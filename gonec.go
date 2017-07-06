@@ -1,0 +1,5 @@
+package gonec
+
+func Interpreter(){
+	
+}
