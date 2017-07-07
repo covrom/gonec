@@ -13,7 +13,7 @@ const APIPath = "/gonec"
 
 type interpreter struct {
 	sync.RWMutex
-	connCount int64
+	connCount int
 	query     []byte
 }
 
@@ -29,13 +29,19 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 	i.RLock()
 	overconn := i.connCount > 5 //лимит количества одновременно работающих интерпретаторов
 	i.RUnlock()
-	if overconn{
+	if overconn {
 		http.Error(w, "Слишком много запросов обрабатывается в данный момент", http.StatusForbidden)
 		return
 	}
 	i.Lock()
 	i.connCount++
 	i.Unlock()
+
+	defer func(i *interpreter) {
+		i.Lock()
+		i.connCount--
+		i.Unlock()
+	}(i)
 
 	if r.ContentLength > 1<<26 {
 		http.Error(w, "Слишком большой запрос", http.StatusForbidden)
