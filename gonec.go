@@ -175,6 +175,8 @@ const (
 	tStr
 	tUndef
 	tType
+
+	iIllegal
 )
 
 var tokenMap = map[string]rune{
@@ -241,10 +243,10 @@ var tokenMap = map[string]rune{
 
 	"Экспорт": aExport,
 	"Export":  aExport,
-	"Истина": aTrue,
-	"True": aTrue,
-	"Ложь": aFalse,
-	"False": aFalse,
+	"Истина":  aTrue,
+	"True":    aTrue,
+	"Ложь":    aFalse,
+	"False":   aFalse,
 }
 
 var operMap = map[string]rune{
@@ -252,7 +254,7 @@ var operMap = map[string]rune{
 	"|":  oLineFeed,   //Используется только в строковых константах в начале строки и означает, что данная строка является продолжением предыдущей (перенос строки)
 	"~":  oLabelStart, //Начало метки оператора
 	":":  oLabelEnd,   //Окончание метки оператора
-	";":  oSemi,        //Символ разделения операторов
+	";":  oSemi,       //Символ разделения операторов
 	"(":  oLBr,
 	")":  oRBr, //В круглые скобки заключается список параметров методов, процедур, функций и конструкторов. Также они используются в выражениях встроенного языка
 	"[":  oLSqBr,
@@ -275,19 +277,26 @@ var operMap = map[string]rune{
 }
 
 var typeMap = map[string]rune{
-	"NULL":tNull,
-	"Булево":tBool,
-	"Boolean":tBool,
-	"Дата":tDate,
-	"Date":tDate,
-	"Число":tNum,
-	"Number":tNum,
-	"Строка":tStr,
-	"String":tStr,
-	"Неопределено":tUndef,
-	"Undefined":tUndef,
-	"Тип":tType,
-	"Type":tType,
+	"NULL":         tNull,
+	"Булево":       tBool,
+	"Boolean":      tBool,
+	"Дата":         tDate,
+	"Date":         tDate,
+	"Число":        tNum,
+	"Number":       tNum,
+	"Строка":       tStr,
+	"String":       tStr,
+	"Неопределено": tUndef,
+	"Undefined":    tUndef,
+	"Тип":          tType,
+	"Type":         tType,
+}
+
+type TokenType rune
+
+type Token struct {
+	Type    TokenType
+	Literal string
 }
 
 // В общем случае формат оператора языка следующий:
