@@ -1,11 +1,15 @@
 package gonec
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/covrom/gonec/gonecscan"
 )
 
 // APIPath содержит путь к api интерпретатора
@@ -99,7 +103,8 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 		}
 	}
 
-	//TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
+	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
+	i.Lexer()
 
 	return nil
 }
@@ -292,12 +297,29 @@ var typeMap = map[string]rune{
 	"Type":         tType,
 }
 
+// В общем случае формат оператора языка следующий:
+// ~метка:Оператор[(параметры)] [ДобКлючевоеСлово];
+
 type TokenType rune
 
+// TODO: номера строк исходного кода для литералов
 type Token struct {
 	Type    TokenType
 	Literal string
 }
 
-// В общем случае формат оператора языка следующий:
-// ~метка:Оператор[(параметры)] [ДобКлючевоеСлово];
+func (i *interpreter) Lexer() {
+	//лексический анализ
+	var s gonecscan.Scanner
+	s.Init(bytes.NewReader(i.query))
+	var tok rune
+	for tok != gonecscan.EOF {
+		tok = s.Scan()
+		
+		//fmt.Println(s.Pos(), ":", s.TokenText())
+		
+		// TODO: распознавать и сохранять токены в дерево разбора
+		// обрабатывать функцию Error
+		
+	}
+}
