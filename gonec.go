@@ -8,6 +8,9 @@ import (
 	"sync"
 )
 
+// APIPath содержит путь к api интерпретатора
+const APIPath = "/gonec"
+
 type interpreter struct {
 	sync.RWMutex
 	connCount int64
@@ -59,7 +62,7 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 
 // Run запускает микросервис интерпретатора по адресу и порту
 func (i *interpreter) Run(srv string) {
-	http.HandleFunc("/", i.handlerMain)
+	http.HandleFunc(APIPath, i.handlerMain)
 	log.Fatal(http.ListenAndServe(srv, nil))
 }
 
