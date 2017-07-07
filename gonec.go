@@ -139,6 +139,10 @@ const (
 	rNew
 	rExecute
 
+	aExport
+	aTrue
+	aFalse
+
 	oComment
 	oLineFeed
 	oLabelStart
@@ -163,6 +167,14 @@ const (
 	oLe
 	oEq
 	oNe
+
+	tNull
+	tBool
+	tDate
+	tNum
+	tStr
+	tUndef
+	tType
 )
 
 var tokenMap = map[string]rune{
@@ -226,6 +238,13 @@ var tokenMap = map[string]rune{
 	"New":          rNew,
 	"Выполнить":    rExecute,
 	"Execute":      rExecute,
+
+	"Экспорт": aExport,
+	"Export":  aExport,
+	"Истина": aTrue,
+	"True": aTrue,
+	"Ложь": aFalse,
+	"False": aFalse,
 }
 
 var operMap = map[string]rune{
@@ -254,3 +273,22 @@ var operMap = map[string]rune{
 	"=":  oEq,     //Операция присваивания. Логическая операция Равно
 	"<>": oNe,     //Логическая операция Не равно
 }
+
+var typeMap = map[string]rune{
+	"NULL":tNull,
+	"Булево":tBool,
+	"Boolean":tBool,
+	"Дата":tDate,
+	"Date":tDate,
+	"Число":tNum,
+	"Number":tNum,
+	"Строка":tStr,
+	"String":tStr,
+	"Неопределено":tUndef,
+	"Undefined":tUndef,
+	"Тип":tType,
+	"Type":tType,
+}
+
+// В общем случае формат оператора языка следующий:
+// ~метка:Оператор[(параметры)] [ДобКлючевоеСлово];
