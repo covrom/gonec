@@ -11,37 +11,51 @@ import (
 // APIPath содержит путь к api интерпретатора
 const APIPath = "/gonec"
 
+type clientConnection struct {
+	IP string
+}
+
 type interpreter struct {
 	sync.RWMutex
-	connCount int
-	query     []byte
+	clientConnections []clientConnection
+	query             []byte
 }
 
 // Interpreter возвращает новый интерпретатор
-func Interpreter() interpreter {
-	return interpreter{}
+func Interpreter() *interpreter {
+	return &interpreter{}
 }
 
 // handlerMain обрабатывает входящие запросы к интерпретатору через POST-запросы
 // тело запроса - это код для интерпретации
 func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 
+	var overconn bool
+
 	i.RLock()
-	overconn := i.connCount > 5 //лимит количества одновременно работающих интерпретаторов
+	//лимит количества одновременных подключений к одному интерпретатору
+	overconn = len(i.clientConnections) > 2
 	i.RUnlock()
+
 	if overconn {
 		http.Error(w, "Слишком много запросов обрабатывается в данный момент", http.StatusForbidden)
 		return
 	}
+
+	clconn := clientConnection{
+		IP: r.RemoteAddr,
+	}
+
 	i.Lock()
-	i.connCount++
+	numtodel := len(i.clientConnections)
+	i.clientConnections = append(i.clientConnections, clconn)
 	i.Unlock()
 
-	defer func(i *interpreter) {
+	defer func(n int) {
 		i.Lock()
-		i.connCount--
+		i.clientConnections = append(i.clientConnections[:n], i.clientConnections[n+1:]...)
 		i.Unlock()
-	}(i)
+	}(numtodel)
 
 	if r.ContentLength > 1<<26 {
 		http.Error(w, "Слишком большой запрос", http.StatusForbidden)
