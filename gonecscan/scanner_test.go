@@ -15,7 +15,7 @@ func TestScanner(t *testing.T) {
 		раз.два();
 		
 		если "а=б" тогда;
-		(5+("4-3"));
+		(5.26+("4-3.25"));
 		
 		Дата('01010001');
 		
@@ -43,7 +43,7 @@ func TestScanner(t *testing.T) {
 	var tok rune
 	for tok != EOF {
 		tok = s.Scan()
-		fmt.Println(s.Pos(), ":", s.TokenText())
+		fmt.Println(s.Pos(), ":",TokenString(tok),":", s.TokenText())
 	}
 
 }

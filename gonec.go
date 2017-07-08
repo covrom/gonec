@@ -1,12 +1,11 @@
 package gonec
 
 import (
-	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 
 	"github.com/covrom/gonec/gonecscan"
@@ -19,10 +18,15 @@ type clientConnection struct {
 	IP string
 }
 
+// TODO: номера строк исходного кода для литералов
+type token struct {
+	toktype, category rune
+	literal           string
+}
+
 type interpreter struct {
 	sync.RWMutex
 	clientConnections []clientConnection
-	query             []byte
 }
 
 // Interpreter возвращает новый интерпретатор
@@ -95,16 +99,12 @@ func (i *interpreter) Run(srv string) {
 
 // ParseAndRun разбирает запрос и запускает интерпретацию
 func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
-	//если r==nil, то разбирается старый запрос, иначе заполняется новый
-	if r != nil {
-		i.query, err = ioutil.ReadAll(r)
-		if err != nil {
-			return
-		}
-	}
 
 	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
-	err = i.Lexer(w)
+
+	//tokens, err := i.Lexer(r, w)
+	_, err = i.Lexer(r, w)
+
 	if err != nil {
 		return
 	}
@@ -185,76 +185,102 @@ const (
 	tType
 
 	iIllegal
+
+	//для категорий
+	defIdentifier
+	defKeyword
+	defOperator
+	defDelimiter
+	defPoint
+	defValueInt
+	defValueFloat
+	defValueDate
+	defValueString
+	defUnknown
 )
 
-var tokenMap = map[string]rune{
-	"Если":      rIf,
-	"If":        rIf,
-	"Тогда":     rThen,
-	"Then":      rThen,
-	"ИначеЕсли": rElsIf,
-	"ElsIf":     rElsIf,
-	"Иначе":     rElse,
-	"Else":      rElse,
-	"КонецЕсли": rEndIf,
-	"EndIf":     rEndIf,
-	"Для":       rFor,
-	"For":       rFor,
-	"Каждого":   rEach,
-	"Each":      rEach,
-	"Из":        rIn,
-	"In":        rIn,
-	"По":        rTo,
-	"To":        rTo,
-	"Пока":      rWhile,
-	"While":     rWhile,
-	"Цикл":      rDo,
-	"Do":        rDo,
-	"КонецЦикла":     rEndDo,
-	"EndDo":          rEndDo,
-	"Процедура":      rProcedure,
-	"Procedure":      rProcedure,
-	"Функция":        rFunction,
-	"Function":       rFunction,
-	"КонецПроцедуры": rEndProcedure,
-	"EndProcedure":   rEndProcedure,
-	"КонецФункции":   rEndFunction,
-	"EndFunction":    rEndFunction,
-	"Перем":          rVar,
-	"Var":            rVar,
-	"Перейти":        rGoto,
-	"Goto":           rGoto,
-	"Возврат":        rReturn,
-	"Return":         rReturn,
-	"Продолжить":     rContinue,
-	"Continue":       rContinue,
-	"Прервать":       rBreak,
-	"Break":          rBreak,
-	"И":              rAnd,
-	"And":            rAnd,
-	"Или":            rOr,
-	"Or":             rOr,
-	"Не":             rNot,
-	"Not":            rNot,
-	"Попытка":        rTry,
-	"Try":            rTry,
-	"Исключение": rExcept,
-	"Except":     rExcept,
-	"ВызватьИсключение": rRaise,
-	"Raise":        rRaise,
-	"КонецПопытки": rEndTry,
-	"EndTry":       rEndTry,
-	"Новый":        rNew,
-	"New":          rNew,
-	"Выполнить":    rExecute,
-	"Execute":      rExecute,
+var keywordMap = map[string]rune{
+	"если":      rIf,
+	"if":        rIf,
+	"тогда":     rThen,
+	"then":      rThen,
+	"иначеесли": rElsIf,
+	"elsif":     rElsIf,
+	"иначе":     rElse,
+	"else":      rElse,
+	"конецесли": rEndIf,
+	"endif":     rEndIf,
+	"для":       rFor,
+	"for":       rFor,
+	"каждого":   rEach,
+	"each":      rEach,
+	"из":        rIn,
+	"in":        rIn,
+	"по":        rTo,
+	"to":        rTo,
+	"пока":      rWhile,
+	"while":     rWhile,
+	"цикл":      rDo,
+	"do":        rDo,
+	"конеццикла":     rEndDo,
+	"enddo":          rEndDo,
+	"процедура":      rProcedure,
+	"procedure":      rProcedure,
+	"функция":        rFunction,
+	"function":       rFunction,
+	"конецпроцедуры": rEndProcedure,
+	"endprocedure":   rEndProcedure,
+	"конецфункции":   rEndFunction,
+	"endfunction":    rEndFunction,
+	"перем":          rVar,
+	"var":            rVar,
+	"перейти":        rGoto,
+	"goto":           rGoto,
+	"возврат":        rReturn,
+	"return":         rReturn,
+	"продолжить":     rContinue,
+	"continue":       rContinue,
+	"прервать":       rBreak,
+	"break":          rBreak,
+	"и":              rAnd,
+	"and":            rAnd,
+	"или":            rOr,
+	"or":             rOr,
+	"не":             rNot,
+	"not":            rNot,
+	"попытка":        rTry,
+	"try":            rTry,
+	"исключение": rExcept,
+	"except":     rExcept,
+	"вызватьисключение": rRaise,
+	"raise":        rRaise,
+	"конецпопытки": rEndTry,
+	"endtry":       rEndTry,
+	"новый":        rNew,
+	"new":          rNew,
+	"выполнить":    rExecute,
+	"execute":      rExecute,
 
-	"Экспорт": aExport,
-	"Export":  aExport,
-	"Истина":  aTrue,
-	"True":    aTrue,
-	"Ложь":    aFalse,
-	"False":   aFalse,
+	"экспорт": aExport,
+	"export":  aExport,
+	"истина":  aTrue,
+	"true":    aTrue,
+	"ложь":    aFalse,
+	"false":   aFalse,
+
+	"null":         tNull,
+	"булево":       tBool,
+	"boolean":      tBool,
+	"дата":         tDate,
+	"date":         tDate,
+	"число":        tNum,
+	"number":       tNum,
+	"строка":       tStr,
+	"string":       tStr,
+	"неопределено": tUndef,
+	"undefined":    tUndef,
+	"тип":          tType,
+	"type":         tType,
 }
 
 var operMap = map[string]rune{
@@ -262,7 +288,6 @@ var operMap = map[string]rune{
 	"|":  oLineFeed,   //Используется только в строковых константах в начале строки и означает, что данная строка является продолжением предыдущей (перенос строки)
 	"~":  oLabelStart, //Начало метки оператора
 	":":  oLabelEnd,   //Окончание метки оператора
-	";":  oSemi,       //Символ разделения операторов
 	"(":  oLBr,
 	")":  oRBr, //В круглые скобки заключается список параметров методов, процедур, функций и конструкторов. Также они используются в выражениях встроенного языка
 	"[":  oLSqBr,
@@ -270,7 +295,6 @@ var operMap = map[string]rune{
 	",":  oComma,  //Разделяет параметры в списке параметров методов, процедур, функций и конструкторов
 	"\"": oDQuote, //Обрамляет строковые литералы
 	"'":  oSQuote, //Обрамляет литералы даты
-	".":  oPoint,  //Десятичная точка в числовых литералах. Разделитель, используемый для обращения к свойствам и методам объектов встроенного языка
 	"+":  oAdd,    //Операция сложения. Операция конкатенации строк
 	"-":  oSub,    //Операция вычитания
 	"*":  oMul,    //Операция умножения
@@ -284,34 +308,18 @@ var operMap = map[string]rune{
 	"<>": oNe,     //Логическая операция Не равно
 }
 
-var typeMap = map[string]rune{
-	"NULL":         tNull,
-	"Булево":       tBool,
-	"Boolean":      tBool,
-	"Дата":         tDate,
-	"Date":         tDate,
-	"Число":        tNum,
-	"Number":       tNum,
-	"Строка":       tStr,
-	"String":       tStr,
-	"Неопределено": tUndef,
-	"Undefined":    tUndef,
-	"Тип":          tType,
-	"Type":         tType,
+var delimMap = map[string]rune{
+	";": oSemi, //Символ разделения операторов
+}
+
+var pointMap = map[string]rune{
+	".": oPoint, //Десятичная точка в числовых литералах. Разделитель, используемый для обращения к свойствам и методам объектов встроенного языка
 }
 
 // В общем случае формат оператора языка следующий:
 // ~метка:Оператор[(параметры)] [ДобКлючевоеСлово];
 
-type TokenType rune
-
-// TODO: номера строк исходного кода для литералов
-type Token struct {
-	Type    TokenType
-	Literal string
-}
-
-func (i *interpreter) Lexer(w io.Writer) (err error) {
+func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error) {
 	//лексический анализ
 	var s gonecscan.Scanner
 
@@ -319,7 +327,7 @@ func (i *interpreter) Lexer(w io.Writer) (err error) {
 		err = errors.New(msg)
 	}
 
-	s.Init(bytes.NewReader(i.query))
+	s.Init(r)
 
 	var tok rune
 
@@ -328,17 +336,51 @@ func (i *interpreter) Lexer(w io.Writer) (err error) {
 		if err != nil {
 			return
 		}
-		w.Write([]byte(s.TokenText()))
-		w.Write([]byte("\n"))
 
-		// TODO: строки возвращаиюся вместе с промежуточными переносами и комментариями - нужно дополнительно очищать
+		nt := token{literal: s.TokenText()}
+		ntlit := strings.ToLower(nt.literal)
+		var ok bool
+		switch tok {
+		case gonecscan.Ident:
+			nt.toktype, ok = keywordMap[ntlit]
+			if !ok {
+				nt.category = defIdentifier
+			} else {
+				nt.category = defKeyword
+			}
+		case gonecscan.String:
+			// TODO: строки возвращаиюся вместе с промежуточными переносами и комментариями - нужно дополнительно очищать
+			nt.category = defValueString
+		case gonecscan.Int:
+			nt.category = defValueInt
+		case gonecscan.Float:
+			nt.category = defValueFloat
+		case gonecscan.Date:
+			nt.category = defValueDate
+		default:
+			nt.toktype, ok = operMap[ntlit]
+			if !ok {
+				nt.toktype, ok = delimMap[ntlit]
+				if !ok {
+					nt.toktype, ok = pointMap[ntlit]
+					if !ok {
+						nt.category = defUnknown
+					} else {
+						nt.category = defPoint
+					}
+				} else {
+					nt.category = defDelimiter
+				}
+			} else {
+				nt.category = defOperator
+			}
+		}
 
-		//fmt.Println(s.Pos(), ":", s.TokenText())
+		tokens = append(tokens,nt)
+		// TODO:
 
-		// TODO: распознавать и сохранять токены в дерево разбора
-		// обрабатывать функцию Error
 
 	}
 
-	return nil
+	return nil, nil
 }

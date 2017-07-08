@@ -39,22 +39,20 @@ const (
 	Ident
 	Int
 	Float
-	Char
+	Date
 	String
-	RawString
 	Comment
 	skipComment
 )
 
 var tokenString = map[rune]string{
-	EOF:       "EOF",
-	Ident:     "Ident",
-	Int:       "Int",
-	Float:     "Float",
-	Char:      "Char",
-	String:    "String",
-	RawString: "RawString",
-	Comment:   "Comment",
+	EOF:     "EOF",
+	Ident:   "Ident",
+	Int:     "Int",
+	Float:   "Float",
+	Date:    "Date",
+	String:  "String",
+	Comment: "Comment",
 }
 
 // TokenString returns a printable string for a token or Unicode character.
@@ -278,7 +276,6 @@ func (s *Scanner) error(msg string) {
 	}
 	if s.Error != nil {
 		s.Error(s, fmt.Sprintf("%s: %s\n", pos, msg))
-		return
 	} else {
 		fmt.Fprintf(os.Stderr, "%s: %s\n", pos, msg)
 	}
@@ -508,7 +505,7 @@ redo:
 		case '\'':
 			// if s.Mode&ScanChars != 0 {
 			s.scanChar()
-			tok = Char
+			tok = Date
 			// }
 			ch = s.next()
 		case '.':
