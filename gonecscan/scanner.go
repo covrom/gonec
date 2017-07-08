@@ -215,7 +215,7 @@ func (s *Scanner) next() rune {
 				s.srcPos += width
 				s.lastCharLen = width
 				s.column++
-				s.error("illegal UTF-8 encoding")
+				s.error("Неверный UTF-8 символ")
 				return ch
 			}
 		}
@@ -230,7 +230,7 @@ func (s *Scanner) next() rune {
 	switch ch {
 	case 0:
 		// for compatibility with other tools
-		s.error("illegal character NUL")
+		s.error("Нулевой символ недопустим")
 	case '\n':
 		s.line++
 		s.lastLineLen = s.column
@@ -272,15 +272,16 @@ func (s *Scanner) Peek() rune {
 
 func (s *Scanner) error(msg string) {
 	s.ErrorCount++
-	if s.Error != nil {
-		s.Error(s, msg)
-		return
-	}
 	pos := s.Position
 	if !pos.IsValid() {
 		pos = s.Pos()
 	}
-	fmt.Fprintf(os.Stderr, "%s: %s\n", pos, msg)
+	if s.Error != nil {
+		s.Error(s, fmt.Sprintf("%s: %s\n", pos, msg))
+		return
+	} else {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", pos, msg)
+	}
 }
 
 func (s *Scanner) isIdentRune(ch rune, i int) bool {
@@ -349,7 +350,7 @@ func (s *Scanner) scanNumber(ch rune) (rune, rune) {
 				hasMantissa = true
 			}
 			if !hasMantissa {
-				s.error("illegal hexadecimal number")
+				s.error("Неверное шестнадцатеричное число")
 			}
 		} else {
 			// octal int or float
@@ -368,7 +369,7 @@ func (s *Scanner) scanNumber(ch rune) (rune, rune) {
 			}
 			// octal int
 			if has8or9 {
-				s.error("illegal octal number")
+				s.error("Неверное восьмеричное число")
 			}
 		}
 		return Int, ch
@@ -384,17 +385,6 @@ func (s *Scanner) scanNumber(ch rune) (rune, rune) {
 	return Int, ch
 }
 
-func (s *Scanner) scanDigits(ch rune, base, n int) rune {
-	for n > 0 && digitVal(ch) < base {
-		ch = s.next()
-		n--
-	}
-	if n > 0 {
-		s.error("illegal char escape")
-	}
-	return ch
-}
-
 func (s *Scanner) scanString(quote rune) (n int) {
 	ch := s.next() // read character after quote
 	for ch != quote {
@@ -403,12 +393,12 @@ func (s *Scanner) scanString(quote rune) (n int) {
 			//после него пропускаем пробелы и комментарии
 			ch = s.next()
 			// skip white space
-			ssredo:
-			
+		ssredo:
+
 			for s.Whitespace&(1<<uint(ch)) != 0 {
 				ch = s.next()
 				if ch == EOF {
-					s.error("literal not terminated")
+					s.error("Строка не закрыта")
 					return
 				}
 			}
@@ -422,7 +412,7 @@ func (s *Scanner) scanString(quote rune) (n int) {
 						goto ssredo
 					}
 				} else {
-					s.error("literal not terminated")
+					s.error("Строка не закрыта")
 					return
 				}
 			}
@@ -435,7 +425,7 @@ func (s *Scanner) scanString(quote rune) (n int) {
 
 func (s *Scanner) scanChar() {
 	if s.scanString('\'') <= 0 {
-		s.error("illegal date literal")
+		s.error("Неверный литерал даты")
 	}
 }
 
