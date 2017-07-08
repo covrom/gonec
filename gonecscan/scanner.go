@@ -33,8 +33,6 @@ func (pos Position) String() string {
 	return s
 }
 
-
-
 // The result of Scan is one of these tokens or a Unicode character.
 const (
 	EOF = -(iota + 1)
@@ -286,7 +284,7 @@ func (s *Scanner) error(msg string) {
 }
 
 func (s *Scanner) isIdentRune(ch rune, i int) bool {
-	return ch == '_' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0 
+	return ch == '_' || unicode.IsLetter(ch) || unicode.IsDigit(ch) && i > 0
 }
 
 func (s *Scanner) scanIdentifier() rune {
@@ -362,7 +360,7 @@ func (s *Scanner) scanNumber(ch rune) (rune, rune) {
 				}
 				ch = s.next()
 			}
-			if (ch == '.' || ch == 'e' || ch == 'E') {
+			if ch == '.' || ch == 'e' || ch == 'E' {
 				// float
 				ch = s.scanFraction(ch)
 				ch = s.scanExponent(ch)
@@ -377,7 +375,7 @@ func (s *Scanner) scanNumber(ch rune) (rune, rune) {
 	}
 	// decimal int or float
 	ch = s.scanMantissa(ch)
-	if (ch == '.' || ch == 'e' || ch == 'E') {
+	if ch == '.' || ch == 'e' || ch == 'E' {
 		// float
 		ch = s.scanFraction(ch)
 		ch = s.scanExponent(ch)
@@ -402,8 +400,11 @@ func (s *Scanner) scanString(quote rune) (n int) {
 	for ch != quote {
 		if ch == '\n' || ch < 0 {
 			//проверяем перенос строки
+			//после него пропускаем пробелы и комментарии
 			ch = s.next()
 			// skip white space
+			ssredo:
+			
 			for s.Whitespace&(1<<uint(ch)) != 0 {
 				ch = s.next()
 				if ch == EOF {
@@ -411,10 +412,19 @@ func (s *Scanner) scanString(quote rune) (n int) {
 					return
 				}
 			}
-			//должен быть перенос строки 1с
+			//должен быть перенос строки 1с по символу |
 			if ch != '|' {
-				s.error("literal not terminated")
-				return
+				if ch == '/' {
+					//пропускаем комментарий
+					ch = s.next()
+					if ch == '/' {
+						ch = s.scanComment(ch)
+						goto ssredo
+					}
+				} else {
+					s.error("literal not terminated")
+					return
+				}
 			}
 		}
 		ch = s.next()
@@ -484,14 +494,14 @@ redo:
 	switch {
 	case s.isIdentRune(ch, 0):
 		// if s.Mode&ScanIdents != 0 {
-			tok = Ident
-			ch = s.scanIdentifier()
+		tok = Ident
+		ch = s.scanIdentifier()
 		// } else {
 		// 	ch = s.next()
 		// }
 	case isDecimal(ch):
 		// if s.Mode&(ScanInts|ScanFloats) != 0 {
-			tok, ch = s.scanNumber(ch)
+		tok, ch = s.scanNumber(ch)
 		// } else {
 		// 	ch = s.next()
 		// }
@@ -501,14 +511,14 @@ redo:
 			break
 		case '"':
 			// if s.Mode&ScanStrings != 0 {
-				s.scanString('"')
-				tok = String
+			s.scanString('"')
+			tok = String
 			// }
 			ch = s.next()
 		case '\'':
 			// if s.Mode&ScanChars != 0 {
-				s.scanChar()
-				tok = Char
+			s.scanChar()
+			tok = Char
 			// }
 			ch = s.next()
 		case '.':
@@ -522,9 +532,9 @@ redo:
 			ch = s.next()
 			if ch == '/' {
 				// if s.Mode&SkipComments != 0 {
-					s.tokPos = -1 // don't collect token text
-					ch = s.scanComment(ch)
-					goto redo
+				s.tokPos = -1 // don't collect token text
+				ch = s.scanComment(ch)
+				goto redo
 				// }
 				// ch = s.scanComment(ch)
 				// tok = Comment
