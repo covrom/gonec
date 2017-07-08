@@ -42,7 +42,7 @@ func TestScanner(t *testing.T) {
 
 	КонецЕсли`
 	var s Scanner
-	s.Filename = "example"
+	//s.Filename = "example"
 	s.Init(strings.NewReader(src))
 	var tok rune
 	for tok != EOF {
