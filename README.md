@@ -1,37 +1,24 @@
-## Welcome to GitHub Pages
+## Интерпретатор 1С-подобного языка Гонец
+Gonec language interpreter
 
-You can use the [editor on GitHub](https://github.com/covrom/gonec/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+### Цели
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+Интерпретатор нужен программистам 1С для решения множества задач, связанных с высокопроизводительными многопоточными вычислениями или работой с высокоэффективными key-value базами данных.
 
-### Markdown
+Включив такой интерпретатор в свое решение на языке Go, Вы можете предоставить небывалый уровень сервиса для своих клиентов, который обгонит решения не только ваших конкуретнов на рынке 1С, но и конкуретных платформ в enterprise (SAP HANA) и в web (node.js).
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+Интерпретатор разрабатывается "от простого к сложному". 
+На начальных этапах будет включена базовая функциональность многопоточных вычислений и сетевых сервисов. 
+В перспективе планируется организация работы с различными базами данных и визуализация управляемых форм, созданных в конфигураторе.
 
-```markdown
-Syntax highlighted code block
+Еще никогда не были так просто доступны программистам 1С возможности:
+* Создать микросервис с произвольным сетевым протоколом
+* Выполнить сложную многопоточную вычислительную задачу для десятков тысяч подключающихся пользователей за миллисекунды
+* Взаимодействовать с пользователем через web-браузер с минимальным трафиком
+* Сохранять и получать данные с максимально доступной скоростью в key-value базах данных
 
-# Header 1
-## Header 2
-### Header 3
+###Почему синтаксис 1С?
 
-- Bulleted
-- List
+Синтаксис 1С знаком и удобен сотням тысяч программистов в России и СНГ, а в перспективе и зарубежом. Это позволяет создавать решения, которые могут поддерживаться любыми программистами 1С, и которые не будут требовать дополнительной квалификации.
 
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/covrom/gonec/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+Интерпретатор полностью поддерживает сиснтаксис языка платформы 1С:Предприятие 8.3, за исключением объектов метаданных и глобальных объектов - в интерпретаторе, по понятным причинам, используются свои объекты.
