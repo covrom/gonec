@@ -35,7 +35,7 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 	i.RUnlock()
 
 	if overconn {
-		time.Sleep(time.Second) //анти-ddos
+		time.Sleep(300*time.Millisecond) //анти-ddos
 		http.Error(w, "Слишком много запросов обрабатывается в данный момент", http.StatusForbidden)
 		return
 	}
