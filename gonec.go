@@ -348,7 +348,7 @@ func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error
 				nt.category = defKeyword
 			}
 		case gonecscan.String:
-			// TODO: строки возвращаиюся вместе с промежуточными переносами и комментариями - нужно дополнительно очищать
+			// строки возвращаются без переносов и комментариев
 			nt.category = defValueString
 		case gonecscan.Int:
 			nt.category = defValueInt

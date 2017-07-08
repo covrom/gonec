@@ -47,14 +47,14 @@ const (
 )
 
 var tokenString = map[rune]string{
-	EOF:     "EOF",
-	Ident:   "Ident",
-	Int:     "Int",
-	Float:   "Float",
-	Date:    "Date",
-	String:  "String",
-	Operator:  "Operator",
-	Comment: "Comment",
+	EOF:      "EOF",
+	Ident:    "Ident",
+	Int:      "Int",
+	Float:    "Float",
+	Date:     "Date",
+	String:   "String",
+	Operator: "Operator",
+	Comment:  "Comment",
 }
 
 // TokenString returns a printable string for a token or Unicode character.
@@ -98,6 +98,8 @@ type Scanner struct {
 
 	// One character look-ahead
 	ch rune // character before current srcPos
+
+	TokenType rune
 
 	// Error is called for each error encountered. If no Error
 	// function is set, the error is reported to os.Stderr.
@@ -163,6 +165,7 @@ func (s *Scanner) Init(src io.Reader) *Scanner {
 func (s *Scanner) next() rune {
 	ch, width := rune(s.srcBuf[s.srcPos]), 1
 
+	//если парсится строка, то пишем всю строку в буфер, чтобы потом вырезать комментарии
 	if ch >= utf8.RuneSelf {
 		// uncommon case: not ASCII or not enough bytes
 		for s.srcPos+utf8.UTFMax > s.srcEnd && !utf8.FullRune(s.srcBuf[s.srcPos:s.srcEnd]) {
@@ -530,13 +533,13 @@ redo:
 			}
 		case '<':
 			ch = s.next()
-			if ch=='>' || ch=='=' {
+			if ch == '>' || ch == '=' {
 				tok = Operator
 				ch = s.next()
 			}
 		case '>':
 			ch = s.next()
-			if ch=='=' {
+			if ch == '=' {
 				tok = Operator
 				ch = s.next()
 			}
@@ -550,6 +553,7 @@ redo:
 	s.tokEnd = s.srcPos - s.lastCharLen
 
 	s.ch = ch
+	s.TokenType = tok
 	return tok
 }
 
@@ -578,6 +582,9 @@ func (s *Scanner) Pos() (pos Position) {
 // TokenText returns the string corresponding to the most recently scanned token.
 // Valid after calling Scan().
 func (s *Scanner) TokenText() string {
+
+	var outb *bytes.Buffer
+
 	if s.tokPos < 0 {
 		// no token text
 		return ""
@@ -590,12 +597,61 @@ func (s *Scanner) TokenText() string {
 
 	if s.tokBuf.Len() == 0 {
 		// common case: the entire token text is still in srcBuf
-		return string(s.srcBuf[s.tokPos:s.tokEnd])
+		outb = bytes.NewBuffer(s.srcBuf[s.tokPos:s.tokEnd])
+		//return string(s.srcBuf[s.tokPos:s.tokEnd])
+	} else {
+
+		// part of the token text was saved in tokBuf: save the rest in
+		// tokBuf as well and return its content
+		s.tokBuf.Write(s.srcBuf[s.tokPos:s.tokEnd])
+		s.tokPos = s.tokEnd // ensure idempotency of TokenText() call
+
+		//return s.tokBuf.String()
+		outb = bytes.NewBuffer(s.tokBuf.Bytes())
+	}
+	//вырезаем комментарии
+	if s.TokenType == String && bytes.ContainsRune(outb.Bytes(), '|') {
+
+		var b bytes.Buffer
+		for {
+			r, _, err := outb.ReadRune()
+			if err == io.EOF {
+				return b.String()
+			}
+			switch r {
+			case '\n':
+				//пропускаем все пробелы и комментарии
+			skwsp:
+				for s.Whitespace&(1<<uint(r)) != 0 {
+					r, _, err = outb.ReadRune()
+					if err == io.EOF {
+						return b.String()
+					}
+				}
+				if r == '/' {
+					r, _, err = outb.ReadRune()
+					if err == io.EOF {
+						return b.String()
+					}
+					if r == '/' {
+						for r != '\n' {
+							r, _, err = outb.ReadRune()
+							if err == io.EOF {
+								return b.String()
+							}
+						}
+						goto skwsp
+					}
+				}
+				if r == '|' {
+					b.WriteRune('\n')
+				}
+			default:
+				b.WriteRune(r)
+			}
+
+		}
 	}
 
-	// part of the token text was saved in tokBuf: save the rest in
-	// tokBuf as well and return its content
-	s.tokBuf.Write(s.srcBuf[s.tokPos:s.tokEnd])
-	s.tokPos = s.tokEnd // ensure idempotency of TokenText() call
-	return s.tokBuf.String()
+	return outb.String()
 }
