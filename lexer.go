@@ -9,9 +9,10 @@ import (
 )
 
 func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error) {
-	
+
 	//лексический анализ
-	
+	tokens = []token{}
+
 	var s gonecscan.Scanner
 
 	s.Error = func(s *gonecscan.Scanner, msg string) {
@@ -71,5 +72,5 @@ func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error
 
 	}
 
-	return nil, nil
+	return
 }

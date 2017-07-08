@@ -95,14 +95,19 @@ func (i *interpreter) Run(srv string) {
 // ParseAndRun разбирает запрос и запускает интерпретацию
 func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 
-	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
+	var tokens []token
 
-	//tokens, err := i.Lexer(r, w)
-	_, err = i.Lexer(r, w)
-
+	tokens, err = i.Lexer(r, w)
 	if err != nil {
 		return
 	}
+
+	err = i.Parse(tokens,w)
+	if err != nil {
+		return
+	}
+	
+	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
 
 	return nil
 }
