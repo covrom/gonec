@@ -41,6 +41,7 @@ const (
 	Float
 	Date
 	String
+	Operator
 	Comment
 	skipComment
 )
@@ -52,6 +53,7 @@ var tokenString = map[rune]string{
 	Float:   "Float",
 	Date:    "Date",
 	String:  "String",
+	Operator:  "Operator",
 	Comment: "Comment",
 }
 
@@ -526,7 +528,20 @@ redo:
 				// ch = s.scanComment(ch)
 				// tok = Comment
 			}
+		case '<':
+			ch = s.next()
+			if ch=='>' || ch=='=' {
+				tok = Operator
+				ch = s.next()
+			}
+		case '>':
+			ch = s.next()
+			if ch=='=' {
+				tok = Operator
+				ch = s.next()
+			}
 		default:
+			tok = Operator
 			ch = s.next()
 		}
 	}
