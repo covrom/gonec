@@ -30,6 +30,12 @@ func TestScanner(t *testing.T) {
 
 		|ИТОГИ ПО а";
 
+		Плохой запрос = "ВЫБРАТЬ *
+		|ГДЕ
+
+		//нет хвоста
+		;
+
 	КонецЕсли`
 	var s Scanner
 	s.Filename = "example"
