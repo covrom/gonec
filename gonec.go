@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // APIPath содержит путь к api интерпретатора
@@ -34,6 +35,7 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 	i.RUnlock()
 
 	if overconn {
+		time.Sleep(time.Second) //анти-ddos
 		http.Error(w, "Слишком много запросов обрабатывается в данный момент", http.StatusForbidden)
 		return
 	}
@@ -58,6 +60,7 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 	}(clconn)
 
 	if r.ContentLength > 1<<26 {
+		time.Sleep(time.Second) //анти-ddos
 		http.Error(w, "Слишком большой запрос", http.StatusForbidden)
 		return
 	}
@@ -71,11 +74,13 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		err := i.ParseAndRun(r.Body, w)
 		if err != nil {
+			time.Sleep(time.Second) //анти-ddos
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 	default:
+		time.Sleep(time.Second) //анти-ddos
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
 	}
