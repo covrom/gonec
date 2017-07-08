@@ -2,7 +2,7 @@ package gonec
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -104,7 +104,10 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 	}
 
 	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
-	i.Lexer()
+	err = i.Lexer(w)
+	if err != nil {
+		return
+	}
 
 	return nil
 }
@@ -308,18 +311,34 @@ type Token struct {
 	Literal string
 }
 
-func (i *interpreter) Lexer() {
+func (i *interpreter) Lexer(w io.Writer) (err error) {
 	//лексический анализ
 	var s gonecscan.Scanner
+
+	s.Error = func(s *gonecscan.Scanner, msg string) {
+		err = errors.New(msg)
+	}
+
 	s.Init(bytes.NewReader(i.query))
+
 	var tok rune
+
 	for tok != gonecscan.EOF {
 		tok = s.Scan()
-		
+		if err != nil {
+			return
+		}
+		w.Write([]byte(s.TokenText()))
+		w.Write([]byte("\n"))
+
+		// TODO: строки возвращаиюся вместе с промежуточными переносами и комментариями - нужно дополнительно очищать
+
 		//fmt.Println(s.Pos(), ":", s.TokenText())
-		
+
 		// TODO: распознавать и сохранять токены в дерево разбора
 		// обрабатывать функцию Error
-		
+
 	}
+
+	return nil
 }
