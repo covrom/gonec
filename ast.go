@@ -32,7 +32,8 @@ type pDecl interface {
 
 //главная нода программы
 type pProgram struct {
-	stmts []pStmt
+	stmts  []pStmt
+	errors []string
 }
 
 func (p *pProgram) tLit() string {

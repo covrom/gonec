@@ -1,9 +1,10 @@
 package gonec
 
-// TODO: номера строк исходного кода для литералов
 type token struct {
-	toktype, category rune
-	literal           string
+	toktype         rune
+	category        uint
+	literal         string
+	srcline, srccol int
 }
 
 // Приведенные далее ключевые слова являются зарезервированными и не могут использоваться в качестве создаваемых имен переменных, реквизитов объектов конфигурации и объявляемых процедур и функций.
@@ -78,9 +79,11 @@ const (
 	tType
 
 	iIllegal
+)
 
+const (
 	//для категорий
-	defIdentifier
+	defIdentifier = 1 << iota
 	defKeyword
 	defOperator
 	defDelimiter
@@ -90,6 +93,13 @@ const (
 	defValueDate
 	defValueString
 	defUnknown
+	defEOF
+	
+	//маски категорий
+	catValues     = defValueDate | defValueFloat | defValueInt | defValueString
+	catAssignable = catValues | defIdentifier | defKeyword | defOperator
+	catSymbols    = defOperator | defPoint | defDelimiter
+	catEndExpression = defDelimiter | defEOF
 )
 
 var keywordMap = map[string]rune{
@@ -178,16 +188,13 @@ var keywordMap = map[string]rune{
 
 var operMap = map[string]rune{
 	//комментарии не учитываются интерпретатором, поэтому // не входит в операторы
-	"|":  oLineFeed,   //Используется только в строковых константах в начале строки и означает, что данная строка является продолжением предыдущей (перенос строки)
 	"~":  oLabelStart, //Начало метки оператора
-	":":  oLabelEnd,   //Окончание метки оператора
+	":":  oLabelEnd,   //Окончание метки оператора, разделитель диапазона
 	"(":  oLBr,
 	")":  oRBr, //В круглые скобки заключается список параметров методов, процедур, функций и конструкторов. Также они используются в выражениях встроенного языка
 	"[":  oLSqBr,
 	"]":  oRSqBr,  //С помощью оператора квадратные скобки производится обращение к свойствам объекта по строковому представлению имени свойства.Также возможно обращение к элементам коллекций по индексу или другому параметру
 	",":  oComma,  //Разделяет параметры в списке параметров методов, процедур, функций и конструкторов
-	"\"": oDQuote, //Обрамляет строковые литералы
-	"'":  oSQuote, //Обрамляет литералы даты
 	"+":  oAdd,    //Операция сложения. Операция конкатенации строк
 	"-":  oSub,    //Операция вычитания
 	"*":  oMul,    //Операция умножения
@@ -204,6 +211,7 @@ var operMap = map[string]rune{
 var delimMap = map[string]rune{
 	";": oSemi, //Символ разделения операторов
 }
+
 
 var pointMap = map[string]rune{
 	".": oPoint, //Десятичная точка в числовых литералах. Разделитель, используемый для обращения к свойствам и методам объектов встроенного языка

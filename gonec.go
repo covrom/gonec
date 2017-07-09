@@ -1,6 +1,7 @@
 package gonec
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -35,7 +36,7 @@ func (i *interpreter) handlerMain(w http.ResponseWriter, r *http.Request) {
 	i.RUnlock()
 
 	if overconn {
-		time.Sleep(300*time.Millisecond) //анти-ddos
+		time.Sleep(300 * time.Millisecond) //анти-ddos
 		http.Error(w, "Слишком много запросов обрабатывается в данный момент", http.StatusForbidden)
 		return
 	}
@@ -102,11 +103,17 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 		return
 	}
 
-	err = i.Parse(tokens,w)
+	var prog pProgram
+
+	prog, err = i.Parse(tokens, w)
 	if err != nil {
-		return
+		es := err.Error()
+		for _, oneerr := range prog.errors {
+			es += "\n" + oneerr
+		}
+		return errors.New(es)
 	}
-	
+
 	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
 
 	return nil

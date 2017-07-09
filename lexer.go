@@ -29,7 +29,13 @@ func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error
 			return
 		}
 
-		nt := token{literal: s.TokenText()}
+		//fmt.Println(s.Pos(), ":", gonecscan.TokenString(tok), ":", s.TokenText())
+
+		nt := token{literal: s.TokenText(),
+			srcline: s.Line,
+			srccol:  s.Column,
+		}
+
 		ntlit := strings.ToLower(nt.literal)
 		var ok bool
 		switch tok {
@@ -49,6 +55,8 @@ func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error
 			nt.category = defValueFloat
 		case gonecscan.Date:
 			nt.category = defValueDate
+		case gonecscan.EOF:
+			nt.category = defEOF
 		default:
 			nt.toktype, ok = operMap[ntlit]
 			if !ok {
@@ -67,10 +75,10 @@ func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error
 				nt.category = defOperator
 			}
 		}
-
 		tokens = append(tokens, nt)
-
 	}
+
+	tokens = append(tokens, token{category: defEOF}) //гарантированное окончание даже для пустого файла
 
 	return
 }
