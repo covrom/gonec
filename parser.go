@@ -88,12 +88,17 @@ func (p *parser) parseStatement() (stmt pStmt, err error) {
 }
 
 func (p *parser) parseLetStatement() (stmt *pLetStatement, err error) {
-	stmt = &pLetStatement{tok: p.curToken}
+	stmt = &pLetStatement{
+		tok: p.curToken,
+	}
 	stmt.name = &pIdentifier{tok: p.curToken, val: p.curToken.literal}
 	if p.peekToken.category&catAssignable == 0 || p.peekToken.toktype == oLabelStart {
 		return nil, errors.New("Недопустимый аргумент присваивания")
 	}
 	//выражением считаем все, что идет до конца файла или строки (;)
+	
+	//stmt.val = p.parseExpression(LOWEST)
+	
 	for p.curToken.category&catEndExpression == 0 {
 		p.nextToken()
 	}
