@@ -1,10 +1,18 @@
 package gonec
 
+import (
+	"fmt"
+)
+
 type token struct {
 	toktype         rune
 	category        uint
 	literal         string
 	srcline, srccol int
+}
+
+func (t token) String() string {
+	return fmt.Sprintf("cat: %v lit: %v", literalsCategory[t.category], t.literal)
 }
 
 // Приведенные далее ключевые слова являются зарезервированными и не могут использоваться в качестве создаваемых имен переменных, реквизитов объектов конфигурации и объявляемых процедур и функций.
@@ -86,6 +94,7 @@ const (
 	defIdentifier = 1 << iota
 	defKeyword
 	defOperator
+	defAssignator
 	defDelimiter
 	defPoint
 	defValueInt
@@ -94,13 +103,28 @@ const (
 	defValueString
 	defUnknown
 	defEOF
-	
+
 	//маски категорий
-	catValues     = defValueDate | defValueFloat | defValueInt | defValueString
-	catAssignable = catValues | defIdentifier | defKeyword | defOperator
-	catSymbols    = defOperator | defPoint | defDelimiter
+	catValues        = defValueDate | defValueFloat | defValueInt | defValueString
+	catAssignable    = catValues | defIdentifier | defKeyword | defOperator
+	catSymbols       = defOperator | defPoint | defDelimiter
 	catEndExpression = defDelimiter | defEOF
 )
+
+var literalsCategory = map[uint]string{
+	defIdentifier:  "Identifier",
+	defKeyword:     "Keyword",
+	defOperator:    "Operator",
+	defAssignator:  "Assignator",
+	defDelimiter:   "Delimiter",
+	defPoint:       "Point",
+	defValueInt:    "ValueInt",
+	defValueFloat:  "ValueFloat",
+	defValueDate:   "ValueDate",
+	defValueString: "ValueString",
+	defUnknown:     "Unknown",
+	defEOF:         "EOF",
+}
 
 var keywordMap = map[string]rune{
 	"если":      rIf,
@@ -186,6 +210,18 @@ var keywordMap = map[string]rune{
 	"type":         tType,
 }
 
+// эти идентификаторы автоматически завершают текущее выражение
+var breaksMap = map[rune]bool{
+	rElsIf:        true,
+	rElse:         true,
+	rEndIf:        true,
+	rEndDo:        true,
+	rEndProcedure: true,
+	rEndFunction:  true,
+	rEndTry:       true,
+	rExcept:       true,
+}
+
 var operMap = map[string]rune{
 	//комментарии не учитываются интерпретатором, поэтому // не входит в операторы
 	"~":  oLabelStart, //Начало метки оператора
@@ -211,7 +247,6 @@ var operMap = map[string]rune{
 var delimMap = map[string]rune{
 	";": oSemi, //Символ разделения операторов
 }
-
 
 var pointMap = map[string]rune{
 	".": oPoint, //Десятичная точка в числовых литералах. Разделитель, используемый для обращения к свойствам и методам объектов встроенного языка

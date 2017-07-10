@@ -2,6 +2,7 @@ package gonec
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -102,6 +103,13 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 	if err != nil {
 		return
 	}
+
+	// TODO:
+	//!!!!!!для отладки
+	for _, t := range tokens {
+		fmt.Println(t)
+	}
+	//!!!!!!!!!
 
 	var prog pProgram
 

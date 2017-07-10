@@ -42,19 +42,21 @@ const (
 	Date
 	String
 	Operator
+	Assignator
 	Comment
 	skipComment
 )
 
 var tokenString = map[rune]string{
-	EOF:      "EOF",
-	Ident:    "Ident",
-	Int:      "Int",
-	Float:    "Float",
-	Date:     "Date",
-	String:   "String",
-	Operator: "Operator",
-	Comment:  "Comment",
+	EOF:        "EOF",
+	Ident:      "Ident",
+	Int:        "Int",
+	Float:      "Float",
+	Date:       "Date",
+	String:     "String",
+	Operator:   "Operator",
+	Assignator: "Assignator",
+	Comment:    "Comment",
 }
 
 // TokenString returns a printable string for a token or Unicode character.
@@ -121,6 +123,9 @@ type Scanner struct {
 	// the scanner is not inside a token. Call Pos to obtain an error
 	// position in that case.
 	Position
+
+	//признак того, что предыдущий знак равенства - это первый в инструкции, и это присваивание
+	Preassign bool
 }
 
 // Init initializes a Scanner with a new source and returns s.
@@ -543,6 +548,20 @@ redo:
 				tok = Operator
 				ch = s.next()
 			}
+		case ';':
+			//сбрасываем наличие присваивания
+			//дополнительно он сбрасывается в лексере, когда встречает окончание процедуры/функции
+			s.Preassign = false
+			tok = Operator
+			ch = s.next()
+		case '=':
+			//устанавливаем наличие присваивания, если еще не было
+			tok = Operator
+			if !s.Preassign {
+				s.Preassign = true
+				tok = Assignator
+			}
+			ch = s.next()
 		default:
 			tok = Operator
 			ch = s.next()

@@ -45,7 +45,20 @@ func (i *interpreter) Lexer(r io.Reader, w io.Writer) (tokens []token, err error
 				nt.category = defIdentifier
 			} else {
 				nt.category = defKeyword
+				if breaksMap[nt.toktype] == true {
+					//вставляем разделитель ;
+					tokens = append(tokens, token{literal: ";",
+						srcline: s.Line,
+						srccol:  s.Column,
+						category: defDelimiter,
+						toktype: oSemi,
+					})
+					//сбрасываем признак предыдущего присвоения
+					s.Preassign = false
+				}
 			}
+		case gonecscan.Assignator:
+			nt.category = defAssignator
 		case gonecscan.String:
 			// строки возвращаются без переносов и комментариев
 			nt.category = defValueString
