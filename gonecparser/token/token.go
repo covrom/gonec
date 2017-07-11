@@ -8,6 +8,7 @@
 package token
 
 import "strconv"
+import "strings"
 
 // Token is the set of lexical tokens of the Go programming language.
 type Token int
@@ -23,11 +24,14 @@ const (
 	// Identifiers and basic type literals
 	// (these tokens stand for classes of literals)
 	IDENT  // main
-	INT    // 12345
-	FLOAT  // 123.45
-	IMAG   // 123.45i
-	CHAR   // 'a'
+	// INT    // 12345
+	NUM  // 123.45
+	// IMAG   // 123.45i
+	DATE   // 'a'
 	STRING // "abc"
+	NULL
+	UNDEF
+
 	literal_end
 
 	operator_beg
@@ -73,8 +77,8 @@ const (
 	NEQ      // !=
 	LEQ      // <=
 	GEQ      // >=
-	DEFINE   // :=
-	ELLIPSIS // ...
+	// DEFINE   // :=
+	// ELLIPSIS // ...
 
 	LPAREN // (
 	LBRACK // [
@@ -87,6 +91,7 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
+
 	operator_end
 
 	keyword_beg
@@ -94,13 +99,13 @@ const (
 	BREAK
 	CASE
 	CHAN
-	CONST
+	// CONST
 	CONTINUE
 
 	DEFAULT
 	DEFER
 	ELSE
-	FALLTHROUGH
+	// FALLTHROUGH
 	FOR
 
 	FUNC
@@ -109,10 +114,10 @@ const (
 	IF
 	IMPORT
 
-	INTERFACE
+	// INTERFACE
 	MAP
 	PACKAGE
-	RANGE
+	// RANGE
 	RETURN
 
 	SELECT
@@ -120,6 +125,26 @@ const (
 	SWITCH
 	TYPE
 	VAR
+
+	EXPORT
+	THEN
+	ELSIF
+	ENDIF
+	EACH
+	IN
+	TO
+	WHILE
+	DO
+	ENDDO
+	PROC
+	ENDFUNC
+	ENDPROC
+	TRY
+	ENDTRY
+	EXCEPT
+	RAISE
+	NEW
+
 	keyword_end
 )
 
@@ -130,11 +155,13 @@ var tokens = [...]string{
 	COMMENT: "COMMENT",
 
 	IDENT:  "IDENT",
-	INT:    "INT",
-	FLOAT:  "FLOAT",
-	IMAG:   "IMAG",
-	CHAR:   "CHAR",
-	STRING: "STRING",
+	NUM:    "число",
+	// FLOAT:  "FLOAT",
+	// IMAG:   "IMAG",
+	DATE:   "дата",
+	STRING: "строка",
+	NULL: "null",
+	UNDEF: "неопределено",
 
 	ADD: "+",
 	SUB: "-",
@@ -162,23 +189,23 @@ var tokens = [...]string{
 	SHR_ASSIGN:     ">>=",
 	AND_NOT_ASSIGN: "&^=",
 
-	LAND:  "&&",
-	LOR:   "||",
+	LAND:  "и",
+	LOR:   "или",
 	ARROW: "<-",
 	INC:   "++",
 	DEC:   "--",
 
-	EQL:    "==",
+	EQL:    "=",
 	LSS:    "<",
 	GTR:    ">",
 	ASSIGN: "=",
-	NOT:    "!",
+	NOT:    "не",
 
-	NEQ:      "!=",
+	NEQ:      "<>",
 	LEQ:      "<=",
 	GEQ:      ">=",
-	DEFINE:   ":=",
-	ELLIPSIS: "...",
+	// DEFINE:   ":=",
+	// ELLIPSIS: "...",
 
 	LPAREN: "(",
 	LBRACK: "[",
@@ -192,35 +219,54 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	COLON:     ":",
 
-	BREAK:    "break",
-	CASE:     "case",
-	CHAN:     "chan",
-	CONST:    "const",
-	CONTINUE: "continue",
+	BREAK:    "прервать",
+	CASE:     "когда",
+	CHAN:     "канал",
+	// CONST:    "const",
+	CONTINUE: "продолжить",
 
-	DEFAULT:     "default",
-	DEFER:       "defer",
-	ELSE:        "else",
-	FALLTHROUGH: "fallthrough",
-	FOR:         "for",
+	DEFAULT:     "другой",
+	DEFER:       "позже",
+	ELSE:        "иначе",
+	// FALLTHROUGH: "fallthrough",
+	FOR:         "для",
 
-	FUNC:   "func",
-	GO:     "go",
-	GOTO:   "goto",
-	IF:     "if",
-	IMPORT: "import",
+	FUNC:   "функция",
+	GO:     "поток",
+	GOTO:   "перейти",
+	IF:     "если",
+	IMPORT: "импорт",
 
-	INTERFACE: "interface",
-	MAP:       "map",
-	PACKAGE:   "package",
-	RANGE:     "range",
-	RETURN:    "return",
+	// INTERFACE: "interface",
+	MAP:       "соответствие",
+	PACKAGE:   "пакет",
+	// RANGE:     "range",
+	RETURN:    "возврат",
 
-	SELECT: "select",
-	STRUCT: "struct",
-	SWITCH: "switch",
-	TYPE:   "type",
-	VAR:    "var",
+	SELECT: "переключить",
+	STRUCT: "структура",
+	SWITCH: "выбор",
+	TYPE:   "тип",
+	VAR:    "перем",
+
+	EXPORT:"экспорт",
+	THEN:"тогда",
+	ELSIF:"иначеесли",
+	ENDIF:"конецесли",
+	EACH:"каждого",
+	IN:"из",
+	TO:"по",
+	WHILE:"пока",
+	DO:"цикл",
+	ENDDO:"конеццикла",
+	PROC:"процедура",
+	ENDFUNC:"конецфункции",
+	ENDPROC:"конецпроцедуры",
+	TRY:"попытка",
+	ENDTRY:"конецпопытки",
+	EXCEPT:"исключение",
+	RAISE:"вызватьисключение",
+	NEW:"новый",
 }
 
 // String returns the string corresponding to the token tok.
@@ -284,7 +330,7 @@ func init() {
 // Lookup maps an identifier to its keyword token or IDENT (if not a keyword).
 //
 func Lookup(ident string) Token {
-	if tok, is_keyword := keywords[ident]; is_keyword {
+	if tok, is_keyword := keywords[strings.ToLower(ident)]; is_keyword {
 		return tok
 	}
 	return IDENT
