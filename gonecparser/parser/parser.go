@@ -18,12 +18,13 @@ package parser
 
 import (
 	"fmt"
-	"github.com/covrom/gonec/gonecparser/ast"
-	"github.com/covrom/gonec/gonecparser/scanner"
-	"github.com/covrom/gonec/gonecparser/token"
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/covrom/gonec/gonecparser/ast"
+	"github.com/covrom/gonec/gonecparser/scanner"
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // The parser structure holds the parser's internal state.
@@ -451,8 +452,8 @@ func assert(cond bool, msg string) {
 func syncStmt(p *parser) {
 	for {
 		switch p.tok {
-		case token.BREAK, token.CONST, token.CONTINUE, token.DEFER,
-			token.FALLTHROUGH, token.FOR, token.GO, token.GOTO,
+		case token.BREAK, token.CONTINUE, token.DEFER,
+			 token.FOR, token.GO, token.GOTO,
 			token.IF, token.RETURN, token.SELECT, token.SWITCH,
 			token.TYPE, token.VAR:
 			// Return only if parser made some progress since last
@@ -489,7 +490,7 @@ func syncStmt(p *parser) {
 func syncDecl(p *parser) {
 	for {
 		switch p.tok {
-		case token.CONST, token.TYPE, token.VAR:
+		case  token.TYPE, token.VAR:
 			// see comments in syncStmt
 			if p.pos == p.syncPos && p.syncCnt < 10 {
 				p.syncCnt++
@@ -579,7 +580,7 @@ func (p *parser) parseLhsList() []ast.Expr {
 	p.inRhs = false
 	list := p.parseExprList(true)
 	switch p.tok {
-	case token.DEFINE:
+	//case token.DEFINE:
 		// lhs of a short variable declaration
 		// but doesn't enter scope until later:
 		// caller must call p.shortVarDecl(p.makeIdentList(list))
@@ -659,10 +660,11 @@ func (p *parser) parseArrayType() ast.Expr {
 	p.exprLev++
 	var len ast.Expr
 	// always permit ellipsis for more fault-tolerant parsing
-	if p.tok == token.ELLIPSIS {
-		len = &ast.Ellipsis{Ellipsis: p.pos}
-		p.next()
-	} else if p.tok != token.RBRACK {
+	// if p.tok == token.ELLIPSIS {
+	// 	len = &ast.Ellipsis{Ellipsis: p.pos}
+	// 	p.next()
+	// } else 
+	if p.tok != token.RBRACK {
 		len = p.parseRhs()
 	}
 	p.exprLev--
@@ -781,18 +783,18 @@ func (p *parser) parsePointerType() *ast.StarExpr {
 
 // If the result is an identifier, it is not resolved.
 func (p *parser) tryVarType(isParam bool) ast.Expr {
-	if isParam && p.tok == token.ELLIPSIS {
-		pos := p.pos
-		p.next()
-		typ := p.tryIdentOrType() // don't use parseType so we can provide better error message
-		if typ != nil {
-			p.resolve(typ)
-		} else {
-			p.error(pos, "'...' parameter is missing type")
-			typ = &ast.BadExpr{From: pos, To: p.pos}
-		}
-		return &ast.Ellipsis{Ellipsis: pos, Elt: typ}
-	}
+	// if isParam && p.tok == token.ELLIPSIS {
+	// 	pos := p.pos
+	// 	p.next()
+	// 	typ := p.tryIdentOrType() // don't use parseType so we can provide better error message
+	// 	if typ != nil {
+	// 		p.resolve(typ)
+	// 	} else {
+	// 		p.error(pos, "'...' parameter is missing type")
+	// 		typ = &ast.BadExpr{From: pos, To: p.pos}
+	// 	}
+	// 	return &ast.Ellipsis{Ellipsis: pos, Elt: typ}
+	// }
 	return p.tryIdentOrType()
 }
 
@@ -952,29 +954,29 @@ func (p *parser) parseMethodSpec(scope *ast.Scope) *ast.Field {
 	return spec
 }
 
-func (p *parser) parseInterfaceType() *ast.InterfaceType {
-	if p.trace {
-		defer un(trace(p, "InterfaceType"))
-	}
+// func (p *parser) parseInterfaceType() *ast.InterfaceType {
+// 	if p.trace {
+// 		defer un(trace(p, "InterfaceType"))
+// 	}
 
-	pos := p.expect(token.INTERFACE)
-	lbrace := p.expect(token.LBRACE)
-	scope := ast.NewScope(nil) // interface scope
-	var list []*ast.Field
-	for p.tok == token.IDENT {
-		list = append(list, p.parseMethodSpec(scope))
-	}
-	rbrace := p.expect(token.RBRACE)
+// 	pos := p.expect(token.INTERFACE)
+// 	lbrace := p.expect(token.LBRACE)
+// 	scope := ast.NewScope(nil) // interface scope
+// 	var list []*ast.Field
+// 	for p.tok == token.IDENT {
+// 		list = append(list, p.parseMethodSpec(scope))
+// 	}
+// 	rbrace := p.expect(token.RBRACE)
 
-	return &ast.InterfaceType{
-		Interface: pos,
-		Methods: &ast.FieldList{
-			Opening: lbrace,
-			List:    list,
-			Closing: rbrace,
-		},
-	}
-}
+// 	return &ast.InterfaceType{
+// 		Interface: pos,
+// 		Methods: &ast.FieldList{
+// 			Opening: lbrace,
+// 			List:    list,
+// 			Closing: rbrace,
+// 		},
+// 	}
+// }
 
 func (p *parser) parseMapType() *ast.MapType {
 	if p.trace {
@@ -1029,8 +1031,8 @@ func (p *parser) tryIdentOrType() ast.Expr {
 	case token.FUNC:
 		typ, _ := p.parseFuncType()
 		return typ
-	case token.INTERFACE:
-		return p.parseInterfaceType()
+	// case token.INTERFACE:
+	// 	return p.parseInterfaceType()
 	case token.MAP:
 		return p.parseMapType()
 	case token.CHAN, token.ARROW:
@@ -1138,7 +1140,7 @@ func (p *parser) parseOperand(lhs bool) ast.Expr {
 		}
 		return x
 
-	case token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING:
+	case token.NUM, token.DATE, token.STRING:
 		x := &ast.BasicLit{ValuePos: p.pos, Kind: p.tok, Value: p.lit}
 		p.next()
 		return x
@@ -1256,10 +1258,10 @@ func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {
 	var ellipsis token.Pos
 	for p.tok != token.RPAREN && p.tok != token.EOF && !ellipsis.IsValid() {
 		list = append(list, p.parseRhsOrType()) // builtins may expect a type: make(some type, ...)
-		if p.tok == token.ELLIPSIS {
-			ellipsis = p.pos
-			p.next()
-		}
+		// if p.tok == token.ELLIPSIS {
+		// 	ellipsis = p.pos
+		// 	p.next()
+		// }
 		if !p.atComma("argument list", token.RPAREN) {
 			break
 		}
@@ -1663,7 +1665,7 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 
 	switch p.tok {
 	case
-		token.DEFINE, token.ASSIGN, token.ADD_ASSIGN,
+		token.ASSIGN, token.ADD_ASSIGN,
 		token.SUB_ASSIGN, token.MUL_ASSIGN, token.QUO_ASSIGN,
 		token.REM_ASSIGN, token.AND_ASSIGN, token.OR_ASSIGN,
 		token.XOR_ASSIGN, token.SHL_ASSIGN, token.SHR_ASSIGN, token.AND_NOT_ASSIGN:
@@ -1672,18 +1674,18 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 		p.next()
 		var y []ast.Expr
 		isRange := false
-		if mode == rangeOk && p.tok == token.RANGE && (tok == token.DEFINE || tok == token.ASSIGN) {
+		if mode == rangeOk && p.tok == token.EACH && tok == token.ASSIGN {
 			pos := p.pos
 			p.next()
-			y = []ast.Expr{&ast.UnaryExpr{OpPos: pos, Op: token.RANGE, X: p.parseRhs()}}
+			y = []ast.Expr{&ast.UnaryExpr{OpPos: pos, Op: token.EACH, X: p.parseRhs()}}
 			isRange = true
 		} else {
 			y = p.parseRhsList()
 		}
 		as := &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
-		if tok == token.DEFINE {
-			p.shortVarDecl(as, x)
-		}
+		// if tok == token.DEFINE {
+		// 	p.shortVarDecl(as, x)
+		// }
 		return as, isRange
 	}
 
@@ -1797,7 +1799,8 @@ func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {
 
 	pos := p.expect(tok)
 	var label *ast.Ident
-	if tok != token.FALLTHROUGH && p.tok == token.IDENT {
+	// if tok != token.FALLTHROUGH && p.tok == token.IDENT {
+	if p.tok == token.IDENT {
 		label = p.parseIdent()
 		// add to list of unresolved targets
 		n := len(p.targetStack) - 1
@@ -1927,8 +1930,8 @@ func (p *parser) isTypeSwitchGuard(s ast.Stmt) bool {
 			case token.ASSIGN:
 				// permit v = x.(type) but complain
 				p.error(t.TokPos, "expected ':=', found '='")
-				fallthrough
-			case token.DEFINE:
+				// fallthrough
+			// case token.DEFINE:
 				return true
 			}
 		}
@@ -2017,7 +2020,8 @@ func (p *parser) parseCommClause() *ast.CommClause {
 			comm = &ast.SendStmt{Chan: lhs[0], Arrow: arrow, Value: rhs}
 		} else {
 			// RecvStmt
-			if tok := p.tok; tok == token.ASSIGN || tok == token.DEFINE {
+			//if tok := p.tok; tok == token.ASSIGN || tok == token.DEFINE {
+			if tok := p.tok; tok == token.ASSIGN {
 				// RecvStmt with assignment
 				if len(lhs) > 2 {
 					p.errorExpected(lhs[0].Pos(), "1 or 2 expressions")
@@ -2028,9 +2032,9 @@ func (p *parser) parseCommClause() *ast.CommClause {
 				p.next()
 				rhs := p.parseRhs()
 				as := &ast.AssignStmt{Lhs: lhs, TokPos: pos, Tok: tok, Rhs: []ast.Expr{rhs}}
-				if tok == token.DEFINE {
-					p.shortVarDecl(as, lhs)
-				}
+				// if tok == token.DEFINE {
+				// 	p.shortVarDecl(as, lhs)
+				// }
 				comm = as
 			} else {
 				// lhs must be single receive operation
@@ -2085,11 +2089,11 @@ func (p *parser) parseForStmt() ast.Stmt {
 		prevLev := p.exprLev
 		p.exprLev = -1
 		if p.tok != token.SEMICOLON {
-			if p.tok == token.RANGE {
+			if p.tok == token.EACH {
 				// "for range x" (nil lhs in assignment)
 				pos := p.pos
 				p.next()
-				y := []ast.Expr{&ast.UnaryExpr{OpPos: pos, Op: token.RANGE, X: p.parseRhs()}}
+				y := []ast.Expr{&ast.UnaryExpr{OpPos: pos, Op: token.EACH, X: p.parseRhs()}}
 				s2 = &ast.AssignStmt{Rhs: y}
 				isRange = true
 			} else {
@@ -2159,12 +2163,12 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	}
 
 	switch p.tok {
-	case token.CONST, token.TYPE, token.VAR:
+	case token.TYPE, token.VAR:
 		s = &ast.DeclStmt{Decl: p.parseDecl(syncStmt)}
 	case
 		// tokens that may start an expression
-		token.IDENT, token.INT, token.FLOAT, token.IMAG, token.CHAR, token.STRING, token.FUNC, token.LPAREN, // operands
-		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, token.INTERFACE, // composite types
+		token.IDENT, token.NUM, token.DATE, token.STRING, token.FUNC, token.LPAREN, // operands
+		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, // composite types
 		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
 		// because of the required look-ahead, labeled statements are
@@ -2179,7 +2183,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = p.parseDeferStmt()
 	case token.RETURN:
 		s = p.parseReturnStmt()
-	case token.BREAK, token.CONTINUE, token.GOTO, token.FALLTHROUGH:
+	case token.BREAK, token.CONTINUE, token.GOTO:
 		s = p.parseBranchStmt(p.tok)
 	case token.LBRACE:
 		s = p.parseBlockStmt()
@@ -2288,10 +2292,10 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 		if typ == nil && values == nil {
 			p.error(pos, "missing variable type or initialization")
 		}
-	case token.CONST:
-		if values == nil && (iota == 0 || typ != nil) {
-			p.error(pos, "missing constant value")
-		}
+	// case token.CONST:
+	// 	if values == nil && (iota == 0 || typ != nil) {
+	// 		p.error(pos, "missing constant value")
+	// 	}
 	}
 
 	// Go spec: The scope of a constant or variable identifier declared inside
@@ -2423,7 +2427,7 @@ func (p *parser) parseDecl(sync func(*parser)) ast.Decl {
 
 	var f parseSpecFunction
 	switch p.tok {
-	case token.CONST, token.VAR:
+	case token.VAR:
 		f = p.parseValueSpec
 
 	case token.TYPE:

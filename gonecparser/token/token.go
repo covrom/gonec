@@ -86,7 +86,7 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
-	LABEL 	  // ~
+	LABEL     // ~
 
 	operator_end
 
@@ -142,9 +142,9 @@ const (
 	NEW
 	NULL
 	UNDEF
-	LAND  // &&
-	LOR   // ||
-	NOT    // !
+	LAND // &&
+	LOR  // ||
+	NOT  // !
 
 	keyword_end
 )

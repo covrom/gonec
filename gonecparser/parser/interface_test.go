@@ -31,8 +31,8 @@ func TestParseFile(t *testing.T) {
 				filename: "",
 				src: `
 	// This is scanned code.
-	Модуль Основной
-	
+	Пакет Основной
+
 	Если a > 10 then
 		
 		someParsable = text;

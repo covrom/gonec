@@ -6,9 +6,10 @@ package scanner
 
 import (
 	"fmt"
-	"github.com/covrom/gonec/gonecparser/token"
 	"io"
 	"sort"
+
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // In an ErrorList, an error is represented by an *Error.
