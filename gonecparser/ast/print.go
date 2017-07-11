@@ -8,7 +8,7 @@ package ast
 
 import (
 	"fmt"
-	"go/token"
+	"github.com/covrom/gonec/gonecparser/token"
 	"io"
 	"os"
 	"reflect"

@@ -11,7 +11,7 @@ package scanner
 import (
 	"bytes"
 	"fmt"
-	"go/token"
+	"github.com/covrom/gonec/gonecparser/token"
 	"path/filepath"
 	"strconv"
 	"unicode"

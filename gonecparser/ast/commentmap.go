@@ -7,7 +7,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
-	"go/token"
+	"github.com/covrom/gonec/gonecparser/token"
 	"sort"
 )
 

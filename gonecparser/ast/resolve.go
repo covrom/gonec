@@ -8,8 +8,8 @@ package ast
 
 import (
 	"fmt"
-	"go/scanner"
-	"go/token"
+	"github.com/covrom/gonec/gonecparser/scanner"
+	"github.com/covrom/gonec/gonecparser/token"
 	"strconv"
 )
 

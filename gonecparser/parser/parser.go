@@ -18,9 +18,9 @@ package parser
 
 import (
 	"fmt"
-	"go/ast"
-	"go/scanner"
-	"go/token"
+	"github.com/covrom/gonec/gonecparser/ast"
+	"github.com/covrom/gonec/gonecparser/scanner"
+	"github.com/covrom/gonec/gonecparser/token"
 	"strconv"
 	"strings"
 	"unicode"

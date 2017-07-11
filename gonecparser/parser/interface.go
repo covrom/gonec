@@ -9,8 +9,8 @@ package parser
 import (
 	"bytes"
 	"errors"
-	"go/ast"
-	"go/token"
+	"github.com/covrom/gonec/gonecparser/ast"
+	"github.com/covrom/gonec/gonecparser/token"
 	"io"
 	"io/ioutil"
 	"os"
