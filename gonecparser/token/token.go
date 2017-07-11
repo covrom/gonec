@@ -23,14 +23,12 @@ const (
 	literal_beg
 	// Identifiers and basic type literals
 	// (these tokens stand for classes of literals)
-	IDENT  // main
+	IDENT // main
 	// INT    // 12345
-	NUM  // 123.45
+	NUM // 123.45
 	// IMAG   // 123.45i
 	DATE   // 'a'
 	STRING // "abc"
-	NULL
-	UNDEF
 
 	literal_end
 
@@ -62,8 +60,6 @@ const (
 	SHR_ASSIGN     // >>=
 	AND_NOT_ASSIGN // &^=
 
-	LAND  // &&
-	LOR   // ||
 	ARROW // <-
 	INC   // ++
 	DEC   // --
@@ -72,11 +68,10 @@ const (
 	LSS    // <
 	GTR    // >
 	ASSIGN // =
-	NOT    // !
 
-	NEQ      // !=
-	LEQ      // <=
-	GEQ      // >=
+	NEQ // !=
+	LEQ // <=
+	GEQ // >=
 	// DEFINE   // :=
 	// ELLIPSIS // ...
 
@@ -91,6 +86,7 @@ const (
 	RBRACE    // }
 	SEMICOLON // ;
 	COLON     // :
+	LABEL 	  // ~
 
 	operator_end
 
@@ -144,6 +140,11 @@ const (
 	EXCEPT
 	RAISE
 	NEW
+	NULL
+	UNDEF
+	LAND  // &&
+	LOR   // ||
+	NOT    // !
 
 	keyword_end
 )
@@ -154,14 +155,14 @@ var tokens = [...]string{
 	EOF:     "EOF",
 	COMMENT: "COMMENT",
 
-	IDENT:  "IDENT",
-	NUM:    "число",
+	IDENT: "IDENT",
+	NUM:   "число",
 	// FLOAT:  "FLOAT",
 	// IMAG:   "IMAG",
 	DATE:   "дата",
 	STRING: "строка",
-	NULL: "null",
-	UNDEF: "неопределено",
+	NULL:   "null",
+	UNDEF:  "неопределено",
 
 	ADD: "+",
 	SUB: "-",
@@ -201,9 +202,9 @@ var tokens = [...]string{
 	ASSIGN: "=",
 	NOT:    "не",
 
-	NEQ:      "<>",
-	LEQ:      "<=",
-	GEQ:      ">=",
+	NEQ: "<>",
+	LEQ: "<=",
+	GEQ: ">=",
 	// DEFINE:   ":=",
 	// ELLIPSIS: "...",
 
@@ -218,18 +219,19 @@ var tokens = [...]string{
 	RBRACE:    "}",
 	SEMICOLON: ";",
 	COLON:     ":",
+	LABEL:     "~",
 
-	BREAK:    "прервать",
-	CASE:     "когда",
-	CHAN:     "канал",
+	BREAK: "прервать",
+	CASE:  "когда",
+	CHAN:  "канал",
 	// CONST:    "const",
 	CONTINUE: "продолжить",
 
-	DEFAULT:     "другой",
-	DEFER:       "позже",
-	ELSE:        "иначе",
+	DEFAULT: "другой",
+	DEFER:   "позже",
+	ELSE:    "иначе",
 	// FALLTHROUGH: "fallthrough",
-	FOR:         "для",
+	FOR: "для",
 
 	FUNC:   "функция",
 	GO:     "поток",
@@ -238,10 +240,10 @@ var tokens = [...]string{
 	IMPORT: "импорт",
 
 	// INTERFACE: "interface",
-	MAP:       "соответствие",
-	PACKAGE:   "пакет",
+	MAP:     "соответствие",
+	PACKAGE: "пакет",
 	// RANGE:     "range",
-	RETURN:    "возврат",
+	RETURN: "возврат",
 
 	SELECT: "переключить",
 	STRUCT: "структура",
@@ -249,24 +251,24 @@ var tokens = [...]string{
 	TYPE:   "тип",
 	VAR:    "перем",
 
-	EXPORT:"экспорт",
-	THEN:"тогда",
-	ELSIF:"иначеесли",
-	ENDIF:"конецесли",
-	EACH:"каждого",
-	IN:"из",
-	TO:"по",
-	WHILE:"пока",
-	DO:"цикл",
-	ENDDO:"конеццикла",
-	PROC:"процедура",
-	ENDFUNC:"конецфункции",
-	ENDPROC:"конецпроцедуры",
-	TRY:"попытка",
-	ENDTRY:"конецпопытки",
-	EXCEPT:"исключение",
-	RAISE:"вызватьисключение",
-	NEW:"новый",
+	EXPORT:  "экспорт",
+	THEN:    "тогда",
+	ELSIF:   "иначеесли",
+	ENDIF:   "конецесли",
+	EACH:    "каждого",
+	IN:      "из",
+	TO:      "по",
+	WHILE:   "пока",
+	DO:      "цикл",
+	ENDDO:   "конеццикла",
+	PROC:    "процедура",
+	ENDFUNC: "конецфункции",
+	ENDPROC: "конецпроцедуры",
+	TRY:     "попытка",
+	ENDTRY:  "конецпопытки",
+	EXCEPT:  "исключение",
+	RAISE:   "вызватьисключение",
+	NEW:     "новый",
 }
 
 // String returns the string corresponding to the token tok.

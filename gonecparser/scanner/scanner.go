@@ -11,11 +11,12 @@ package scanner
 import (
 	"bytes"
 	"fmt"
-	"github.com/covrom/gonec/gonecparser/token"
 	"path/filepath"
 	"strconv"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // An ErrorHandler may be provided to Scanner.Init. If a syntax error is
@@ -46,6 +47,9 @@ type Scanner struct {
 
 	// public state - ok to modify
 	ErrorCount int // number of errors encountered
+
+	//признак того, что предыдущий знак равенства - это первый в инструкции, и это присваивание
+	Preassign bool
 }
 
 const bom = 0xFEFF // byte order mark, only permitted as very first character
@@ -291,11 +295,11 @@ func (s *Scanner) scanMantissa(base int) {
 func (s *Scanner) scanNumber(seenDecimalPoint bool) (token.Token, string) {
 	// digitVal(s.ch) < 10
 	offs := s.offset
-	tok := token.INT
+	tok := token.NUM
 
 	if seenDecimalPoint {
 		offs--
-		tok = token.FLOAT
+		// tok = token.NUM
 		s.scanMantissa(10)
 		goto exponent
 	}
@@ -337,14 +341,14 @@ func (s *Scanner) scanNumber(seenDecimalPoint bool) (token.Token, string) {
 
 fraction:
 	if s.ch == '.' {
-		tok = token.FLOAT
+		// tok = token.NUM
 		s.next()
 		s.scanMantissa(10)
 	}
 
 exponent:
 	if s.ch == 'e' || s.ch == 'E' {
-		tok = token.FLOAT
+		tok = token.NUM
 		s.next()
 		if s.ch == '-' || s.ch == '+' {
 			s.next()
@@ -356,10 +360,10 @@ exponent:
 		}
 	}
 
-	if s.ch == 'i' {
-		tok = token.IMAG
-		s.next()
-	}
+	// if s.ch == 'i' {
+	// 	tok = token.IMAG
+	// 	s.next()
+	// }
 
 exit:
 	return tok, string(s.src[offs:s.offset])
@@ -451,8 +455,10 @@ func (s *Scanner) scanRune() string {
 		}
 	}
 
-	if valid && n != 1 {
-		s.error(offs, "illegal rune literal")
+	//литерал даты
+	//if valid && n != 1 {
+	if !valid {
+		s.error(offs, "illegal date literal")
 	}
 
 	return string(s.src[offs:s.offset])
@@ -464,6 +470,29 @@ func (s *Scanner) scanString() string {
 
 	for {
 		ch := s.ch
+
+		if ch == '\n' {
+			//проверяем перенос строки
+			//после него пропускаем пробелы и комментарии
+		ssredo:
+
+			s.skipWhitespace()
+			//должен быть перенос строки 1с по символу |
+			if s.ch != '|' {
+				if s.ch == '/' {
+					//пропускаем комментарий
+					s.next()
+					if s.ch == '/' {
+						s.scanComment()
+						goto ssredo
+					}
+				} else {
+					s.error(offs, "string literal not terminated")
+					break
+				}
+			}
+		}
+
 		if ch == '\n' || ch < 0 {
 			s.error(offs, "string literal not terminated")
 			break
@@ -517,6 +546,26 @@ func (s *Scanner) scanRawString() string {
 		lit = stripCR(lit)
 	}
 
+	return string(lit)
+}
+
+func (s *Scanner) scanLabel() string {
+	// '~' opening already consumed
+	offs := s.offset - 1
+
+	for {
+		ch := s.ch
+		if (ch != ':') && (ch < 0 || !isLetter(ch)) {
+			s.error(offs, "label literal not terminated")
+			break
+		}
+		s.next()
+		if ch == ':' {
+			break
+		}
+	}
+
+	lit := s.src[offs:s.offset]
 	return string(lit)
 }
 
@@ -615,7 +664,7 @@ scanAgain:
 			// keywords are longer than one letter - avoid lookup otherwise
 			tok = token.Lookup(lit)
 			switch tok {
-			case token.IDENT, token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.RETURN:
+			case token.IDENT, token.BREAK, token.CONTINUE, token.RETURN:
 				insertSemi = true
 			}
 		} else {
@@ -646,24 +695,22 @@ scanAgain:
 			lit = s.scanString()
 		case '\'':
 			insertSemi = true
-			tok = token.CHAR
+			tok = token.DATE
 			lit = s.scanRune()
 		case '`':
 			insertSemi = true
 			tok = token.STRING
 			lit = s.scanRawString()
+		case '~':
+			insertSemi = true
+			tok = token.LABEL
+			lit = s.scanLabel()
 		case ':':
-			tok = s.switch2(token.COLON, token.DEFINE)
+			tok = token.COLON
 		case '.':
 			if '0' <= s.ch && s.ch <= '9' {
 				insertSemi = true
 				tok, lit = s.scanNumber(true)
-			} else if s.ch == '.' {
-				s.next()
-				if s.ch == '.' {
-					s.next()
-					tok = token.ELLIPSIS
-				}
 			} else {
 				tok = token.PERIOD
 			}
@@ -672,6 +719,7 @@ scanAgain:
 		case ';':
 			tok = token.SEMICOLON
 			lit = ";"
+			s.Preassign = false
 		case '(':
 			tok = token.LPAREN
 		case ')':
@@ -729,15 +777,24 @@ scanAgain:
 			if s.ch == '-' {
 				s.next()
 				tok = token.ARROW
+			} else if s.ch == '>' {
+				s.next()
+				tok = token.NEQ
 			} else {
 				tok = s.switch4(token.LSS, token.LEQ, '<', token.SHL, token.SHL_ASSIGN)
 			}
 		case '>':
 			tok = s.switch4(token.GTR, token.GEQ, '>', token.SHR, token.SHR_ASSIGN)
 		case '=':
-			tok = s.switch2(token.ASSIGN, token.EQL)
-		case '!':
-			tok = s.switch2(token.NOT, token.NEQ)
+			//устанавливаем наличие присваивания, если еще не было
+			tok = token.EQL
+			if !s.Preassign {
+				s.Preassign = true
+				tok = token.ASSIGN
+			}
+			//=s.switch2(token.ASSIGN, token.EQL)
+		// case '!':
+		// 	tok = s.switch2(token.NOT, token.NEQ)
 		case '&':
 			if s.ch == '^' {
 				s.next()
