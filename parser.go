@@ -91,6 +91,11 @@ func (i *interpreter) Parse(tokens []token, w io.Writer) (pProgram, error) {
 
 func (p *parser) parseStatement() (stmt pStmt, err error) {
 
+	//если в начале не идет ключевая конструкция "для" и т.п., то
+	//собираем оператор и смотрим, есть ли в нем присваивание
+	//если есть, будет два операнда
+	//если нет, то есть только правый операнд
+
 	switch p.curToken.category {
 	case defIdentifier:
 		if p.peekTokenCatIs(defOperator) {
@@ -109,6 +114,8 @@ func (p *parser) parseStatement() (stmt pStmt, err error) {
 			//присвоение без []
 			return p.parseLetStatement()
 		}
+	case defPoint:
+		
 	case defEOF:
 		return nil, nil
 	}

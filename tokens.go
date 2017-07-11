@@ -210,7 +210,13 @@ var keywordMap = map[string]rune{
 	"type":         tType,
 }
 
-// эти идентификаторы автоматически завершают текущее выражение
+// идентификаторы, начинающие блоки кода
+var startsMap = map[rune]bool{
+	rIf:   true,
+	rThen: true,
+}
+
+// идентификаторы, заканчивающие блоки кода, автоматически завершают текущее выражение
 var breaksMap = map[rune]bool{
 	rElsIf:        true,
 	rElse:         true,
