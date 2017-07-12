@@ -453,7 +453,7 @@ func syncStmt(p *parser) {
 	for {
 		switch p.tok {
 		case token.BREAK, token.CONTINUE, token.DEFER,
-			 token.FOR, token.GO, token.GOTO,
+			token.FOR, token.GO, token.GOTO,
 			token.IF, token.RETURN, token.SELECT, token.SWITCH,
 			token.TYPE, token.VAR:
 			// Return only if parser made some progress since last
@@ -490,7 +490,7 @@ func syncStmt(p *parser) {
 func syncDecl(p *parser) {
 	for {
 		switch p.tok {
-		case  token.TYPE, token.VAR:
+		case token.VAR: //token.TYPE, token.VAR:
 			// see comments in syncStmt
 			if p.pos == p.syncPos && p.syncCnt < 10 {
 				p.syncCnt++
@@ -581,10 +581,10 @@ func (p *parser) parseLhsList() []ast.Expr {
 	list := p.parseExprList(true)
 	switch p.tok {
 	//case token.DEFINE:
-		// lhs of a short variable declaration
-		// but doesn't enter scope until later:
-		// caller must call p.shortVarDecl(p.makeIdentList(list))
-		// at appropriate time.
+	// lhs of a short variable declaration
+	// but doesn't enter scope until later:
+	// caller must call p.shortVarDecl(p.makeIdentList(list))
+	// at appropriate time.
 	case token.COLON:
 		// lhs of a label declaration or a communication clause of a select
 		// statement (parseLhsList is not called when parsing the case clause
@@ -663,7 +663,7 @@ func (p *parser) parseArrayType() ast.Expr {
 	// if p.tok == token.ELLIPSIS {
 	// 	len = &ast.Ellipsis{Ellipsis: p.pos}
 	// 	p.next()
-	// } else 
+	// } else
 	if p.tok != token.RBRACK {
 		len = p.parseRhs()
 	}
@@ -889,16 +889,20 @@ func (p *parser) parseResult(scope *ast.Scope) *ast.FieldList {
 		defer un(trace(p, "Result"))
 	}
 
-	if p.tok == token.LPAREN {
-		return p.parseParameters(scope, false)
-	}
-
-	typ := p.tryType()
-	if typ != nil {
+	if p.tok == token.EXPORT {
+		typ := p.tryType()
+		p.next()
 		list := make([]*ast.Field, 1)
 		list[0] = &ast.Field{Type: typ}
 		return &ast.FieldList{List: list}
 	}
+
+	// typ := p.tryType()
+	// if typ != nil {
+	// 	list := make([]*ast.Field, 1)
+	// 	list[0] = &ast.Field{Type: typ}
+	// 	return &ast.FieldList{List: list}
+	// }
 
 	return nil
 }
@@ -1065,7 +1069,8 @@ func (p *parser) parseStmtList() (list []ast.Stmt) {
 		defer un(trace(p, "StatementList"))
 	}
 
-	for p.tok != token.CASE && p.tok != token.DEFAULT && p.tok != token.RBRACE && p.tok != token.EOF {
+	for p.tok != token.CASE && p.tok != token.DEFAULT && p.tok != token.RBRACE && p.tok != token.EOF &&
+	 p.tok != token.ENDFUNC && p.tok != token.ENDPROC {
 		list = append(list, p.parseStmt())
 	}
 
@@ -1086,6 +1091,38 @@ func (p *parser) parseBody(scope *ast.Scope) *ast.BlockStmt {
 	rbrace := p.expect(token.RBRACE)
 
 	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
+}
+
+func (p *parser) parseBodyProc(scope *ast.Scope) *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BodyProc"))
+	}
+
+	// lbrace := p.expect(token.SEMICOLON)
+	p.topScope = scope // open function scope
+	p.openLabelScope()
+	list := p.parseStmtList()
+	p.closeLabelScope()
+	p.closeScope()
+	rbrace := p.expect(token.ENDPROC)
+
+	return &ast.BlockStmt{List: list, Rbrace: rbrace}
+}
+
+func (p *parser) parseBodyFunc(scope *ast.Scope) *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BodyFunc"))
+	}
+
+	//lbrace := p.expect(token.SEMICOLON)
+	p.topScope = scope // open function scope
+	p.openLabelScope()
+	list := p.parseStmtList()
+	p.closeLabelScope()
+	p.closeScope()
+	rbrace := p.expect(token.ENDFUNC)
+
+	return &ast.BlockStmt{List: list, Rbrace: rbrace}
 }
 
 func (p *parser) parseBlockStmt() *ast.BlockStmt {
@@ -1931,7 +1968,7 @@ func (p *parser) isTypeSwitchGuard(s ast.Stmt) bool {
 				// permit v = x.(type) but complain
 				p.error(t.TokPos, "expected ':=', found '='")
 				// fallthrough
-			// case token.DEFINE:
+				// case token.DEFINE:
 				return true
 			}
 		}
@@ -2292,10 +2329,10 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 		if typ == nil && values == nil {
 			p.error(pos, "missing variable type or initialization")
 		}
-	// case token.CONST:
-	// 	if values == nil && (iota == 0 || typ != nil) {
-	// 		p.error(pos, "missing constant value")
-	// 	}
+		// case token.CONST:
+		// 	if values == nil && (iota == 0 || typ != nil) {
+		// 		p.error(pos, "missing constant value")
+		// 	}
 	}
 
 	// Go spec: The scope of a constant or variable identifier declared inside
@@ -2379,24 +2416,28 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	pos := p.expect(token.FUNC)
 	scope := ast.NewScope(p.topScope) // function scope
 
-	var recv *ast.FieldList
-	if p.tok == token.LPAREN {
-		recv = p.parseParameters(scope, false)
-	}
+	// var recv *ast.FieldList
+	// if p.tok == token.LPAREN {
+	// 	recv = p.parseParameters(scope, false)
+	// }
 
 	ident := p.parseIdent()
 
 	params, results := p.parseSignature(scope)
 
 	var body *ast.BlockStmt
-	if p.tok == token.LBRACE {
-		body = p.parseBody(scope)
+	
+	//fmt.Println(p.tok.String())
+
+	if p.tok != token.ENDFUNC {
+		body = p.parseBodyFunc(scope)
 	}
+
 	p.expectSemi()
 
 	decl := &ast.FuncDecl{
 		Doc:  doc,
-		Recv: recv,
+		Recv: nil,
 		Name: ident,
 		Type: &ast.FuncType{
 			Func:    pos,
@@ -2405,17 +2446,69 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		},
 		Body: body,
 	}
-	if recv == nil {
-		// Go spec: The scope of an identifier denoting a constant, type,
-		// variable, or function (but not method) declared at top level
-		// (outside any function) is the package block.
-		//
-		// init() functions cannot be referred to and there may
-		// be more than one - don't put them in the pkgScope
-		if ident.Name != "init" {
-			p.declare(decl, nil, p.pkgScope, ast.Fun, ident)
-		}
+	// if recv == nil {
+	// Go spec: The scope of an identifier denoting a constant, type,
+	// variable, or function (but not method) declared at top level
+	// (outside any function) is the package block.
+	//
+	// init() functions cannot be referred to and there may
+	// be more than one - don't put them in the pkgScope
+
+	// if ident.Name != "init" {
+	p.declare(decl, nil, p.pkgScope, ast.Fun, ident)
+	// }
+	// }
+
+	return decl
+}
+
+func (p *parser) parseProcDecl() *ast.FuncDecl {
+	if p.trace {
+		defer un(trace(p, "ProcedureDecl"))
 	}
+
+	doc := p.leadComment
+	pos := p.expect(token.PROC)
+	scope := ast.NewScope(p.topScope) // procedure scope
+
+	// var recv *ast.FieldList
+	// if p.tok == token.LPAREN {
+	// 	recv = p.parseParameters(scope, false)
+	// }
+
+	ident := p.parseIdent()
+
+	params, results := p.parseSignature(scope)
+
+	var body *ast.BlockStmt
+	if p.tok != token.ENDPROC {
+		body = p.parseBodyProc(scope)
+	}
+	p.expectSemi()
+
+	decl := &ast.FuncDecl{
+		Doc:  doc,
+		Recv: nil,
+		Name: ident,
+		Type: &ast.FuncType{
+			Func:    pos,
+			Params:  params,
+			Results: results,
+		},
+		Body: body,
+	}
+	// if recv == nil {
+	// Go spec: The scope of an identifier denoting a constant, type,
+	// variable, or function (but not method) declared at top level
+	// (outside any function) is the package block.
+	//
+	// init() functions cannot be referred to and there may
+	// be more than one - don't put them in the pkgScope
+
+	// if ident.Name != "init" {
+	p.declare(decl, nil, p.pkgScope, ast.Fun, ident)
+	// }
+	// }
 
 	return decl
 }
@@ -2430,11 +2523,14 @@ func (p *parser) parseDecl(sync func(*parser)) ast.Decl {
 	case token.VAR:
 		f = p.parseValueSpec
 
-	case token.TYPE:
-		f = p.parseTypeSpec
+	// case token.TYPE:
+	// 	f = p.parseTypeSpec
 
 	case token.FUNC:
 		return p.parseFuncDecl()
+
+	case token.PROC:
+		return p.parseProcDecl()
 
 	default:
 		pos := p.pos

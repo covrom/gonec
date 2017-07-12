@@ -142,6 +142,8 @@ const (
 	NEW
 	NULL
 	UNDEF
+
+	//операторы, являющиеся ключевыми словами
 	LAND // &&
 	LOR  // ||
 	NOT  // !
@@ -348,9 +350,13 @@ func (tok Token) IsLiteral() bool { return literal_beg < tok && tok < literal_en
 // IsOperator returns true for tokens corresponding to operators and
 // delimiters; it returns false otherwise.
 //
-func (tok Token) IsOperator() bool { return operator_beg < tok && tok < operator_end }
+func (tok Token) IsOperator() bool {
+	return (operator_beg < tok && tok < operator_end) || (tok == LAND || tok == LOR || tok == NOT)
+}
 
 // IsKeyword returns true for tokens corresponding to keywords;
 // it returns false otherwise.
 //
-func (tok Token) IsKeyword() bool { return keyword_beg < tok && tok < keyword_end }
+func (tok Token) IsKeyword() bool {
+	return (keyword_beg < tok && tok < keyword_end) && !(tok == LAND || tok == LOR || tok == NOT)
+}
