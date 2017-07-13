@@ -1,13 +1,16 @@
 package gonec
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"fmt"
+
+	"github.com/covrom/gonec/gonecparser/parser"
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // APIPath содержит путь к api интерпретатора
@@ -97,29 +100,15 @@ func (i *interpreter) Run(srv string) {
 // ParseAndRun разбирает запрос и запускает интерпретацию
 func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 
-	var tokens []token
+	fset := token.NewFileSet()
+	ast, err := parser.ParseFile(fset, "", r, parser.Trace)
 
-	tokens, err = i.Lexer(r, w)
 	if err != nil {
 		return
 	}
 
-	// TODO:
-	//!!!!!!для отладки
-	for _, t := range tokens {
-		fmt.Println(t)
-	}
-	//!!!!!!!!!
-
-	var prog pProgram
-
-	prog, err = i.Parse(tokens, w)
-	if err != nil {
-		es := err.Error()
-		for _, oneerr := range prog.errors {
-			es += "\n" + oneerr
-		}
-		return errors.New(es)
+	for _,u := range ast.Unresolved {
+		fmt.Println("Неразыменовано: "+u.Name)
 	}
 
 	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
