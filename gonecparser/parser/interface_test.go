@@ -32,6 +32,8 @@ func TestParseFile(t *testing.T) {
 	// This is scanned code.
 	Пакет Основной
 
+		перем дд,вв;
+		
 		Функция а(б,в,г) экспОрт
 			а=б
 		КонецФункции

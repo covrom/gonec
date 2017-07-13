@@ -2334,16 +2334,16 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 	}
 	p.expectSemi() // call before accessing p.linecomment
 
-	switch keyword {
-	case token.VAR:
-		if typ == nil && values == nil {
-			p.error(pos, "missing variable type or initialization")
-		}
+	// switch keyword {
+	// case token.VAR:
+		// if typ == nil && values == nil {
+		// 	p.error(pos, "missing variable type or initialization")
+		// }
 		// case token.CONST:
 		// 	if values == nil && (iota == 0 || typ != nil) {
 		// 		p.error(pos, "missing constant value")
 		// 	}
-	}
+	// }
 
 	// Go spec: The scope of a constant or variable identifier declared inside
 	// a function begins at the end of the ConstSpec or VarSpec and ends at
@@ -2356,10 +2356,10 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 		Values:  values,
 		Comment: p.lineComment,
 	}
-	kind := ast.Con
-	if keyword == token.VAR {
-		kind = ast.Var
-	}
+	// kind := ast.Con
+	// if keyword == token.VAR {
+		kind := ast.Var
+	// }
 	p.declare(spec, iota, p.topScope, kind, idents...)
 
 	return spec
