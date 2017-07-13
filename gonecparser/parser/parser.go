@@ -397,6 +397,15 @@ func (p *parser) expect(tok token.Token) token.Pos {
 	return pos
 }
 
+func (p *parser) checkElseElsifEndif() token.Pos {
+	pos := p.pos
+	if !(p.tok == token.ELSE || p.tok == token.ELSIF || p.tok == token.ENDIF) {
+		p.errorExpected(pos, "'иначе или иначеесли или конецесли'")
+	}
+	// p.next() // make progress
+	return pos
+}
+
 // expectClosing is like expect but provides a better error message
 // for the common case of a missing comma before a newline.
 //
@@ -1070,7 +1079,8 @@ func (p *parser) parseStmtList() (list []ast.Stmt) {
 	}
 
 	for p.tok != token.CASE && p.tok != token.DEFAULT && p.tok != token.RBRACE && p.tok != token.EOF &&
-	 p.tok != token.ENDFUNC && p.tok != token.ENDPROC {
+		p.tok != token.ENDFUNC && p.tok != token.ENDPROC && p.tok != token.ENDIF && p.tok != token.ELSE && p.tok != token.ELSIF &&
+		p.tok != token.ENDDO && p.tok != token.ENDTRY && p.tok != token.EXCEPT {
 		list = append(list, p.parseStmt())
 	}
 
@@ -1145,6 +1155,20 @@ func (p *parser) parseBlockStmt() *ast.BlockStmt {
 	list := p.parseStmtList()
 	p.closeScope()
 	rbrace := p.expect(token.RBRACE)
+
+	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
+}
+
+func (p *parser) parseBlockIfStmt() *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BlockIfStmt"))
+	}
+
+	lbrace := p.expect(token.THEN)
+	// p.openScope()
+	list := p.parseStmtList()
+	// p.closeScope()
+	rbrace := p.checkElseElsifEndif()
 
 	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
 }
@@ -1875,8 +1899,8 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	}
 
 	pos := p.expect(token.IF)
-	p.openScope()
-	defer p.closeScope()
+	// p.openScope()
+	// defer p.closeScope()
 
 	var s ast.Stmt
 	var x ast.Expr
@@ -1899,25 +1923,33 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 		p.exprLev = prevLev
 	}
 
-	body := p.parseBlockStmt()
+	body := p.parseBlockIfStmt()
 	var else_ ast.Stmt
-	if p.tok == token.ELSE {
-		p.next()
-		switch p.tok {
-		case token.IF:
-			else_ = p.parseIfStmt()
-		case token.LBRACE:
+	switch p.tok {
+	case token.ELSE:
 			else_ = p.parseBlockStmt()
 			p.expectSemi()
-		default:
-			p.errorExpected(p.pos, "if statement or block")
-			else_ = &ast.BadStmt{From: p.pos, To: p.pos}
-		}
-	} else {
+	case token.ELSIF:
+		else_ = p.parseIfStmt()
+	case token.ENDIF:
+		p.next()
 		p.expectSemi()
+	default:
+		p.errorExpected(p.pos, "elseif or else statement or block")
+		else_ = &ast.BadStmt{From: p.pos, To: p.pos}
 	}
 
 	return &ast.IfStmt{If: pos, Init: s, Cond: x, Body: body, Else: else_}
+}
+
+func (p *parser) parseTryStmt() *ast.IfStmt {
+	// TODO:
+	return nil
+}
+
+func (p *parser) parseRaiseStmt() *ast.IfStmt {
+	// TODO:
+	return nil
 }
 
 func (p *parser) parseTypeList() (list []ast.Expr) {
@@ -2340,13 +2372,13 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 
 	// switch keyword {
 	// case token.VAR:
-		// if typ == nil && values == nil {
-		// 	p.error(pos, "missing variable type or initialization")
-		// }
-		// case token.CONST:
-		// 	if values == nil && (iota == 0 || typ != nil) {
-		// 		p.error(pos, "missing constant value")
-		// 	}
+	// if typ == nil && values == nil {
+	// 	p.error(pos, "missing variable type or initialization")
+	// }
+	// case token.CONST:
+	// 	if values == nil && (iota == 0 || typ != nil) {
+	// 		p.error(pos, "missing constant value")
+	// 	}
 	// }
 
 	// Go spec: The scope of a constant or variable identifier declared inside
@@ -2362,7 +2394,7 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 	}
 	// kind := ast.Con
 	// if keyword == token.VAR {
-		kind := ast.Var
+	kind := ast.Var
 	// }
 	p.declare(spec, iota, p.topScope, kind, idents...)
 
@@ -2440,7 +2472,7 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 	params, results := p.parseSignature(scope)
 
 	var body *ast.BlockStmt
-	
+
 	//fmt.Println(p.tok.String())
 
 	if p.tok != token.ENDFUNC {
@@ -2548,17 +2580,17 @@ func (p *parser) parseDecl(sync func(*parser)) ast.Decl {
 
 	default:
 		//все остальное идет в псевдо-init функцию
-			var body *ast.BlockStmt
-			pos := p.pos
-			body = p.parseBodyInit(p.pkgScope)
+		var body *ast.BlockStmt
+		pos := p.pos
+		body = p.parseBodyInit(p.pkgScope)
 
-			return &ast.FuncDecl{
-				Name: &ast.Ident{Name:"__init__"}, //как в Python
-				Type: &ast.FuncType{
-					Func:    pos,
-				},
-				Body: body,
-			}
+		return &ast.FuncDecl{
+			Name: &ast.Ident{Name: "__init__"}, //как в Python
+			Type: &ast.FuncType{
+				Func: pos,
+			},
+			Body: body,
+		}
 	}
 
 	return p.parseGenDecl(p.tok, f)

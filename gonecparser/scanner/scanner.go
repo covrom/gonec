@@ -664,7 +664,8 @@ scanAgain:
 			// keywords are longer than one letter - avoid lookup otherwise
 			tok = token.Lookup(lit)
 			switch tok {
-			case token.IDENT, token.BREAK, token.CONTINUE, token.RETURN, token.ENDFUNC, token.ENDPROC:
+			case token.IDENT, token.BREAK, token.CONTINUE, token.RETURN, 
+				token.ENDFUNC, token.ENDPROC, token.ENDDO, token.ENDIF, token.ENDTRY:
 				insertSemi = true
 			}
 		} else {
