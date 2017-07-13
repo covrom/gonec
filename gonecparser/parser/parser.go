@@ -2241,8 +2241,12 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = p.parseSwitchStmt()
 	case token.SELECT:
 		s = p.parseSelectStmt()
-	case token.FOR:
+	case token.FOR, token.WHILE:
 		s = p.parseForStmt()
+	case token.TRY:
+		s = p.parseTryStmt()
+	case token.RAISE:
+		s = p.parseRaiseStmt()
 	case token.SEMICOLON:
 		// Is it ever possible to have an implicit semicolon
 		// producing an empty statement in a valid program?
