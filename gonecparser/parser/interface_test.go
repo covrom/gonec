@@ -42,6 +42,8 @@ func TestParseFile(t *testing.T) {
 				СТочкойСЗапятой();
 		КонецПроцедуры
 
+		б = а(1,2,3)
+		Сообщить(б)
 	`,
 				mode: Trace,
 			},

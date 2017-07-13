@@ -1125,6 +1125,16 @@ func (p *parser) parseBodyFunc(scope *ast.Scope) *ast.BlockStmt {
 	return &ast.BlockStmt{List: list, Rbrace: rbrace}
 }
 
+func (p *parser) parseBodyInit(scope *ast.Scope) *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BodyMain"))
+	}
+
+	list := p.parseStmtList()
+
+	return &ast.BlockStmt{List: list}
+}
+
 func (p *parser) parseBlockStmt() *ast.BlockStmt {
 	if p.trace {
 		defer un(trace(p, "BlockStmt"))
@@ -2533,10 +2543,18 @@ func (p *parser) parseDecl(sync func(*parser)) ast.Decl {
 		return p.parseProcDecl()
 
 	default:
-		pos := p.pos
-		p.errorExpected(pos, "declaration")
-		sync(p)
-		return &ast.BadDecl{From: pos, To: p.pos}
+		//все остальное идет в псевдо-init функцию
+			var body *ast.BlockStmt
+			pos := p.pos
+			body = p.parseBodyInit(p.pkgScope)
+
+			return &ast.FuncDecl{
+				Name: &ast.Ident{Name:"__init__"}, //как в Python
+				Type: &ast.FuncType{
+					Func:    pos,
+				},
+				Body: body,
+			}
 	}
 
 	return p.parseGenDecl(p.tok, f)
