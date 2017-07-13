@@ -230,13 +230,13 @@ var tokens = [...]string{
 	CONTINUE: "продолжить",
 
 	DEFAULT: "другой",
-	DEFER:   "позже",
+	DEFER:   "привыходе",
 	ELSE:    "иначе",
 	// FALLTHROUGH: "fallthrough",
 	FOR: "для",
 
 	FUNC:   "функция",
-	GO:     "поток",
+	GO:     "запустить",
 	GOTO:   "перейти",
 	IF:     "если",
 	IMPORT: "импорт",

@@ -2210,11 +2210,11 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	}
 
 	switch p.tok {
-	case token.TYPE, token.VAR:
+	case token.VAR: //token.TYPE, token.VAR:
 		s = &ast.DeclStmt{Decl: p.parseDecl(syncStmt)}
 	case
 		// tokens that may start an expression
-		token.IDENT, token.NUM, token.DATE, token.STRING, token.FUNC, token.LPAREN, // operands
+		token.IDENT, token.NUM, token.DATE, token.STRING, token.NULL, token.UNDEF, token.NEW, token.FUNC, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, token.CHAN, // composite types
 		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
@@ -2232,9 +2232,9 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		s = p.parseReturnStmt()
 	case token.BREAK, token.CONTINUE, token.GOTO:
 		s = p.parseBranchStmt(p.tok)
-	case token.LBRACE:
-		s = p.parseBlockStmt()
-		p.expectSemi()
+	// case token.LBRACE:
+	// 	s = p.parseBlockStmt()
+	// 	p.expectSemi()
 	case token.IF:
 		s = p.parseIfStmt()
 	case token.SWITCH:
@@ -2249,9 +2249,9 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		// (handle correctly anyway)
 		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: p.lit == "\n"}
 		p.next()
-	case token.RBRACE:
-		// a semicolon may be omitted before a closing "}"
-		s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: true}
+	// case token.RBRACE:
+	// 	// a semicolon may be omitted before a closing "}"
+	// 	s = &ast.EmptyStmt{Semicolon: p.pos, Implicit: true}
 	default:
 		// no statement found
 		pos := p.pos
