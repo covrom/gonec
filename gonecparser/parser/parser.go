@@ -2323,7 +2323,7 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 		defer un(trace(p, keyword.String()+"Spec"))
 	}
 
-	pos := p.pos
+	// pos := p.pos
 	idents := p.parseIdentList()
 	typ := p.tryType()
 	var values []ast.Expr
@@ -2365,26 +2365,26 @@ func (p *parser) parseValueSpec(doc *ast.CommentGroup, keyword token.Token, iota
 	return spec
 }
 
-func (p *parser) parseTypeSpec(doc *ast.CommentGroup, _ token.Token, _ int) ast.Spec {
-	if p.trace {
-		defer un(trace(p, "TypeSpec"))
-	}
+// func (p *parser) parseTypeSpec(doc *ast.CommentGroup, _ token.Token, _ int) ast.Spec {
+// 	if p.trace {
+// 		defer un(trace(p, "TypeSpec"))
+// 	}
 
-	ident := p.parseIdent()
+// 	ident := p.parseIdent()
 
-	// Go spec: The scope of a type identifier declared inside a function begins
-	// at the identifier in the TypeSpec and ends at the end of the innermost
-	// containing block.
-	// (Global identifiers are resolved in a separate phase after parsing.)
-	spec := &ast.TypeSpec{Doc: doc, Name: ident}
-	p.declare(spec, nil, p.topScope, ast.Typ, ident)
+// 	// Go spec: The scope of a type identifier declared inside a function begins
+// 	// at the identifier in the TypeSpec and ends at the end of the innermost
+// 	// containing block.
+// 	// (Global identifiers are resolved in a separate phase after parsing.)
+// 	spec := &ast.TypeSpec{Doc: doc, Name: ident}
+// 	p.declare(spec, nil, p.topScope, ast.Typ, ident)
 
-	spec.Type = p.parseType()
-	p.expectSemi() // call before accessing p.linecomment
-	spec.Comment = p.lineComment
+// 	spec.Type = p.parseType()
+// 	p.expectSemi() // call before accessing p.linecomment
+// 	spec.Comment = p.lineComment
 
-	return spec
-}
+// 	return spec
+// }
 
 func (p *parser) parseGenDecl(keyword token.Token, f parseSpecFunction) *ast.GenDecl {
 	if p.trace {
