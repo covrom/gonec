@@ -1,7 +1,10 @@
 package vm
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
+	"strings"
 	"time"
 )
 
@@ -150,4 +153,71 @@ func (v variant) IsString() bool {
 
 func (v variant) IsBool() bool {
 	return v.typ == BOOL
+}
+
+func (v variant) IsZero() bool {
+	switch v.typ {
+	case BOOL:
+		return v.boo == false
+	case NUM:
+		return v.num.Cmp(big.NewFloat(0)) == 0
+	case DATE:
+		return v.date.IsZero()
+	case STR:
+		return v.str == ""
+	default:
+		return true
+	}
+}
+
+func (v variant) GetTypeString() string {
+	switch v.typ {
+	case NULL:
+		return "NULL"
+	case UNDEF:
+		return "Неопределено"
+	case NUM:
+		return "Число"
+	case DATE:
+		return "Дата"
+	case STR:
+		return "Строка"
+	case BOOL:
+		return "Булево"
+	default:
+		return "NONE"
+	}
+}
+
+func (v variant) Cmp(to variant) (int, error) {
+	if v.typ != to.typ {
+		return 0, fmt.Errorf("Несравниваемые типы %v и %v", v.GetTypeString(), to.GetTypeString())
+	}
+	switch v.typ {
+	case NULL:
+		return 0, nil
+	case UNDEF:
+		return 0, nil
+	case NUM:
+		return v.num.Cmp(&to.num), nil
+	case DATE:
+		if v.date.Equal(to.date) {
+			return 0, nil
+		}
+		if v.date.Before(to.date) {
+			return -1, nil
+		}
+		if v.date.After(to.date) {
+			return 1, nil
+		}
+		return 0, errors.New("Невозможно сравнить даты")
+	case STR:
+		return strings.Compare(v.str, to.str), nil
+	case BOOL:
+		if (!v.boo)&&to.boo{return -1,nil}
+		if v.boo==to.boo{return 0,nil}
+		if v.boo&&(!to.boo){return 1,nil}
+	default:
+		return 0, errors.New("Невозможно сравнить значения")
+	}
 }
