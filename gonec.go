@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
 	"fmt"
 
+	"github.com/covrom/gonec/gonecparser/ast"
 	"github.com/covrom/gonec/gonecparser/parser"
 	"github.com/covrom/gonec/gonecparser/token"
 )
@@ -101,15 +101,29 @@ func (i *interpreter) Run(srv string) {
 func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 
 	fset := token.NewFileSet()
-	ast, err := parser.ParseFile(fset, "", r, parser.Trace)
+	f, err := parser.ParseFile(fset, "", r, parser.Trace)
 
 	if err != nil {
 		return
 	}
 
-	for _,u := range ast.Unresolved {
-		fmt.Println("Неразыменовано: "+u.Name)
+	for _, u := range f.Unresolved {
+		fmt.Println("Неразыменовано: " + u.Name)
 	}
+
+	ast.Inspect(f, func(n ast.Node) bool {
+		var s string
+		switch x := n.(type) {
+		case *ast.BasicLit:
+			s = x.Value
+		case *ast.Ident:
+			s = x.Name
+		}
+		if s != "" {
+			fmt.Printf("%s:\t%s\n", fset.Position(n.Pos()), s)
+		}
+		return true
+	})
 
 	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
 
