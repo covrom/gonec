@@ -1,16 +1,15 @@
 package gonec
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/covrom/gonec/gonecparser/ast"
 	"github.com/covrom/gonec/gonecparser/parser"
 	"github.com/covrom/gonec/gonecparser/token"
+	"github.com/covrom/gonec/vm"
 )
 
 // APIPath содержит путь к api интерпретатора
@@ -107,27 +106,15 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 		return
 	}
 
-	for _, u := range f.Unresolved {
-		fmt.Println("Неразыменовано: " + u.Name)
+	// for _, u := range f.Unresolved {
+	// 	fmt.Println("Неразыменовано: " + u.Name)
+	// }
+
+	virtm := vm.NewVM(f, w)
+	err = virtm.Run()
+	if err != nil {
+		return
 	}
-
-	ast.Inspect(f,astInspect)
-
-	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
 
 	return nil
-}
-
-func astInspect(n ast.Node) bool {
-	var s string
-	switch x := n.(type) {
-	case *ast.BasicLit:
-		s = x.Value
-	case *ast.Ident:
-		s = x.Name
-	}
-	if s != "" {
-		fmt.Println(s)
-	}
-	return true
 }
