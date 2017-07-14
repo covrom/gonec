@@ -214,10 +214,15 @@ func (v variant) Cmp(to variant) (int, error) {
 	case STR:
 		return strings.Compare(v.str, to.str), nil
 	case BOOL:
-		if (!v.boo)&&to.boo{return -1,nil}
-		if v.boo==to.boo{return 0,nil}
-		if v.boo&&(!to.boo){return 1,nil}
-	default:
-		return 0, errors.New("Невозможно сравнить значения")
+		if (!v.boo) && to.boo {
+			return -1, nil
+		}
+		if v.boo == to.boo {
+			return 0, nil
+		}
+		if v.boo && (!to.boo) {
+			return 1, nil
+		}
 	}
+	return 0, errors.New("Невозможно сравнить значения")
 }
