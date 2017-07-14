@@ -37,7 +37,7 @@ func (v variant) String() string {
 	case NUM:
 		return v.num.String()
 	case DATE:
-		return v.date.String()
+		return v.date.Format(time.RFC3339)
 	case STR:
 		return v.str
 	default:
