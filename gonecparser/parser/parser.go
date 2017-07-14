@@ -899,10 +899,11 @@ func (p *parser) parseResult(scope *ast.Scope) *ast.FieldList {
 	}
 
 	if p.tok == token.EXPORT {
-		typ := p.tryType()
 		p.next()
 		list := make([]*ast.Field, 1)
-		list[0] = &ast.Field{Type: typ}
+		list[0] = &ast.Field{Tag: &ast.BasicLit{
+			Kind: token.EXPORT,
+		}}
 		return &ast.FieldList{List: list}
 	}
 

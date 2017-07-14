@@ -1,12 +1,12 @@
 package gonec
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"sync"
 	"time"
-	"fmt"
 
 	"github.com/covrom/gonec/gonecparser/ast"
 	"github.com/covrom/gonec/gonecparser/parser"
@@ -111,21 +111,23 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 		fmt.Println("Неразыменовано: " + u.Name)
 	}
 
-	ast.Inspect(f, func(n ast.Node) bool {
-		var s string
-		switch x := n.(type) {
-		case *ast.BasicLit:
-			s = x.Value
-		case *ast.Ident:
-			s = x.Name
-		}
-		if s != "" {
-			fmt.Printf("%s:\t%s\n", fset.Position(n.Pos()), s)
-		}
-		return true
-	})
+	ast.Inspect(f,astInspect)
 
 	// TODO: синхронно запускается код модуля, но он может создавать вэб-сервера и горутины, которые будут работать и после возврата
 
 	return nil
+}
+
+func astInspect(n ast.Node) bool {
+	var s string
+	switch x := n.(type) {
+	case *ast.BasicLit:
+		s = x.Value
+	case *ast.Ident:
+		s = x.Name
+	}
+	if s != "" {
+		fmt.Println(s)
+	}
+	return true
 }
