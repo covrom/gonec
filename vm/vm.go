@@ -19,6 +19,7 @@ const (
 	NUM
 	DATE
 	STR
+	BOOL
 )
 
 type variant struct {
@@ -26,6 +27,7 @@ type variant struct {
 	num  big.Float
 	date time.Time
 	str  string
+	boo  bool
 }
 
 func (v variant) String() string {
@@ -40,6 +42,11 @@ func (v variant) String() string {
 		return v.date.Format(time.RFC3339)
 	case STR:
 		return v.str
+	case BOOL:
+		if v.boo {
+			return "Истина"
+		}
+		return "Ложь"
 	default:
 		return "NONE"
 	}
@@ -50,6 +57,7 @@ func (v *variant) SetString(s string) {
 	v.str = s
 	v.date = time.Time{}
 	v.num = big.Float{}
+	v.boo = false
 }
 
 func (v *variant) SetDate(d time.Time) {
@@ -57,6 +65,7 @@ func (v *variant) SetDate(d time.Time) {
 	v.str = ""
 	v.date = d
 	v.num = big.Float{}
+	v.boo = false
 }
 
 func (v *variant) SetNum(n big.Float) {
@@ -64,6 +73,7 @@ func (v *variant) SetNum(n big.Float) {
 	v.str = ""
 	v.date = time.Time{}
 	v.num = n
+	v.boo = false
 }
 
 func (v *variant) SetUNDEF() {
@@ -71,6 +81,7 @@ func (v *variant) SetUNDEF() {
 	v.str = ""
 	v.date = time.Time{}
 	v.num = big.Float{}
+	v.boo = false
 }
 
 func (v *variant) SetNULL() {
@@ -78,6 +89,31 @@ func (v *variant) SetNULL() {
 	v.str = ""
 	v.date = time.Time{}
 	v.num = big.Float{}
+	v.boo = false
+}
+
+func (v *variant) SetTrue() {
+	v.typ = BOOL
+	v.str = ""
+	v.date = time.Time{}
+	v.num = big.Float{}
+	v.boo = true
+}
+
+func (v *variant) SetFalse() {
+	v.typ = BOOL
+	v.str = ""
+	v.date = time.Time{}
+	v.num = big.Float{}
+	v.boo = false
+}
+
+func (v *variant) SetBool(b bool) {
+	v.typ = BOOL
+	v.str = ""
+	v.date = time.Time{}
+	v.num = big.Float{}
+	v.boo = b
 }
 
 func (v variant) GetValue() (typ int, val interface{}) {
@@ -89,6 +125,8 @@ func (v variant) GetValue() (typ int, val interface{}) {
 		val = v.str
 	case NUM:
 		val = v.num
+	case BOOL:
+		val = v.boo
 	default:
 		val = nil
 	}
@@ -115,15 +153,28 @@ func (v variant) IsString() bool {
 	return v.typ == STR
 }
 
+func (v variant) IsBool() bool {
+	return v.typ == BOOL
+}
+
+type scope struct {
+	vars map[string]variant
+}
+
 // виртуальная машина
 
 type VirtMachine struct {
-	af *ast.File
-	w  io.Writer
+	af     *ast.File
+	w      io.Writer
+	scopes map[string]scope
 }
 
 func NewVM(af *ast.File, w io.Writer) *VirtMachine {
-	return &VirtMachine{af: af, w: w}
+	return &VirtMachine{
+		af:     af,
+		w:      w,
+		scopes: make(map[string]scope),
+	}
 }
 
 func (v *VirtMachine) Run() error {
