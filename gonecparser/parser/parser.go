@@ -893,18 +893,17 @@ func (p *parser) parseParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldLi
 	return &ast.FieldList{Opening: lparen, List: params, Closing: rparen}
 }
 
-func (p *parser) parseResult(scope *ast.Scope) *ast.FieldList {
+func (p *parser) parseResult(scope *ast.Scope) *ast.BasicLit {
 	if p.trace {
 		defer un(trace(p, "Result"))
 	}
 
 	if p.tok == token.EXPORT {
 		p.next()
-		list := make([]*ast.Field, 1)
-		list[0] = &ast.Field{Tag: &ast.BasicLit{
+		
+		return &ast.BasicLit{
 			Kind: token.EXPORT,
-		}}
-		return &ast.FieldList{List: list}
+		}
 	}
 
 	// typ := p.tryType()
@@ -917,7 +916,7 @@ func (p *parser) parseResult(scope *ast.Scope) *ast.FieldList {
 	return nil
 }
 
-func (p *parser) parseSignature(scope *ast.Scope) (params, results *ast.FieldList) {
+func (p *parser) parseSignature(scope *ast.Scope) (params *ast.FieldList, results *ast.BasicLit) {
 	if p.trace {
 		defer un(trace(p, "Signature"))
 	}
