@@ -134,6 +134,7 @@ func (v *VirtMachine) Run() error {
 func (v *VirtMachine) astInspect(n ast.Node) bool {
 	var s string
 	switch x := n.(type) {
+	// TODO: исполнение __init__
 	case *ast.GenDecl:
 
 		// s = x.Value
