@@ -900,7 +900,7 @@ func (p *parser) parseResult(scope *ast.Scope) *ast.BasicLit {
 
 	if p.tok == token.EXPORT {
 		p.next()
-		
+
 		return &ast.BasicLit{
 			Kind: token.EXPORT,
 		}
@@ -1035,27 +1035,27 @@ func (p *parser) tryIdentOrType() ast.Expr {
 	switch p.tok {
 	case token.IDENT:
 		return p.parseTypeName()
-	case token.LBRACK:
-		return p.parseArrayType()
-	case token.STRUCT:
-		return p.parseStructType()
-	case token.MUL:
-		return p.parsePointerType()
-	case token.FUNC:
-		typ, _ := p.parseFuncType()
-		return typ
-	// case token.INTERFACE:
-	// 	return p.parseInterfaceType()
-	case token.MAP:
-		return p.parseMapType()
-	case token.CHAN, token.ARROW:
-		return p.parseChanType()
-	case token.LPAREN:
-		lparen := p.pos
-		p.next()
-		typ := p.parseType()
-		rparen := p.expect(token.RPAREN)
-		return &ast.ParenExpr{Lparen: lparen, X: typ, Rparen: rparen}
+		// case token.LBRACK:
+		// 	return p.parseArrayType()
+		// case token.STRUCT:
+		// 	return p.parseStructType()
+		// case token.MUL:
+		// 	return p.parsePointerType()
+		// case token.FUNC:
+		// 	typ, _ := p.parseFuncType()
+		// 	return typ
+		// // case token.INTERFACE:
+		// // 	return p.parseInterfaceType()
+		// case token.MAP:
+		// 	return p.parseMapType()
+		// case token.CHAN, token.ARROW:
+		// 	return p.parseChanType()
+		// case token.LPAREN:
+		// 	lparen := p.pos
+		// 	p.next()
+		// 	typ := p.parseType()
+		// 	rparen := p.expect(token.RPAREN)
+		// 	return &ast.ParenExpr{Lparen: lparen, X: typ, Rparen: rparen}
 	}
 
 	// no type found
@@ -1927,8 +1927,8 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	var else_ ast.Stmt
 	switch p.tok {
 	case token.ELSE:
-			else_ = p.parseBlockStmt()
-			p.expectSemi()
+		else_ = p.parseBlockStmt()
+		p.expectSemi()
 	case token.ELSIF:
 		else_ = p.parseIfStmt()
 	case token.ENDIF:
@@ -2584,13 +2584,15 @@ func (p *parser) parseDecl(sync func(*parser)) ast.Decl {
 		pos := p.pos
 		body = p.parseBodyInit(p.pkgScope)
 
-		return &ast.FuncDecl{
-			Name: &ast.Ident{Name: "__init__"}, //как в Python
+		decl := &ast.FuncDecl{
+			Name: &ast.Ident{NamePos: pos, Name: "__init__"}, //как в Python
 			Type: &ast.FuncType{
 				Func: pos,
 			},
 			Body: body,
 		}
+		p.declare(decl, nil, p.pkgScope, ast.Fun, decl.Name)
+		return decl
 	}
 
 	return p.parseGenDecl(p.tok, f)
