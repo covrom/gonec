@@ -1,47 +1,49 @@
 package vm
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/covrom/gonec/gonecparser/ast"
+	"fmt"
 )
 
 // виртуальная машина
 
+// в этой мапе ключом является iota поле Data из scope.Object
+type varMap map[int]variant
+
 type VirtMachine struct {
-	af     *ast.File
-	w      io.Writer
-	scopes map[string]scope
+	af       *ast.File
+	w        io.Writer
+	vars     varMap
+	funcInit *ast.FuncDecl
 }
 
 func NewVM(af *ast.File, w io.Writer) *VirtMachine {
 	return &VirtMachine{
-		af:     af,
-		w:      w,
-		scopes: make(map[string]scope),
+		af:   af,
+		w:    w,
+		vars: make(varMap),
 	}
 }
 
 func (v *VirtMachine) Run() error {
-	ast.Inspect(v.af, v.astInspect)
+	ast.Inspect(v.af, v.enumIdents)
 	return nil
 }
 
-func (v *VirtMachine) astInspect(n ast.Node) bool {
-	var s string
+func (v *VirtMachine) enumIdents(n ast.Node) bool {
 	switch x := n.(type) {
-	// TODO: исполнение __init__
-	case *ast.GenDecl:
-
-		// s = x.Value
-
+	case *ast.FuncDecl:
+		if x.Name.Name == "__init__" {
+			v.funcInit = x
+		}
 	case *ast.Ident:
-		s = x.Name
+		i, ok := x.Obj.Data.(int)
+		if ok {
+			v.vars[i] = variant{}
+			fmt.Printf("Assign %v to id %v",x.Name,i)
+		}
 	}
-	if s != "" {
-		fmt.Println(s)
-		return true
-	}
-	return false
+	return true
 }
