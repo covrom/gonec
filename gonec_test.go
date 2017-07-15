@@ -13,9 +13,11 @@ func Test_interpreter_ParseAndRun(t *testing.T) {
 	// This is scanned code.
 	Пакет Основной
 
-		//перем дд,вв;
+		перем дд,вв;
 		
 		Функция а(б,в,г) экспОрт
+			г=0
+			к=1
 			если б<>в тогда
 				д=б
 				д=в
@@ -25,6 +27,7 @@ func Test_interpreter_ParseAndRun(t *testing.T) {
 			возврат д
 		КонецФункции
 
+		ф=дд
 		б = а(1,2,3)
 		Сообщить(б)
 	`)

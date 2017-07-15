@@ -146,7 +146,9 @@ func (p *parser) shortVarDecl(decl *ast.AssignStmt, list []ast.Expr) {
 	for _, x := range list {
 		if ident, isIdent := x.(*ast.Ident); isIdent {
 			//assert(ident.Obj == nil, "identifier already declared or resolved")
-			if ident.Obj != nil{continue}
+			if !(ident.Obj == nil) {
+				continue
+			}
 
 			obj := ast.NewObj(ast.Var, ident.Name)
 			// remember corresponding assignment for other tools
@@ -591,7 +593,7 @@ func (p *parser) parseLhsList() []ast.Expr {
 	p.inRhs = false
 	list := p.parseExprList(true)
 	switch p.tok {
-	//case token.DEFINE:
+	case token.ASSIGN:
 	// lhs of a short variable declaration
 	// but doesn't enter scope until later:
 	// caller must call p.shortVarDecl(p.makeIdentList(list))
@@ -843,10 +845,22 @@ func (p *parser) parseParameterList(scope *ast.Scope, ellipsisOk bool) (params [
 	// analyze case
 	// if typ := p.tryVarType(ellipsisOk); typ != nil {
 
-
-		typ := &ast.Ident{NamePos: p.pos, Name: "__variant__"} //p.tryVarType(ellipsisOk)
-		// IdentifierList Type
-		idents := p.makeIdentList(list)
+	typ := &ast.Ident{NamePos: p.pos, Name: "__variant__"} //p.tryVarType(ellipsisOk)
+	// IdentifierList Type
+	idents := p.makeIdentList(list)
+	field := &ast.Field{Names: idents, Type: typ}
+	params = append(params, field)
+	// Go spec: The scope of an identifier denoting a function
+	// parameter or result variable is the function body.
+	p.declare(field, nil, scope, ast.Var, idents...)
+	// p.resolve(typ)
+	if !p.atComma("parameter list", token.RPAREN) {
+		return
+	}
+	p.next()
+	for p.tok != token.RPAREN && p.tok != token.EOF {
+		idents := p.parseIdentList()
+		typ := p.parseVarType(ellipsisOk)
 		field := &ast.Field{Names: idents, Type: typ}
 		params = append(params, field)
 		// Go spec: The scope of an identifier denoting a function
@@ -854,25 +868,11 @@ func (p *parser) parseParameterList(scope *ast.Scope, ellipsisOk bool) (params [
 		p.declare(field, nil, scope, ast.Var, idents...)
 		// p.resolve(typ)
 		if !p.atComma("parameter list", token.RPAREN) {
-			return
+			break
 		}
 		p.next()
-		for p.tok != token.RPAREN && p.tok != token.EOF {
-			idents := p.parseIdentList()
-			typ := p.parseVarType(ellipsisOk)
-			field := &ast.Field{Names: idents, Type: typ}
-			params = append(params, field)
-			// Go spec: The scope of an identifier denoting a function
-			// parameter or result variable is the function body.
-			p.declare(field, nil, scope, ast.Var, idents...)
-			// p.resolve(typ)
-			if !p.atComma("parameter list", token.RPAREN) {
-				break
-			}
-			p.next()
-		}
-		return
-
+	}
+	return
 
 	// }
 
@@ -1147,7 +1147,10 @@ func (p *parser) parseBodyInit(scope *ast.Scope) *ast.BlockStmt {
 		defer un(trace(p, "BodyMain"))
 	}
 
+	p.topScope = scope // open function scope
+	p.openLabelScope()
 	list := p.parseStmtList()
+	p.closeLabelScope()
 
 	return &ast.BlockStmt{List: list}
 }
@@ -1776,9 +1779,9 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 			y = p.parseRhsList()
 		}
 		as := &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
-		 if tok == token.ASSIGN {
-		 	p.shortVarDecl(as, x)
-		 }
+		if tok == token.ASSIGN {
+			p.shortVarDecl(as, x)
+		}
 		return as, isRange
 	}
 
@@ -1938,8 +1941,8 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 			// 	p.next()
 			// 	x = p.parseRhs()
 			// } else {
-				x = p.makeExpr(s, "boolean expression")
-				s = nil
+			x = p.makeExpr(s, "boolean expression")
+			s = nil
 			// }
 		}
 		p.exprLev = prevLev
@@ -2133,9 +2136,9 @@ func (p *parser) parseCommClause() *ast.CommClause {
 				p.next()
 				rhs := p.parseRhs()
 				as := &ast.AssignStmt{Lhs: lhs, TokPos: pos, Tok: tok, Rhs: []ast.Expr{rhs}}
-				 if tok == token.ASSIGN {
-				 	p.shortVarDecl(as, lhs)
-				 }
+				if tok == token.ASSIGN {
+					p.shortVarDecl(as, lhs)
+				}
 				comm = as
 			} else {
 				// lhs must be single receive operation
