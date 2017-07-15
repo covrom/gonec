@@ -145,7 +145,9 @@ func (p *parser) shortVarDecl(decl *ast.AssignStmt, list []ast.Expr) {
 	n := 0 // number of new variables
 	for _, x := range list {
 		if ident, isIdent := x.(*ast.Ident); isIdent {
-			assert(ident.Obj == nil, "identifier already declared or resolved")
+			//assert(ident.Obj == nil, "identifier already declared or resolved")
+			if ident.Obj != nil{continue}
+
 			obj := ast.NewObj(ast.Var, ident.Name)
 			// remember corresponding assignment for other tools
 			obj.Decl = decl
@@ -161,9 +163,9 @@ func (p *parser) shortVarDecl(decl *ast.AssignStmt, list []ast.Expr) {
 			p.errorExpected(x.Pos(), "identifier on left side of :=")
 		}
 	}
-	if n == 0 && p.mode&DeclarationErrors != 0 {
-		p.error(list[0].Pos(), "no new variables on left side of :=")
-	}
+	// if n == 0 && p.mode&DeclarationErrors != 0 {
+	// 	p.error(list[0].Pos(), "no new variables on left side of :=")
+	// }
 }
 
 // The unresolved object is a sentinel to mark identifiers that have been added
@@ -839,7 +841,10 @@ func (p *parser) parseParameterList(scope *ast.Scope, ellipsisOk bool) (params [
 	}
 
 	// analyze case
-	if typ := p.tryVarType(ellipsisOk); typ != nil {
+	// if typ := p.tryVarType(ellipsisOk); typ != nil {
+
+
+		typ := &ast.Ident{NamePos: p.pos, Name: "__variant__"} //p.tryVarType(ellipsisOk)
 		// IdentifierList Type
 		idents := p.makeIdentList(list)
 		field := &ast.Field{Names: idents, Type: typ}
@@ -847,7 +852,7 @@ func (p *parser) parseParameterList(scope *ast.Scope, ellipsisOk bool) (params [
 		// Go spec: The scope of an identifier denoting a function
 		// parameter or result variable is the function body.
 		p.declare(field, nil, scope, ast.Var, idents...)
-		p.resolve(typ)
+		// p.resolve(typ)
 		if !p.atComma("parameter list", token.RPAREN) {
 			return
 		}
@@ -860,22 +865,24 @@ func (p *parser) parseParameterList(scope *ast.Scope, ellipsisOk bool) (params [
 			// Go spec: The scope of an identifier denoting a function
 			// parameter or result variable is the function body.
 			p.declare(field, nil, scope, ast.Var, idents...)
-			p.resolve(typ)
+			// p.resolve(typ)
 			if !p.atComma("parameter list", token.RPAREN) {
 				break
 			}
 			p.next()
 		}
 		return
-	}
+
+
+	// }
 
 	// Type { "," Type } (anonymous parameters)
-	params = make([]*ast.Field, len(list))
-	for i, typ := range list {
-		p.resolve(typ)
-		params[i] = &ast.Field{Type: typ}
-	}
-	return
+	// params = make([]*ast.Field, len(list))
+	// for i, typ := range list {
+	// 	p.resolve(typ)
+	// 	params[i] = &ast.Field{Type: typ}
+	// }
+	// return
 }
 
 func (p *parser) parseParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldList {
@@ -1169,6 +1176,21 @@ func (p *parser) parseBlockIfStmt() *ast.BlockStmt {
 	list := p.parseStmtList()
 	// p.closeScope()
 	rbrace := p.checkElseElsifEndif()
+
+	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
+}
+
+func (p *parser) parseBlockElseStmt() *ast.BlockStmt {
+	if p.trace {
+		defer un(trace(p, "BlockIfStmt"))
+	}
+
+	lbrace := p.pos
+	p.next()
+	// p.openScope()
+	list := p.parseStmtList()
+	// p.closeScope()
+	rbrace := p.expect(token.ENDIF)
 
 	return &ast.BlockStmt{Lbrace: lbrace, List: list, Rbrace: rbrace}
 }
@@ -1754,9 +1776,9 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 			y = p.parseRhsList()
 		}
 		as := &ast.AssignStmt{Lhs: x, TokPos: pos, Tok: tok, Rhs: y}
-		// if tok == token.DEFINE {
-		// 	p.shortVarDecl(as, x)
-		// }
+		 if tok == token.ASSIGN {
+		 	p.shortVarDecl(as, x)
+		 }
 		return as, isRange
 	}
 
@@ -1912,13 +1934,13 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 			x = p.parseRhs()
 		} else {
 			s, _ = p.parseSimpleStmt(basic)
-			if p.tok == token.SEMICOLON {
-				p.next()
-				x = p.parseRhs()
-			} else {
+			// if p.tok == token.SEMICOLON {
+			// 	p.next()
+			// 	x = p.parseRhs()
+			// } else {
 				x = p.makeExpr(s, "boolean expression")
 				s = nil
-			}
+			// }
 		}
 		p.exprLev = prevLev
 	}
@@ -1927,7 +1949,7 @@ func (p *parser) parseIfStmt() *ast.IfStmt {
 	var else_ ast.Stmt
 	switch p.tok {
 	case token.ELSE:
-		else_ = p.parseBlockStmt()
+		else_ = p.parseBlockElseStmt()
 		p.expectSemi()
 	case token.ELSIF:
 		else_ = p.parseIfStmt()
@@ -2111,9 +2133,9 @@ func (p *parser) parseCommClause() *ast.CommClause {
 				p.next()
 				rhs := p.parseRhs()
 				as := &ast.AssignStmt{Lhs: lhs, TokPos: pos, Tok: tok, Rhs: []ast.Expr{rhs}}
-				// if tok == token.DEFINE {
-				// 	p.shortVarDecl(as, lhs)
-				// }
+				 if tok == token.ASSIGN {
+				 	p.shortVarDecl(as, lhs)
+				 }
 				comm = as
 			} else {
 				// lhs must be single receive operation

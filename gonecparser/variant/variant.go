@@ -1,4 +1,4 @@
-package vm
+package variant
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ const (
 	BOOL
 )
 
-type variant struct {
+type Variant struct {
 	typ  int //может быть одна из констант
 	num  big.Float
 	date time.Time
@@ -28,7 +28,13 @@ type variant struct {
 	boo  bool
 }
 
-func (v variant) String() string {
+func (v Variant) isVariant() bool { return true }
+
+func NewVariant() *Variant{
+	return &Variant{typ:NONE}
+}
+
+func (v Variant) String() string {
 	switch v.typ {
 	case NULL:
 		return "NULL"
@@ -50,7 +56,7 @@ func (v variant) String() string {
 	}
 }
 
-func (v *variant) SetString(s string) {
+func (v *Variant) SetString(s string) {
 	v.typ = STR
 	v.str = s
 	v.date = time.Time{}
@@ -58,7 +64,7 @@ func (v *variant) SetString(s string) {
 	v.boo = false
 }
 
-func (v *variant) SetDate(d time.Time) {
+func (v *Variant) SetDate(d time.Time) {
 	v.typ = DATE
 	v.str = ""
 	v.date = d
@@ -66,7 +72,7 @@ func (v *variant) SetDate(d time.Time) {
 	v.boo = false
 }
 
-func (v *variant) SetNum(n big.Float) {
+func (v *Variant) SetNum(n big.Float) {
 	v.typ = NUM
 	v.str = ""
 	v.date = time.Time{}
@@ -74,7 +80,7 @@ func (v *variant) SetNum(n big.Float) {
 	v.boo = false
 }
 
-func (v *variant) SetUNDEF() {
+func (v *Variant) SetUNDEF() {
 	v.typ = UNDEF
 	v.str = ""
 	v.date = time.Time{}
@@ -82,7 +88,7 @@ func (v *variant) SetUNDEF() {
 	v.boo = false
 }
 
-func (v *variant) SetNULL() {
+func (v *Variant) SetNULL() {
 	v.typ = NULL
 	v.str = ""
 	v.date = time.Time{}
@@ -90,7 +96,7 @@ func (v *variant) SetNULL() {
 	v.boo = false
 }
 
-func (v *variant) SetTrue() {
+func (v *Variant) SetTrue() {
 	v.typ = BOOL
 	v.str = ""
 	v.date = time.Time{}
@@ -98,7 +104,7 @@ func (v *variant) SetTrue() {
 	v.boo = true
 }
 
-func (v *variant) SetFalse() {
+func (v *Variant) SetFalse() {
 	v.typ = BOOL
 	v.str = ""
 	v.date = time.Time{}
@@ -106,7 +112,7 @@ func (v *variant) SetFalse() {
 	v.boo = false
 }
 
-func (v *variant) SetBool(b bool) {
+func (v *Variant) SetBool(b bool) {
 	v.typ = BOOL
 	v.str = ""
 	v.date = time.Time{}
@@ -114,7 +120,7 @@ func (v *variant) SetBool(b bool) {
 	v.boo = b
 }
 
-func (v variant) GetValue() (typ int, val interface{}) {
+func (v Variant) GetValue() (typ int, val interface{}) {
 	typ = v.typ
 	switch typ {
 	case DATE:
@@ -131,31 +137,35 @@ func (v variant) GetValue() (typ int, val interface{}) {
 	return
 }
 
-func (v variant) IsNULL() bool {
+func (v Variant) IsNone() bool {
+	return v.typ == NONE
+}
+
+func (v Variant) IsNULL() bool {
 	return v.typ == NULL
 }
 
-func (v variant) IsUNDEF() bool {
+func (v Variant) IsUNDEF() bool {
 	return v.typ == UNDEF
 }
 
-func (v variant) IsDate() bool {
+func (v Variant) IsDate() bool {
 	return v.typ == DATE
 }
 
-func (v variant) IsNum() bool {
+func (v Variant) IsNum() bool {
 	return v.typ == NUM
 }
 
-func (v variant) IsString() bool {
+func (v Variant) IsString() bool {
 	return v.typ == STR
 }
 
-func (v variant) IsBool() bool {
+func (v Variant) IsBool() bool {
 	return v.typ == BOOL
 }
 
-func (v variant) IsZero() bool {
+func (v Variant) IsZero() bool {
 	switch v.typ {
 	case BOOL:
 		return v.boo == false
@@ -170,7 +180,7 @@ func (v variant) IsZero() bool {
 	}
 }
 
-func (v variant) GetTypeString() string {
+func (v Variant) GetTypeString() string {
 	switch v.typ {
 	case NULL:
 		return "NULL"
@@ -189,7 +199,7 @@ func (v variant) GetTypeString() string {
 	}
 }
 
-func (v variant) Cmp(to variant) (int, error) {
+func (v Variant) Cmp(to Variant) (int, error) {
 	if v.typ != to.typ {
 		return 0, fmt.Errorf("Несравниваемые типы %v и %v", v.GetTypeString(), to.GetTypeString())
 	}

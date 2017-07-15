@@ -8,10 +8,11 @@
 package ast
 
 import (
-	"github.com/covrom/gonec/gonecparser/token"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // ----------------------------------------------------------------------------
@@ -239,6 +240,7 @@ type (
 		NamePos token.Pos // identifier position
 		Name    string    // identifier name
 		Obj     *Object   // denoted object; or nil
+		// Scope   *Scope
 	}
 
 	// An Ellipsis node stands for the "..." type in a
@@ -391,7 +393,7 @@ type (
 	FuncType struct {
 		Func    token.Pos  // position of "func" keyword (token.NoPos if there is no "func")
 		Params  *FieldList // (incoming) parameters; non-nil
-		Results *BasicLit // exported; or nil
+		Results *BasicLit  // exported; or nil
 	}
 
 	// An InterfaceType node represents an interface type.
