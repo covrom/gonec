@@ -93,12 +93,12 @@ const (
 	keyword_beg
 	// Keywords
 	BREAK
-	CASE
-	CHAN
+	// CASE
+	// CHAN //реализуется библиотечными функциями
 	// CONST
 	CONTINUE
 
-	DEFAULT
+	// DEFAULT
 	DEFER
 	ELSE
 	// FALLTHROUGH
@@ -116,13 +116,13 @@ const (
 	// RANGE
 	RETURN
 
-	SELECT
+	// SELECT
 	STRUCT
-	SWITCH
+	// SWITCH
 	TYPE
 	VAR
 
-	EXPORT
+	// EXPORT
 	THEN
 	ELSIF
 	ENDIF
@@ -224,12 +224,12 @@ var tokens = [...]string{
 	LABEL:     "~",
 
 	BREAK: "прервать",
-	CASE:  "когда",
-	CHAN:  "канал",
+	// CASE:  "когда",
+	// CHAN:  "канал",
 	// CONST:    "const",
 	CONTINUE: "продолжить",
 
-	DEFAULT: "другой",
+	// DEFAULT: "другой",
 	DEFER:   "привыходе",
 	ELSE:    "иначе",
 	// FALLTHROUGH: "fallthrough",
@@ -247,13 +247,13 @@ var tokens = [...]string{
 	// RANGE:     "range",
 	RETURN: "возврат",
 
-	SELECT: "переключить",
+	// SELECT: "переключить",
 	STRUCT: "структура",
-	SWITCH: "выбор",
+	// SWITCH: "выбор",
 	TYPE:   "тип",
 	VAR:    "перем",
 
-	EXPORT:  "экспорт",
+	// EXPORT:  "экспорт",
 	THEN:    "тогда",
 	ELSIF:   "иначеесли",
 	ENDIF:   "конецесли",
