@@ -5,8 +5,9 @@
 package ast
 
 import (
-	"github.com/covrom/gonec/gonecparser/token"
 	"sort"
+
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // ----------------------------------------------------------------------------
@@ -68,8 +69,8 @@ func fieldName(x Expr) *Ident {
 		if _, ok := t.X.(*Ident); ok {
 			return t.Sel
 		}
-	case *StarExpr:
-		return fieldName(t.X)
+		// case *StarExpr:
+		// 	return fieldName(t.X)
 	}
 	return nil
 }
@@ -128,28 +129,28 @@ func filterType(typ Expr, f Filter, export bool) bool {
 		return f(t.Name)
 	case *ParenExpr:
 		return filterType(t.X, f, export)
-	case *ArrayType:
-		return filterType(t.Elt, f, export)
-	case *StructType:
-		if filterFieldList(t.Fields, f, export) {
-			t.Incomplete = true
-		}
-		return len(t.Fields.List) > 0
+	// case *ArrayType:
+	// 	return filterType(t.Elt, f, export)
+	// case *StructType:
+	// 	if filterFieldList(t.Fields, f, export) {
+	// 		t.Incomplete = true
+	// 	}
+	// 	return len(t.Fields.List) > 0
 	case *FuncType:
 		b1 := filterParamList(t.Params, f, export)
 		//b2 := filterParamList(t.Results, f, export)
 		return b1 //|| b2
-	case *InterfaceType:
-		if filterFieldList(t.Methods, f, export) {
-			t.Incomplete = true
-		}
-		return len(t.Methods.List) > 0
-	case *MapType:
-		b1 := filterType(t.Key, f, export)
-		b2 := filterType(t.Value, f, export)
-		return b1 || b2
-	case *ChanType:
-		return filterType(t.Value, f, export)
+		// case *InterfaceType:
+		// 	if filterFieldList(t.Methods, f, export) {
+		// 		t.Incomplete = true
+		// 	}
+		// 	return len(t.Methods.List) > 0
+		// case *MapType:
+		// 	b1 := filterType(t.Key, f, export)
+		// 	b2 := filterType(t.Value, f, export)
+		// 	return b1 || b2
+		// case *ChanType:
+		// 	return filterType(t.Value, f, export)
 	}
 	return false
 }
@@ -164,21 +165,21 @@ func filterSpec(spec Spec, f Filter, export bool) bool {
 			}
 			return true
 		}
-	case *TypeSpec:
-		if f(s.Name.Name) {
-			if export {
-				filterType(s.Type, f, export)
-			}
-			return true
-		}
-		if !export {
-			// For general filtering (not just exports),
-			// filter type even if name is not filtered
-			// out.
-			// If the type contains filtered elements,
-			// keep the declaration.
-			return filterType(s.Type, f, export)
-		}
+		// case *TypeSpec:
+		// 	if f(s.Name.Name) {
+		// 		if export {
+		// 			filterType(s.Type, f, export)
+		// 		}
+		// 		return true
+		// 	}
+		// 	if !export {
+		// 		// For general filtering (not just exports),
+		// 		// filter type even if name is not filtered
+		// 		// out.
+		// 		// If the type contains filtered elements,
+		// 		// keep the declaration.
+		// 		return filterType(s.Type, f, export)
+		// 	}
 	}
 	return false
 }
@@ -288,26 +289,26 @@ const (
 // receiver, it assumes a function instead.
 //
 func nameOf(f *FuncDecl) string {
-	if r := f.Recv; r != nil && len(r.List) == 1 {
-		// looks like a correct receiver declaration
-		t := r.List[0].Type
-		// dereference pointer receiver types
-		if p, _ := t.(*StarExpr); p != nil {
-			t = p.X
-		}
-		// the receiver type must be a type name
-		if p, _ := t.(*Ident); p != nil {
-			return p.Name + "." + f.Name.Name
-		}
-		// otherwise assume a function instead
-	}
+	// if r := f.Recv; r != nil && len(r.List) == 1 {
+	// 	// looks like a correct receiver declaration
+	// 	t := r.List[0].Type
+	// 	// dereference pointer receiver types
+	// 	if p, _ := t.(*StarExpr); p != nil {
+	// 		t = p.X
+	// 	}
+	// 	// the receiver type must be a type name
+	// 	if p, _ := t.(*Ident); p != nil {
+	// 		return p.Name + "." + f.Name.Name
+	// 	}
+	// 	// otherwise assume a function instead
+	// }
 	return f.Name.Name
 }
 
 // separator is an empty //-style comment that is interspersed between
 // different comment groups when they are concatenated into a single group
 //
-var separator = &Comment{token.NoPos, "//"}
+// var separator = &Comment{token.NoPos, "//"}
 
 // MergePackageFiles creates a file AST by merging the ASTs of the
 // files belonging to a package. The mode flags control merging behavior.
@@ -324,10 +325,10 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 	for filename, f := range pkg.Files {
 		filenames[i] = filename
 		i++
-		if f.Doc != nil {
-			ndocs += len(f.Doc.List) + 1 // +1 for separator
-		}
-		ncomments += len(f.Comments)
+		// if f.Doc != nil {
+		// 	ndocs += len(f.Doc.List) + 1 // +1 for separator
+		// }
+		// ncomments += len(f.Comments)
 		ndecls += len(f.Decls)
 	}
 	sort.Strings(filenames)
@@ -336,33 +337,33 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 	// CommentGroup - the collected package documentation. In general
 	// there should be only one file with a package comment; but it's
 	// better to collect extra comments than drop them on the floor.
-	var doc *CommentGroup
+	// var doc *CommentGroup
 	var pos token.Pos
-	if ndocs > 0 {
-		list := make([]*Comment, ndocs-1) // -1: no separator before first group
-		i := 0
-		for _, filename := range filenames {
-			f := pkg.Files[filename]
-			if f.Doc != nil {
-				if i > 0 {
-					// not the first group - add separator
-					list[i] = separator
-					i++
-				}
-				for _, c := range f.Doc.List {
-					list[i] = c
-					i++
-				}
-				if f.Package > pos {
-					// Keep the maximum package clause position as
-					// position for the package clause of the merged
-					// files.
-					pos = f.Package
-				}
-			}
-		}
-		doc = &CommentGroup{list}
-	}
+	// if ndocs > 0 {
+	// 	// list := make([]*Comment, ndocs-1) // -1: no separator before first group
+	// 	i := 0
+	// 	for _, filename := range filenames {
+	// 		f := pkg.Files[filename]
+	// 		// if f.Doc != nil {
+	// 		// 	if i > 0 {
+	// 		// 		// not the first group - add separator
+	// 		// 		list[i] = separator
+	// 		// 		i++
+	// 		// 	}
+	// 		// 	for _, c := range f.Doc.List {
+	// 		// 		list[i] = c
+	// 		// 		i++
+	// 		// 	}
+	// 		// 	if f.Package > pos {
+	// 		// 		// Keep the maximum package clause position as
+	// 		// 		// position for the package clause of the merged
+	// 		// 		// files.
+	// 		// 		pos = f.Package
+	// 		// 	}
+	// 		// }
+	// 	}
+	// 	// doc = &CommentGroup{list}
+	// }
 
 	// Collect declarations from all package files.
 	var decls []Decl
@@ -388,7 +389,7 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 						name := nameOf(f)
 						if j, exists := funcs[name]; exists {
 							// function declared already
-							if decls[j] != nil && decls[j].(*FuncDecl).Doc == nil {
+							if decls[j] != nil {
 								// existing declaration has no documentation;
 								// ignore the existing declaration
 								decls[j] = nil
@@ -451,15 +452,15 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 	}
 
 	// Collect comments from all package files.
-	var comments []*CommentGroup
-	if mode&FilterUnassociatedComments == 0 {
-		comments = make([]*CommentGroup, ncomments)
-		i := 0
-		for _, f := range pkg.Files {
-			i += copy(comments[i:], f.Comments)
-		}
-	}
+	// var comments []*CommentGroup
+	// if mode&FilterUnassociatedComments == 0 {
+	// 	comments = make([]*CommentGroup, ncomments)
+	// 	i := 0
+	// 	for _, f := range pkg.Files {
+	// 		i += copy(comments[i:], f.Comments)
+	// 	}
+	// }
 
 	// TODO(gri) need to compute unresolved identifiers!
-	return &File{doc, pos, NewIdent(pkg.Name), decls, pkg.Scope, imports, nil, comments}
+	return &File{pos, NewIdent(pkg.Name), decls, pkg.Scope, imports, nil}
 }

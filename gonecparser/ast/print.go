@@ -8,10 +8,11 @@ package ast
 
 import (
 	"fmt"
-	"github.com/covrom/gonec/gonecparser/token"
 	"io"
 	"os"
 	"reflect"
+
+	"github.com/covrom/gonec/gonecparser/token"
 )
 
 // A FieldFilter may be provided to Fprint to control the output.

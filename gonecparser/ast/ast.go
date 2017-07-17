@@ -160,7 +160,7 @@ type (
 	// A BasicLit node represents a literal of basic type.
 	BasicLit struct {
 		ValuePos token.Pos   // literal position
-		Kind     token.Token // token.NUM, token.BOOL, token.DATE, or token.STRING
+		Kind     token.Token // token.NUM, token.BOOL, token.DATE, or token.STRING, NULL, UNDEF
 		Value    string      // literal string; e.g. 42, 0x7f, 3.14, 1e-9, 2.4i, 'a', '\x7f', "foo" or `\m\n\o`
 	}
 
@@ -247,6 +247,7 @@ type (
 
 	// A UnaryExpr node represents a unary expression.
 	// Unary "*" expressions are represented via StarExpr nodes.
+	// Сюда входит также "Новый"
 	//
 	UnaryExpr struct {
 		OpPos token.Pos   // position of Op
@@ -579,6 +580,13 @@ type (
 		Else  Stmt   // else branch; or nil
 	}
 
+	TryStmt struct {
+		Try token.Pos // position of "if" keyword
+		// Init Stmt      // initialization statement; or nil
+		Body  *BlockStmt
+		Except  Stmt   // else branch; or nil
+	}
+
 	// A CaseClause represents a case of an select expression
 	// CaseClause struct {
 	// 	Case  token.Pos // position of "case" or "default" keyword
@@ -625,6 +633,14 @@ type (
 		// Post Stmt      // post iteration statement; or nil
 		Body *BlockStmt
 	}
+	
+	WhileStmt struct {
+		While  token.Pos // position of "for" keyword
+		// Init Stmt      // initialization statement; or nil
+		Cond Expr      // condition; or nil. Сюда попадает и "каждого из", и "по"
+		// Post Stmt      // post iteration statement; or nil
+		Body *BlockStmt
+	}
 
 	// A RangeStmt represents a for statement with a range clause.
 	// RangeStmt struct {
@@ -653,12 +669,14 @@ func (s *ReturnStmt) Pos() token.Pos     { return s.Return }
 func (s *BranchStmt) Pos() token.Pos     { return s.TokPos }
 func (s *BlockStmt) Pos() token.Pos      { return s.Lbrace }
 func (s *IfStmt) Pos() token.Pos         { return s.If }
+func (s *TryStmt) Pos() token.Pos         { return s.Try }
 // func (s *CaseClause) Pos() token.Pos     { return s.Case }
 // func (s *SwitchStmt) Pos() token.Pos     { return s.Switch }
 // func (s *TypeSwitchStmt) Pos() token.Pos { return s.Switch }
 // func (s *CommClause) Pos() token.Pos     { return s.Case }
 // func (s *SelectStmt) Pos() token.Pos     { return s.Select }
 func (s *ForStmt) Pos() token.Pos        { return s.For }
+func (s *WhileStmt) Pos() token.Pos        { return s.While }
 // func (s *RangeStmt) Pos() token.Pos      { return s.For }
 
 func (s *BadStmt) End() token.Pos  { return s.To }
@@ -700,6 +718,9 @@ func (s *IfStmt) End() token.Pos {
 	}
 	return s.Body.End()
 }
+func (s *TryStmt) End() token.Pos {
+	return s.Body.End()
+}
 // func (s *CaseClause) End() token.Pos {
 // 	if n := len(s.Body); n > 0 {
 // 		return s.Body[n-1].End()
@@ -716,6 +737,7 @@ func (s *IfStmt) End() token.Pos {
 // }
 // func (s *SelectStmt) End() token.Pos { return s.Body.End() }
 func (s *ForStmt) End() token.Pos    { return s.Body.End() }
+func (s *WhileStmt) End() token.Pos    { return s.Body.End() }
 // func (s *RangeStmt) End() token.Pos  { return s.Body.End() }
 
 // stmtNode() ensures that only statement nodes can be
@@ -735,12 +757,14 @@ func (*ReturnStmt) stmtNode()     {}
 func (*BranchStmt) stmtNode()     {}
 func (*BlockStmt) stmtNode()      {}
 func (*IfStmt) stmtNode()         {}
+func (*TryStmt) stmtNode()         {}
 // func (*CaseClause) stmtNode()     {}
 // func (*SwitchStmt) stmtNode()     {}
 // func (*TypeSwitchStmt) stmtNode() {}
 // func (*CommClause) stmtNode()     {}
 // func (*SelectStmt) stmtNode()     {}
 func (*ForStmt) stmtNode()        {}
+func (*WhileStmt) stmtNode()         {}
 // func (*RangeStmt) stmtNode()      {}
 
 // ----------------------------------------------------------------------------

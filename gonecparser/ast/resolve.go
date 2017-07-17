@@ -8,9 +8,10 @@ package ast
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/covrom/gonec/gonecparser/scanner"
 	"github.com/covrom/gonec/gonecparser/token"
-	"strconv"
 )
 
 type pkgBuilder struct {
