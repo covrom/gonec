@@ -1,4 +1,4 @@
-[![GitHub issues](https://img.shields.io/github/issues/covrom/gonec.svg)](https://github.com/covrom/gonec/issues)
+[![GitHub issues](https://img.shields.io/github/issues/covrom/gonec.svg)](https://github.com/covrom/gonec/issues) [![Travis](https://travis-ci.org/covrom/gonec.svg?branch=master)](https://github.com/covrom/gonec/releases)
 
 # ГОНЕЦ (gonec)
 ## Интерпретатор 1С-подобного языка
