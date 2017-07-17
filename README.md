@@ -1,3 +1,5 @@
+[![GitHub issues](https://img.shields.io/github/issues/covrom/gonec.svg)](https://github.com/covrom/gonec/issues)
+
 # ГОНЕЦ (gonec)
 ## Интерпретатор 1С-подобного языка
 
