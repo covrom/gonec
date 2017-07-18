@@ -723,6 +723,9 @@ scanAgain:
 			s.Preassign = false
 		case '(':
 			tok = token.LPAREN
+		case '?':
+			tok = token.TERNARY
+			// insertSemi = false
 		case ')':
 			insertSemi = true
 			tok = token.RPAREN

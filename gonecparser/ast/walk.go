@@ -106,6 +106,11 @@ func Walk(v Visitor, node Node) {
 	case *ParenExpr:
 		Walk(v, n.X)
 
+	case *TernaryExpr:
+		Walk(v, n.Cond)
+		Walk(v, n.X)
+		Walk(v, n.Y)
+
 	case *SelectorExpr:
 		Walk(v, n.X)
 		Walk(v, n.Sel)

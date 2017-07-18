@@ -28,7 +28,7 @@ func Test_interpreter_ParseAndRun(t *testing.T) {
 		КонецФункции
 
 		ф=дд
-		б = а(1,2,3)
+		б = ?(а(1,2,3)=0,1,2)
 		Сообщить(б)
 	`)
 	w := &bytes.Buffer{}

@@ -1343,8 +1343,8 @@ func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {
 	lparen := p.expect(token.LPAREN)
 	p.exprLev++
 	var list []ast.Expr
-	var ellipsis token.Pos
-	for p.tok != token.RPAREN && p.tok != token.EOF && !ellipsis.IsValid() {
+	// var ellipsis token.Pos
+	for p.tok != token.RPAREN && p.tok != token.EOF {
 		list = append(list, p.parseRhsOrType()) // builtins may expect a type: make(some type, ...)
 		// if p.tok == token.ELLIPSIS {
 		// 	ellipsis = p.pos
@@ -1359,6 +1359,31 @@ func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {
 	rparen := p.expectClosing(token.RPAREN, "argument list")
 
 	return &ast.CallExpr{Fun: fun, Lparen: lparen, Args: list, Rparen: rparen}
+}
+
+func (p *parser) parseTernary() *ast.TernaryExpr {
+	if p.trace {
+		defer un(trace(p, "Ternary"))
+	}
+
+	lparen := p.expect(token.LPAREN)
+	p.exprLev++
+
+	var list []ast.Expr
+	for p.tok != token.RPAREN && p.tok != token.EOF {
+		list = append(list, p.parseRhsOrType()) // builtins may expect a type: make(some type, ...)
+		if !p.atComma("неверный тернарный оператор", token.RPAREN) {
+			break
+		}
+		p.next()
+	}
+	p.exprLev--
+	if len(list)!=3{
+		p.error(p.pos,"Неверный формат тернарного оператора")
+	}
+	rparen := p.expectClosing(token.RPAREN, "argument list")
+
+	return &ast.TernaryExpr{Lparen: lparen, Rparen: rparen, Cond:list[0],X:list[1],Y:list[2]}
 }
 
 func (p *parser) parseValue(keyOk bool) ast.Expr {
@@ -1472,6 +1497,7 @@ func (p *parser) checkExpr(x ast.Expr) ast.Expr {
 	case *ast.CallExpr:
 	// case *ast.StarExpr:
 	case *ast.UnaryExpr:
+	case *ast.TernaryExpr:
 	case *ast.BinaryExpr:
 	default:
 		// all other nodes are not proper expressions
@@ -1615,6 +1641,9 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 		x := p.parseUnaryExpr(false)
 		return &ast.UnaryExpr{OpPos: pos, Op: op, X: p.checkExpr(x)}
 
+	case token.TERNARY:
+		p.next()
+		return p.parseTernary()
 	case token.ARROW:
 		// channel type or receive expression
 		arrow := p.pos
@@ -2282,7 +2311,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 		// tokens that may start an expression
 		token.IDENT, token.NUM, token.DATE, token.STRING, token.NULL, token.UNDEF, token.NEW, token.FUNC, token.LPAREN, // operands
 		token.LBRACK, token.STRUCT, token.MAP, // composite types
-		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
+		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT, token.TERNARY: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
 		// because of the required look-ahead, labeled statements are
 		// parsed by parseSimpleStmt - don't expect a semicolon after

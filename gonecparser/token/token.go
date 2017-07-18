@@ -87,6 +87,7 @@ const (
 	SEMICOLON // ;
 	COLON     // :
 	LABEL     // ~
+	TERNARY   //?
 
 	operator_end
 
@@ -222,6 +223,7 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	COLON:     ":",
 	LABEL:     "~",
+	TERNARY:   "?",
 
 	BREAK: "прервать",
 	// CASE:  "когда",

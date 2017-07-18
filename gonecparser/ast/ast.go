@@ -226,6 +226,13 @@ type (
 		Rparen token.Pos // position of ")"
 	}
 
+	//тернарная операция ?(условие,выражение для "истина",выражение для "ложь")
+	TernaryExpr struct {
+		Lparen     token.Pos // position of "("
+		Cond, X, Y Expr      // expression
+		Rparen     token.Pos // position of ")"
+	}
+
 	// A CallExpr node represents an expression followed by an argument list.
 	CallExpr struct {
 		Fun    Expr      // function expression
@@ -353,6 +360,7 @@ func (x *SelectorExpr) Pos() token.Pos   { return x.X.Pos() }
 func (x *IndexExpr) Pos() token.Pos      { return x.X.Pos() }
 func (x *SliceExpr) Pos() token.Pos      { return x.X.Pos() }
 func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
+func (x *TernaryExpr) Pos() token.Pos { return x.Lparen }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
 
 // func (x *StarExpr) Pos() token.Pos       { return x.Star }
@@ -390,6 +398,8 @@ func (x *SelectorExpr) End() token.Pos   { return x.Sel.End() }
 func (x *IndexExpr) End() token.Pos      { return x.Rbrack + 1 }
 func (x *SliceExpr) End() token.Pos      { return x.Rbrack + 1 }
 func (x *TypeAssertExpr) End() token.Pos { return x.Rparen + 1 }
+func (x *TernaryExpr) End() token.Pos { return x.Rparen+1 }
+
 func (x *CallExpr) End() token.Pos       { return x.Rparen + 1 }
 
 // func (x *StarExpr) End() token.Pos       { return x.X.End() }
@@ -425,6 +435,7 @@ func (*SelectorExpr) exprNode()   {}
 func (*IndexExpr) exprNode()      {}
 func (*SliceExpr) exprNode()      {}
 func (*TypeAssertExpr) exprNode() {}
+func (*TernaryExpr) exprNode() {}
 func (*CallExpr) exprNode()       {}
 
 // func (*StarExpr) exprNode()       {}
