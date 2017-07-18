@@ -1757,7 +1757,14 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 		defer un(trace(p, "SimpleStmt"))
 	}
 
+	p.scanner.Preassign = false
 	x := p.parseLhsList()
+	
+	// //!!!!!!!!!!!!!!!!!
+	// switch xx:=x[0].(type){
+	// case *ast.BinaryExpr:
+	// 	fmt.Printf("%#v %s %#v\n",xx.X, xx.Op, xx.Y)
+	// }
 
 	switch p.tok {
 	case

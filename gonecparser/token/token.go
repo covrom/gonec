@@ -230,8 +230,8 @@ var tokens = [...]string{
 	CONTINUE: "продолжить",
 
 	// DEFAULT: "другой",
-	DEFER:   "привыходе",
-	ELSE:    "иначе",
+	DEFER: "привыходе",
+	ELSE:  "иначе",
 	// FALLTHROUGH: "fallthrough",
 	FOR: "для",
 
@@ -250,8 +250,8 @@ var tokens = [...]string{
 	// SELECT: "переключить",
 	STRUCT: "структура",
 	// SWITCH: "выбор",
-	TYPE:   "тип",
-	VAR:    "перем",
+	TYPE: "тип",
+	VAR:  "перем",
 
 	// EXPORT:  "экспорт",
 	THEN:    "тогда",
@@ -286,6 +286,9 @@ func (tok Token) String() string {
 	}
 	if s == "" {
 		s = "token(" + strconv.Itoa(int(tok)) + ")"
+	}
+	if tok == ASSIGN {
+		s = "присвоить"
 	}
 	return s
 }
