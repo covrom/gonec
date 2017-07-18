@@ -100,7 +100,7 @@ func (i *interpreter) Run(srv string) {
 func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "", r, parser.Trace)
+	f, err := parser.ParseFile(fset, "", r, 0)
 
 	if err != nil {
 		return
