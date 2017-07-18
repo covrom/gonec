@@ -902,36 +902,26 @@ func (p *parser) parseParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldLi
 	return &ast.FieldList{Opening: lparen, List: params, Closing: rparen}
 }
 
-// func (p *parser) parseResult(scope *ast.Scope) *ast.BasicLit {
-// 	if p.trace {
-// 		defer un(trace(p, "Result"))
-// 	}
+func (p *parser) parseExported() bool {
+	if p.trace {
+		defer un(trace(p, "Exported"))
+	}
 
-// if p.tok == token.EXPORT {
-// 	p.next()
+	if p.tok == token.EXPORT {
+		p.next()
 
-// 	return &ast.BasicLit{
-// 		Kind: token.EXPORT,
-// 	}
-// }
+		return true
+	}
+	return false
+}
 
-// typ := p.tryType()
-// if typ != nil {
-// 	list := make([]*ast.Field, 1)
-// 	list[0] = &ast.Field{Type: typ}
-// 	return &ast.FieldList{List: list}
-// }
-
-// 	return nil
-// }
-
-func (p *parser) parseSignature(scope *ast.Scope) (params *ast.FieldList) {
+func (p *parser) parseSignature(scope *ast.Scope) (params *ast.FieldList, exp bool) {
 	if p.trace {
 		defer un(trace(p, "Signature"))
 	}
 
 	params = p.parseParameters(scope, true)
-	// results = p.parseResult(scope)
+	exp = p.parseExported()
 
 	return
 }
@@ -943,9 +933,9 @@ func (p *parser) parseFuncType() (*ast.FuncType, *ast.Scope) {
 
 	pos := p.expect(token.FUNC)
 	scope := ast.NewScope(p.topScope) // function scope
-	params := p.parseSignature(scope)
+	params, exp := p.parseSignature(scope)
 
-	return &ast.FuncType{Func: pos, Params: params}, scope
+	return &ast.FuncType{Func: pos, Params: params, Exported: exp}, scope
 }
 
 func (p *parser) parseMethodSpec(scope *ast.Scope) *ast.Field {
@@ -961,7 +951,7 @@ func (p *parser) parseMethodSpec(scope *ast.Scope) *ast.Field {
 		// method
 		idents = []*ast.Ident{ident}
 		scope := ast.NewScope(nil) // method scope
-		params := p.parseSignature(scope)
+		params, _ := p.parseSignature(scope)
 		typ = &ast.FuncType{Func: token.NoPos, Params: params}
 	} else {
 		// embedded interface
@@ -2513,7 +2503,7 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 
 	ident := p.parseIdent()
 
-	params := p.parseSignature(scope)
+	params, exp := p.parseSignature(scope)
 
 	var body *ast.BlockStmt
 
@@ -2530,8 +2520,9 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		// Recv: nil,
 		Name: ident,
 		Type: &ast.FuncType{
-			Func:   pos,
-			Params: params,
+			Func:     pos,
+			Params:   params,
+			Exported: exp,
 			// Results: results,
 		},
 		Body: body,
@@ -2568,7 +2559,7 @@ func (p *parser) parseProcDecl() *ast.FuncDecl {
 
 	ident := p.parseIdent()
 
-	params := p.parseSignature(scope)
+	params, _ := p.parseSignature(scope)
 
 	var body *ast.BlockStmt
 	if p.tok != token.ENDPROC {

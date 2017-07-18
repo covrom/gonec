@@ -40,6 +40,7 @@ func (v *VirtMachine) enumIdents(n ast.Node) bool {
 			v.funcInit = x
 		}
 	case *ast.Ident:
+		//экспортируемый идентификатор определяется по суффиксу "экспорт"
 		if x.Obj != nil {
 			if x.Obj.Var == nil {
 				x.Obj.Var = variant.NewVariant()

@@ -14,9 +14,9 @@ import (
 // Export filtering
 
 // exportFilter is a special filter function to extract exported nodes.
-func exportFilter(name string) bool {
-	return IsExported(name)
-}
+// func exportFilter(name string) bool {
+// 	return IsExported(name)
+// }
 
 // FileExports trims the AST for a Go source file in place such that
 // only exported nodes remain: all top-level identifiers which are not exported
@@ -26,9 +26,9 @@ func exportFilter(name string) bool {
 //
 // FileExports reports whether there are exported declarations.
 //
-func FileExports(src *File) bool {
-	return filterFile(src, exportFilter, true)
-}
+// func FileExports(src *File) bool {
+// 	return filterFile(src, exportFilter, true)
+// }
 
 // PackageExports trims the AST for a Go package in place such that
 // only exported nodes remain. The pkg.Files list is not changed, so that
@@ -37,9 +37,9 @@ func FileExports(src *File) bool {
 // PackageExports reports whether there are exported declarations;
 // it returns false otherwise.
 //
-func PackageExports(pkg *Package) bool {
-	return filterPackage(pkg, exportFilter, true)
-}
+// func PackageExports(pkg *Package) bool {
+// 	return filterPackage(pkg, exportFilter, true)
+// }
 
 // ----------------------------------------------------------------------------
 // General filtering

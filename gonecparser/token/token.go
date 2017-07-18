@@ -122,7 +122,7 @@ const (
 	TYPE
 	VAR
 
-	// EXPORT
+	EXPORT
 	THEN
 	ELSIF
 	ENDIF
@@ -253,7 +253,7 @@ var tokens = [...]string{
 	TYPE: "тип",
 	VAR:  "перем",
 
-	// EXPORT:  "экспорт",
+	EXPORT:  "экспорт",
 	THEN:    "тогда",
 	ELSIF:   "иначеесли",
 	ENDIF:   "конецесли",
