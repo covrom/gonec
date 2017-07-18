@@ -43,7 +43,7 @@ func (v *VirtMachine) enumIdents(n ast.Node) bool {
 		if x.Obj != nil {
 			if x.Obj.Var == nil {
 				x.Obj.Var = variant.NewVariant()
-				fmt.Printf("Resolved, assign new variant to %v\n", x.Name)
+				fmt.Printf("Resolved, assign new variant to %v in scope %v\n", x.Name, x.Scope)
 			}
 		} 
 	}

@@ -106,10 +106,6 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 		return
 	}
 
-	// for _, u := range f.Unresolved {
-	// 	fmt.Println("Неразыменовано: " + u.Name)
-	// }
-
 	virtm := vm.NewVM(f, w)
 	err = virtm.Run()
 	if err != nil {

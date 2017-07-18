@@ -134,6 +134,7 @@ func (p *parser) declare(decl, data interface{}, scope *ast.Scope, kind ast.ObjK
 				}
 				p.error(ident.Pos(), fmt.Sprintf("%s redeclared in this block%s", ident.Name, prevDecl))
 			}
+			ident.Scope = scope
 		}
 	}
 }
@@ -160,6 +161,7 @@ func (p *parser) shortVarDecl(decl *ast.AssignStmt, list []ast.Expr) {
 				} else {
 					n++ // new declaration
 				}
+				ident.Scope = p.topScope
 			}
 		} else {
 			p.errorExpected(x.Pos(), "identifier on left side of :=")
@@ -325,31 +327,31 @@ func (p *parser) next() {
 	p.next0()
 
 	// if p.tok == token.COMMENT {
-		// var comment *ast.CommentGroup
-		// var endline int
+	// var comment *ast.CommentGroup
+	// var endline int
 
-		// if p.file.Line(p.pos) == p.file.Line(prev) {
-			// The comment is on same line as the previous token; it
-			// cannot be a lead comment but may be a line comment.
-			// comment, endline = p.consumeCommentGroup(0)
-			// if p.file.Line(p.pos) != endline {
-				// The next token is on a different line, thus
-				// the last comment group is a line comment.
-				// p.lineComment = comment
-			// }
-		// }
+	// if p.file.Line(p.pos) == p.file.Line(prev) {
+	// The comment is on same line as the previous token; it
+	// cannot be a lead comment but may be a line comment.
+	// comment, endline = p.consumeCommentGroup(0)
+	// if p.file.Line(p.pos) != endline {
+	// The next token is on a different line, thus
+	// the last comment group is a line comment.
+	// p.lineComment = comment
+	// }
+	// }
 
-		// consume successor comments, if any
-		// endline = -1
-		// for p.tok == token.COMMENT {
-			// comment, endline = p.consumeCommentGroup(1)
-		// }
+	// consume successor comments, if any
+	// endline = -1
+	// for p.tok == token.COMMENT {
+	// comment, endline = p.consumeCommentGroup(1)
+	// }
 
-		// if endline+1 == p.file.Line(p.pos) {
-			// The next token is following on the line immediately after the
-			// comment group, thus the last comment group is a lead comment.
-			// p.leadComment = comment
-		// }
+	// if endline+1 == p.file.Line(p.pos) {
+	// The next token is following on the line immediately after the
+	// comment group, thus the last comment group is a lead comment.
+	// p.leadComment = comment
+	// }
 	// }
 }
 
@@ -905,20 +907,20 @@ func (p *parser) parseParameters(scope *ast.Scope, ellipsisOk bool) *ast.FieldLi
 // 		defer un(trace(p, "Result"))
 // 	}
 
-	// if p.tok == token.EXPORT {
-	// 	p.next()
+// if p.tok == token.EXPORT {
+// 	p.next()
 
-	// 	return &ast.BasicLit{
-	// 		Kind: token.EXPORT,
-	// 	}
-	// }
+// 	return &ast.BasicLit{
+// 		Kind: token.EXPORT,
+// 	}
+// }
 
-	// typ := p.tryType()
-	// if typ != nil {
-	// 	list := make([]*ast.Field, 1)
-	// 	list[0] = &ast.Field{Type: typ}
-	// 	return &ast.FieldList{List: list}
-	// }
+// typ := p.tryType()
+// if typ != nil {
+// 	list := make([]*ast.Field, 1)
+// 	list[0] = &ast.Field{Type: typ}
+// 	return &ast.FieldList{List: list}
+// }
 
 // 	return nil
 // }
@@ -1366,7 +1368,7 @@ func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {
 	p.exprLev--
 	rparen := p.expectClosing(token.RPAREN, "argument list")
 
-	return &ast.CallExpr{Fun: fun, Lparen: lparen, Args: list,  Rparen: rparen}
+	return &ast.CallExpr{Fun: fun, Lparen: lparen, Args: list, Rparen: rparen}
 }
 
 func (p *parser) parseValue(keyOk bool) ast.Expr {
@@ -1544,11 +1546,11 @@ func (p *parser) checkExprOrType(x ast.Expr) ast.Expr {
 	case *ast.ParenExpr:
 		panic("unreachable")
 	case *ast.UnaryExpr:
-	// case *ast.ArrayType:
-	// 	if len, isEllipsis := t.Len.(*ast.Ellipsis); isEllipsis {
-	// 		p.error(len.Pos(), "expected array length, found '...'")
-	// 		x = &ast.BadExpr{From: x.Pos(), To: p.safePos(x.End())}
-	// 	}
+		// case *ast.ArrayType:
+		// 	if len, isEllipsis := t.Len.(*ast.Ellipsis); isEllipsis {
+		// 		p.error(len.Pos(), "expected array length, found '...'")
+		// 		x = &ast.BadExpr{From: x.Pos(), To: p.safePos(x.End())}
+		// 	}
 	}
 
 	// all other nodes are expressions or types
@@ -1669,12 +1671,12 @@ func (p *parser) parseUnaryExpr(lhs bool) ast.Expr {
 		// <-(expr)
 		return &ast.UnaryExpr{OpPos: arrow, Op: token.ARROW, X: p.checkExpr(x)}
 
-	// case token.MUL:
-	// 	// pointer type or unary "*" expression
-	// 	pos := p.pos
-	// 	p.next()
-	// 	x := p.parseUnaryExpr(false)
-	// 	return &ast.StarExpr{Star: pos, X: p.checkExprOrType(x)}
+		// case token.MUL:
+		// 	// pointer type or unary "*" expression
+		// 	pos := p.pos
+		// 	p.next()
+		// 	x := p.parseUnaryExpr(false)
+		// 	return &ast.StarExpr{Star: pos, X: p.checkExprOrType(x)}
 	}
 
 	return p.parsePrimaryExpr(lhs)
@@ -1759,7 +1761,7 @@ func (p *parser) parseSimpleStmt(mode int) (ast.Stmt, bool) {
 
 	p.scanner.Preassign = false
 	x := p.parseLhsList()
-	
+
 	// //!!!!!!!!!!!!!!!!!
 	// switch xx:=x[0].(type){
 	// case *ast.BinaryExpr:
@@ -1931,12 +1933,12 @@ func (p *parser) parseIfStmt(expElsif bool) *ast.IfStmt {
 	}
 
 	var pos token.Pos
-	if expElsif{
+	if expElsif {
 		pos = p.expect(token.ELSIF)
-	}else{
+	} else {
 		pos = p.expect(token.IF)
 	}
-	
+
 	// p.openScope()
 	// defer p.closeScope()
 
@@ -1970,8 +1972,8 @@ func (p *parser) parseIfStmt(expElsif bool) *ast.IfStmt {
 		p.expectSemi()
 	case token.ELSIF:
 		//может быть несколько
-		for p.tok==token.ELSIF{
-			elseif_ = append(elseif_,p.parseIfStmt(true))
+		for p.tok == token.ELSIF {
+			elseif_ = append(elseif_, p.parseIfStmt(true))
 		}
 	case token.ENDIF:
 		p.next()
@@ -1981,7 +1983,7 @@ func (p *parser) parseIfStmt(expElsif bool) *ast.IfStmt {
 		else_ = &ast.BadStmt{From: p.pos, To: p.pos}
 	}
 
-	return &ast.IfStmt{If: pos, Cond: x, Body: body, ElsIf: elseif_,Else: else_}
+	return &ast.IfStmt{If: pos, Cond: x, Body: body, ElsIf: elseif_, Else: else_}
 }
 
 func (p *parser) parseTryStmt() *ast.IfStmt {
@@ -2270,7 +2272,7 @@ func (p *parser) parseForStmt() ast.Stmt {
 
 	// regular for statement
 	return &ast.ForStmt{
-		For:  pos,
+		For: pos,
 		// Init: s1,
 		Cond: p.makeExpr(s2, "boolean or range expression"),
 		// Post: s3,
@@ -2289,7 +2291,7 @@ func (p *parser) parseStmt() (s ast.Stmt) {
 	case
 		// tokens that may start an expression
 		token.IDENT, token.NUM, token.DATE, token.STRING, token.NULL, token.UNDEF, token.NEW, token.FUNC, token.LPAREN, // operands
-		token.LBRACK, token.STRUCT, token.MAP,  // composite types
+		token.LBRACK, token.STRUCT, token.MAP, // composite types
 		token.ADD, token.SUB, token.MUL, token.AND, token.XOR, token.ARROW, token.NOT: // unary operators
 		s, _ = p.parseSimpleStmt(labelOk)
 		// because of the required look-ahead, labeled statements are
@@ -2387,8 +2389,8 @@ func (p *parser) parseImportSpec(_ token.Token, _ int) ast.Spec {
 	// collect imports
 	spec := &ast.ImportSpec{
 		// Doc:     doc,
-		Name:    ident,
-		Path:    &ast.BasicLit{ValuePos: pos, Kind: token.STRING, Value: path},
+		Name: ident,
+		Path: &ast.BasicLit{ValuePos: pos, Kind: token.STRING, Value: path},
 		// Comment: p.lineComment,
 	}
 	p.imports = append(p.imports, spec)
@@ -2396,7 +2398,7 @@ func (p *parser) parseImportSpec(_ token.Token, _ int) ast.Spec {
 	return spec
 }
 
-func (p *parser) parseValueSpec( keyword token.Token, iota int) ast.Spec {
+func (p *parser) parseValueSpec(keyword token.Token, iota int) ast.Spec {
 	if p.trace {
 		defer un(trace(p, keyword.String()+"Spec"))
 	}
@@ -2429,9 +2431,9 @@ func (p *parser) parseValueSpec( keyword token.Token, iota int) ast.Spec {
 	// (Global identifiers are resolved in a separate phase after parsing.)
 	spec := &ast.ValueSpec{
 		// Doc:     doc,
-		Names:   idents,
-		Type:    typ,
-		Values:  values,
+		Names:  idents,
+		Type:   typ,
+		Values: values,
 		// Comment: p.lineComment,
 	}
 	// kind := ast.Con
@@ -2528,8 +2530,8 @@ func (p *parser) parseFuncDecl() *ast.FuncDecl {
 		// Recv: nil,
 		Name: ident,
 		Type: &ast.FuncType{
-			Func:    pos,
-			Params:  params,
+			Func:   pos,
+			Params: params,
 			// Results: results,
 		},
 		Body: body,
@@ -2579,8 +2581,8 @@ func (p *parser) parseProcDecl() *ast.FuncDecl {
 		// Recv: nil,
 		Name: ident,
 		Type: &ast.FuncType{
-			Func:    pos,
-			Params:  params,
+			Func:   pos,
+			Params: params,
 			// Results: results,
 		},
 		Body: body,
