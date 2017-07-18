@@ -317,8 +317,8 @@ func MergePackageFiles(pkg *Package, mode MergeMode) *File {
 	// Count the number of package docs, comments and declarations across
 	// all package files. Also, compute sorted list of filenames, so that
 	// subsequent iterations can always iterate in the same order.
-	ndocs := 0
-	ncomments := 0
+	// ndocs := 0
+	// ncomments := 0
 	ndecls := 0
 	filenames := make([]string, len(pkg.Files))
 	i := 0

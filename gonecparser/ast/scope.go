@@ -112,10 +112,10 @@ func (obj *Object) Pos() token.Pos {
 				return n.Pos()
 			}
 		}
-	case *TypeSpec:
-		if d.Name.Name == name {
-			return d.Name.Pos()
-		}
+	// case *TypeSpec:
+	// 	if d.Name.Name == name {
+	// 		return d.Name.Pos()
+	// 	}
 	case *FuncDecl:
 		if d.Name.Name == name {
 			return d.Name.Pos()

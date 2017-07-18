@@ -106,7 +106,7 @@ func sortSpecs(fset *token.FileSet, f *File, specs []Spec) []Spec {
 
 	// Identify comments in this range.
 	// Any comment from pos[0].Start to the final line counts.
-	lastLine := fset.Position(pos[len(pos)-1].End).Line
+	// lastLine := fset.Position(pos[len(pos)-1].End).Line
 	// cstart := len(f.Comments)
 	// cend := len(f.Comments)
 	// for i, g := range f.Comments {
