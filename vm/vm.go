@@ -14,7 +14,7 @@ import (
 type VirtMachine struct {
 	af       *ast.File
 	w        io.Writer
-	funcInit *ast.FuncDecl
+	ctx	variant.Context
 }
 
 func NewVM(af *ast.File, w io.Writer) *VirtMachine {
@@ -38,6 +38,8 @@ func (v *VirtMachine) enumIdents(n ast.Node) bool {
 	case *ast.FuncDecl:
 		if x.Name.Name == "__init__" {
 			v.funcInit = x
+			//добавляем контекст окружения в стек вызовов
+
 		}
 	case *ast.Ident:
 		//экспортируемый идентификатор определяется по суффиксу "экспорт"
