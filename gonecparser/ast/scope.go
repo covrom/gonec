@@ -11,7 +11,6 @@ import (
 	"fmt"
 
 	"github.com/covrom/gonec/gonecparser/token"
-	"github.com/covrom/gonec/gonecparser/variant"
 )
 
 // A Scope maintains the set of named language entities declared
@@ -81,7 +80,7 @@ type Object struct {
 	Decl interface{} // corresponding Field, XxxSpec, FuncDecl, LabeledStmt, AssignStmt, Scope; or nil
 	Data interface{} // object-specific data; or nil
 	Type interface{} // placeholder for type information; may be nil
-	Var  *variant.Variant
+	// Var  *variant.Variant
 }
 
 // NewObj creates a new object of a given kind and name.

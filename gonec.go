@@ -106,7 +106,7 @@ func (i *interpreter) ParseAndRun(r io.Reader, w io.Writer) (err error) {
 		return
 	}
 
-	virtm := vm.NewVM(f, w)
+	virtm := vm.NewVM(f, w, fset)
 	err = virtm.Run()
 	if err != nil {
 		return
