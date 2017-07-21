@@ -29,6 +29,8 @@ const (
 	// IMAG   // 123.45i
 	DATE   // 'a'
 	STRING // "abc"
+	TRUE
+	FALSE
 
 	literal_end
 
@@ -166,6 +168,8 @@ var tokens = [...]string{
 	STRING: "строка",
 	NULL:   "null",
 	UNDEF:  "неопределено",
+	TRUE:  "истина",
+	FALSE:  "ложь",
 
 	ADD: "+",
 	SUB: "-",

@@ -10,7 +10,7 @@ import "fmt"
 // If the result visitor w is not nil, Walk visits each of the children
 // of node with the visitor w, followed by a call of w.Visit(nil).
 type Visitor interface {
-	Visit(node Node) (w Visitor)
+	Visit(node Node) (w Visitor, err error)
 }
 
 // Helper functions for common node lists. They may be empty.
@@ -48,9 +48,14 @@ func walkDeclList(v Visitor, list []Decl) {
 // w for each of the non-nil children of node, followed by a call of
 // w.Visit(nil).
 //
-func Walk(v Visitor, node Node) {
-	if v = v.Visit(node); v == nil {
-		return
+func Walk(v Visitor, node Node) error {
+	var err error
+	v, err = v.Visit(node)
+	if err != nil {
+		return err
+	}
+	if v == nil {
+		return nil
 	}
 
 	// walk children
@@ -59,21 +64,22 @@ func Walk(v Visitor, node Node) {
 	switch n := node.(type) {
 	// Comments and fields
 	// case *Comment:
-		// nothing to do
+	// nothing to do
 
 	// case *CommentGroup:
 	// 	for _, c := range n.List {
 	// 		Walk(v, c)
 	// 	}
 
+		// TODO: обработка ошибок!!!
 	case *Field:
 		// if n.Doc != nil {
 		// 	Walk(v, n.Doc)
 		// }
 		walkIdentList(v, n.Names)
-		Walk(v, n.Type)
+		err=Walk(v, n.Type)
 		if n.Tag != nil {
-			Walk(v, n.Tag)
+			err=Walk(v, n.Tag)
 		}
 		// if n.Comment != nil {
 		// 	Walk(v, n.Comment)
@@ -81,7 +87,7 @@ func Walk(v Visitor, node Node) {
 
 	case *FieldList:
 		for _, f := range n.List {
-			Walk(v, f)
+			err=Walk(v, f)
 		}
 
 	// Expressions
@@ -94,8 +100,8 @@ func Walk(v Visitor, node Node) {
 	// 	}
 
 	case *FuncLit:
-		Walk(v, n.Type)
-		Walk(v, n.Body)
+		err=Walk(v, n.Type)
+		err=Walk(v, n.Body)
 
 	case *CompositeLit:
 		// if n.Type != nil {
@@ -104,56 +110,56 @@ func Walk(v Visitor, node Node) {
 		walkExprList(v, n.Elts)
 
 	case *ParenExpr:
-		Walk(v, n.X)
+		err=Walk(v, n.X)
 
 	case *TernaryExpr:
-		Walk(v, n.Cond)
-		Walk(v, n.X)
-		Walk(v, n.Y)
+		err=Walk(v, n.Cond)
+		err=Walk(v, n.X)
+		err=Walk(v, n.Y)
 
 	case *SelectorExpr:
-		Walk(v, n.X)
-		Walk(v, n.Sel)
+		err=Walk(v, n.X)
+		err=Walk(v, n.Sel)
 
 	case *IndexExpr:
-		Walk(v, n.X)
-		Walk(v, n.Index)
+		err=Walk(v, n.X)
+		err=Walk(v, n.Index)
 
 	case *SliceExpr:
-		Walk(v, n.X)
+		err=Walk(v, n.X)
 		if n.Low != nil {
-			Walk(v, n.Low)
+			err=Walk(v, n.Low)
 		}
 		if n.High != nil {
-			Walk(v, n.High)
+			err=Walk(v, n.High)
 		}
 		// if n.Max != nil {
 		// 	Walk(v, n.Max)
 		// }
 
 	case *TypeAssertExpr:
-		Walk(v, n.X)
+		err=Walk(v, n.X)
 		if n.Type != nil {
-			Walk(v, n.Type)
+			err=Walk(v, n.Type)
 		}
 
 	case *CallExpr:
-		Walk(v, n.Fun)
+		err=Walk(v, n.Fun)
 		walkExprList(v, n.Args)
 
 	// case *StarExpr:
 	// 	Walk(v, n.X)
 
 	case *UnaryExpr:
-		Walk(v, n.X)
+		err=Walk(v, n.X)
 
 	case *BinaryExpr:
-		Walk(v, n.X)
-		Walk(v, n.Y)
+		err=Walk(v, n.X)
+		err=Walk(v, n.Y)
 
 	case *KeyValueExpr:
-		Walk(v, n.Key)
-		Walk(v, n.Value)
+		err=Walk(v, n.Key)
+		err=Walk(v, n.Value)
 
 	// Types
 	// case *ArrayType:
@@ -167,7 +173,7 @@ func Walk(v Visitor, node Node) {
 
 	case *FuncType:
 		if n.Params != nil {
-			Walk(v, n.Params)
+			err=Walk(v, n.Params)
 		}
 		// if n.Results != nil {
 		// 	Walk(v, n.Results)
@@ -188,41 +194,41 @@ func Walk(v Visitor, node Node) {
 		// nothing to do
 
 	case *DeclStmt:
-		Walk(v, n.Decl)
+		err=Walk(v, n.Decl)
 
 	case *EmptyStmt:
 		// nothing to do
 
 	case *LabeledStmt:
-		Walk(v, n.Label)
-		Walk(v, n.Stmt)
+		err=Walk(v, n.Label)
+		err=Walk(v, n.Stmt)
 
 	case *ExprStmt:
-		Walk(v, n.X)
+		err=Walk(v, n.X)
 
 	// case *SendStmt:
 	// 	Walk(v, n.Chan)
 	// 	Walk(v, n.Value)
 
 	case *IncDecStmt:
-		Walk(v, n.X)
+		err=Walk(v, n.X)
 
 	case *AssignStmt:
 		walkExprList(v, n.Lhs)
 		walkExprList(v, n.Rhs)
 
 	case *GoStmt:
-		Walk(v, n.Call)
+		err=Walk(v, n.Call)
 
 	case *DeferStmt:
-		Walk(v, n.Call)
+		err=Walk(v, n.Call)
 
 	case *ReturnStmt:
 		walkExprList(v, n.Results)
 
 	case *BranchStmt:
 		if n.Label != nil {
-			Walk(v, n.Label)
+			err=Walk(v, n.Label)
 		}
 
 	case *BlockStmt:
@@ -232,19 +238,19 @@ func Walk(v Visitor, node Node) {
 		// if n.Init != nil {
 		// 	Walk(v, n.Init)
 		// }
-		Walk(v, n.Cond)
-		Walk(v, n.Body)
+		err=Walk(v, n.Cond)
+		err=Walk(v, n.Body)
 		if n.ElsIf != nil {
 			walkStmtList(v, n.ElsIf)
 		}
 		if n.Else != nil {
-			Walk(v, n.Else)
+			err=Walk(v, n.Else)
 		}
 
 	case *TryStmt:
-		Walk(v, n.Body)
+		err=Walk(v, n.Body)
 		if n.Except != nil {
-			Walk(v, n.Except)
+			err=Walk(v, n.Except)
 		}
 
 	// case *CaseClause:
@@ -281,18 +287,18 @@ func Walk(v Visitor, node Node) {
 		// 	Walk(v, n.Init)
 		// }
 		if n.Cond != nil {
-			Walk(v, n.Cond)
+			err=Walk(v, n.Cond)
 		}
 		// if n.Post != nil {
 		// 	Walk(v, n.Post)
 		// }
-		Walk(v, n.Body)
+		err=Walk(v, n.Body)
 
 	case *WhileStmt:
 		if n.Cond != nil {
-			Walk(v, n.Cond)
+			err=Walk(v, n.Cond)
 		}
-		Walk(v, n.Body)
+		err=Walk(v, n.Body)
 
 	// case *RangeStmt:
 	// 	if n.Key != nil {
@@ -310,9 +316,9 @@ func Walk(v Visitor, node Node) {
 		// 	Walk(v, n.Doc)
 		// }
 		if n.Name != nil {
-			Walk(v, n.Name)
+			err=Walk(v, n.Name)
 		}
-		Walk(v, n.Path)
+		err=Walk(v, n.Path)
 		// if n.Comment != nil {
 		// 	Walk(v, n.Comment)
 		// }
@@ -348,7 +354,7 @@ func Walk(v Visitor, node Node) {
 		// 	Walk(v, n.Doc)
 		// }
 		for _, s := range n.Specs {
-			Walk(v, s)
+			err=Walk(v, s)
 		}
 
 	case *FuncDecl:
@@ -358,10 +364,10 @@ func Walk(v Visitor, node Node) {
 		// if n.Recv != nil {
 		// 	Walk(v, n.Recv)
 		// }
-		Walk(v, n.Name)
-		Walk(v, n.Type)
+		err=Walk(v, n.Name)
+		err=Walk(v, n.Type)
 		if n.Body != nil {
-			Walk(v, n.Body)
+			err=Walk(v, n.Body)
 		}
 
 	// Files and packages
@@ -369,7 +375,7 @@ func Walk(v Visitor, node Node) {
 		// if n.Doc != nil {
 		// 	Walk(v, n.Doc)
 		// }
-		Walk(v, n.Name)
+		err=Walk(v, n.Name)
 		walkDeclList(v, n.Decls)
 		// don't walk n.Comments - they have been
 		// visited already through the individual
@@ -377,23 +383,30 @@ func Walk(v Visitor, node Node) {
 
 	case *Package:
 		for _, f := range n.Files {
-			Walk(v, f)
+			err=Walk(v, f)
 		}
 
 	default:
-		panic(fmt.Sprintf("ast.Walk: unexpected node type %T", n))
+		return fmt.Errorf("ast.Walk: unexpected node type %T", n)
 	}
-
-	v.Visit(nil)
+	 if err!=nil{
+		 return err
+	 }
+	_,err=v.Visit(nil)
+	return err
 }
 
-type inspector func(Node) bool
+type inspector func(Node) (bool, error)
 
-func (f inspector) Visit(node Node) Visitor {
-	if f(node) {
-		return f
+func (f inspector) Visit(node Node) (Visitor, error) {
+	res, err := f(node)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	if res {
+		return f, nil
+	}
+	return nil, nil
 }
 
 // Inspect traverses an AST in depth-first order: It starts by calling
@@ -401,6 +414,6 @@ func (f inspector) Visit(node Node) Visitor {
 // recursively for each of the non-nil children of node, followed by a
 // call of f(nil).
 //
-func Inspect(node Node, f func(Node) bool) {
-	Walk(inspector(f), node)
+func Inspect(node Node, f func(Node) (bool, error)) error {
+	return Walk(inspector(f), node)
 }
