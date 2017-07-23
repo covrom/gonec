@@ -38,16 +38,25 @@ func (ctx *Context) NewContext(name string) *Context {
 	}
 }
 
+func (ctx *Context) findVar(name string) *Variant {
+	if v, ok := ctx.Vars[strings.ToLower(name)]; ctx.Parent != nil && !ok {
+		return ctx.Parent.findVar(name)
+	} else {
+		return v
+	}
+}
+
 func (ctx *Context) GetVar(name string) *Variant {
 	ctx.RLock()
 	defer ctx.RUnlock()
 
-	if v, ok := ctx.Vars[strings.ToLower(name)]; ctx.Parent != nil && !ok {
-		return ctx.Parent.GetVar(name)
-	} else {
-		return v
+	v := ctx.findVar(name)
+	//если переменной еще нет, а так же ее нет в родительских контекстах, создаем ее в текущем контексте
+	if v == nil {
+		v = NewVariant()
+		ctx.SetVar(name, v)
 	}
-
+	return v
 }
 
 func (ctx *Context) SetVar(name string, val *Variant) {

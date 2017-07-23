@@ -56,6 +56,14 @@ func (v Variant) String() string {
 	}
 }
 
+func (v *Variant) SetFrom(s *Variant) {
+	v.typ = s.typ
+	v.str = s.str
+	v.date = s.date
+	v.num = s.num
+	v.boo = s.boo
+}
+
 func (v *Variant) SetString(s string) {
 	v.typ = STR
 	v.str = s

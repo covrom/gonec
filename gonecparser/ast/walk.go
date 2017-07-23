@@ -78,6 +78,9 @@ func Walk(v Visitor, node Node) error {
 		// }
 		walkIdentList(v, n.Names)
 		err=Walk(v, n.Type)
+		if err!=nil{
+			return err
+		}
 		if n.Tag != nil {
 			err=Walk(v, n.Tag)
 		}
@@ -88,6 +91,10 @@ func Walk(v Visitor, node Node) error {
 	case *FieldList:
 		for _, f := range n.List {
 			err=Walk(v, f)
+			if err!=nil{
+				return err
+			}
+		
 		}
 
 	// Expressions
@@ -101,6 +108,9 @@ func Walk(v Visitor, node Node) error {
 
 	case *FuncLit:
 		err=Walk(v, n.Type)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Body)
 
 	case *CompositeLit:
@@ -114,21 +124,39 @@ func Walk(v Visitor, node Node) error {
 
 	case *TernaryExpr:
 		err=Walk(v, n.Cond)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.X)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Y)
 
 	case *SelectorExpr:
 		err=Walk(v, n.X)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Sel)
 
 	case *IndexExpr:
 		err=Walk(v, n.X)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Index)
 
 	case *SliceExpr:
 		err=Walk(v, n.X)
+		if err!=nil{
+			return err
+		}
 		if n.Low != nil {
 			err=Walk(v, n.Low)
+		}
+		if err!=nil{
+			return err
 		}
 		if n.High != nil {
 			err=Walk(v, n.High)
@@ -139,12 +167,18 @@ func Walk(v Visitor, node Node) error {
 
 	case *TypeAssertExpr:
 		err=Walk(v, n.X)
+		if err!=nil{
+			return err
+		}
 		if n.Type != nil {
 			err=Walk(v, n.Type)
 		}
 
 	case *CallExpr:
 		err=Walk(v, n.Fun)
+		if err!=nil{
+			return err
+		}
 		walkExprList(v, n.Args)
 
 	// case *StarExpr:
@@ -155,10 +189,16 @@ func Walk(v Visitor, node Node) error {
 
 	case *BinaryExpr:
 		err=Walk(v, n.X)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Y)
 
 	case *KeyValueExpr:
 		err=Walk(v, n.Key)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Value)
 
 	// Types
@@ -174,6 +214,9 @@ func Walk(v Visitor, node Node) error {
 	case *FuncType:
 		if n.Params != nil {
 			err=Walk(v, n.Params)
+			if err!=nil{
+				return err
+			}
 		}
 		// if n.Results != nil {
 		// 	Walk(v, n.Results)
@@ -201,6 +244,9 @@ func Walk(v Visitor, node Node) error {
 
 	case *LabeledStmt:
 		err=Walk(v, n.Label)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Stmt)
 
 	case *ExprStmt:
@@ -239,9 +285,18 @@ func Walk(v Visitor, node Node) error {
 		// 	Walk(v, n.Init)
 		// }
 		err=Walk(v, n.Cond)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Body)
+		if err!=nil{
+			return err
+		}
 		if n.ElsIf != nil {
 			walkStmtList(v, n.ElsIf)
+		}
+		if err!=nil{
+			return err
 		}
 		if n.Else != nil {
 			err=Walk(v, n.Else)
@@ -249,6 +304,9 @@ func Walk(v Visitor, node Node) error {
 
 	case *TryStmt:
 		err=Walk(v, n.Body)
+		if err!=nil{
+			return err
+		}
 		if n.Except != nil {
 			err=Walk(v, n.Except)
 		}
@@ -292,11 +350,17 @@ func Walk(v Visitor, node Node) error {
 		// if n.Post != nil {
 		// 	Walk(v, n.Post)
 		// }
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Body)
 
 	case *WhileStmt:
 		if n.Cond != nil {
 			err=Walk(v, n.Cond)
+		}
+		if err!=nil{
+			return err
 		}
 		err=Walk(v, n.Body)
 
@@ -318,6 +382,9 @@ func Walk(v Visitor, node Node) error {
 		if n.Name != nil {
 			err=Walk(v, n.Name)
 		}
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Path)
 		// if n.Comment != nil {
 		// 	Walk(v, n.Comment)
@@ -329,7 +396,10 @@ func Walk(v Visitor, node Node) error {
 		// }
 		walkIdentList(v, n.Names)
 		if n.Type != nil {
-			Walk(v, n.Type)
+			err=Walk(v, n.Type)
+		}
+		if err!=nil{
+			return err
 		}
 		walkExprList(v, n.Values)
 		// if n.Comment != nil {
@@ -355,6 +425,9 @@ func Walk(v Visitor, node Node) error {
 		// }
 		for _, s := range n.Specs {
 			err=Walk(v, s)
+			if err!=nil{
+				return err
+			}
 		}
 
 	case *FuncDecl:
@@ -365,7 +438,13 @@ func Walk(v Visitor, node Node) error {
 		// 	Walk(v, n.Recv)
 		// }
 		err=Walk(v, n.Name)
+		if err!=nil{
+			return err
+		}
 		err=Walk(v, n.Type)
+		if err!=nil{
+			return err
+		}
 		if n.Body != nil {
 			err=Walk(v, n.Body)
 		}
@@ -376,6 +455,9 @@ func Walk(v Visitor, node Node) error {
 		// 	Walk(v, n.Doc)
 		// }
 		err=Walk(v, n.Name)
+		if err!=nil{
+			return err
+		}
 		walkDeclList(v, n.Decls)
 		// don't walk n.Comments - they have been
 		// visited already through the individual
@@ -384,6 +466,9 @@ func Walk(v Visitor, node Node) error {
 	case *Package:
 		for _, f := range n.Files {
 			err=Walk(v, f)
+			if err!=nil{
+				return err
+			}
 		}
 
 	default:

@@ -67,11 +67,9 @@ func (v *VirtMachine) walker(n ast.Node) (bool,error) {
 			vars = append(vars,v.evaluate(x.Rhs[nr],v.mainContext))
 		}
 		for nr:=range x.Lhs{
-			vars = append(vars,v.evaluate(x.Rhs[nr],v.mainContext))
+			toassign:=v.evaluate(x.Lhs[nr],v.mainContext)
+			toassign.SetFrom(vars[nr])
 		}
-		
-		ast.Print(v.fset,x.Lhs)
-		ast.Print(v.fset,x.Rhs)
 		//выражение разобрано - углубляться в дерево не требуется
 		return false,nil
 	}
