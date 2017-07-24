@@ -1,4 +1,4 @@
-// Package parser implements parser for anko.
+// Package parser implements parser for gonec.
 package parser
 
 import (
