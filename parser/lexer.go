@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"unicode"
 
+	"strings"
+
 	"github.com/covrom/gonec/ast"
 )
 
@@ -38,30 +40,30 @@ type Scanner struct {
 
 // opName is correction of operation names.
 var opName = map[string]int{
-	"func":     FUNC,
-	"return":   RETURN,
-	"var":      VAR,
-	"throw":    THROW,
-	"if":       IF,
-	"for":      FOR,
-	"break":    BREAK,
-	"continue": CONTINUE,
-	"in":       IN,
-	"else":     ELSE,
-	"new":      NEW,
-	"true":     TRUE,
-	"false":    FALSE,
-	"nil":      NIL,
-	"module":   MODULE,
-	"try":      TRY,
-	"catch":    CATCH,
-	"finally":  FINALLY,
-	"switch":   SWITCH,
-	"case":     CASE,
-	"default":  DEFAULT,
-	"go":       GO,
-	"chan":     CHAN,
-	"make":     MAKE,
+	"функция":     FUNC,
+	"возврат":   RETURN,
+	"перем":      VAR,
+	"вызватьисключение":    THROW,
+	"если":       IF,
+	"для":      FOR,
+	"прервать":    BREAK,
+	"продолжить": CONTINUE,
+	"из":       IN,
+	"иначе":     ELSE,
+	"новый":      NEW,
+	"истина":     TRUE,
+	"ложь":    FALSE,
+	"неопределено":      NIL,
+	"модуль":   MODULE,
+	"попытка":      TRY,
+	"исключение":    CATCH,
+	"окончательно":  FINALLY,
+	"выбор":   SWITCH,
+	"когда":     CASE,
+	"умолчание":  DEFAULT,
+	"старт":       GO,
+	"канал":     CHAN,
+	"создать":     MAKE,
 }
 
 // Init resets code to scan.
@@ -80,7 +82,7 @@ retry:
 		if err != nil {
 			return
 		}
-		if name, ok := opName[lit]; ok {
+		if name, ok := opName[strings.ToLower(lit)]; ok {
 			tok = name
 		} else {
 			tok = IDENT
