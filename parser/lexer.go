@@ -32,38 +32,74 @@ func (e *Error) Error() string {
 
 // Scanner stores informations for lexer.
 type Scanner struct {
-	src      []rune
-	offset   int
-	lineHead int
-	line     int
+	src        []rune
+	offset     int
+	lineHead   int
+	line       int
+	canequal   bool
+	inbrackets int
 }
 
 // opName is correction of operation names.
 var opName = map[string]int{
-	"функция":     FUNC,
-	"возврат":   RETURN,
-	"перем":      VAR,
-	"вызватьисключение":    THROW,
-	"если":       IF,
-	"для":      FOR,
-	"прервать":    BREAK,
-	"продолжить": CONTINUE,
-	"из":       IN,
-	"иначе":     ELSE,
-	"новый":      NEW,
-	"истина":     TRUE,
-	"ложь":    FALSE,
+	"функция":           FUNC,
+	"возврат":           RETURN,
+	"перем":             VAR,
+	"вызватьисключение": THROW,
+	"если":              IF,
+	"для":               FOR,
+	"прервать":          BREAK,
+	"продолжить":        CONTINUE,
+	"из":                IN,
+	"иначе":             ELSE,
+	"новый":             NEW,
+	"истина":            TRUE,
+	"ложь":              FALSE,
 	"неопределено":      NIL,
-	"модуль":   MODULE,
-	"попытка":      TRY,
-	"исключение":    CATCH,
-	"окончательно":  FINALLY,
-	"выбор":   SWITCH,
-	"когда":     CASE,
-	"умолчание":  DEFAULT,
-	"старт":       GO,
-	"канал":     CHAN,
-	"создать":     MAKE,
+	"модуль":            MODULE,
+	"попытка":           TRY,
+	"исключение":        CATCH,
+	"окончательно":      FINALLY,
+	"старт":             GO,
+	"канал":             CHAN,
+	"создать":           MAKE,
+
+	"или":          OROR,
+	"и":            ANDAND,
+	"не":           int('!'),
+	"конеццикла":   int('}'),
+	"конецесли":    int('}'),
+	"конецфункции": int('}'),
+	"тогда":        int('{'),
+	"цикл":         int('{'),
+	"null":         NULL,
+	"каждого":      EACH,
+	"по":           TO,
+	"пока":         WHILE,
+	"иначеесли":    ELSIF,
+}
+
+var opCanEqual = map[int]bool{
+	RETURN:   true,
+	THROW:    true,
+	IF:       true,
+	FOR:      true,
+	IN:       true,
+	NEW:      true,
+	TRUE:     true,
+	FALSE:    true,
+	NIL:      true,
+	GO:       true,
+	CHAN:     true,
+	MAKE:     true,
+	OROR:     true,
+	ANDAND:   true,
+	int('!'): true,
+	NULL:     true,
+	EACH:     true,
+	TO:       true,
+	WHILE:    true,
+	ELSIF:    true,
 }
 
 // Init resets code to scan.
@@ -84,6 +120,7 @@ retry:
 		}
 		if name, ok := opName[strings.ToLower(lit)]; ok {
 			tok = name
+			_, s.canequal = opCanEqual[tok]
 		} else {
 			tok = IDENT
 		}
@@ -115,11 +152,6 @@ retry:
 		switch ch {
 		case EOF:
 			tok = EOF
-		case '#':
-			for !isEOL(s.peek()) {
-				s.next()
-			}
-			goto retry
 		case '!':
 			s.next()
 			switch s.peek() {
@@ -139,8 +171,15 @@ retry:
 				lit = "=="
 			default:
 				s.back()
-				tok = int(ch)
-				lit = string(ch)
+				//при таком синтаксисе нельзя присваивать анонимные функции, можно только именованные
+				if s.canequal || s.inbrackets > 0 {
+					tok = EQEQ
+					lit = "=="
+				} else {
+					tok = int(ch)
+					lit = string(ch)
+					s.canequal = true
+				}
 			}
 		case '+':
 			s.next()
@@ -187,6 +226,11 @@ retry:
 		case '/':
 			s.next()
 			switch s.peek() {
+			case '/':
+				for !isEOL(s.peek()) {
+					s.next()
+				}
+				goto retry
 			case '=':
 				tok = DIVEQ
 				lit = "/="
@@ -221,6 +265,9 @@ retry:
 			case '<':
 				tok = SHIFTLEFT
 				lit = "<<"
+			case '>':
+				tok = NEQ
+				lit = "!="
 			default:
 				s.back()
 				tok = int(ch)
@@ -272,9 +319,30 @@ retry:
 		case '\n':
 			tok = int(ch)
 			lit = string(ch)
-		case '(', ')', ':', ';', '%', '?', '{', '}', ',', '[', ']', '^':
+		case ';':
+			//смена оператора - меняем признак возможности сравнения
+			tok = int(ch)
+			lit = string(ch)
+			s.canequal = false
+		case '(':
+			tok = int(ch)
+			lit = string(ch)
+			s.inbrackets++
+		case ')', ']':
+			tok = int(ch)
+			lit = string(ch)
+			s.inbrackets--
+		case '{', '}':
+			tok = int(ch)
+			lit = string(ch)
+			s.inbrackets = 0
+			s.canequal = false
+		case ':', '%', '?', ',', '^':
+			tok = int(ch)
+			lit = string(ch)
+		case '[':
 			s.next()
-			if ch == '[' && s.peek() == ']' {
+			if s.peek() == ']' {
 				s.next()
 				if isLetter(s.peek()) {
 					s.back()
@@ -285,11 +353,13 @@ retry:
 					s.back()
 					tok = int(ch)
 					lit = string(ch)
+					s.inbrackets++
 				}
 			} else {
 				s.back()
 				tok = int(ch)
 				lit = string(ch)
+				s.inbrackets++
 			}
 		default:
 			err = fmt.Errorf(`syntax error "%s"`, string(ch))
