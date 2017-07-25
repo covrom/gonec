@@ -60,9 +60,12 @@ var opName = map[string]int{
 	"попытка":           TRY,
 	"исключение":        CATCH,
 	// "окончательно":      FINALLY,
-	"старт":             GO,
-	"канал":             CHAN,
-	"создать":           MAKE,
+	"выбор":   SWITCH,
+	"когда":   CASE,
+	"другое":  DEFAULT,
+	"старт":   GO,
+	"канал":   CHAN,
+	"создать": MAKE,
 
 	"или":          OROR,
 	"и":            ANDAND,
@@ -71,7 +74,7 @@ var opName = map[string]int{
 	"конецесли":    int('}'),
 	"конецфункции": int('}'),
 	"конецпопытки": int('}'),
-	"конецвыбора": int('}'),
+	"конецвыбора":  int('}'),
 	"тогда":        int('{'),
 	"цикл":         int('{'),
 	"null":         NULL,
@@ -82,9 +85,9 @@ var opName = map[string]int{
 }
 
 var opCanEqual = map[int]bool{
-	RETURN:   true,
-	THROW:    true,
-	IF:       true,
+	RETURN: true,
+	THROW:  true,
+	IF:     true,
 	// FOR:      true,
 	IN:       true,
 	NEW:      true,
@@ -99,9 +102,9 @@ var opCanEqual = map[int]bool{
 	int('!'): true,
 	NULL:     true,
 	// EACH:     true,
-	TO:       true,
-	WHILE:    true,
-	ELSIF:    true,
+	TO:    true,
+	WHILE: true,
+	ELSIF: true,
 }
 
 // Init resets code to scan.
