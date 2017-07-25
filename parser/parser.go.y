@@ -14,6 +14,8 @@ import (
 %type<stmt_default> stmt_default
 %type<stmt_case> stmt_case
 %type<stmt_cases> stmt_cases
+%type<stmt_elsif> stmt_elsif
+%type<stmt_elsifs> stmt_elsifs
 %type<typ> typ
 %type<expr> expr
 %type<exprs> exprs
@@ -27,6 +29,8 @@ import (
 	compstmt               []ast.Stmt
 	stmt_if                ast.Stmt
 	stmt_default           ast.Stmt
+	stmt_elsif             ast.Stmt
+	stmt_elsifs            []ast.Stmt
 	stmt_case              ast.Stmt
 	stmt_cases             []ast.Stmt
 	stmts                  []ast.Stmt
@@ -174,27 +178,30 @@ stmt :
 		$$.SetPosition($1.Position())
 	}
 
-stmt_if_start:
-	IF expr '{' compstmt ELSE compstmt
+stmt_elsifs:
 	{
-		$$ = &ast.IfStmt{If: $2, Then: $4, Else: $6}
-		$$.SetPosition($1.Position())
+		$$ = []ast.IfStmt{}
+	}
+	| stmt_elsifs stmt_elsif
+	{
+		$$ = append($1, $2)
+	}
+
+stmt_elsif :
+	ELSIF expr '{' compstmt
+	{
+		$$ = &ast.IfStmt{If: $2, Then: $4}
 	}
 
 stmt_if :
-	stmt_if_start ELSIF expr '{' compstmt '}'
+	IF expr '{' compstmt stmt_elsifs ELSE compstmt '}'
 	{
-		$1.(*ast.IfStmt).ElseIf = append($1.(*ast.IfStmt).ElseIf, &ast.IfStmt{If: $3, Then: $5})
+		$$ = &ast.IfStmt{If: $2, Then: $4, ElseIf: $5, Else: $7}
 		$$.SetPosition($1.Position())
 	}
-	| IF expr '{' compstmt ELSE compstmt '}'
+	| IF expr '{' compstmt stmt_elsifs '}'
 	{
-		$$ = &ast.IfStmt{If: $2, Then: $4, Else: $6}
-		$$.SetPosition($1.Position())
-	}
-	| IF expr '{' compstmt '}'
-	{
-		$$ = &ast.IfStmt{If: $2, Then: $4, Else: nil}
+		$$ = &ast.IfStmt{If: $2, Then: $4, ElseIf: $5, Else: nil}
 		$$.SetPosition($1.Position())
 	}
 
@@ -375,6 +382,11 @@ expr :
 		$$.SetPosition($1.Position())
 	}
 	| NIL
+	{
+		$$ = &ast.ConstExpr{Value: $1.Lit}
+		$$.SetPosition($1.Position())
+	}
+	| NULL
 	{
 		$$ = &ast.ConstExpr{Value: $1.Lit}
 		$$.SetPosition($1.Position())
