@@ -33,9 +33,9 @@ type IfStmt struct {
 type TryStmt struct {
 	StmtImpl
 	Try     []Stmt
-	Var     string
+	// Var     string
 	Catch   []Stmt
-	Finally []Stmt
+	// Finally []Stmt
 }
 
 // ForStmt provide "for in" expression statement.
@@ -51,7 +51,7 @@ type CForStmt struct {
 	StmtImpl
 	Expr1 Expr
 	Expr2 Expr
-	Expr3 Expr
+	// Expr3 Expr
 	Stmts []Stmt
 }
 

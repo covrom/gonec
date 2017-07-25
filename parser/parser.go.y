@@ -100,6 +100,11 @@ stmt :
 		$$ = &ast.VarStmt{Names: $2, Exprs: $4}
 		$$.SetPosition($1.Position())
 	}
+	| VAR expr_idents
+	{
+		$$ = &ast.VarStmt{Names: $2, Exprs: []Expr{}}
+		$$.SetPosition($1.Position())
+	}
 	| expr '=' expr
 	{
 		$$ = &ast.LetsStmt{Lhss: []ast.Expr{$1}, Operator: "=", Rhss: []ast.Expr{$3}}
@@ -138,47 +143,27 @@ stmt :
 		$$ = $1
 		$$.SetPosition($1.Position())
 	}
-	| FOR '{' compstmt '}'
+	| FOR EACH IDENT IN expr '{' compstmt '}'
 	{
-		$$ = &ast.LoopStmt{Stmts: $3}
+		$$ = &ast.ForStmt{Var: $3.Lit, Value: $5, Stmts: $7}
 		$$.SetPosition($1.Position())
 	}
-	| FOR IDENT IN expr '{' compstmt '}'
+	| FOR expr_lets TO expr '{' compstmt '}'
 	{
-		$$ = &ast.ForStmt{Var: $2.Lit, Value: $4, Stmts: $6}
+		$$ = &ast.CForStmt{Expr1: $2, Expr2: $4, Stmts: $6}
 		$$.SetPosition($1.Position())
 	}
-	| FOR expr_lets ';' expr ';' expr '{' compstmt '}'
-	{
-		$$ = &ast.CForStmt{Expr1: $2, Expr2: $4, Expr3: $6, Stmts: $8}
-		$$.SetPosition($1.Position())
-	}
-	| FOR expr '{' compstmt '}'
+	| WHILE expr '{' compstmt '}'
 	{
 		$$ = &ast.LoopStmt{Expr: $2, Stmts: $4}
 		$$.SetPosition($1.Position())
 	}
-	| TRY '{' compstmt '}' CATCH IDENT '{' compstmt '}' FINALLY '{' compstmt '}'
+	| TRY compstmt CATCH compstmt '}'
 	{
-		$$ = &ast.TryStmt{Try: $3, Var: $6.Lit, Catch: $8, Finally: $12}
+		$$ = &ast.TryStmt{Try: $2, Catch: $4}
 		$$.SetPosition($1.Position())
 	}
-	| TRY '{' compstmt '}' CATCH '{' compstmt '}' FINALLY '{' compstmt '}'
-	{
-		$$ = &ast.TryStmt{Try: $3, Catch: $7, Finally: $11}
-		$$.SetPosition($1.Position())
-	}
-	| TRY '{' compstmt '}' CATCH IDENT '{' compstmt '}'
-	{
-		$$ = &ast.TryStmt{Try: $3, Var: $6.Lit, Catch: $8}
-		$$.SetPosition($1.Position())
-	}
-	| TRY '{' compstmt '}' CATCH '{' compstmt '}'
-	{
-		$$ = &ast.TryStmt{Try: $3, Catch: $7}
-		$$.SetPosition($1.Position())
-	}
-	| SWITCH expr '{' stmt_cases '}'
+	| SWITCH expr ':' stmt_cases '}'
 	{
 		$$ = &ast.SwitchStmt{Expr: $2, Cases: $4}
 		$$.SetPosition($1.Position())
@@ -189,20 +174,22 @@ stmt :
 		$$.SetPosition($1.Position())
 	}
 
-
-stmt_if :
-	stmt_if ELSE IF expr '{' compstmt '}'
+stmt_if_start:
+	IF expr '{' compstmt ELSE compstmt
 	{
-		$1.(*ast.IfStmt).ElseIf = append($1.(*ast.IfStmt).ElseIf, &ast.IfStmt{If: $4, Then: $6})
+		$$ = &ast.IfStmt{If: $2, Then: $4, Else: $6}
 		$$.SetPosition($1.Position())
 	}
-	| stmt_if ELSE '{' compstmt '}'
+
+stmt_if :
+	stmt_if_start ELSIF expr '{' compstmt '}'
 	{
-		if $$.(*ast.IfStmt).Else != nil {
-			yylex.Error("multiple else statement")
-		} else {
-			$$.(*ast.IfStmt).Else = append($$.(*ast.IfStmt).Else, $4...)
-		}
+		$1.(*ast.IfStmt).ElseIf = append($1.(*ast.IfStmt).ElseIf, &ast.IfStmt{If: $3, Then: $5})
+		$$.SetPosition($1.Position())
+	}
+	| IF expr '{' compstmt ELSE compstmt '}'
+	{
+		$$ = &ast.IfStmt{If: $2, Then: $4, Else: $6}
 		$$.SetPosition($1.Position())
 	}
 	| IF expr '{' compstmt '}'
