@@ -587,10 +587,10 @@ state 33
 
 
 state 34
-	expr:  FUNC.'(' expr_idents ')' '{' compstmt '}' 
-	expr:  FUNC.'(' IDENT VARARG ')' '{' compstmt '}' 
-	expr:  FUNC.IDENT '(' expr_idents ')' '{' compstmt '}' 
-	expr:  FUNC.IDENT '(' IDENT VARARG ')' '{' compstmt '}' 
+	expr:  FUNC.'(' expr_idents ')' opt_terms compstmt '}' 
+	expr:  FUNC.'(' IDENT VARARG ')' opt_terms compstmt '}' 
+	expr:  FUNC.IDENT '(' expr_idents ')' opt_terms compstmt '}' 
+	expr:  FUNC.IDENT '(' IDENT VARARG ')' opt_terms compstmt '}' 
 
 	IDENT  shift 103
 	'('  shift 102
@@ -2598,8 +2598,8 @@ state 101
 
 
 state 102
-	expr:  FUNC '('.expr_idents ')' '{' compstmt '}' 
-	expr:  FUNC '('.IDENT VARARG ')' '{' compstmt '}' 
+	expr:  FUNC '('.expr_idents ')' opt_terms compstmt '}' 
+	expr:  FUNC '('.IDENT VARARG ')' opt_terms compstmt '}' 
 	expr_idents: .    (38)
 
 	IDENT  shift 161
@@ -2608,8 +2608,8 @@ state 102
 	expr_idents  goto 160
 
 state 103
-	expr:  FUNC IDENT.'(' expr_idents ')' '{' compstmt '}' 
-	expr:  FUNC IDENT.'(' IDENT VARARG ')' '{' compstmt '}' 
+	expr:  FUNC IDENT.'(' expr_idents ')' opt_terms compstmt '}' 
+	expr:  FUNC IDENT.'(' IDENT VARARG ')' opt_terms compstmt '}' 
 
 	'('  shift 162
 	.  error
@@ -5657,7 +5657,7 @@ state 159
 
 state 160
 	expr_idents:  expr_idents.',' opt_terms IDENT 
-	expr:  FUNC '(' expr_idents.')' '{' compstmt '}' 
+	expr:  FUNC '(' expr_idents.')' opt_terms compstmt '}' 
 
 	','  shift 116
 	')'  shift 199
@@ -5666,15 +5666,15 @@ state 160
 
 state 161
 	expr_idents:  IDENT.    (39)
-	expr:  FUNC '(' IDENT.VARARG ')' '{' compstmt '}' 
+	expr:  FUNC '(' IDENT.VARARG ')' opt_terms compstmt '}' 
 
 	VARARG  shift 200
 	.  reduce 39 (src line 269)
 
 
 state 162
-	expr:  FUNC IDENT '('.expr_idents ')' '{' compstmt '}' 
-	expr:  FUNC IDENT '('.IDENT VARARG ')' '{' compstmt '}' 
+	expr:  FUNC IDENT '('.expr_idents ')' opt_terms compstmt '}' 
+	expr:  FUNC IDENT '('.IDENT VARARG ')' opt_terms compstmt '}' 
 	expr_idents: .    (38)
 
 	IDENT  shift 202
@@ -6277,15 +6277,22 @@ state 198
 	.  reduce 59 (src line 364)
 
 
+199: shift/reduce conflict (shift 6(0), red'n 122(0)) on ';'
+199: shift/reduce conflict (shift 7(0), red'n 122(0)) on '\n'
 state 199
-	expr:  FUNC '(' expr_idents ')'.'{' compstmt '}' 
+	expr:  FUNC '(' expr_idents ')'.opt_terms compstmt '}' 
+	opt_terms: .    (122)
 
-	'{'  shift 238
-	.  error
+	';'  shift 6
+	'\n'  shift 7
+	.  reduce 122 (src line 688)
 
+	opt_terms  goto 238
+	terms  goto 4
+	term  goto 5
 
 state 200
-	expr:  FUNC '(' IDENT VARARG.')' '{' compstmt '}' 
+	expr:  FUNC '(' IDENT VARARG.')' opt_terms compstmt '}' 
 
 	')'  shift 239
 	.  error
@@ -6293,7 +6300,7 @@ state 200
 
 state 201
 	expr_idents:  expr_idents.',' opt_terms IDENT 
-	expr:  FUNC IDENT '(' expr_idents.')' '{' compstmt '}' 
+	expr:  FUNC IDENT '(' expr_idents.')' opt_terms compstmt '}' 
 
 	','  shift 116
 	')'  shift 240
@@ -6302,7 +6309,7 @@ state 201
 
 state 202
 	expr_idents:  IDENT.    (39)
-	expr:  FUNC IDENT '(' IDENT.VARARG ')' '{' compstmt '}' 
+	expr:  FUNC IDENT '(' IDENT.VARARG ')' opt_terms compstmt '}' 
 
 	VARARG  shift 241
 	.  reduce 39 (src line 269)
@@ -7095,7 +7102,7 @@ state 237
 238: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
 238: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
 state 238
-	expr:  FUNC '(' expr_idents ')' '{'.compstmt '}' 
+	expr:  FUNC '(' expr_idents ')' opt_terms.compstmt '}' 
 	opt_terms: .    (122)
 	stmts: .    (3)
 
@@ -7110,22 +7117,36 @@ state 238
 	terms  goto 4
 	term  goto 5
 
+239: shift/reduce conflict (shift 6(0), red'n 122(0)) on ';'
+239: shift/reduce conflict (shift 7(0), red'n 122(0)) on '\n'
 state 239
-	expr:  FUNC '(' IDENT VARARG ')'.'{' compstmt '}' 
+	expr:  FUNC '(' IDENT VARARG ')'.opt_terms compstmt '}' 
+	opt_terms: .    (122)
 
-	'{'  shift 263
-	.  error
+	';'  shift 6
+	'\n'  shift 7
+	.  reduce 122 (src line 688)
 
+	opt_terms  goto 263
+	terms  goto 4
+	term  goto 5
 
+240: shift/reduce conflict (shift 6(0), red'n 122(0)) on ';'
+240: shift/reduce conflict (shift 7(0), red'n 122(0)) on '\n'
 state 240
-	expr:  FUNC IDENT '(' expr_idents ')'.'{' compstmt '}' 
+	expr:  FUNC IDENT '(' expr_idents ')'.opt_terms compstmt '}' 
+	opt_terms: .    (122)
 
-	'{'  shift 264
-	.  error
+	';'  shift 6
+	'\n'  shift 7
+	.  reduce 122 (src line 688)
 
+	opt_terms  goto 264
+	terms  goto 4
+	term  goto 5
 
 state 241
-	expr:  FUNC IDENT '(' IDENT VARARG.')' '{' compstmt '}' 
+	expr:  FUNC IDENT '(' IDENT VARARG.')' opt_terms compstmt '}' 
 
 	')'  shift 265
 	.  error
@@ -7582,7 +7603,7 @@ state 261
 
 
 state 262
-	expr:  FUNC '(' expr_idents ')' '{' compstmt.'}' 
+	expr:  FUNC '(' expr_idents ')' opt_terms compstmt.'}' 
 
 	'}'  shift 281
 	.  error
@@ -7592,7 +7613,7 @@ state 262
 263: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
 263: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
 state 263
-	expr:  FUNC '(' IDENT VARARG ')' '{'.compstmt '}' 
+	expr:  FUNC '(' IDENT VARARG ')' opt_terms.compstmt '}' 
 	opt_terms: .    (122)
 	stmts: .    (3)
 
@@ -7611,7 +7632,7 @@ state 263
 264: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
 264: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
 state 264
-	expr:  FUNC IDENT '(' expr_idents ')' '{'.compstmt '}' 
+	expr:  FUNC IDENT '(' expr_idents ')' opt_terms.compstmt '}' 
 	opt_terms: .    (122)
 	stmts: .    (3)
 
@@ -7626,12 +7647,19 @@ state 264
 	terms  goto 4
 	term  goto 5
 
+265: shift/reduce conflict (shift 6(0), red'n 122(0)) on ';'
+265: shift/reduce conflict (shift 7(0), red'n 122(0)) on '\n'
 state 265
-	expr:  FUNC IDENT '(' IDENT VARARG ')'.'{' compstmt '}' 
+	expr:  FUNC IDENT '(' IDENT VARARG ')'.opt_terms compstmt '}' 
+	opt_terms: .    (122)
 
-	'{'  shift 284
-	.  error
+	';'  shift 6
+	'\n'  shift 7
+	.  reduce 122 (src line 688)
 
+	opt_terms  goto 284
+	terms  goto 4
+	term  goto 5
 
 state 266
 	expr:  '[' opt_terms exprs ',' opt_terms ']'.    (72)
@@ -8014,20 +8042,20 @@ state 280
 	term  goto 5
 
 state 281
-	expr:  FUNC '(' expr_idents ')' '{' compstmt '}'.    (67)
+	expr:  FUNC '(' expr_idents ')' opt_terms compstmt '}'.    (67)
 
 	.  reduce 67 (src line 404)
 
 
 state 282
-	expr:  FUNC '(' IDENT VARARG ')' '{' compstmt.'}' 
+	expr:  FUNC '(' IDENT VARARG ')' opt_terms compstmt.'}' 
 
 	'}'  shift 293
 	.  error
 
 
 state 283
-	expr:  FUNC IDENT '(' expr_idents ')' '{' compstmt.'}' 
+	expr:  FUNC IDENT '(' expr_idents ')' opt_terms compstmt.'}' 
 
 	'}'  shift 294
 	.  error
@@ -8037,7 +8065,7 @@ state 283
 284: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
 284: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
 state 284
-	expr:  FUNC IDENT '(' IDENT VARARG ')' '{'.compstmt '}' 
+	expr:  FUNC IDENT '(' IDENT VARARG ')' opt_terms.compstmt '}' 
 	opt_terms: .    (122)
 	stmts: .    (3)
 
@@ -8205,19 +8233,19 @@ state 292
 
 
 state 293
-	expr:  FUNC '(' IDENT VARARG ')' '{' compstmt '}'.    (68)
+	expr:  FUNC '(' IDENT VARARG ')' opt_terms compstmt '}'.    (68)
 
 	.  reduce 68 (src line 409)
 
 
 state 294
-	expr:  FUNC IDENT '(' expr_idents ')' '{' compstmt '}'.    (69)
+	expr:  FUNC IDENT '(' expr_idents ')' opt_terms compstmt '}'.    (69)
 
 	.  reduce 69 (src line 414)
 
 
 state 295
-	expr:  FUNC IDENT '(' IDENT VARARG ')' '{' compstmt.'}' 
+	expr:  FUNC IDENT '(' IDENT VARARG ')' opt_terms compstmt.'}' 
 
 	'}'  shift 300
 	.  error
@@ -8330,7 +8358,7 @@ state 299
 
 
 state 300
-	expr:  FUNC IDENT '(' IDENT VARARG ')' '{' compstmt '}'.    (70)
+	expr:  FUNC IDENT '(' IDENT VARARG ')' opt_terms compstmt '}'.    (70)
 
 	.  reduce 70 (src line 419)
 
@@ -8349,13 +8377,13 @@ state 302
 
 81 terminals, 21 nonterminals
 128 grammar rules, 303/8000 states
-647 shift/reduce, 295 reduce/reduce conflicts reported
+655 shift/reduce, 295 reduce/reduce conflicts reported
 120 working sets used
-memory: parser 235/120000
+memory: parser 247/120000
 348 extra closures
-3101 shift entries, 161 exceptions
-131 goto entries
-97 entries saved by goto default
+3105 shift entries, 161 exceptions
+135 goto entries
+105 entries saved by goto default
 Optimizer space used: output 2293/120000
 2293 table entries, 1030 zero
 maximum spread: 81, maximum offset: 298

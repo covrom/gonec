@@ -401,22 +401,22 @@ expr :
 		$$ = &ast.MemberExpr{Expr: $1, Name: $3.Lit}
 		$$.SetPosition($1.Position())
 	}
-	| FUNC '(' expr_idents ')' '{' compstmt '}'
+	| FUNC '(' expr_idents ')' opt_terms compstmt '}'
 	{
 		$$ = &ast.FuncExpr{Args: $3, Stmts: $6}
 		$$.SetPosition($1.Position())
 	}
-	| FUNC '(' IDENT VARARG ')' '{' compstmt '}'
+	| FUNC '(' IDENT VARARG ')' opt_terms compstmt '}'
 	{
 		$$ = &ast.FuncExpr{Args: []string{$3.Lit}, Stmts: $7, VarArg: true}
 		$$.SetPosition($1.Position())
 	}
-	| FUNC IDENT '(' expr_idents ')' '{' compstmt '}'
+	| FUNC IDENT '(' expr_idents ')' opt_terms compstmt '}'
 	{
 		$$ = &ast.FuncExpr{Name: $2.Lit, Args: $4, Stmts: $7}
 		$$.SetPosition($1.Position())
 	}
-	| FUNC IDENT '(' IDENT VARARG ')' '{' compstmt '}'
+	| FUNC IDENT '(' IDENT VARARG ')' opt_terms compstmt '}'
 	{
 		$$ = &ast.FuncExpr{Name: $2.Lit, Args: []string{$4.Lit}, Stmts: $8, VarArg: true}
 		$$.SetPosition($1.Position())
