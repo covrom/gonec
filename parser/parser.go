@@ -1204,7 +1204,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line parser.go.y:108
 		{
-			yyVAL.stmt = &ast.VarStmt{Names: yyDollar[2].expr_idents, Exprs: []Expr{}}
+			yyVAL.stmt = &ast.VarStmt{Names: yyDollar[2].expr_idents, Exprs: nil}
 			yyVAL.stmt.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 8:
@@ -1307,7 +1307,7 @@ yydefault:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		//line parser.go.y:182
 		{
-			yyVAL.stmt_elsifs = []ast.IfStmt{}
+			yyVAL.stmt_elsifs = []ast.Stmt{}
 		}
 	case 23:
 		yyDollar = yyS[yypt-2 : yypt+1]

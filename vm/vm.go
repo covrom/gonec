@@ -250,9 +250,9 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			// Catch
 			cenv := env.NewEnv()
 			defer cenv.Destroy()
-			if stmt.Var != "" {
-				cenv.Define(stmt.Var, reflect.ValueOf(err))
-			}
+			// if stmt.Var != "" {
+			// 	cenv.Define(stmt.Var, reflect.ValueOf(err))
+			// }
 			_, e1 := Run(stmt.Catch, cenv)
 			if e1 != nil {
 				err = NewError(stmt.Catch[0], e1)
@@ -260,15 +260,15 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 				err = nil
 			}
 		}
-		if len(stmt.Finally) > 0 {
-			// Finally
-			fenv := env.NewEnv()
-			defer fenv.Destroy()
-			_, e2 := Run(stmt.Finally, newenv)
-			if e2 != nil {
-				err = NewError(stmt.Finally[0], e2)
-			}
-		}
+		// if len(stmt.Finally) > 0 {
+		// 	// Finally
+		// 	fenv := env.NewEnv()
+		// 	defer fenv.Destroy()
+		// 	_, e2 := Run(stmt.Finally, newenv)
+		// 	if e2 != nil {
+		// 		err = NewError(stmt.Finally[0], e2)
+		// 	}
+		// }
 		return NilValue, NewError(stmt, err)
 	case *ast.LoopStmt:
 		newenv := env.NewEnv()
@@ -400,10 +400,10 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 				}
 				return rv, NewError(stmt, err)
 			}
-			_, err = invokeExpr(stmt.Expr3, newenv)
-			if err != nil {
-				return NilValue, err
-			}
+			// _, err = invokeExpr(stmt.Expr3, newenv)
+			// if err != nil {
+			// 	return NilValue, err
+			// }
 		}
 		return NilValue, nil
 	case *ast.ReturnStmt:

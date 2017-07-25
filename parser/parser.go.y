@@ -106,7 +106,7 @@ stmt :
 	}
 	| VAR expr_idents
 	{
-		$$ = &ast.VarStmt{Names: $2, Exprs: []Expr{}}
+		$$ = &ast.VarStmt{Names: $2, Exprs: nil}
 		$$.SetPosition($1.Position())
 	}
 	| expr '=' expr
@@ -180,7 +180,7 @@ stmt :
 
 stmt_elsifs:
 	{
-		$$ = []ast.IfStmt{}
+		$$ = []ast.Stmt{}
 	}
 	| stmt_elsifs stmt_elsif
 	{
