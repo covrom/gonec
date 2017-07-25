@@ -157,6 +157,11 @@ retry:
 		switch ch {
 		case EOF:
 			tok = EOF
+		case '#':
+			for !isEOL(s.peek()) {
+				s.next()
+			}
+			goto retry
 		case '!':
 			s.next()
 			switch s.peek() {
