@@ -3,7 +3,7 @@
 # ГОНЕЦ (gonec)
 ## Интерпретатор 1С-подобного языка
 
-![Gonec Logo](/gonec.png)
+[![Gonec Logo](/gonec.png)](https://github.com/covrom/gonec/releases)
 
 Gonec language interpreter
 
