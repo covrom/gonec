@@ -1,6 +1,4 @@
 [![GitHub issues](https://img.shields.io/github/issues/covrom/gonec.svg)](https://github.com/covrom/gonec/issues) [![Travis](https://travis-ci.org/covrom/gonec.svg?branch=master)](https://github.com/covrom/gonec/releases)
-[![Download](https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C--blue.svg?style=social)](https://github.com/covrom/gonec/releases)
-[![Docs](https://img.shields.io/badge/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F--blue.svg?style=social)](https://github.com/covrom/gonec/wiki)
 
 # ГОНЕЦ (gonec)
 ## Интерпретатор 1С-подобного языка
@@ -9,9 +7,8 @@
 
 Gonec language interpreter
 
-[Скачать](https://github.com/covrom/gonec/releases) 
-
-[Документация](https://github.com/covrom/gonec/wiki)
+[![Download](https://img.shields.io/badge/%D0%A1%D0%BA%D0%B0%D1%87%D0%B0%D1%82%D1%8C--blue.svg?style=social)](https://github.com/covrom/gonec/releases)
+[![Docs](https://img.shields.io/badge/%D0%94%D0%BE%D0%BA%D1%83%D0%BC%D0%B5%D0%BD%D1%82%D0%B0%D1%86%D0%B8%D1%8F--blue.svg?style=social)](https://github.com/covrom/gonec/wiki)
 
 ## Цели
 
