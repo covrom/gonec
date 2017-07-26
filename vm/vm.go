@@ -1370,7 +1370,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		var err error
 		fnc := func() {
 			defer func() {
-				if os.Getenv("ANKO_DEBUG") == "" {
+				if os.Getenv("GONEC_DEBUG") == "" {
 					if ex := recover(); ex != nil {
 						if e, ok := ex.(error); ok {
 							err = e
@@ -1459,7 +1459,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		return func() (reflect.Value, error) {
 			defer func() {
-				if os.Getenv("ANKO_DEBUG") == "" {
+				if os.Getenv("GONEC_DEBUG") == "" {
 					if ex := recover(); ex != nil {
 						if e, ok := ex.(error); ok {
 							err = e
@@ -1496,7 +1496,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		return func() (reflect.Value, error) {
 			defer func() {
-				if os.Getenv("ANKO_DEBUG") == "" {
+				if os.Getenv("GONEC_DEBUG") == "" {
 					if ex := recover(); ex != nil {
 						if e, ok := ex.(error); ok {
 							err = e
