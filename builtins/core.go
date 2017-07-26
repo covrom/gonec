@@ -70,16 +70,14 @@ func LoadAllBuiltins(env *vm.Env) {
 	}
 
 	env.Define("импорт", func(s string) interface{} {
-		if loader, ok := pkgs[s]; ok {
+		if loader, ok := pkgs[strings.ToLower(s)]; ok {
 			m := loader(env)
 			return m
 		}
 		panic(fmt.Sprintf("package '%s' not found", s))
 	})
 
-	env.Define("сообщить", func(s string) {
-		fmt.Println(s)
-	})
+	env.Define("сообщить", fmt.Println)
 }
 
 // Import defines core language builtins - len, range, println, int64, etc.
