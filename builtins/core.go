@@ -13,30 +13,30 @@ import (
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
 
-	anko_encoding_json "github.com/covrom/gonec/builtins/encoding/json"
-	anko_errors "github.com/covrom/gonec/builtins/errors"
-	anko_flag "github.com/covrom/gonec/builtins/flag"
-	anko_fmt "github.com/covrom/gonec/builtins/fmt"
-	anko_io "github.com/covrom/gonec/builtins/io"
-	anko_io_ioutil "github.com/covrom/gonec/builtins/io/ioutil"
-	anko_math "github.com/covrom/gonec/builtins/math"
-	anko_math_big "github.com/covrom/gonec/builtins/math/big"
-	anko_math_rand "github.com/covrom/gonec/builtins/math/rand"
-	anko_net "github.com/covrom/gonec/builtins/net"
-	anko_net_http "github.com/covrom/gonec/builtins/net/http"
-	anko_net_url "github.com/covrom/gonec/builtins/net/url"
-	anko_os "github.com/covrom/gonec/builtins/os"
-	anko_os_exec "github.com/covrom/gonec/builtins/os/exec"
-	anko_os_signal "github.com/covrom/gonec/builtins/os/signal"
-	anko_path "github.com/covrom/gonec/builtins/path"
-	anko_path_filepath "github.com/covrom/gonec/builtins/path/filepath"
-	anko_regexp "github.com/covrom/gonec/builtins/regexp"
-	anko_runtime "github.com/covrom/gonec/builtins/runtime"
-	anko_sort "github.com/covrom/gonec/builtins/sort"
-	anko_strings "github.com/covrom/gonec/builtins/strings"
-	anko_time "github.com/covrom/gonec/builtins/time"
+	gonec_encoding_json "github.com/covrom/gonec/builtins/encoding/json"
+	gonec_errors "github.com/covrom/gonec/builtins/errors"
+	gonec_flag "github.com/covrom/gonec/builtins/flag"
+	gonec_fmt "github.com/covrom/gonec/builtins/fmt"
+	gonec_io "github.com/covrom/gonec/builtins/io"
+	gonec_io_ioutil "github.com/covrom/gonec/builtins/io/ioutil"
+	gonec_math "github.com/covrom/gonec/builtins/math"
+	gonec_math_big "github.com/covrom/gonec/builtins/math/big"
+	gonec_math_rand "github.com/covrom/gonec/builtins/math/rand"
+	gonec_net "github.com/covrom/gonec/builtins/net"
+	gonec_net_http "github.com/covrom/gonec/builtins/net/http"
+	gonec_net_url "github.com/covrom/gonec/builtins/net/url"
+	gonec_os "github.com/covrom/gonec/builtins/os"
+	gonec_os_exec "github.com/covrom/gonec/builtins/os/exec"
+	gonec_os_signal "github.com/covrom/gonec/builtins/os/signal"
+	gonec_path "github.com/covrom/gonec/builtins/path"
+	gonec_path_filepath "github.com/covrom/gonec/builtins/path/filepath"
+	gonec_regexp "github.com/covrom/gonec/builtins/regexp"
+	gonec_runtime "github.com/covrom/gonec/builtins/runtime"
+	gonec_sort "github.com/covrom/gonec/builtins/sort"
+	gonec_strings "github.com/covrom/gonec/builtins/strings"
+	gonec_time "github.com/covrom/gonec/builtins/time"
 
-	anko_colortext "github.com/covrom/gonec/builtins/github.com/daviddengcn/go-colortext"
+	gonec_colortext "github.com/covrom/gonec/builtins/github.com/daviddengcn/go-colortext"
 )
 
 // LoadAllBuiltins is a convenience function that loads all defined builtins.
@@ -44,37 +44,41 @@ func LoadAllBuiltins(env *vm.Env) {
 	Import(env)
 
 	pkgs := map[string]func(env *vm.Env) *vm.Env{
-		"encoding/json": anko_encoding_json.Import,
-		"errors":        anko_errors.Import,
-		"flag":          anko_flag.Import,
-		"fmt":           anko_fmt.Import,
-		"io":            anko_io.Import,
-		"io/ioutil":     anko_io_ioutil.Import,
-		"math":          anko_math.Import,
-		"math/big":      anko_math_big.Import,
-		"math/rand":     anko_math_rand.Import,
-		"net":           anko_net.Import,
-		"net/http":      anko_net_http.Import,
-		"net/url":       anko_net_url.Import,
-		"os":            anko_os.Import,
-		"os/exec":       anko_os_exec.Import,
-		"os/signal":     anko_os_signal.Import,
-		"path":          anko_path.Import,
-		"path/filepath": anko_path_filepath.Import,
-		"regexp":        anko_regexp.Import,
-		"runtime":       anko_runtime.Import,
-		"sort":          anko_sort.Import,
-		"strings":       anko_strings.Import,
-		"time":          anko_time.Import,
-		"github.com/daviddengcn/go-colortext": anko_colortext.Import,
+		"encoding/json": gonec_encoding_json.Import,
+		"errors":        gonec_errors.Import,
+		"flag":          gonec_flag.Import,
+		"fmt":           gonec_fmt.Import,
+		"io":            gonec_io.Import,
+		"io/ioutil":     gonec_io_ioutil.Import,
+		"math":          gonec_math.Import,
+		"math/big":      gonec_math_big.Import,
+		"math/rand":     gonec_math_rand.Import,
+		"net":           gonec_net.Import,
+		"net/http":      gonec_net_http.Import,
+		"net/url":       gonec_net_url.Import,
+		"os":            gonec_os.Import,
+		"os/exec":       gonec_os_exec.Import,
+		"os/signal":     gonec_os_signal.Import,
+		"path":          gonec_path.Import,
+		"path/filepath": gonec_path_filepath.Import,
+		"regexp":        gonec_regexp.Import,
+		"runtime":       gonec_runtime.Import,
+		"sort":          gonec_sort.Import,
+		"strings":       gonec_strings.Import,
+		"time":          gonec_time.Import,
+		"github.com/daviddengcn/go-colortext": gonec_colortext.Import,
 	}
 
-	env.Define("import", func(s string) interface{} {
+	env.Define("импорт", func(s string) interface{} {
 		if loader, ok := pkgs[s]; ok {
 			m := loader(env)
 			return m
 		}
 		panic(fmt.Sprintf("package '%s' not found", s))
+	})
+
+	env.Define("сообщить", func(s string) {
+		fmt.Println(s)
 	})
 }
 
