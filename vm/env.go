@@ -50,7 +50,7 @@ func NewPackage(n string) *Env {
 		env:       make(map[string]reflect.Value),
 		typ:       make(map[string]reflect.Type),
 		parent:    nil,
-		name:      n,
+		name:      strings.ToLower(n),
 		interrupt: &b,
 	}
 }
@@ -60,7 +60,7 @@ func (e *Env) NewPackage(n string) *Env {
 		env:       make(map[string]reflect.Value),
 		typ:       make(map[string]reflect.Type),
 		parent:    e,
-		name:      n,
+		name:      strings.ToLower(n),
 		interrupt: e.interrupt,
 	}
 }
@@ -84,19 +84,20 @@ func (e *Env) Destroy() {
 
 // NewModule creates new module scope as global.
 func (e *Env) NewModule(n string) *Env {
+	ni:=strings.ToLower(n)
 	m := &Env{
 		env:    make(map[string]reflect.Value),
 		parent: e,
-		name:   n,
+		name:   ni,
 	}
-	e.Define(n, m)
+	e.Define(ni, m)
 	return m
 }
 
 // SetName sets a name of the scope. This means that the scope is module.
 func (e *Env) SetName(n string) {
 	e.Lock()
-	e.name = n
+	e.name = strings.ToLower(n)
 	e.Unlock()
 }
 
@@ -114,7 +115,7 @@ func (e *Env) Addr(k string) (reflect.Value, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	if v, ok := e.env[k]; ok {
+	if v, ok := e.env[strings.ToLower(k)]; ok {
 		return v.Addr(), nil
 	}
 	if e.parent == nil {
@@ -129,7 +130,7 @@ func (e *Env) Type(k string) (reflect.Type, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	if v, ok := e.typ[k]; ok {
+	if v, ok := e.typ[strings.ToLower(k)]; ok {
 		return v, nil
 	}
 	if e.parent == nil {
@@ -144,7 +145,7 @@ func (e *Env) Get(k string) (reflect.Value, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	if v, ok := e.env[k]; ok {
+	if v, ok := e.env[strings.ToLower(k)]; ok {
 		return v, nil
 	}
 	if e.parent == nil {
@@ -158,19 +159,19 @@ func (e *Env) Get(k string) (reflect.Value, error) {
 func (e *Env) Set(k string, v interface{}) error {
 	e.Lock()
 	defer e.Unlock()
-
-	if _, ok := e.env[k]; ok {
+	ki:=strings.ToLower(k)
+	if _, ok := e.env[ki]; ok {
 		val, ok := v.(reflect.Value)
 		if !ok {
 			val = reflect.ValueOf(v)
 		}
-		e.env[k] = val
+		e.env[ki] = val
 		return nil
 	}
 	if e.parent == nil {
 		return fmt.Errorf("Unknown symbol '%s'", k)
 	}
-	return e.parent.Set(k, v)
+	return e.parent.Set(ki, v)
 }
 
 // DefineGlobal defines symbol in global scope.
@@ -187,7 +188,7 @@ func (e *Env) DefineType(k string, t interface{}) error {
 		return fmt.Errorf("Unknown symbol '%s'", k)
 	}
 	global := e
-	keys := []string{k}
+	keys := []string{strings.ToLower(k)}
 
 	e.RLock()
 	for global.parent != nil {
@@ -225,7 +226,7 @@ func (e *Env) Define(k string, v interface{}) error {
 	}
 
 	e.Lock()
-	e.env[k] = val
+	e.env[strings.ToLower(k)] = val
 	e.Unlock()
 
 	return nil
