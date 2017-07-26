@@ -6,7 +6,10 @@
 ![Gonec Logo](/gonec.png)
 
 Gonec language interpreter
-[Скачать](https://github.com/covrom/gonec/releases) [Документация](https://github.com/covrom/gonec/wiki)
+
+[Скачать](https://github.com/covrom/gonec/releases) 
+
+[Документация](https://github.com/covrom/gonec/wiki)
 
 ## Цели
 
