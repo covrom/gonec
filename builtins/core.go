@@ -78,6 +78,7 @@ func LoadAllBuiltins(env *vm.Env) {
 	})
 
 	env.Define("сообщить", fmt.Println)
+	env.Define("сообщитьф", fmt.Printf)
 }
 
 // Import defines core language builtins - len, range, println, int64, etc.
