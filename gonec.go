@@ -20,7 +20,7 @@ import (
 	gonec_core "github.com/covrom/gonec/builtins"
 )
 
-const version = "0.0.1"
+const version = "1.0a"
 
 var (
 	fs   = flag.NewFlagSet(os.Args[0], 1)
