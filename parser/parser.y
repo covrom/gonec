@@ -20,7 +20,6 @@ import (
 %type<expr> expr
 %type<exprs> exprs
 %type<expr_many> expr_many
-%type<expr_lets> expr_lets
 %type<expr_pair> expr_pair
 %type<expr_pairs> expr_pairs
 %type<expr_idents> expr_idents
@@ -39,7 +38,6 @@ import (
 	expr                   ast.Expr
 	exprs                  []ast.Expr
 	expr_many              []ast.Expr
-	expr_lets              ast.Expr
 	expr_pair              ast.Expr
 	expr_pairs             []ast.Expr
 	expr_idents            []string
@@ -155,11 +153,6 @@ stmt :
 	| FOR IDENT '=' expr TO expr '{' compstmt '}'
 	{
 		$$ = &ast.NumForStmt{Name: $2.Lit, Expr1: $4, Expr2: $6, Stmts: $8}
-		$$.SetPosition($1.Position())
-	}
-	| WHILE expr_lets ';' expr ';' expr '{' compstmt '}'
-	{
-		$$ = &ast.CForStmt{Expr1: $2, Expr2: $4, Expr3: $6, Stmts: $8}
 		$$.SetPosition($1.Position())
 	}
 	| WHILE expr '{' compstmt '}'
@@ -278,11 +271,6 @@ expr_idents :
 	| expr_idents ',' opt_terms IDENT
 	{
 		$$ = append($1, $4.Lit)
-	}
-
-expr_lets : expr_many '=' expr_many
-	{
-		$$ = &ast.LetsExpr{Lhss: $1, Operator: "=", Rhss: $3}
 	}
 
 expr_many :

@@ -419,43 +419,43 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			}
 		}
 		return NilValue, nil
-	case *ast.CForStmt:
-		newenv := env //.NewEnv()
-		//defer newenv.Destroy()
-		_, err := invokeExpr(stmt.Expr1, newenv)
-		if err != nil {
-			return NilValue, err
-		}
-		for {
-			fb, err := invokeExpr(stmt.Expr2, newenv)
-			if err != nil {
-				return NilValue, err
-			}
-			if !toBool(fb) {
-				break
-			}
+	// case *ast.CForStmt:
+	// 	newenv := env //.NewEnv()
+	// 	//defer newenv.Destroy()
+	// 	_, err := invokeExpr(stmt.Expr1, newenv)
+	// 	if err != nil {
+	// 		return NilValue, err
+	// 	}
+	// 	for {
+	// 		fb, err := invokeExpr(stmt.Expr2, newenv)
+	// 		if err != nil {
+	// 			return NilValue, err
+	// 		}
+	// 		if !toBool(fb) {
+	// 			break
+	// 		}
 
-			rv, err := Run(stmt.Stmts, newenv)
-			if err != nil {
-				if err == BreakError {
-					err = nil
-					break
-				}
-				if err == ContinueError {
-					err = nil
-					continue
-				}
-				if err == ReturnError {
-					return rv, err
-				}
-				return rv, NewError(stmt, err)
-			}
-			_, err = invokeExpr(stmt.Expr3, newenv)
-			if err != nil {
-				return NilValue, err
-			}
-		}
-		return NilValue, nil
+	// 		rv, err := Run(stmt.Stmts, newenv)
+	// 		if err != nil {
+	// 			if err == BreakError {
+	// 				err = nil
+	// 				break
+	// 			}
+	// 			if err == ContinueError {
+	// 				err = nil
+	// 				continue
+	// 			}
+	// 			if err == ReturnError {
+	// 				return rv, err
+	// 			}
+	// 			return rv, NewError(stmt, err)
+	// 		}
+	// 		_, err = invokeExpr(stmt.Expr3, newenv)
+	// 		if err != nil {
+	// 			return NilValue, err
+	// 		}
+	// 	}
+	// 	return NilValue, nil
 	case *ast.ReturnStmt:
 		rvs := []interface{}{}
 		switch len(stmt.Exprs) {
