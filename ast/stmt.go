@@ -46,12 +46,21 @@ type ForStmt struct {
 	Stmts []Stmt
 }
 
+// NumForStmt name = expr1 to expr2
+type NumForStmt struct {
+	StmtImpl
+	Name string
+	Expr1 Expr
+	Expr2 Expr
+	Stmts []Stmt
+}
+
 // CForStmt provide C-style "for (;;)" expression statement.
 type CForStmt struct {
 	StmtImpl
 	Expr1 Expr
 	Expr2 Expr
-	// Expr3 Expr
+	Expr3 Expr
 	Stmts []Stmt
 }
 

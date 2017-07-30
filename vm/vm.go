@@ -196,7 +196,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		return rvs, nil
 	case *ast.IfStmt:
-		// If
+		// Если Тогда ИначеЕсли Иначе КонецЕсли
 		rv, err := invokeExpr(stmt.If, env)
 		if err != nil {
 			return rv, NewError(stmt, err)
@@ -310,8 +310,9 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			val = val.Elem()
 		}
 		if val.Kind() == reflect.Array || val.Kind() == reflect.Slice {
-			newenv := env.NewEnv()
-			defer newenv.Destroy()
+			//отключено создание новой области видимости внутри цикла
+			newenv := env //.NewEnv()
+			//defer newenv.Destroy()
 
 			for i := 0; i < val.Len(); i++ {
 				iv := val.Index(i)
@@ -337,8 +338,8 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			}
 			return NilValue, nil
 		} else if val.Kind() == reflect.Chan {
-			newenv := env.NewEnv()
-			defer newenv.Destroy()
+			newenv := env //.NewEnv()
+			//defer newenv.Destroy()
 
 			for {
 				iv, ok := val.Recv()
@@ -367,11 +368,60 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			}
 			return NilValue, nil
 		} else {
-			return NilValue, NewStringError(stmt, "Invalid operation for non-array value")
+			return NilValue, NewStringError(stmt, "Цикл может выполняться только для переменных-коллекций или каналов")
 		}
+	case *ast.NumForStmt:
+		newenv := env //.NewEnv()
+		//defer newenv.Destroy()
+		fv1, err := invokeExpr(stmt.Expr1, newenv)
+		if err != nil {
+			return NilValue, err
+		}
+		if !isNum(fv1) {
+			return NilValue, NewStringError(stmt, "Цикл должен иметь числовой итератор")
+		}
+
+		fv2, err := invokeExpr(stmt.Expr2, newenv)
+		if err != nil {
+			return NilValue, err
+		}
+		if !isNum(fv2) {
+			return NilValue, NewStringError(stmt, "Цикл должен иметь числовое целевое значение")
+		}
+		fvi1, fvi2 := toInt64(fv1), toInt64(fv2)
+		fviadd := int64(1)
+		if fvi1 > fvi2 {
+			fviadd = int64(-1) // если конечное значение меньше первого, идем в обратном порядке
+		}
+
+		for fvi := fvi1; true; fvi = fvi + fviadd {
+
+			newenv.Define(stmt.Name, fvi) //изменение итератора в теле цикла никак не влияет на стабильность перебора
+
+			rv, err := Run(stmt.Stmts, newenv)
+			if err != nil {
+				if err == BreakError {
+					err = nil
+					break
+				}
+				if err == ContinueError {
+					err = nil
+					continue
+				}
+				if err == ReturnError {
+					return rv, err
+				}
+				return rv, NewError(stmt, err)
+			}
+
+			if fvi == fvi2 { //когда дошли до равенства - проходим итерацию и прекращаем цикл
+				break
+			}
+		}
+		return NilValue, nil
 	case *ast.CForStmt:
-		newenv := env.NewEnv()
-		defer newenv.Destroy()
+		newenv := env //.NewEnv()
+		//defer newenv.Destroy()
 		_, err := invokeExpr(stmt.Expr1, newenv)
 		if err != nil {
 			return NilValue, err
@@ -400,10 +450,10 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 				}
 				return rv, NewError(stmt, err)
 			}
-			// _, err = invokeExpr(stmt.Expr3, newenv)
-			// if err != nil {
-			// 	return NilValue, err
-			// }
+			_, err = invokeExpr(stmt.Expr3, newenv)
+			if err != nil {
+				return NilValue, err
+			}
 		}
 		return NilValue, nil
 	case *ast.ReturnStmt:

@@ -152,9 +152,14 @@ stmt :
 		$$ = &ast.ForStmt{Var: $3.Lit, Value: $5, Stmts: $7}
 		$$.SetPosition($1.Position())
 	}
-	| FOR expr_lets TO expr '{' compstmt '}'
+	| FOR IDENT '=' expr TO expr '{' compstmt '}'
 	{
-		$$ = &ast.CForStmt{Expr1: $2, Expr2: $4, Stmts: $6}
+		$$ = &ast.NumForStmt{Name: $2.Lit, Expr1: $4, Expr2: $6, Stmts: $8}
+		$$.SetPosition($1.Position())
+	}
+	| FOR expr_lets ';' expr ';' expr '{' compstmt '}'
+	{
+		$$ = &ast.CForStmt{Expr1: $2, Expr2: $4, Expr3: $6, Stmts: $8}
 		$$.SetPosition($1.Position())
 	}
 	| WHILE expr '{' compstmt '}'
