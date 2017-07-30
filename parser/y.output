@@ -296,39 +296,16 @@ state 17
 state 18
 	stmt:  FOR.EACH IDENT IN expr '{' compstmt '}' 
 	stmt:  FOR.IDENT '=' expr TO expr '{' compstmt '}' 
-	stmt:  FOR.expr_lets ';' expr ';' expr '{' compstmt '}' 
-	exprs: .    (48)
 
 	IDENT  shift 87
-	NUMBER  shift 23
-	STRING  shift 29
-	FUNC  shift 34
-	NEW  shift 38
-	TRUE  shift 30
-	FALSE  shift 31
-	NIL  shift 32
-	GO  shift 39
-	MAKE  shift 40
-	OPCHAN  shift 41
-	NULL  shift 33
 	EACH  shift 86
-	'-'  shift 24
-	'*'  shift 28
-	'{'  shift 36
-	'!'  shift 25
-	'^'  shift 26
-	'&'  shift 27
-	'('  shift 37
-	'['  shift 35
-	.  reduce 48 (src line 311)
+	.  error
 
-	expr  goto 90
-	exprs  goto 42
-	expr_many  goto 89
-	expr_lets  goto 88
 
 state 19
+	stmt:  WHILE.expr_lets ';' expr ';' expr '{' compstmt '}' 
 	stmt:  WHILE.expr '{' compstmt '}' 
+	exprs: .    (48)
 
 	IDENT  shift 22
 	NUMBER  shift 23
@@ -350,9 +327,12 @@ state 19
 	'&'  shift 27
 	'('  shift 37
 	'['  shift 35
-	.  error
+	.  reduce 48 (src line 311)
 
-	expr  goto 91
+	expr  goto 89
+	exprs  goto 42
+	expr_many  goto 90
+	expr_lets  goto 88
 
  20: reduce/reduce conflict  (red'ns 123 and 3) on CATCH
 20: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
@@ -367,7 +347,7 @@ state 20
 	'\n'  shift 7
 	.  reduce 123 (src line 693)
 
-	compstmt  goto 92
+	compstmt  goto 91
 	stmts  goto 3
 	opt_terms  goto 2
 	terms  goto 4
@@ -398,10 +378,10 @@ state 21
 	'['  shift 35
 	.  error
 
-	expr  goto 93
+	expr  goto 92
 
-22: shift/reduce conflict (shift 94(0), red'n 52(5)) on '('
-22: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
+22: shift/reduce conflict (shift 93(0), red'n 52(5)) on '('
+22: shift/reduce conflict (shift 94(0), red'n 52(5)) on '['
 state 22
 	expr:  IDENT.    (52)
 	expr:  IDENT.'(' exprs VARARG ')' 
@@ -409,8 +389,8 @@ state 22
 	expr:  IDENT.'[' expr ']' 
 	expr:  IDENT.'[' expr ':' expr ']' 
 
-	'('  shift 94
-	'['  shift 95
+	'('  shift 93
+	'['  shift 94
 	.  reduce 52 (src line 328)
 
 
@@ -445,7 +425,7 @@ state 24
 	'['  shift 35
 	.  error
 
-	expr  goto 96
+	expr  goto 95
 
 state 25
 	expr:  '!'.expr 
@@ -472,7 +452,7 @@ state 25
 	'['  shift 35
 	.  error
 
-	expr  goto 97
+	expr  goto 96
 
 state 26
 	expr:  '^'.expr 
@@ -499,13 +479,13 @@ state 26
 	'['  shift 35
 	.  error
 
-	expr  goto 98
+	expr  goto 97
 
 state 27
 	expr:  '&'.IDENT 
 	expr:  '&'.expr '.' IDENT 
 
-	IDENT  shift 99
+	IDENT  shift 98
 	NUMBER  shift 23
 	STRING  shift 29
 	FUNC  shift 34
@@ -527,13 +507,13 @@ state 27
 	'['  shift 35
 	.  error
 
-	expr  goto 100
+	expr  goto 99
 
 state 28
 	expr:  '*'.IDENT 
 	expr:  '*'.expr '.' IDENT 
 
-	IDENT  shift 101
+	IDENT  shift 100
 	NUMBER  shift 23
 	STRING  shift 29
 	FUNC  shift 34
@@ -555,7 +535,7 @@ state 28
 	'['  shift 35
 	.  error
 
-	expr  goto 102
+	expr  goto 101
 
 state 29
 	expr:  STRING.    (61)
@@ -593,8 +573,8 @@ state 34
 	expr:  FUNC.IDENT '(' expr_idents ')' opt_terms compstmt '}' 
 	expr:  FUNC.IDENT '(' IDENT VARARG ')' opt_terms compstmt '}' 
 
-	IDENT  shift 104
-	'('  shift 103
+	IDENT  shift 103
+	'('  shift 102
 	.  error
 
 
@@ -609,7 +589,7 @@ state 35
 	'\n'  shift 7
 	.  reduce 123 (src line 693)
 
-	opt_terms  goto 105
+	opt_terms  goto 104
 	terms  goto 4
 	term  goto 5
 
@@ -624,7 +604,7 @@ state 36
 	'\n'  shift 7
 	.  reduce 123 (src line 693)
 
-	opt_terms  goto 106
+	opt_terms  goto 105
 	terms  goto 4
 	term  goto 5
 
@@ -653,12 +633,12 @@ state 37
 	'['  shift 35
 	.  error
 
-	expr  goto 107
+	expr  goto 106
 
 state 38
 	expr:  NEW.'(' typ ')' 
 
-	'('  shift 108
+	'('  shift 107
 	.  error
 
 
@@ -668,7 +648,7 @@ state 39
 	expr:  GO.expr '(' exprs VARARG ')' 
 	expr:  GO.expr '(' exprs ')' 
 
-	IDENT  shift 109
+	IDENT  shift 108
 	NUMBER  shift 23
 	STRING  shift 29
 	FUNC  shift 34
@@ -690,7 +670,7 @@ state 39
 	'['  shift 35
 	.  error
 
-	expr  goto 110
+	expr  goto 109
 
 state 40
 	expr:  MAKE.'(' typ ')' 
@@ -699,7 +679,7 @@ state 40
 	expr:  MAKE.'(' ARRAYLIT typ ',' expr ')' 
 	expr:  MAKE.'(' ARRAYLIT typ ',' expr ',' expr ')' 
 
-	'('  shift 111
+	'('  shift 110
 	.  error
 
 
@@ -728,7 +708,7 @@ state 41
 	'['  shift 35
 	.  error
 
-	expr  goto 112
+	expr  goto 111
 
 state 42
 	expr_many:  exprs.',' opt_terms expr 
@@ -736,7 +716,7 @@ state 42
 	exprs:  exprs.',' opt_terms expr 
 	exprs:  exprs.',' opt_terms IDENT 
 
-	','  shift 113
+	','  shift 112
 	.  error
 
 
@@ -766,7 +746,7 @@ state 43
 	'['  shift 35
 	.  error
 
-	expr  goto 114
+	expr  goto 113
 
 state 44
 	compstmt:  stmts opt_terms.    (2)
@@ -816,7 +796,7 @@ state 45
 	'\n'  shift 7
 	.  reduce 124 (src line 694)
 
-	stmt  goto 115
+	stmt  goto 114
 	stmt_if  goto 17
 	expr  goto 10
 	exprs  goto 42
@@ -834,8 +814,8 @@ state 47
 	stmt:  VAR expr_idents.    (7)
 	expr_idents:  expr_idents.',' opt_terms IDENT 
 
-	'='  shift 116
-	','  shift 117
+	'='  shift 115
+	','  shift 116
 	.  reduce 7 (src line 107)
 
 
@@ -870,7 +850,7 @@ state 49
 	'['  shift 35
 	.  error
 
-	expr  goto 118
+	expr  goto 117
 
 state 50
 	expr:  expr '?'.expr ':' expr 
@@ -897,12 +877,12 @@ state 50
 	'['  shift 35
 	.  error
 
-	expr  goto 119
+	expr  goto 118
 
 state 51
 	expr:  expr '.'.IDENT 
 
-	IDENT  shift 120
+	IDENT  shift 119
 	.  error
 
 
@@ -931,7 +911,7 @@ state 52
 	'['  shift 35
 	.  error
 
-	expr  goto 121
+	expr  goto 120
 
 state 53
 	expr:  expr '-'.expr 
@@ -958,7 +938,7 @@ state 53
 	'['  shift 35
 	.  error
 
-	expr  goto 122
+	expr  goto 121
 
 state 54
 	expr:  expr '*'.expr 
@@ -985,7 +965,7 @@ state 54
 	'['  shift 35
 	.  error
 
-	expr  goto 123
+	expr  goto 122
 
 state 55
 	expr:  expr '/'.expr 
@@ -1012,7 +992,7 @@ state 55
 	'['  shift 35
 	.  error
 
-	expr  goto 124
+	expr  goto 123
 
 state 56
 	expr:  expr '%'.expr 
@@ -1039,7 +1019,7 @@ state 56
 	'['  shift 35
 	.  error
 
-	expr  goto 125
+	expr  goto 124
 
 state 57
 	expr:  expr POW.expr 
@@ -1066,7 +1046,7 @@ state 57
 	'['  shift 35
 	.  error
 
-	expr  goto 126
+	expr  goto 125
 
 state 58
 	expr:  expr SHIFTLEFT.expr 
@@ -1093,7 +1073,7 @@ state 58
 	'['  shift 35
 	.  error
 
-	expr  goto 127
+	expr  goto 126
 
 state 59
 	expr:  expr SHIFTRIGHT.expr 
@@ -1120,7 +1100,7 @@ state 59
 	'['  shift 35
 	.  error
 
-	expr  goto 128
+	expr  goto 127
 
 state 60
 	expr:  expr EQEQ.expr 
@@ -1147,7 +1127,7 @@ state 60
 	'['  shift 35
 	.  error
 
-	expr  goto 129
+	expr  goto 128
 
 state 61
 	expr:  expr NEQ.expr 
@@ -1174,7 +1154,7 @@ state 61
 	'['  shift 35
 	.  error
 
-	expr  goto 130
+	expr  goto 129
 
 state 62
 	expr:  expr '>'.expr 
@@ -1201,7 +1181,7 @@ state 62
 	'['  shift 35
 	.  error
 
-	expr  goto 131
+	expr  goto 130
 
 state 63
 	expr:  expr GE.expr 
@@ -1228,7 +1208,7 @@ state 63
 	'['  shift 35
 	.  error
 
-	expr  goto 132
+	expr  goto 131
 
 state 64
 	expr:  expr '<'.expr 
@@ -1255,7 +1235,7 @@ state 64
 	'['  shift 35
 	.  error
 
-	expr  goto 133
+	expr  goto 132
 
 state 65
 	expr:  expr LE.expr 
@@ -1282,7 +1262,7 @@ state 65
 	'['  shift 35
 	.  error
 
-	expr  goto 134
+	expr  goto 133
 
 state 66
 	expr:  expr PLUSEQ.expr 
@@ -1309,7 +1289,7 @@ state 66
 	'['  shift 35
 	.  error
 
-	expr  goto 135
+	expr  goto 134
 
 state 67
 	expr:  expr MINUSEQ.expr 
@@ -1336,7 +1316,7 @@ state 67
 	'['  shift 35
 	.  error
 
-	expr  goto 136
+	expr  goto 135
 
 state 68
 	expr:  expr MULEQ.expr 
@@ -1363,7 +1343,7 @@ state 68
 	'['  shift 35
 	.  error
 
-	expr  goto 137
+	expr  goto 136
 
 state 69
 	expr:  expr DIVEQ.expr 
@@ -1390,7 +1370,7 @@ state 69
 	'['  shift 35
 	.  error
 
-	expr  goto 138
+	expr  goto 137
 
 state 70
 	expr:  expr ANDEQ.expr 
@@ -1417,7 +1397,7 @@ state 70
 	'['  shift 35
 	.  error
 
-	expr  goto 139
+	expr  goto 138
 
 state 71
 	expr:  expr OREQ.expr 
@@ -1444,7 +1424,7 @@ state 71
 	'['  shift 35
 	.  error
 
-	expr  goto 140
+	expr  goto 139
 
 state 72
 	expr:  expr PLUSPLUS.    (98)
@@ -1483,7 +1463,7 @@ state 74
 	'['  shift 35
 	.  error
 
-	expr  goto 141
+	expr  goto 140
 
 state 75
 	expr:  expr OROR.expr 
@@ -1510,7 +1490,7 @@ state 75
 	'['  shift 35
 	.  error
 
-	expr  goto 142
+	expr  goto 141
 
 state 76
 	expr:  expr '&'.expr 
@@ -1537,7 +1517,7 @@ state 76
 	'['  shift 35
 	.  error
 
-	expr  goto 143
+	expr  goto 142
 
 state 77
 	expr:  expr ANDAND.expr 
@@ -1564,7 +1544,7 @@ state 77
 	'['  shift 35
 	.  error
 
-	expr  goto 144
+	expr  goto 143
 
 state 78
 	expr:  expr '('.exprs VARARG ')' 
@@ -1594,7 +1574,7 @@ state 78
 	.  reduce 48 (src line 311)
 
 	expr  goto 83
-	exprs  goto 145
+	exprs  goto 144
 
 state 79
 	expr:  expr '['.expr ']' 
@@ -1622,7 +1602,7 @@ state 79
 	'['  shift 35
 	.  error
 
-	expr  goto 146
+	expr  goto 145
 
 state 80
 	expr:  expr OPCHAN.expr 
@@ -1649,7 +1629,7 @@ state 80
 	'['  shift 35
 	.  error
 
-	expr  goto 147
+	expr  goto 146
 
 state 81
 	stmt:  expr_many '='.expr_many 
@@ -1677,9 +1657,9 @@ state 81
 	'['  shift 35
 	.  reduce 48 (src line 311)
 
-	expr  goto 90
+	expr  goto 148
 	exprs  goto 42
-	expr_many  goto 148
+	expr_many  goto 147
 
 state 82
 	stmt:  RETURN exprs.    (12)
@@ -1844,36 +1824,22 @@ state 86
 	.  error
 
 
-87: shift/reduce conflict (shift 94(0), red'n 52(5)) on '('
-87: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
 state 87
 	stmt:  FOR IDENT.'=' expr TO expr '{' compstmt '}' 
-	expr:  IDENT.    (52)
-	expr:  IDENT.'(' exprs VARARG ')' 
-	expr:  IDENT.'(' exprs ')' 
-	expr:  IDENT.'[' expr ']' 
-	expr:  IDENT.'[' expr ':' expr ']' 
 
-	'('  shift 94
-	'['  shift 95
-	.  reduce 52 (src line 328)
+	'='  shift 152
+	.  error
 
 
 state 88
-	stmt:  FOR expr_lets.';' expr ';' expr '{' compstmt '}' 
+	stmt:  WHILE expr_lets.';' expr ';' expr '{' compstmt '}' 
 
 	';'  shift 153
 	.  error
 
 
 state 89
-	expr_lets:  expr_many.'=' expr_many 
-
-	'='  shift 154
-	.  error
-
-
-state 90
+	stmt:  WHILE expr.'{' compstmt '}' 
 	expr_many:  expr.    (43)
 	exprs:  expr.    (49)
 	expr:  expr.'?' expr ':' expr 
@@ -1937,6 +1903,7 @@ state 90
 	'*'  shift 54
 	'/'  shift 55
 	'%'  shift 56
+	'{'  shift 154
 	'.'  shift 51
 	'&'  shift 76
 	'('  shift 78
@@ -1945,85 +1912,21 @@ state 90
 	.  reduce 43 (src line 288)
 
 
-state 91
-	stmt:  WHILE expr.'{' compstmt '}' 
-	expr:  expr.'?' expr ':' expr 
-	expr:  expr.'.' IDENT 
-	expr:  expr.'+' expr 
-	expr:  expr.'-' expr 
-	expr:  expr.'*' expr 
-	expr:  expr.'/' expr 
-	expr:  expr.'%' expr 
-	expr:  expr.POW expr 
-	expr:  expr.SHIFTLEFT expr 
-	expr:  expr.SHIFTRIGHT expr 
-	expr:  expr.EQEQ expr 
-	expr:  expr.NEQ expr 
-	expr:  expr.'>' expr 
-	expr:  expr.GE expr 
-	expr:  expr.'<' expr 
-	expr:  expr.LE expr 
-	expr:  expr.PLUSEQ expr 
-	expr:  expr.MINUSEQ expr 
-	expr:  expr.MULEQ expr 
-	expr:  expr.DIVEQ expr 
-	expr:  expr.ANDEQ expr 
-	expr:  expr.OREQ expr 
-	expr:  expr.PLUSPLUS 
-	expr:  expr.MINUSMINUS 
-	expr:  expr.'|' expr 
-	expr:  expr.OROR expr 
-	expr:  expr.'&' expr 
-	expr:  expr.ANDAND expr 
-	expr:  expr.'(' exprs VARARG ')' 
-	expr:  expr.'(' exprs ')' 
-	expr:  expr.'[' expr ']' 
-	expr:  expr.'[' expr ':' expr ']' 
-	expr:  expr.OPCHAN expr 
+state 90
+	expr_lets:  expr_many.'=' expr_many 
 
-	EQEQ  shift 60
-	NEQ  shift 61
-	GE  shift 63
-	LE  shift 65
-	OROR  shift 75
-	ANDAND  shift 77
-	PLUSEQ  shift 66
-	MINUSEQ  shift 67
-	MULEQ  shift 68
-	DIVEQ  shift 69
-	ANDEQ  shift 70
-	OREQ  shift 71
-	PLUSPLUS  shift 72
-	MINUSMINUS  shift 73
-	POW  shift 57
-	SHIFTLEFT  shift 58
-	SHIFTRIGHT  shift 59
-	OPCHAN  shift 80
-	'?'  shift 50
-	'>'  shift 62
-	'<'  shift 64
-	'+'  shift 52
-	'-'  shift 53
-	'*'  shift 54
-	'/'  shift 55
-	'%'  shift 56
-	'{'  shift 155
-	'.'  shift 51
-	'&'  shift 76
-	'('  shift 78
-	'['  shift 79
-	'|'  shift 74
+	'='  shift 155
 	.  error
 
 
-state 92
+state 91
 	stmt:  TRY compstmt.CATCH compstmt '}' 
 
 	CATCH  shift 156
 	.  error
 
 
-state 93
+state 92
 	stmt:  SWITCH expr.':' stmt_cases '}' 
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -2094,7 +1997,7 @@ state 93
 	.  error
 
 
-state 94
+state 93
 	expr:  IDENT '('.exprs VARARG ')' 
 	expr:  IDENT '('.exprs ')' 
 	exprs: .    (48)
@@ -2124,7 +2027,7 @@ state 94
 	expr  goto 83
 	exprs  goto 158
 
-state 95
+state 94
 	expr:  IDENT '['.expr ']' 
 	expr:  IDENT '['.expr ':' expr ']' 
 
@@ -2152,20 +2055,20 @@ state 95
 
 	expr  goto 159
 
-96: shift/reduce conflict (shift 66(0), red'n 54(10)) on PLUSEQ
-96: shift/reduce conflict (shift 67(0), red'n 54(10)) on MINUSEQ
-96: shift/reduce conflict (shift 68(0), red'n 54(10)) on MULEQ
-96: shift/reduce conflict (shift 69(0), red'n 54(10)) on DIVEQ
-96: shift/reduce conflict (shift 70(0), red'n 54(10)) on ANDEQ
-96: shift/reduce conflict (shift 71(0), red'n 54(10)) on OREQ
-96: shift/reduce conflict (shift 57(0), red'n 54(10)) on POW
-96: shift/reduce conflict (shift 80(0), red'n 54(10)) on OPCHAN
-96: shift/reduce conflict (shift 51(0), red'n 54(10)) on '.'
-96: shift/reduce conflict (shift 76(0), red'n 54(10)) on '&'
-96: shift/reduce conflict (shift 78(0), red'n 54(10)) on '('
-96: shift/reduce conflict (shift 79(0), red'n 54(10)) on '['
-96: shift/reduce conflict (shift 74(0), red'n 54(10)) on '|'
-state 96
+95: shift/reduce conflict (shift 66(0), red'n 54(10)) on PLUSEQ
+95: shift/reduce conflict (shift 67(0), red'n 54(10)) on MINUSEQ
+95: shift/reduce conflict (shift 68(0), red'n 54(10)) on MULEQ
+95: shift/reduce conflict (shift 69(0), red'n 54(10)) on DIVEQ
+95: shift/reduce conflict (shift 70(0), red'n 54(10)) on ANDEQ
+95: shift/reduce conflict (shift 71(0), red'n 54(10)) on OREQ
+95: shift/reduce conflict (shift 57(0), red'n 54(10)) on POW
+95: shift/reduce conflict (shift 80(0), red'n 54(10)) on OPCHAN
+95: shift/reduce conflict (shift 51(0), red'n 54(10)) on '.'
+95: shift/reduce conflict (shift 76(0), red'n 54(10)) on '&'
+95: shift/reduce conflict (shift 78(0), red'n 54(10)) on '('
+95: shift/reduce conflict (shift 79(0), red'n 54(10)) on '['
+95: shift/reduce conflict (shift 74(0), red'n 54(10)) on '|'
+state 95
 	expr:  '-' expr.    (54)
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -2217,20 +2120,20 @@ state 96
 	.  reduce 54 (src line 339)
 
 
-97: shift/reduce conflict (shift 66(0), red'n 55(10)) on PLUSEQ
-97: shift/reduce conflict (shift 67(0), red'n 55(10)) on MINUSEQ
-97: shift/reduce conflict (shift 68(0), red'n 55(10)) on MULEQ
-97: shift/reduce conflict (shift 69(0), red'n 55(10)) on DIVEQ
-97: shift/reduce conflict (shift 70(0), red'n 55(10)) on ANDEQ
-97: shift/reduce conflict (shift 71(0), red'n 55(10)) on OREQ
-97: shift/reduce conflict (shift 57(0), red'n 55(10)) on POW
-97: shift/reduce conflict (shift 80(0), red'n 55(10)) on OPCHAN
-97: shift/reduce conflict (shift 51(0), red'n 55(10)) on '.'
-97: shift/reduce conflict (shift 76(0), red'n 55(10)) on '&'
-97: shift/reduce conflict (shift 78(0), red'n 55(10)) on '('
-97: shift/reduce conflict (shift 79(0), red'n 55(10)) on '['
-97: shift/reduce conflict (shift 74(0), red'n 55(10)) on '|'
-state 97
+96: shift/reduce conflict (shift 66(0), red'n 55(10)) on PLUSEQ
+96: shift/reduce conflict (shift 67(0), red'n 55(10)) on MINUSEQ
+96: shift/reduce conflict (shift 68(0), red'n 55(10)) on MULEQ
+96: shift/reduce conflict (shift 69(0), red'n 55(10)) on DIVEQ
+96: shift/reduce conflict (shift 70(0), red'n 55(10)) on ANDEQ
+96: shift/reduce conflict (shift 71(0), red'n 55(10)) on OREQ
+96: shift/reduce conflict (shift 57(0), red'n 55(10)) on POW
+96: shift/reduce conflict (shift 80(0), red'n 55(10)) on OPCHAN
+96: shift/reduce conflict (shift 51(0), red'n 55(10)) on '.'
+96: shift/reduce conflict (shift 76(0), red'n 55(10)) on '&'
+96: shift/reduce conflict (shift 78(0), red'n 55(10)) on '('
+96: shift/reduce conflict (shift 79(0), red'n 55(10)) on '['
+96: shift/reduce conflict (shift 74(0), red'n 55(10)) on '|'
+state 96
 	expr:  '!' expr.    (55)
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -2282,20 +2185,20 @@ state 97
 	.  reduce 55 (src line 344)
 
 
-98: shift/reduce conflict (shift 66(0), red'n 56(10)) on PLUSEQ
-98: shift/reduce conflict (shift 67(0), red'n 56(10)) on MINUSEQ
-98: shift/reduce conflict (shift 68(0), red'n 56(10)) on MULEQ
-98: shift/reduce conflict (shift 69(0), red'n 56(10)) on DIVEQ
-98: shift/reduce conflict (shift 70(0), red'n 56(10)) on ANDEQ
-98: shift/reduce conflict (shift 71(0), red'n 56(10)) on OREQ
-98: shift/reduce conflict (shift 57(0), red'n 56(10)) on POW
-98: shift/reduce conflict (shift 80(0), red'n 56(10)) on OPCHAN
-98: shift/reduce conflict (shift 51(0), red'n 56(10)) on '.'
-98: shift/reduce conflict (shift 76(0), red'n 56(10)) on '&'
-98: shift/reduce conflict (shift 78(0), red'n 56(10)) on '('
-98: shift/reduce conflict (shift 79(0), red'n 56(10)) on '['
-98: shift/reduce conflict (shift 74(0), red'n 56(10)) on '|'
-state 98
+97: shift/reduce conflict (shift 66(0), red'n 56(10)) on PLUSEQ
+97: shift/reduce conflict (shift 67(0), red'n 56(10)) on MINUSEQ
+97: shift/reduce conflict (shift 68(0), red'n 56(10)) on MULEQ
+97: shift/reduce conflict (shift 69(0), red'n 56(10)) on DIVEQ
+97: shift/reduce conflict (shift 70(0), red'n 56(10)) on ANDEQ
+97: shift/reduce conflict (shift 71(0), red'n 56(10)) on OREQ
+97: shift/reduce conflict (shift 57(0), red'n 56(10)) on POW
+97: shift/reduce conflict (shift 80(0), red'n 56(10)) on OPCHAN
+97: shift/reduce conflict (shift 51(0), red'n 56(10)) on '.'
+97: shift/reduce conflict (shift 76(0), red'n 56(10)) on '&'
+97: shift/reduce conflict (shift 78(0), red'n 56(10)) on '('
+97: shift/reduce conflict (shift 79(0), red'n 56(10)) on '['
+97: shift/reduce conflict (shift 74(0), red'n 56(10)) on '|'
+state 97
 	expr:  '^' expr.    (56)
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -2347,40 +2250,40 @@ state 98
 	.  reduce 56 (src line 349)
 
 
-99: shift/reduce conflict (shift 94(0), red'n 52(5)) on '('
-99: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
- 99: reduce/reduce conflict  (red'ns 52 and 57) on EQEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on NEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on GE
- 99: reduce/reduce conflict  (red'ns 52 and 57) on LE
- 99: reduce/reduce conflict  (red'ns 52 and 57) on OROR
- 99: reduce/reduce conflict  (red'ns 52 and 57) on ANDAND
- 99: reduce/reduce conflict  (red'ns 52 and 57) on PLUSEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on MINUSEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on MULEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on DIVEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on ANDEQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on OREQ
- 99: reduce/reduce conflict  (red'ns 52 and 57) on PLUSPLUS
- 99: reduce/reduce conflict  (red'ns 52 and 57) on MINUSMINUS
- 99: reduce/reduce conflict  (red'ns 52 and 57) on POW
- 99: reduce/reduce conflict  (red'ns 52 and 57) on SHIFTLEFT
- 99: reduce/reduce conflict  (red'ns 52 and 57) on SHIFTRIGHT
- 99: reduce/reduce conflict  (red'ns 52 and 57) on OPCHAN
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '?'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '>'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '<'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '+'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '-'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '*'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '/'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '%'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '.'
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '&'
-99: shift/reduce conflict (shift 94(0), red'n 57(10)) on '('
-99: shift/reduce conflict (shift 95(0), red'n 57(10)) on '['
- 99: reduce/reduce conflict  (red'ns 52 and 57) on '|'
-state 99
+98: shift/reduce conflict (shift 93(0), red'n 52(5)) on '('
+98: shift/reduce conflict (shift 94(0), red'n 52(5)) on '['
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on EQEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on NEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on GE
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on LE
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on OROR
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on ANDAND
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on PLUSEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on MINUSEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on MULEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on DIVEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on ANDEQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on OREQ
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on PLUSPLUS
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on MINUSMINUS
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on POW
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on SHIFTLEFT
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on SHIFTRIGHT
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on OPCHAN
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '?'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '>'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '<'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '+'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '-'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '*'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '/'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '%'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '.'
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '&'
+98: shift/reduce conflict (shift 93(0), red'n 57(10)) on '('
+98: shift/reduce conflict (shift 94(0), red'n 57(10)) on '['
+ 98: reduce/reduce conflict  (red'ns 52 and 57) on '|'
+state 98
 	expr:  IDENT.    (52)
 	expr:  '&' IDENT.    (57)
 	expr:  IDENT.'(' exprs VARARG ')' 
@@ -2402,15 +2305,15 @@ state 99
 	'{'  reduce 57 (src line 354)
 	'}'  reduce 57 (src line 354)
 	';'  reduce 57 (src line 354)
-	'('  shift 94
+	'('  shift 93
 	')'  reduce 57 (src line 354)
-	'['  shift 95
+	'['  shift 94
 	']'  reduce 57 (src line 354)
 	'\n'  reduce 57 (src line 354)
 	.  reduce 52 (src line 328)
 
 
-state 100
+state 99
 	expr:  '&' expr.'.' IDENT 
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -2480,40 +2383,40 @@ state 100
 	.  error
 
 
-101: shift/reduce conflict (shift 94(0), red'n 52(5)) on '('
-101: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
- 101: reduce/reduce conflict  (red'ns 52 and 59) on EQEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on NEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on GE
- 101: reduce/reduce conflict  (red'ns 52 and 59) on LE
- 101: reduce/reduce conflict  (red'ns 52 and 59) on OROR
- 101: reduce/reduce conflict  (red'ns 52 and 59) on ANDAND
- 101: reduce/reduce conflict  (red'ns 52 and 59) on PLUSEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on MINUSEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on MULEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on DIVEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on ANDEQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on OREQ
- 101: reduce/reduce conflict  (red'ns 52 and 59) on PLUSPLUS
- 101: reduce/reduce conflict  (red'ns 52 and 59) on MINUSMINUS
- 101: reduce/reduce conflict  (red'ns 52 and 59) on POW
- 101: reduce/reduce conflict  (red'ns 52 and 59) on SHIFTLEFT
- 101: reduce/reduce conflict  (red'ns 52 and 59) on SHIFTRIGHT
- 101: reduce/reduce conflict  (red'ns 52 and 59) on OPCHAN
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '?'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '>'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '<'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '+'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '-'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '*'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '/'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '%'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '.'
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '&'
-101: shift/reduce conflict (shift 94(0), red'n 59(10)) on '('
-101: shift/reduce conflict (shift 95(0), red'n 59(10)) on '['
- 101: reduce/reduce conflict  (red'ns 52 and 59) on '|'
-state 101
+100: shift/reduce conflict (shift 93(0), red'n 52(5)) on '('
+100: shift/reduce conflict (shift 94(0), red'n 52(5)) on '['
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on EQEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on NEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on GE
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on LE
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on OROR
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on ANDAND
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on PLUSEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on MINUSEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on MULEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on DIVEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on ANDEQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on OREQ
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on PLUSPLUS
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on MINUSMINUS
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on POW
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on SHIFTLEFT
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on SHIFTRIGHT
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on OPCHAN
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '?'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '>'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '<'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '+'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '-'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '*'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '/'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '%'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '.'
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '&'
+100: shift/reduce conflict (shift 93(0), red'n 59(10)) on '('
+100: shift/reduce conflict (shift 94(0), red'n 59(10)) on '['
+ 100: reduce/reduce conflict  (red'ns 52 and 59) on '|'
+state 100
 	expr:  IDENT.    (52)
 	expr:  '*' IDENT.    (59)
 	expr:  IDENT.'(' exprs VARARG ')' 
@@ -2535,15 +2438,15 @@ state 101
 	'{'  reduce 59 (src line 364)
 	'}'  reduce 59 (src line 364)
 	';'  reduce 59 (src line 364)
-	'('  shift 94
+	'('  shift 93
 	')'  reduce 59 (src line 364)
-	'['  shift 95
+	'['  shift 94
 	']'  reduce 59 (src line 364)
 	'\n'  reduce 59 (src line 364)
 	.  reduce 52 (src line 328)
 
 
-state 102
+state 101
 	expr:  '*' expr.'.' IDENT 
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -2613,7 +2516,7 @@ state 102
 	.  error
 
 
-state 103
+state 102
 	expr:  FUNC '('.expr_idents ')' opt_terms compstmt '}' 
 	expr:  FUNC '('.IDENT VARARG ')' opt_terms compstmt '}' 
 	expr_idents: .    (39)
@@ -2623,7 +2526,7 @@ state 103
 
 	expr_idents  goto 162
 
-state 104
+state 103
 	expr:  FUNC IDENT.'(' expr_idents ')' opt_terms compstmt '}' 
 	expr:  FUNC IDENT.'(' IDENT VARARG ')' opt_terms compstmt '}' 
 
@@ -2631,7 +2534,7 @@ state 104
 	.  error
 
 
-state 105
+state 104
 	expr:  '[' opt_terms.exprs opt_terms ']' 
 	expr:  '[' opt_terms.exprs ',' opt_terms ']' 
 	exprs: .    (48)
@@ -2661,7 +2564,7 @@ state 105
 	expr  goto 83
 	exprs  goto 165
 
-state 106
+state 105
 	expr:  '{' opt_terms.expr_pairs opt_terms '}' 
 	expr:  '{' opt_terms.expr_pairs ',' opt_terms '}' 
 	expr_pairs: .    (36)
@@ -2672,7 +2575,7 @@ state 106
 	expr_pair  goto 167
 	expr_pairs  goto 166
 
-state 107
+state 106
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  '(' expr.')' 
@@ -2743,7 +2646,7 @@ state 107
 	.  error
 
 
-state 108
+state 107
 	expr:  NEW '('.typ ')' 
 
 	IDENT  shift 171
@@ -2751,9 +2654,9 @@ state 108
 
 	typ  goto 170
 
-109: shift/reduce conflict (shift 172(0), red'n 52(5)) on '('
-109: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
-state 109
+108: shift/reduce conflict (shift 172(0), red'n 52(5)) on '('
+108: shift/reduce conflict (shift 94(0), red'n 52(5)) on '['
+state 108
 	expr:  IDENT.    (52)
 	expr:  IDENT.'(' exprs VARARG ')' 
 	expr:  IDENT.'(' exprs ')' 
@@ -2763,11 +2666,11 @@ state 109
 	expr:  IDENT.'[' expr ':' expr ']' 
 
 	'('  shift 172
-	'['  shift 95
+	'['  shift 94
 	.  reduce 52 (src line 328)
 
 
-state 110
+state 109
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -2838,7 +2741,7 @@ state 110
 	.  error
 
 
-state 111
+state 110
 	expr:  MAKE '('.typ ')' 
 	expr:  MAKE '('.CHAN typ ')' 
 	expr:  MAKE '('.CHAN typ ',' expr ')' 
@@ -2852,38 +2755,38 @@ state 111
 
 	typ  goto 174
 
-112: shift/reduce conflict (shift 60(6), red'n 122(0)) on EQEQ
-112: shift/reduce conflict (shift 61(6), red'n 122(0)) on NEQ
-112: shift/reduce conflict (shift 63(7), red'n 122(0)) on GE
-112: shift/reduce conflict (shift 65(7), red'n 122(0)) on LE
-112: shift/reduce conflict (shift 75(3), red'n 122(0)) on OROR
-112: shift/reduce conflict (shift 77(4), red'n 122(0)) on ANDAND
-112: shift/reduce conflict (shift 66(0), red'n 122(0)) on PLUSEQ
-112: shift/reduce conflict (shift 67(0), red'n 122(0)) on MINUSEQ
-112: shift/reduce conflict (shift 68(0), red'n 122(0)) on MULEQ
-112: shift/reduce conflict (shift 69(0), red'n 122(0)) on DIVEQ
-112: shift/reduce conflict (shift 70(0), red'n 122(0)) on ANDEQ
-112: shift/reduce conflict (shift 71(0), red'n 122(0)) on OREQ
-112: shift/reduce conflict (shift 72(8), red'n 122(0)) on PLUSPLUS
-112: shift/reduce conflict (shift 73(8), red'n 122(0)) on MINUSMINUS
-112: shift/reduce conflict (shift 57(0), red'n 122(0)) on POW
-112: shift/reduce conflict (shift 58(7), red'n 122(0)) on SHIFTLEFT
-112: shift/reduce conflict (shift 59(7), red'n 122(0)) on SHIFTRIGHT
-112: shift/reduce conflict (shift 80(0), red'n 122(0)) on OPCHAN
-112: shift/reduce conflict (shift 50(2), red'n 122(0)) on '?'
-112: shift/reduce conflict (shift 62(7), red'n 122(0)) on '>'
-112: shift/reduce conflict (shift 64(7), red'n 122(0)) on '<'
-112: shift/reduce conflict (shift 52(8), red'n 122(0)) on '+'
-112: shift/reduce conflict (shift 53(8), red'n 122(0)) on '-'
-112: shift/reduce conflict (shift 54(9), red'n 122(0)) on '*'
-112: shift/reduce conflict (shift 55(9), red'n 122(0)) on '/'
-112: shift/reduce conflict (shift 56(9), red'n 122(0)) on '%'
-112: shift/reduce conflict (shift 51(0), red'n 122(0)) on '.'
-112: shift/reduce conflict (shift 76(0), red'n 122(0)) on '&'
-112: shift/reduce conflict (shift 78(0), red'n 122(0)) on '('
-112: shift/reduce conflict (shift 79(0), red'n 122(0)) on '['
-112: shift/reduce conflict (shift 74(0), red'n 122(0)) on '|'
-state 112
+111: shift/reduce conflict (shift 60(6), red'n 122(0)) on EQEQ
+111: shift/reduce conflict (shift 61(6), red'n 122(0)) on NEQ
+111: shift/reduce conflict (shift 63(7), red'n 122(0)) on GE
+111: shift/reduce conflict (shift 65(7), red'n 122(0)) on LE
+111: shift/reduce conflict (shift 75(3), red'n 122(0)) on OROR
+111: shift/reduce conflict (shift 77(4), red'n 122(0)) on ANDAND
+111: shift/reduce conflict (shift 66(0), red'n 122(0)) on PLUSEQ
+111: shift/reduce conflict (shift 67(0), red'n 122(0)) on MINUSEQ
+111: shift/reduce conflict (shift 68(0), red'n 122(0)) on MULEQ
+111: shift/reduce conflict (shift 69(0), red'n 122(0)) on DIVEQ
+111: shift/reduce conflict (shift 70(0), red'n 122(0)) on ANDEQ
+111: shift/reduce conflict (shift 71(0), red'n 122(0)) on OREQ
+111: shift/reduce conflict (shift 72(8), red'n 122(0)) on PLUSPLUS
+111: shift/reduce conflict (shift 73(8), red'n 122(0)) on MINUSMINUS
+111: shift/reduce conflict (shift 57(0), red'n 122(0)) on POW
+111: shift/reduce conflict (shift 58(7), red'n 122(0)) on SHIFTLEFT
+111: shift/reduce conflict (shift 59(7), red'n 122(0)) on SHIFTRIGHT
+111: shift/reduce conflict (shift 80(0), red'n 122(0)) on OPCHAN
+111: shift/reduce conflict (shift 50(2), red'n 122(0)) on '?'
+111: shift/reduce conflict (shift 62(7), red'n 122(0)) on '>'
+111: shift/reduce conflict (shift 64(7), red'n 122(0)) on '<'
+111: shift/reduce conflict (shift 52(8), red'n 122(0)) on '+'
+111: shift/reduce conflict (shift 53(8), red'n 122(0)) on '-'
+111: shift/reduce conflict (shift 54(9), red'n 122(0)) on '*'
+111: shift/reduce conflict (shift 55(9), red'n 122(0)) on '/'
+111: shift/reduce conflict (shift 56(9), red'n 122(0)) on '%'
+111: shift/reduce conflict (shift 51(0), red'n 122(0)) on '.'
+111: shift/reduce conflict (shift 76(0), red'n 122(0)) on '&'
+111: shift/reduce conflict (shift 78(0), red'n 122(0)) on '('
+111: shift/reduce conflict (shift 79(0), red'n 122(0)) on '['
+111: shift/reduce conflict (shift 74(0), red'n 122(0)) on '|'
+state 111
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -2953,7 +2856,7 @@ state 112
 	.  reduce 122 (src line 687)
 
 
-state 113
+state 112
 	expr_many:  exprs ','.opt_terms expr 
 	expr_many:  exprs ','.opt_terms IDENT 
 	exprs:  exprs ','.opt_terms expr 
@@ -2968,7 +2871,7 @@ state 113
 	terms  goto 4
 	term  goto 5
 
-state 114
+state 113
 	stmt_if:  IF expr.'{' compstmt stmt_elsifs ELSE compstmt '}' 
 	stmt_if:  IF expr.'{' compstmt stmt_elsifs '}' 
 	expr:  expr.'?' expr ':' expr 
@@ -3040,13 +2943,13 @@ state 114
 	.  error
 
 
-state 115
+state 114
 	stmts:  stmts terms stmt.    (5)
 
 	.  reduce 5 (src line 91)
 
 
-state 116
+state 115
 	stmt:  VAR expr_idents '='.expr_many 
 	exprs: .    (48)
 
@@ -3072,11 +2975,11 @@ state 116
 	'['  shift 35
 	.  reduce 48 (src line 311)
 
-	expr  goto 90
+	expr  goto 148
 	exprs  goto 42
 	expr_many  goto 179
 
-state 117
+state 116
 	expr_idents:  expr_idents ','.opt_terms IDENT 
 	opt_terms: .    (123)
 
@@ -3088,7 +2991,7 @@ state 117
 	terms  goto 4
 	term  goto 5
 
-state 118
+state 117
 	stmt:  expr '=' expr.    (8)
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
@@ -3158,7 +3061,7 @@ state 118
 	.  reduce 8 (src line 112)
 
 
-state 119
+state 118
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr '?' expr.':' expr 
 	expr:  expr.'.' IDENT 
@@ -3229,26 +3132,26 @@ state 119
 	.  error
 
 
-state 120
+state 119
 	expr:  expr '.' IDENT.    (67)
 
 	.  reduce 67 (src line 404)
 
 
-121: shift/reduce conflict (shift 66(0), red'n 78(8)) on PLUSEQ
-121: shift/reduce conflict (shift 67(0), red'n 78(8)) on MINUSEQ
-121: shift/reduce conflict (shift 68(0), red'n 78(8)) on MULEQ
-121: shift/reduce conflict (shift 69(0), red'n 78(8)) on DIVEQ
-121: shift/reduce conflict (shift 70(0), red'n 78(8)) on ANDEQ
-121: shift/reduce conflict (shift 71(0), red'n 78(8)) on OREQ
-121: shift/reduce conflict (shift 57(0), red'n 78(8)) on POW
-121: shift/reduce conflict (shift 80(0), red'n 78(8)) on OPCHAN
-121: shift/reduce conflict (shift 51(0), red'n 78(8)) on '.'
-121: shift/reduce conflict (shift 76(0), red'n 78(8)) on '&'
-121: shift/reduce conflict (shift 78(0), red'n 78(8)) on '('
-121: shift/reduce conflict (shift 79(0), red'n 78(8)) on '['
-121: shift/reduce conflict (shift 74(0), red'n 78(8)) on '|'
-state 121
+120: shift/reduce conflict (shift 66(0), red'n 78(8)) on PLUSEQ
+120: shift/reduce conflict (shift 67(0), red'n 78(8)) on MINUSEQ
+120: shift/reduce conflict (shift 68(0), red'n 78(8)) on MULEQ
+120: shift/reduce conflict (shift 69(0), red'n 78(8)) on DIVEQ
+120: shift/reduce conflict (shift 70(0), red'n 78(8)) on ANDEQ
+120: shift/reduce conflict (shift 71(0), red'n 78(8)) on OREQ
+120: shift/reduce conflict (shift 57(0), red'n 78(8)) on POW
+120: shift/reduce conflict (shift 80(0), red'n 78(8)) on OPCHAN
+120: shift/reduce conflict (shift 51(0), red'n 78(8)) on '.'
+120: shift/reduce conflict (shift 76(0), red'n 78(8)) on '&'
+120: shift/reduce conflict (shift 78(0), red'n 78(8)) on '('
+120: shift/reduce conflict (shift 79(0), red'n 78(8)) on '['
+120: shift/reduce conflict (shift 74(0), red'n 78(8)) on '|'
+state 120
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3303,20 +3206,20 @@ state 121
 	.  reduce 78 (src line 467)
 
 
-122: shift/reduce conflict (shift 66(0), red'n 79(8)) on PLUSEQ
-122: shift/reduce conflict (shift 67(0), red'n 79(8)) on MINUSEQ
-122: shift/reduce conflict (shift 68(0), red'n 79(8)) on MULEQ
-122: shift/reduce conflict (shift 69(0), red'n 79(8)) on DIVEQ
-122: shift/reduce conflict (shift 70(0), red'n 79(8)) on ANDEQ
-122: shift/reduce conflict (shift 71(0), red'n 79(8)) on OREQ
-122: shift/reduce conflict (shift 57(0), red'n 79(8)) on POW
-122: shift/reduce conflict (shift 80(0), red'n 79(8)) on OPCHAN
-122: shift/reduce conflict (shift 51(0), red'n 79(8)) on '.'
-122: shift/reduce conflict (shift 76(0), red'n 79(8)) on '&'
-122: shift/reduce conflict (shift 78(0), red'n 79(8)) on '('
-122: shift/reduce conflict (shift 79(0), red'n 79(8)) on '['
-122: shift/reduce conflict (shift 74(0), red'n 79(8)) on '|'
-state 122
+121: shift/reduce conflict (shift 66(0), red'n 79(8)) on PLUSEQ
+121: shift/reduce conflict (shift 67(0), red'n 79(8)) on MINUSEQ
+121: shift/reduce conflict (shift 68(0), red'n 79(8)) on MULEQ
+121: shift/reduce conflict (shift 69(0), red'n 79(8)) on DIVEQ
+121: shift/reduce conflict (shift 70(0), red'n 79(8)) on ANDEQ
+121: shift/reduce conflict (shift 71(0), red'n 79(8)) on OREQ
+121: shift/reduce conflict (shift 57(0), red'n 79(8)) on POW
+121: shift/reduce conflict (shift 80(0), red'n 79(8)) on OPCHAN
+121: shift/reduce conflict (shift 51(0), red'n 79(8)) on '.'
+121: shift/reduce conflict (shift 76(0), red'n 79(8)) on '&'
+121: shift/reduce conflict (shift 78(0), red'n 79(8)) on '('
+121: shift/reduce conflict (shift 79(0), red'n 79(8)) on '['
+121: shift/reduce conflict (shift 74(0), red'n 79(8)) on '|'
+state 121
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3371,20 +3274,20 @@ state 122
 	.  reduce 79 (src line 472)
 
 
-123: shift/reduce conflict (shift 66(0), red'n 80(9)) on PLUSEQ
-123: shift/reduce conflict (shift 67(0), red'n 80(9)) on MINUSEQ
-123: shift/reduce conflict (shift 68(0), red'n 80(9)) on MULEQ
-123: shift/reduce conflict (shift 69(0), red'n 80(9)) on DIVEQ
-123: shift/reduce conflict (shift 70(0), red'n 80(9)) on ANDEQ
-123: shift/reduce conflict (shift 71(0), red'n 80(9)) on OREQ
-123: shift/reduce conflict (shift 57(0), red'n 80(9)) on POW
-123: shift/reduce conflict (shift 80(0), red'n 80(9)) on OPCHAN
-123: shift/reduce conflict (shift 51(0), red'n 80(9)) on '.'
-123: shift/reduce conflict (shift 76(0), red'n 80(9)) on '&'
-123: shift/reduce conflict (shift 78(0), red'n 80(9)) on '('
-123: shift/reduce conflict (shift 79(0), red'n 80(9)) on '['
-123: shift/reduce conflict (shift 74(0), red'n 80(9)) on '|'
-state 123
+122: shift/reduce conflict (shift 66(0), red'n 80(9)) on PLUSEQ
+122: shift/reduce conflict (shift 67(0), red'n 80(9)) on MINUSEQ
+122: shift/reduce conflict (shift 68(0), red'n 80(9)) on MULEQ
+122: shift/reduce conflict (shift 69(0), red'n 80(9)) on DIVEQ
+122: shift/reduce conflict (shift 70(0), red'n 80(9)) on ANDEQ
+122: shift/reduce conflict (shift 71(0), red'n 80(9)) on OREQ
+122: shift/reduce conflict (shift 57(0), red'n 80(9)) on POW
+122: shift/reduce conflict (shift 80(0), red'n 80(9)) on OPCHAN
+122: shift/reduce conflict (shift 51(0), red'n 80(9)) on '.'
+122: shift/reduce conflict (shift 76(0), red'n 80(9)) on '&'
+122: shift/reduce conflict (shift 78(0), red'n 80(9)) on '('
+122: shift/reduce conflict (shift 79(0), red'n 80(9)) on '['
+122: shift/reduce conflict (shift 74(0), red'n 80(9)) on '|'
+state 122
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3436,20 +3339,20 @@ state 123
 	.  reduce 80 (src line 477)
 
 
-124: shift/reduce conflict (shift 66(0), red'n 81(9)) on PLUSEQ
-124: shift/reduce conflict (shift 67(0), red'n 81(9)) on MINUSEQ
-124: shift/reduce conflict (shift 68(0), red'n 81(9)) on MULEQ
-124: shift/reduce conflict (shift 69(0), red'n 81(9)) on DIVEQ
-124: shift/reduce conflict (shift 70(0), red'n 81(9)) on ANDEQ
-124: shift/reduce conflict (shift 71(0), red'n 81(9)) on OREQ
-124: shift/reduce conflict (shift 57(0), red'n 81(9)) on POW
-124: shift/reduce conflict (shift 80(0), red'n 81(9)) on OPCHAN
-124: shift/reduce conflict (shift 51(0), red'n 81(9)) on '.'
-124: shift/reduce conflict (shift 76(0), red'n 81(9)) on '&'
-124: shift/reduce conflict (shift 78(0), red'n 81(9)) on '('
-124: shift/reduce conflict (shift 79(0), red'n 81(9)) on '['
-124: shift/reduce conflict (shift 74(0), red'n 81(9)) on '|'
-state 124
+123: shift/reduce conflict (shift 66(0), red'n 81(9)) on PLUSEQ
+123: shift/reduce conflict (shift 67(0), red'n 81(9)) on MINUSEQ
+123: shift/reduce conflict (shift 68(0), red'n 81(9)) on MULEQ
+123: shift/reduce conflict (shift 69(0), red'n 81(9)) on DIVEQ
+123: shift/reduce conflict (shift 70(0), red'n 81(9)) on ANDEQ
+123: shift/reduce conflict (shift 71(0), red'n 81(9)) on OREQ
+123: shift/reduce conflict (shift 57(0), red'n 81(9)) on POW
+123: shift/reduce conflict (shift 80(0), red'n 81(9)) on OPCHAN
+123: shift/reduce conflict (shift 51(0), red'n 81(9)) on '.'
+123: shift/reduce conflict (shift 76(0), red'n 81(9)) on '&'
+123: shift/reduce conflict (shift 78(0), red'n 81(9)) on '('
+123: shift/reduce conflict (shift 79(0), red'n 81(9)) on '['
+123: shift/reduce conflict (shift 74(0), red'n 81(9)) on '|'
+state 123
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3501,20 +3404,20 @@ state 124
 	.  reduce 81 (src line 482)
 
 
-125: shift/reduce conflict (shift 66(0), red'n 82(9)) on PLUSEQ
-125: shift/reduce conflict (shift 67(0), red'n 82(9)) on MINUSEQ
-125: shift/reduce conflict (shift 68(0), red'n 82(9)) on MULEQ
-125: shift/reduce conflict (shift 69(0), red'n 82(9)) on DIVEQ
-125: shift/reduce conflict (shift 70(0), red'n 82(9)) on ANDEQ
-125: shift/reduce conflict (shift 71(0), red'n 82(9)) on OREQ
-125: shift/reduce conflict (shift 57(0), red'n 82(9)) on POW
-125: shift/reduce conflict (shift 80(0), red'n 82(9)) on OPCHAN
-125: shift/reduce conflict (shift 51(0), red'n 82(9)) on '.'
-125: shift/reduce conflict (shift 76(0), red'n 82(9)) on '&'
-125: shift/reduce conflict (shift 78(0), red'n 82(9)) on '('
-125: shift/reduce conflict (shift 79(0), red'n 82(9)) on '['
-125: shift/reduce conflict (shift 74(0), red'n 82(9)) on '|'
-state 125
+124: shift/reduce conflict (shift 66(0), red'n 82(9)) on PLUSEQ
+124: shift/reduce conflict (shift 67(0), red'n 82(9)) on MINUSEQ
+124: shift/reduce conflict (shift 68(0), red'n 82(9)) on MULEQ
+124: shift/reduce conflict (shift 69(0), red'n 82(9)) on DIVEQ
+124: shift/reduce conflict (shift 70(0), red'n 82(9)) on ANDEQ
+124: shift/reduce conflict (shift 71(0), red'n 82(9)) on OREQ
+124: shift/reduce conflict (shift 57(0), red'n 82(9)) on POW
+124: shift/reduce conflict (shift 80(0), red'n 82(9)) on OPCHAN
+124: shift/reduce conflict (shift 51(0), red'n 82(9)) on '.'
+124: shift/reduce conflict (shift 76(0), red'n 82(9)) on '&'
+124: shift/reduce conflict (shift 78(0), red'n 82(9)) on '('
+124: shift/reduce conflict (shift 79(0), red'n 82(9)) on '['
+124: shift/reduce conflict (shift 74(0), red'n 82(9)) on '|'
+state 124
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3566,38 +3469,38 @@ state 125
 	.  reduce 82 (src line 487)
 
 
-126: shift/reduce conflict (shift 60(6), red'n 83(0)) on EQEQ
-126: shift/reduce conflict (shift 61(6), red'n 83(0)) on NEQ
-126: shift/reduce conflict (shift 63(7), red'n 83(0)) on GE
-126: shift/reduce conflict (shift 65(7), red'n 83(0)) on LE
-126: shift/reduce conflict (shift 75(3), red'n 83(0)) on OROR
-126: shift/reduce conflict (shift 77(4), red'n 83(0)) on ANDAND
-126: shift/reduce conflict (shift 66(0), red'n 83(0)) on PLUSEQ
-126: shift/reduce conflict (shift 67(0), red'n 83(0)) on MINUSEQ
-126: shift/reduce conflict (shift 68(0), red'n 83(0)) on MULEQ
-126: shift/reduce conflict (shift 69(0), red'n 83(0)) on DIVEQ
-126: shift/reduce conflict (shift 70(0), red'n 83(0)) on ANDEQ
-126: shift/reduce conflict (shift 71(0), red'n 83(0)) on OREQ
-126: shift/reduce conflict (shift 72(8), red'n 83(0)) on PLUSPLUS
-126: shift/reduce conflict (shift 73(8), red'n 83(0)) on MINUSMINUS
-126: shift/reduce conflict (shift 57(0), red'n 83(0)) on POW
-126: shift/reduce conflict (shift 58(7), red'n 83(0)) on SHIFTLEFT
-126: shift/reduce conflict (shift 59(7), red'n 83(0)) on SHIFTRIGHT
-126: shift/reduce conflict (shift 80(0), red'n 83(0)) on OPCHAN
-126: shift/reduce conflict (shift 50(2), red'n 83(0)) on '?'
-126: shift/reduce conflict (shift 62(7), red'n 83(0)) on '>'
-126: shift/reduce conflict (shift 64(7), red'n 83(0)) on '<'
-126: shift/reduce conflict (shift 52(8), red'n 83(0)) on '+'
-126: shift/reduce conflict (shift 53(8), red'n 83(0)) on '-'
-126: shift/reduce conflict (shift 54(9), red'n 83(0)) on '*'
-126: shift/reduce conflict (shift 55(9), red'n 83(0)) on '/'
-126: shift/reduce conflict (shift 56(9), red'n 83(0)) on '%'
-126: shift/reduce conflict (shift 51(0), red'n 83(0)) on '.'
-126: shift/reduce conflict (shift 76(0), red'n 83(0)) on '&'
-126: shift/reduce conflict (shift 78(0), red'n 83(0)) on '('
-126: shift/reduce conflict (shift 79(0), red'n 83(0)) on '['
-126: shift/reduce conflict (shift 74(0), red'n 83(0)) on '|'
-state 126
+125: shift/reduce conflict (shift 60(6), red'n 83(0)) on EQEQ
+125: shift/reduce conflict (shift 61(6), red'n 83(0)) on NEQ
+125: shift/reduce conflict (shift 63(7), red'n 83(0)) on GE
+125: shift/reduce conflict (shift 65(7), red'n 83(0)) on LE
+125: shift/reduce conflict (shift 75(3), red'n 83(0)) on OROR
+125: shift/reduce conflict (shift 77(4), red'n 83(0)) on ANDAND
+125: shift/reduce conflict (shift 66(0), red'n 83(0)) on PLUSEQ
+125: shift/reduce conflict (shift 67(0), red'n 83(0)) on MINUSEQ
+125: shift/reduce conflict (shift 68(0), red'n 83(0)) on MULEQ
+125: shift/reduce conflict (shift 69(0), red'n 83(0)) on DIVEQ
+125: shift/reduce conflict (shift 70(0), red'n 83(0)) on ANDEQ
+125: shift/reduce conflict (shift 71(0), red'n 83(0)) on OREQ
+125: shift/reduce conflict (shift 72(8), red'n 83(0)) on PLUSPLUS
+125: shift/reduce conflict (shift 73(8), red'n 83(0)) on MINUSMINUS
+125: shift/reduce conflict (shift 57(0), red'n 83(0)) on POW
+125: shift/reduce conflict (shift 58(7), red'n 83(0)) on SHIFTLEFT
+125: shift/reduce conflict (shift 59(7), red'n 83(0)) on SHIFTRIGHT
+125: shift/reduce conflict (shift 80(0), red'n 83(0)) on OPCHAN
+125: shift/reduce conflict (shift 50(2), red'n 83(0)) on '?'
+125: shift/reduce conflict (shift 62(7), red'n 83(0)) on '>'
+125: shift/reduce conflict (shift 64(7), red'n 83(0)) on '<'
+125: shift/reduce conflict (shift 52(8), red'n 83(0)) on '+'
+125: shift/reduce conflict (shift 53(8), red'n 83(0)) on '-'
+125: shift/reduce conflict (shift 54(9), red'n 83(0)) on '*'
+125: shift/reduce conflict (shift 55(9), red'n 83(0)) on '/'
+125: shift/reduce conflict (shift 56(9), red'n 83(0)) on '%'
+125: shift/reduce conflict (shift 51(0), red'n 83(0)) on '.'
+125: shift/reduce conflict (shift 76(0), red'n 83(0)) on '&'
+125: shift/reduce conflict (shift 78(0), red'n 83(0)) on '('
+125: shift/reduce conflict (shift 79(0), red'n 83(0)) on '['
+125: shift/reduce conflict (shift 74(0), red'n 83(0)) on '|'
+state 125
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3667,20 +3570,20 @@ state 126
 	.  reduce 83 (src line 492)
 
 
-127: shift/reduce conflict (shift 66(0), red'n 84(7)) on PLUSEQ
-127: shift/reduce conflict (shift 67(0), red'n 84(7)) on MINUSEQ
-127: shift/reduce conflict (shift 68(0), red'n 84(7)) on MULEQ
-127: shift/reduce conflict (shift 69(0), red'n 84(7)) on DIVEQ
-127: shift/reduce conflict (shift 70(0), red'n 84(7)) on ANDEQ
-127: shift/reduce conflict (shift 71(0), red'n 84(7)) on OREQ
-127: shift/reduce conflict (shift 57(0), red'n 84(7)) on POW
-127: shift/reduce conflict (shift 80(0), red'n 84(7)) on OPCHAN
-127: shift/reduce conflict (shift 51(0), red'n 84(7)) on '.'
-127: shift/reduce conflict (shift 76(0), red'n 84(7)) on '&'
-127: shift/reduce conflict (shift 78(0), red'n 84(7)) on '('
-127: shift/reduce conflict (shift 79(0), red'n 84(7)) on '['
-127: shift/reduce conflict (shift 74(0), red'n 84(7)) on '|'
-state 127
+126: shift/reduce conflict (shift 66(0), red'n 84(7)) on PLUSEQ
+126: shift/reduce conflict (shift 67(0), red'n 84(7)) on MINUSEQ
+126: shift/reduce conflict (shift 68(0), red'n 84(7)) on MULEQ
+126: shift/reduce conflict (shift 69(0), red'n 84(7)) on DIVEQ
+126: shift/reduce conflict (shift 70(0), red'n 84(7)) on ANDEQ
+126: shift/reduce conflict (shift 71(0), red'n 84(7)) on OREQ
+126: shift/reduce conflict (shift 57(0), red'n 84(7)) on POW
+126: shift/reduce conflict (shift 80(0), red'n 84(7)) on OPCHAN
+126: shift/reduce conflict (shift 51(0), red'n 84(7)) on '.'
+126: shift/reduce conflict (shift 76(0), red'n 84(7)) on '&'
+126: shift/reduce conflict (shift 78(0), red'n 84(7)) on '('
+126: shift/reduce conflict (shift 79(0), red'n 84(7)) on '['
+126: shift/reduce conflict (shift 74(0), red'n 84(7)) on '|'
+state 126
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3739,20 +3642,20 @@ state 127
 	.  reduce 84 (src line 497)
 
 
-128: shift/reduce conflict (shift 66(0), red'n 85(7)) on PLUSEQ
-128: shift/reduce conflict (shift 67(0), red'n 85(7)) on MINUSEQ
-128: shift/reduce conflict (shift 68(0), red'n 85(7)) on MULEQ
-128: shift/reduce conflict (shift 69(0), red'n 85(7)) on DIVEQ
-128: shift/reduce conflict (shift 70(0), red'n 85(7)) on ANDEQ
-128: shift/reduce conflict (shift 71(0), red'n 85(7)) on OREQ
-128: shift/reduce conflict (shift 57(0), red'n 85(7)) on POW
-128: shift/reduce conflict (shift 80(0), red'n 85(7)) on OPCHAN
-128: shift/reduce conflict (shift 51(0), red'n 85(7)) on '.'
-128: shift/reduce conflict (shift 76(0), red'n 85(7)) on '&'
-128: shift/reduce conflict (shift 78(0), red'n 85(7)) on '('
-128: shift/reduce conflict (shift 79(0), red'n 85(7)) on '['
-128: shift/reduce conflict (shift 74(0), red'n 85(7)) on '|'
-state 128
+127: shift/reduce conflict (shift 66(0), red'n 85(7)) on PLUSEQ
+127: shift/reduce conflict (shift 67(0), red'n 85(7)) on MINUSEQ
+127: shift/reduce conflict (shift 68(0), red'n 85(7)) on MULEQ
+127: shift/reduce conflict (shift 69(0), red'n 85(7)) on DIVEQ
+127: shift/reduce conflict (shift 70(0), red'n 85(7)) on ANDEQ
+127: shift/reduce conflict (shift 71(0), red'n 85(7)) on OREQ
+127: shift/reduce conflict (shift 57(0), red'n 85(7)) on POW
+127: shift/reduce conflict (shift 80(0), red'n 85(7)) on OPCHAN
+127: shift/reduce conflict (shift 51(0), red'n 85(7)) on '.'
+127: shift/reduce conflict (shift 76(0), red'n 85(7)) on '&'
+127: shift/reduce conflict (shift 78(0), red'n 85(7)) on '('
+127: shift/reduce conflict (shift 79(0), red'n 85(7)) on '['
+127: shift/reduce conflict (shift 74(0), red'n 85(7)) on '|'
+state 127
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3811,20 +3714,20 @@ state 128
 	.  reduce 85 (src line 502)
 
 
-129: shift/reduce conflict (shift 66(0), red'n 86(6)) on PLUSEQ
-129: shift/reduce conflict (shift 67(0), red'n 86(6)) on MINUSEQ
-129: shift/reduce conflict (shift 68(0), red'n 86(6)) on MULEQ
-129: shift/reduce conflict (shift 69(0), red'n 86(6)) on DIVEQ
-129: shift/reduce conflict (shift 70(0), red'n 86(6)) on ANDEQ
-129: shift/reduce conflict (shift 71(0), red'n 86(6)) on OREQ
-129: shift/reduce conflict (shift 57(0), red'n 86(6)) on POW
-129: shift/reduce conflict (shift 80(0), red'n 86(6)) on OPCHAN
-129: shift/reduce conflict (shift 51(0), red'n 86(6)) on '.'
-129: shift/reduce conflict (shift 76(0), red'n 86(6)) on '&'
-129: shift/reduce conflict (shift 78(0), red'n 86(6)) on '('
-129: shift/reduce conflict (shift 79(0), red'n 86(6)) on '['
-129: shift/reduce conflict (shift 74(0), red'n 86(6)) on '|'
-state 129
+128: shift/reduce conflict (shift 66(0), red'n 86(6)) on PLUSEQ
+128: shift/reduce conflict (shift 67(0), red'n 86(6)) on MINUSEQ
+128: shift/reduce conflict (shift 68(0), red'n 86(6)) on MULEQ
+128: shift/reduce conflict (shift 69(0), red'n 86(6)) on DIVEQ
+128: shift/reduce conflict (shift 70(0), red'n 86(6)) on ANDEQ
+128: shift/reduce conflict (shift 71(0), red'n 86(6)) on OREQ
+128: shift/reduce conflict (shift 57(0), red'n 86(6)) on POW
+128: shift/reduce conflict (shift 80(0), red'n 86(6)) on OPCHAN
+128: shift/reduce conflict (shift 51(0), red'n 86(6)) on '.'
+128: shift/reduce conflict (shift 76(0), red'n 86(6)) on '&'
+128: shift/reduce conflict (shift 78(0), red'n 86(6)) on '('
+128: shift/reduce conflict (shift 79(0), red'n 86(6)) on '['
+128: shift/reduce conflict (shift 74(0), red'n 86(6)) on '|'
+state 128
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3891,20 +3794,20 @@ state 129
 	.  reduce 86 (src line 507)
 
 
-130: shift/reduce conflict (shift 66(0), red'n 87(6)) on PLUSEQ
-130: shift/reduce conflict (shift 67(0), red'n 87(6)) on MINUSEQ
-130: shift/reduce conflict (shift 68(0), red'n 87(6)) on MULEQ
-130: shift/reduce conflict (shift 69(0), red'n 87(6)) on DIVEQ
-130: shift/reduce conflict (shift 70(0), red'n 87(6)) on ANDEQ
-130: shift/reduce conflict (shift 71(0), red'n 87(6)) on OREQ
-130: shift/reduce conflict (shift 57(0), red'n 87(6)) on POW
-130: shift/reduce conflict (shift 80(0), red'n 87(6)) on OPCHAN
-130: shift/reduce conflict (shift 51(0), red'n 87(6)) on '.'
-130: shift/reduce conflict (shift 76(0), red'n 87(6)) on '&'
-130: shift/reduce conflict (shift 78(0), red'n 87(6)) on '('
-130: shift/reduce conflict (shift 79(0), red'n 87(6)) on '['
-130: shift/reduce conflict (shift 74(0), red'n 87(6)) on '|'
-state 130
+129: shift/reduce conflict (shift 66(0), red'n 87(6)) on PLUSEQ
+129: shift/reduce conflict (shift 67(0), red'n 87(6)) on MINUSEQ
+129: shift/reduce conflict (shift 68(0), red'n 87(6)) on MULEQ
+129: shift/reduce conflict (shift 69(0), red'n 87(6)) on DIVEQ
+129: shift/reduce conflict (shift 70(0), red'n 87(6)) on ANDEQ
+129: shift/reduce conflict (shift 71(0), red'n 87(6)) on OREQ
+129: shift/reduce conflict (shift 57(0), red'n 87(6)) on POW
+129: shift/reduce conflict (shift 80(0), red'n 87(6)) on OPCHAN
+129: shift/reduce conflict (shift 51(0), red'n 87(6)) on '.'
+129: shift/reduce conflict (shift 76(0), red'n 87(6)) on '&'
+129: shift/reduce conflict (shift 78(0), red'n 87(6)) on '('
+129: shift/reduce conflict (shift 79(0), red'n 87(6)) on '['
+129: shift/reduce conflict (shift 74(0), red'n 87(6)) on '|'
+state 129
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -3971,20 +3874,20 @@ state 130
 	.  reduce 87 (src line 512)
 
 
-131: shift/reduce conflict (shift 66(0), red'n 88(7)) on PLUSEQ
-131: shift/reduce conflict (shift 67(0), red'n 88(7)) on MINUSEQ
-131: shift/reduce conflict (shift 68(0), red'n 88(7)) on MULEQ
-131: shift/reduce conflict (shift 69(0), red'n 88(7)) on DIVEQ
-131: shift/reduce conflict (shift 70(0), red'n 88(7)) on ANDEQ
-131: shift/reduce conflict (shift 71(0), red'n 88(7)) on OREQ
-131: shift/reduce conflict (shift 57(0), red'n 88(7)) on POW
-131: shift/reduce conflict (shift 80(0), red'n 88(7)) on OPCHAN
-131: shift/reduce conflict (shift 51(0), red'n 88(7)) on '.'
-131: shift/reduce conflict (shift 76(0), red'n 88(7)) on '&'
-131: shift/reduce conflict (shift 78(0), red'n 88(7)) on '('
-131: shift/reduce conflict (shift 79(0), red'n 88(7)) on '['
-131: shift/reduce conflict (shift 74(0), red'n 88(7)) on '|'
-state 131
+130: shift/reduce conflict (shift 66(0), red'n 88(7)) on PLUSEQ
+130: shift/reduce conflict (shift 67(0), red'n 88(7)) on MINUSEQ
+130: shift/reduce conflict (shift 68(0), red'n 88(7)) on MULEQ
+130: shift/reduce conflict (shift 69(0), red'n 88(7)) on DIVEQ
+130: shift/reduce conflict (shift 70(0), red'n 88(7)) on ANDEQ
+130: shift/reduce conflict (shift 71(0), red'n 88(7)) on OREQ
+130: shift/reduce conflict (shift 57(0), red'n 88(7)) on POW
+130: shift/reduce conflict (shift 80(0), red'n 88(7)) on OPCHAN
+130: shift/reduce conflict (shift 51(0), red'n 88(7)) on '.'
+130: shift/reduce conflict (shift 76(0), red'n 88(7)) on '&'
+130: shift/reduce conflict (shift 78(0), red'n 88(7)) on '('
+130: shift/reduce conflict (shift 79(0), red'n 88(7)) on '['
+130: shift/reduce conflict (shift 74(0), red'n 88(7)) on '|'
+state 130
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4043,20 +3946,20 @@ state 131
 	.  reduce 88 (src line 517)
 
 
-132: shift/reduce conflict (shift 66(0), red'n 89(7)) on PLUSEQ
-132: shift/reduce conflict (shift 67(0), red'n 89(7)) on MINUSEQ
-132: shift/reduce conflict (shift 68(0), red'n 89(7)) on MULEQ
-132: shift/reduce conflict (shift 69(0), red'n 89(7)) on DIVEQ
-132: shift/reduce conflict (shift 70(0), red'n 89(7)) on ANDEQ
-132: shift/reduce conflict (shift 71(0), red'n 89(7)) on OREQ
-132: shift/reduce conflict (shift 57(0), red'n 89(7)) on POW
-132: shift/reduce conflict (shift 80(0), red'n 89(7)) on OPCHAN
-132: shift/reduce conflict (shift 51(0), red'n 89(7)) on '.'
-132: shift/reduce conflict (shift 76(0), red'n 89(7)) on '&'
-132: shift/reduce conflict (shift 78(0), red'n 89(7)) on '('
-132: shift/reduce conflict (shift 79(0), red'n 89(7)) on '['
-132: shift/reduce conflict (shift 74(0), red'n 89(7)) on '|'
-state 132
+131: shift/reduce conflict (shift 66(0), red'n 89(7)) on PLUSEQ
+131: shift/reduce conflict (shift 67(0), red'n 89(7)) on MINUSEQ
+131: shift/reduce conflict (shift 68(0), red'n 89(7)) on MULEQ
+131: shift/reduce conflict (shift 69(0), red'n 89(7)) on DIVEQ
+131: shift/reduce conflict (shift 70(0), red'n 89(7)) on ANDEQ
+131: shift/reduce conflict (shift 71(0), red'n 89(7)) on OREQ
+131: shift/reduce conflict (shift 57(0), red'n 89(7)) on POW
+131: shift/reduce conflict (shift 80(0), red'n 89(7)) on OPCHAN
+131: shift/reduce conflict (shift 51(0), red'n 89(7)) on '.'
+131: shift/reduce conflict (shift 76(0), red'n 89(7)) on '&'
+131: shift/reduce conflict (shift 78(0), red'n 89(7)) on '('
+131: shift/reduce conflict (shift 79(0), red'n 89(7)) on '['
+131: shift/reduce conflict (shift 74(0), red'n 89(7)) on '|'
+state 131
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4115,20 +4018,20 @@ state 132
 	.  reduce 89 (src line 522)
 
 
-133: shift/reduce conflict (shift 66(0), red'n 90(7)) on PLUSEQ
-133: shift/reduce conflict (shift 67(0), red'n 90(7)) on MINUSEQ
-133: shift/reduce conflict (shift 68(0), red'n 90(7)) on MULEQ
-133: shift/reduce conflict (shift 69(0), red'n 90(7)) on DIVEQ
-133: shift/reduce conflict (shift 70(0), red'n 90(7)) on ANDEQ
-133: shift/reduce conflict (shift 71(0), red'n 90(7)) on OREQ
-133: shift/reduce conflict (shift 57(0), red'n 90(7)) on POW
-133: shift/reduce conflict (shift 80(0), red'n 90(7)) on OPCHAN
-133: shift/reduce conflict (shift 51(0), red'n 90(7)) on '.'
-133: shift/reduce conflict (shift 76(0), red'n 90(7)) on '&'
-133: shift/reduce conflict (shift 78(0), red'n 90(7)) on '('
-133: shift/reduce conflict (shift 79(0), red'n 90(7)) on '['
-133: shift/reduce conflict (shift 74(0), red'n 90(7)) on '|'
-state 133
+132: shift/reduce conflict (shift 66(0), red'n 90(7)) on PLUSEQ
+132: shift/reduce conflict (shift 67(0), red'n 90(7)) on MINUSEQ
+132: shift/reduce conflict (shift 68(0), red'n 90(7)) on MULEQ
+132: shift/reduce conflict (shift 69(0), red'n 90(7)) on DIVEQ
+132: shift/reduce conflict (shift 70(0), red'n 90(7)) on ANDEQ
+132: shift/reduce conflict (shift 71(0), red'n 90(7)) on OREQ
+132: shift/reduce conflict (shift 57(0), red'n 90(7)) on POW
+132: shift/reduce conflict (shift 80(0), red'n 90(7)) on OPCHAN
+132: shift/reduce conflict (shift 51(0), red'n 90(7)) on '.'
+132: shift/reduce conflict (shift 76(0), red'n 90(7)) on '&'
+132: shift/reduce conflict (shift 78(0), red'n 90(7)) on '('
+132: shift/reduce conflict (shift 79(0), red'n 90(7)) on '['
+132: shift/reduce conflict (shift 74(0), red'n 90(7)) on '|'
+state 132
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4187,20 +4090,20 @@ state 133
 	.  reduce 90 (src line 527)
 
 
-134: shift/reduce conflict (shift 66(0), red'n 91(7)) on PLUSEQ
-134: shift/reduce conflict (shift 67(0), red'n 91(7)) on MINUSEQ
-134: shift/reduce conflict (shift 68(0), red'n 91(7)) on MULEQ
-134: shift/reduce conflict (shift 69(0), red'n 91(7)) on DIVEQ
-134: shift/reduce conflict (shift 70(0), red'n 91(7)) on ANDEQ
-134: shift/reduce conflict (shift 71(0), red'n 91(7)) on OREQ
-134: shift/reduce conflict (shift 57(0), red'n 91(7)) on POW
-134: shift/reduce conflict (shift 80(0), red'n 91(7)) on OPCHAN
-134: shift/reduce conflict (shift 51(0), red'n 91(7)) on '.'
-134: shift/reduce conflict (shift 76(0), red'n 91(7)) on '&'
-134: shift/reduce conflict (shift 78(0), red'n 91(7)) on '('
-134: shift/reduce conflict (shift 79(0), red'n 91(7)) on '['
-134: shift/reduce conflict (shift 74(0), red'n 91(7)) on '|'
-state 134
+133: shift/reduce conflict (shift 66(0), red'n 91(7)) on PLUSEQ
+133: shift/reduce conflict (shift 67(0), red'n 91(7)) on MINUSEQ
+133: shift/reduce conflict (shift 68(0), red'n 91(7)) on MULEQ
+133: shift/reduce conflict (shift 69(0), red'n 91(7)) on DIVEQ
+133: shift/reduce conflict (shift 70(0), red'n 91(7)) on ANDEQ
+133: shift/reduce conflict (shift 71(0), red'n 91(7)) on OREQ
+133: shift/reduce conflict (shift 57(0), red'n 91(7)) on POW
+133: shift/reduce conflict (shift 80(0), red'n 91(7)) on OPCHAN
+133: shift/reduce conflict (shift 51(0), red'n 91(7)) on '.'
+133: shift/reduce conflict (shift 76(0), red'n 91(7)) on '&'
+133: shift/reduce conflict (shift 78(0), red'n 91(7)) on '('
+133: shift/reduce conflict (shift 79(0), red'n 91(7)) on '['
+133: shift/reduce conflict (shift 74(0), red'n 91(7)) on '|'
+state 133
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4259,38 +4162,38 @@ state 134
 	.  reduce 91 (src line 532)
 
 
-135: shift/reduce conflict (shift 60(6), red'n 92(0)) on EQEQ
-135: shift/reduce conflict (shift 61(6), red'n 92(0)) on NEQ
-135: shift/reduce conflict (shift 63(7), red'n 92(0)) on GE
-135: shift/reduce conflict (shift 65(7), red'n 92(0)) on LE
-135: shift/reduce conflict (shift 75(3), red'n 92(0)) on OROR
-135: shift/reduce conflict (shift 77(4), red'n 92(0)) on ANDAND
-135: shift/reduce conflict (shift 66(0), red'n 92(0)) on PLUSEQ
-135: shift/reduce conflict (shift 67(0), red'n 92(0)) on MINUSEQ
-135: shift/reduce conflict (shift 68(0), red'n 92(0)) on MULEQ
-135: shift/reduce conflict (shift 69(0), red'n 92(0)) on DIVEQ
-135: shift/reduce conflict (shift 70(0), red'n 92(0)) on ANDEQ
-135: shift/reduce conflict (shift 71(0), red'n 92(0)) on OREQ
-135: shift/reduce conflict (shift 72(8), red'n 92(0)) on PLUSPLUS
-135: shift/reduce conflict (shift 73(8), red'n 92(0)) on MINUSMINUS
-135: shift/reduce conflict (shift 57(0), red'n 92(0)) on POW
-135: shift/reduce conflict (shift 58(7), red'n 92(0)) on SHIFTLEFT
-135: shift/reduce conflict (shift 59(7), red'n 92(0)) on SHIFTRIGHT
-135: shift/reduce conflict (shift 80(0), red'n 92(0)) on OPCHAN
-135: shift/reduce conflict (shift 50(2), red'n 92(0)) on '?'
-135: shift/reduce conflict (shift 62(7), red'n 92(0)) on '>'
-135: shift/reduce conflict (shift 64(7), red'n 92(0)) on '<'
-135: shift/reduce conflict (shift 52(8), red'n 92(0)) on '+'
-135: shift/reduce conflict (shift 53(8), red'n 92(0)) on '-'
-135: shift/reduce conflict (shift 54(9), red'n 92(0)) on '*'
-135: shift/reduce conflict (shift 55(9), red'n 92(0)) on '/'
-135: shift/reduce conflict (shift 56(9), red'n 92(0)) on '%'
-135: shift/reduce conflict (shift 51(0), red'n 92(0)) on '.'
-135: shift/reduce conflict (shift 76(0), red'n 92(0)) on '&'
-135: shift/reduce conflict (shift 78(0), red'n 92(0)) on '('
-135: shift/reduce conflict (shift 79(0), red'n 92(0)) on '['
-135: shift/reduce conflict (shift 74(0), red'n 92(0)) on '|'
-state 135
+134: shift/reduce conflict (shift 60(6), red'n 92(0)) on EQEQ
+134: shift/reduce conflict (shift 61(6), red'n 92(0)) on NEQ
+134: shift/reduce conflict (shift 63(7), red'n 92(0)) on GE
+134: shift/reduce conflict (shift 65(7), red'n 92(0)) on LE
+134: shift/reduce conflict (shift 75(3), red'n 92(0)) on OROR
+134: shift/reduce conflict (shift 77(4), red'n 92(0)) on ANDAND
+134: shift/reduce conflict (shift 66(0), red'n 92(0)) on PLUSEQ
+134: shift/reduce conflict (shift 67(0), red'n 92(0)) on MINUSEQ
+134: shift/reduce conflict (shift 68(0), red'n 92(0)) on MULEQ
+134: shift/reduce conflict (shift 69(0), red'n 92(0)) on DIVEQ
+134: shift/reduce conflict (shift 70(0), red'n 92(0)) on ANDEQ
+134: shift/reduce conflict (shift 71(0), red'n 92(0)) on OREQ
+134: shift/reduce conflict (shift 72(8), red'n 92(0)) on PLUSPLUS
+134: shift/reduce conflict (shift 73(8), red'n 92(0)) on MINUSMINUS
+134: shift/reduce conflict (shift 57(0), red'n 92(0)) on POW
+134: shift/reduce conflict (shift 58(7), red'n 92(0)) on SHIFTLEFT
+134: shift/reduce conflict (shift 59(7), red'n 92(0)) on SHIFTRIGHT
+134: shift/reduce conflict (shift 80(0), red'n 92(0)) on OPCHAN
+134: shift/reduce conflict (shift 50(2), red'n 92(0)) on '?'
+134: shift/reduce conflict (shift 62(7), red'n 92(0)) on '>'
+134: shift/reduce conflict (shift 64(7), red'n 92(0)) on '<'
+134: shift/reduce conflict (shift 52(8), red'n 92(0)) on '+'
+134: shift/reduce conflict (shift 53(8), red'n 92(0)) on '-'
+134: shift/reduce conflict (shift 54(9), red'n 92(0)) on '*'
+134: shift/reduce conflict (shift 55(9), red'n 92(0)) on '/'
+134: shift/reduce conflict (shift 56(9), red'n 92(0)) on '%'
+134: shift/reduce conflict (shift 51(0), red'n 92(0)) on '.'
+134: shift/reduce conflict (shift 76(0), red'n 92(0)) on '&'
+134: shift/reduce conflict (shift 78(0), red'n 92(0)) on '('
+134: shift/reduce conflict (shift 79(0), red'n 92(0)) on '['
+134: shift/reduce conflict (shift 74(0), red'n 92(0)) on '|'
+state 134
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4360,38 +4263,38 @@ state 135
 	.  reduce 92 (src line 537)
 
 
-136: shift/reduce conflict (shift 60(6), red'n 93(0)) on EQEQ
-136: shift/reduce conflict (shift 61(6), red'n 93(0)) on NEQ
-136: shift/reduce conflict (shift 63(7), red'n 93(0)) on GE
-136: shift/reduce conflict (shift 65(7), red'n 93(0)) on LE
-136: shift/reduce conflict (shift 75(3), red'n 93(0)) on OROR
-136: shift/reduce conflict (shift 77(4), red'n 93(0)) on ANDAND
-136: shift/reduce conflict (shift 66(0), red'n 93(0)) on PLUSEQ
-136: shift/reduce conflict (shift 67(0), red'n 93(0)) on MINUSEQ
-136: shift/reduce conflict (shift 68(0), red'n 93(0)) on MULEQ
-136: shift/reduce conflict (shift 69(0), red'n 93(0)) on DIVEQ
-136: shift/reduce conflict (shift 70(0), red'n 93(0)) on ANDEQ
-136: shift/reduce conflict (shift 71(0), red'n 93(0)) on OREQ
-136: shift/reduce conflict (shift 72(8), red'n 93(0)) on PLUSPLUS
-136: shift/reduce conflict (shift 73(8), red'n 93(0)) on MINUSMINUS
-136: shift/reduce conflict (shift 57(0), red'n 93(0)) on POW
-136: shift/reduce conflict (shift 58(7), red'n 93(0)) on SHIFTLEFT
-136: shift/reduce conflict (shift 59(7), red'n 93(0)) on SHIFTRIGHT
-136: shift/reduce conflict (shift 80(0), red'n 93(0)) on OPCHAN
-136: shift/reduce conflict (shift 50(2), red'n 93(0)) on '?'
-136: shift/reduce conflict (shift 62(7), red'n 93(0)) on '>'
-136: shift/reduce conflict (shift 64(7), red'n 93(0)) on '<'
-136: shift/reduce conflict (shift 52(8), red'n 93(0)) on '+'
-136: shift/reduce conflict (shift 53(8), red'n 93(0)) on '-'
-136: shift/reduce conflict (shift 54(9), red'n 93(0)) on '*'
-136: shift/reduce conflict (shift 55(9), red'n 93(0)) on '/'
-136: shift/reduce conflict (shift 56(9), red'n 93(0)) on '%'
-136: shift/reduce conflict (shift 51(0), red'n 93(0)) on '.'
-136: shift/reduce conflict (shift 76(0), red'n 93(0)) on '&'
-136: shift/reduce conflict (shift 78(0), red'n 93(0)) on '('
-136: shift/reduce conflict (shift 79(0), red'n 93(0)) on '['
-136: shift/reduce conflict (shift 74(0), red'n 93(0)) on '|'
-state 136
+135: shift/reduce conflict (shift 60(6), red'n 93(0)) on EQEQ
+135: shift/reduce conflict (shift 61(6), red'n 93(0)) on NEQ
+135: shift/reduce conflict (shift 63(7), red'n 93(0)) on GE
+135: shift/reduce conflict (shift 65(7), red'n 93(0)) on LE
+135: shift/reduce conflict (shift 75(3), red'n 93(0)) on OROR
+135: shift/reduce conflict (shift 77(4), red'n 93(0)) on ANDAND
+135: shift/reduce conflict (shift 66(0), red'n 93(0)) on PLUSEQ
+135: shift/reduce conflict (shift 67(0), red'n 93(0)) on MINUSEQ
+135: shift/reduce conflict (shift 68(0), red'n 93(0)) on MULEQ
+135: shift/reduce conflict (shift 69(0), red'n 93(0)) on DIVEQ
+135: shift/reduce conflict (shift 70(0), red'n 93(0)) on ANDEQ
+135: shift/reduce conflict (shift 71(0), red'n 93(0)) on OREQ
+135: shift/reduce conflict (shift 72(8), red'n 93(0)) on PLUSPLUS
+135: shift/reduce conflict (shift 73(8), red'n 93(0)) on MINUSMINUS
+135: shift/reduce conflict (shift 57(0), red'n 93(0)) on POW
+135: shift/reduce conflict (shift 58(7), red'n 93(0)) on SHIFTLEFT
+135: shift/reduce conflict (shift 59(7), red'n 93(0)) on SHIFTRIGHT
+135: shift/reduce conflict (shift 80(0), red'n 93(0)) on OPCHAN
+135: shift/reduce conflict (shift 50(2), red'n 93(0)) on '?'
+135: shift/reduce conflict (shift 62(7), red'n 93(0)) on '>'
+135: shift/reduce conflict (shift 64(7), red'n 93(0)) on '<'
+135: shift/reduce conflict (shift 52(8), red'n 93(0)) on '+'
+135: shift/reduce conflict (shift 53(8), red'n 93(0)) on '-'
+135: shift/reduce conflict (shift 54(9), red'n 93(0)) on '*'
+135: shift/reduce conflict (shift 55(9), red'n 93(0)) on '/'
+135: shift/reduce conflict (shift 56(9), red'n 93(0)) on '%'
+135: shift/reduce conflict (shift 51(0), red'n 93(0)) on '.'
+135: shift/reduce conflict (shift 76(0), red'n 93(0)) on '&'
+135: shift/reduce conflict (shift 78(0), red'n 93(0)) on '('
+135: shift/reduce conflict (shift 79(0), red'n 93(0)) on '['
+135: shift/reduce conflict (shift 74(0), red'n 93(0)) on '|'
+state 135
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4461,38 +4364,38 @@ state 136
 	.  reduce 93 (src line 542)
 
 
-137: shift/reduce conflict (shift 60(6), red'n 94(0)) on EQEQ
-137: shift/reduce conflict (shift 61(6), red'n 94(0)) on NEQ
-137: shift/reduce conflict (shift 63(7), red'n 94(0)) on GE
-137: shift/reduce conflict (shift 65(7), red'n 94(0)) on LE
-137: shift/reduce conflict (shift 75(3), red'n 94(0)) on OROR
-137: shift/reduce conflict (shift 77(4), red'n 94(0)) on ANDAND
-137: shift/reduce conflict (shift 66(0), red'n 94(0)) on PLUSEQ
-137: shift/reduce conflict (shift 67(0), red'n 94(0)) on MINUSEQ
-137: shift/reduce conflict (shift 68(0), red'n 94(0)) on MULEQ
-137: shift/reduce conflict (shift 69(0), red'n 94(0)) on DIVEQ
-137: shift/reduce conflict (shift 70(0), red'n 94(0)) on ANDEQ
-137: shift/reduce conflict (shift 71(0), red'n 94(0)) on OREQ
-137: shift/reduce conflict (shift 72(8), red'n 94(0)) on PLUSPLUS
-137: shift/reduce conflict (shift 73(8), red'n 94(0)) on MINUSMINUS
-137: shift/reduce conflict (shift 57(0), red'n 94(0)) on POW
-137: shift/reduce conflict (shift 58(7), red'n 94(0)) on SHIFTLEFT
-137: shift/reduce conflict (shift 59(7), red'n 94(0)) on SHIFTRIGHT
-137: shift/reduce conflict (shift 80(0), red'n 94(0)) on OPCHAN
-137: shift/reduce conflict (shift 50(2), red'n 94(0)) on '?'
-137: shift/reduce conflict (shift 62(7), red'n 94(0)) on '>'
-137: shift/reduce conflict (shift 64(7), red'n 94(0)) on '<'
-137: shift/reduce conflict (shift 52(8), red'n 94(0)) on '+'
-137: shift/reduce conflict (shift 53(8), red'n 94(0)) on '-'
-137: shift/reduce conflict (shift 54(9), red'n 94(0)) on '*'
-137: shift/reduce conflict (shift 55(9), red'n 94(0)) on '/'
-137: shift/reduce conflict (shift 56(9), red'n 94(0)) on '%'
-137: shift/reduce conflict (shift 51(0), red'n 94(0)) on '.'
-137: shift/reduce conflict (shift 76(0), red'n 94(0)) on '&'
-137: shift/reduce conflict (shift 78(0), red'n 94(0)) on '('
-137: shift/reduce conflict (shift 79(0), red'n 94(0)) on '['
-137: shift/reduce conflict (shift 74(0), red'n 94(0)) on '|'
-state 137
+136: shift/reduce conflict (shift 60(6), red'n 94(0)) on EQEQ
+136: shift/reduce conflict (shift 61(6), red'n 94(0)) on NEQ
+136: shift/reduce conflict (shift 63(7), red'n 94(0)) on GE
+136: shift/reduce conflict (shift 65(7), red'n 94(0)) on LE
+136: shift/reduce conflict (shift 75(3), red'n 94(0)) on OROR
+136: shift/reduce conflict (shift 77(4), red'n 94(0)) on ANDAND
+136: shift/reduce conflict (shift 66(0), red'n 94(0)) on PLUSEQ
+136: shift/reduce conflict (shift 67(0), red'n 94(0)) on MINUSEQ
+136: shift/reduce conflict (shift 68(0), red'n 94(0)) on MULEQ
+136: shift/reduce conflict (shift 69(0), red'n 94(0)) on DIVEQ
+136: shift/reduce conflict (shift 70(0), red'n 94(0)) on ANDEQ
+136: shift/reduce conflict (shift 71(0), red'n 94(0)) on OREQ
+136: shift/reduce conflict (shift 72(8), red'n 94(0)) on PLUSPLUS
+136: shift/reduce conflict (shift 73(8), red'n 94(0)) on MINUSMINUS
+136: shift/reduce conflict (shift 57(0), red'n 94(0)) on POW
+136: shift/reduce conflict (shift 58(7), red'n 94(0)) on SHIFTLEFT
+136: shift/reduce conflict (shift 59(7), red'n 94(0)) on SHIFTRIGHT
+136: shift/reduce conflict (shift 80(0), red'n 94(0)) on OPCHAN
+136: shift/reduce conflict (shift 50(2), red'n 94(0)) on '?'
+136: shift/reduce conflict (shift 62(7), red'n 94(0)) on '>'
+136: shift/reduce conflict (shift 64(7), red'n 94(0)) on '<'
+136: shift/reduce conflict (shift 52(8), red'n 94(0)) on '+'
+136: shift/reduce conflict (shift 53(8), red'n 94(0)) on '-'
+136: shift/reduce conflict (shift 54(9), red'n 94(0)) on '*'
+136: shift/reduce conflict (shift 55(9), red'n 94(0)) on '/'
+136: shift/reduce conflict (shift 56(9), red'n 94(0)) on '%'
+136: shift/reduce conflict (shift 51(0), red'n 94(0)) on '.'
+136: shift/reduce conflict (shift 76(0), red'n 94(0)) on '&'
+136: shift/reduce conflict (shift 78(0), red'n 94(0)) on '('
+136: shift/reduce conflict (shift 79(0), red'n 94(0)) on '['
+136: shift/reduce conflict (shift 74(0), red'n 94(0)) on '|'
+state 136
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4562,38 +4465,38 @@ state 137
 	.  reduce 94 (src line 547)
 
 
-138: shift/reduce conflict (shift 60(6), red'n 95(0)) on EQEQ
-138: shift/reduce conflict (shift 61(6), red'n 95(0)) on NEQ
-138: shift/reduce conflict (shift 63(7), red'n 95(0)) on GE
-138: shift/reduce conflict (shift 65(7), red'n 95(0)) on LE
-138: shift/reduce conflict (shift 75(3), red'n 95(0)) on OROR
-138: shift/reduce conflict (shift 77(4), red'n 95(0)) on ANDAND
-138: shift/reduce conflict (shift 66(0), red'n 95(0)) on PLUSEQ
-138: shift/reduce conflict (shift 67(0), red'n 95(0)) on MINUSEQ
-138: shift/reduce conflict (shift 68(0), red'n 95(0)) on MULEQ
-138: shift/reduce conflict (shift 69(0), red'n 95(0)) on DIVEQ
-138: shift/reduce conflict (shift 70(0), red'n 95(0)) on ANDEQ
-138: shift/reduce conflict (shift 71(0), red'n 95(0)) on OREQ
-138: shift/reduce conflict (shift 72(8), red'n 95(0)) on PLUSPLUS
-138: shift/reduce conflict (shift 73(8), red'n 95(0)) on MINUSMINUS
-138: shift/reduce conflict (shift 57(0), red'n 95(0)) on POW
-138: shift/reduce conflict (shift 58(7), red'n 95(0)) on SHIFTLEFT
-138: shift/reduce conflict (shift 59(7), red'n 95(0)) on SHIFTRIGHT
-138: shift/reduce conflict (shift 80(0), red'n 95(0)) on OPCHAN
-138: shift/reduce conflict (shift 50(2), red'n 95(0)) on '?'
-138: shift/reduce conflict (shift 62(7), red'n 95(0)) on '>'
-138: shift/reduce conflict (shift 64(7), red'n 95(0)) on '<'
-138: shift/reduce conflict (shift 52(8), red'n 95(0)) on '+'
-138: shift/reduce conflict (shift 53(8), red'n 95(0)) on '-'
-138: shift/reduce conflict (shift 54(9), red'n 95(0)) on '*'
-138: shift/reduce conflict (shift 55(9), red'n 95(0)) on '/'
-138: shift/reduce conflict (shift 56(9), red'n 95(0)) on '%'
-138: shift/reduce conflict (shift 51(0), red'n 95(0)) on '.'
-138: shift/reduce conflict (shift 76(0), red'n 95(0)) on '&'
-138: shift/reduce conflict (shift 78(0), red'n 95(0)) on '('
-138: shift/reduce conflict (shift 79(0), red'n 95(0)) on '['
-138: shift/reduce conflict (shift 74(0), red'n 95(0)) on '|'
-state 138
+137: shift/reduce conflict (shift 60(6), red'n 95(0)) on EQEQ
+137: shift/reduce conflict (shift 61(6), red'n 95(0)) on NEQ
+137: shift/reduce conflict (shift 63(7), red'n 95(0)) on GE
+137: shift/reduce conflict (shift 65(7), red'n 95(0)) on LE
+137: shift/reduce conflict (shift 75(3), red'n 95(0)) on OROR
+137: shift/reduce conflict (shift 77(4), red'n 95(0)) on ANDAND
+137: shift/reduce conflict (shift 66(0), red'n 95(0)) on PLUSEQ
+137: shift/reduce conflict (shift 67(0), red'n 95(0)) on MINUSEQ
+137: shift/reduce conflict (shift 68(0), red'n 95(0)) on MULEQ
+137: shift/reduce conflict (shift 69(0), red'n 95(0)) on DIVEQ
+137: shift/reduce conflict (shift 70(0), red'n 95(0)) on ANDEQ
+137: shift/reduce conflict (shift 71(0), red'n 95(0)) on OREQ
+137: shift/reduce conflict (shift 72(8), red'n 95(0)) on PLUSPLUS
+137: shift/reduce conflict (shift 73(8), red'n 95(0)) on MINUSMINUS
+137: shift/reduce conflict (shift 57(0), red'n 95(0)) on POW
+137: shift/reduce conflict (shift 58(7), red'n 95(0)) on SHIFTLEFT
+137: shift/reduce conflict (shift 59(7), red'n 95(0)) on SHIFTRIGHT
+137: shift/reduce conflict (shift 80(0), red'n 95(0)) on OPCHAN
+137: shift/reduce conflict (shift 50(2), red'n 95(0)) on '?'
+137: shift/reduce conflict (shift 62(7), red'n 95(0)) on '>'
+137: shift/reduce conflict (shift 64(7), red'n 95(0)) on '<'
+137: shift/reduce conflict (shift 52(8), red'n 95(0)) on '+'
+137: shift/reduce conflict (shift 53(8), red'n 95(0)) on '-'
+137: shift/reduce conflict (shift 54(9), red'n 95(0)) on '*'
+137: shift/reduce conflict (shift 55(9), red'n 95(0)) on '/'
+137: shift/reduce conflict (shift 56(9), red'n 95(0)) on '%'
+137: shift/reduce conflict (shift 51(0), red'n 95(0)) on '.'
+137: shift/reduce conflict (shift 76(0), red'n 95(0)) on '&'
+137: shift/reduce conflict (shift 78(0), red'n 95(0)) on '('
+137: shift/reduce conflict (shift 79(0), red'n 95(0)) on '['
+137: shift/reduce conflict (shift 74(0), red'n 95(0)) on '|'
+state 137
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4663,38 +4566,38 @@ state 138
 	.  reduce 95 (src line 552)
 
 
-139: shift/reduce conflict (shift 60(6), red'n 96(0)) on EQEQ
-139: shift/reduce conflict (shift 61(6), red'n 96(0)) on NEQ
-139: shift/reduce conflict (shift 63(7), red'n 96(0)) on GE
-139: shift/reduce conflict (shift 65(7), red'n 96(0)) on LE
-139: shift/reduce conflict (shift 75(3), red'n 96(0)) on OROR
-139: shift/reduce conflict (shift 77(4), red'n 96(0)) on ANDAND
-139: shift/reduce conflict (shift 66(0), red'n 96(0)) on PLUSEQ
-139: shift/reduce conflict (shift 67(0), red'n 96(0)) on MINUSEQ
-139: shift/reduce conflict (shift 68(0), red'n 96(0)) on MULEQ
-139: shift/reduce conflict (shift 69(0), red'n 96(0)) on DIVEQ
-139: shift/reduce conflict (shift 70(0), red'n 96(0)) on ANDEQ
-139: shift/reduce conflict (shift 71(0), red'n 96(0)) on OREQ
-139: shift/reduce conflict (shift 72(8), red'n 96(0)) on PLUSPLUS
-139: shift/reduce conflict (shift 73(8), red'n 96(0)) on MINUSMINUS
-139: shift/reduce conflict (shift 57(0), red'n 96(0)) on POW
-139: shift/reduce conflict (shift 58(7), red'n 96(0)) on SHIFTLEFT
-139: shift/reduce conflict (shift 59(7), red'n 96(0)) on SHIFTRIGHT
-139: shift/reduce conflict (shift 80(0), red'n 96(0)) on OPCHAN
-139: shift/reduce conflict (shift 50(2), red'n 96(0)) on '?'
-139: shift/reduce conflict (shift 62(7), red'n 96(0)) on '>'
-139: shift/reduce conflict (shift 64(7), red'n 96(0)) on '<'
-139: shift/reduce conflict (shift 52(8), red'n 96(0)) on '+'
-139: shift/reduce conflict (shift 53(8), red'n 96(0)) on '-'
-139: shift/reduce conflict (shift 54(9), red'n 96(0)) on '*'
-139: shift/reduce conflict (shift 55(9), red'n 96(0)) on '/'
-139: shift/reduce conflict (shift 56(9), red'n 96(0)) on '%'
-139: shift/reduce conflict (shift 51(0), red'n 96(0)) on '.'
-139: shift/reduce conflict (shift 76(0), red'n 96(0)) on '&'
-139: shift/reduce conflict (shift 78(0), red'n 96(0)) on '('
-139: shift/reduce conflict (shift 79(0), red'n 96(0)) on '['
-139: shift/reduce conflict (shift 74(0), red'n 96(0)) on '|'
-state 139
+138: shift/reduce conflict (shift 60(6), red'n 96(0)) on EQEQ
+138: shift/reduce conflict (shift 61(6), red'n 96(0)) on NEQ
+138: shift/reduce conflict (shift 63(7), red'n 96(0)) on GE
+138: shift/reduce conflict (shift 65(7), red'n 96(0)) on LE
+138: shift/reduce conflict (shift 75(3), red'n 96(0)) on OROR
+138: shift/reduce conflict (shift 77(4), red'n 96(0)) on ANDAND
+138: shift/reduce conflict (shift 66(0), red'n 96(0)) on PLUSEQ
+138: shift/reduce conflict (shift 67(0), red'n 96(0)) on MINUSEQ
+138: shift/reduce conflict (shift 68(0), red'n 96(0)) on MULEQ
+138: shift/reduce conflict (shift 69(0), red'n 96(0)) on DIVEQ
+138: shift/reduce conflict (shift 70(0), red'n 96(0)) on ANDEQ
+138: shift/reduce conflict (shift 71(0), red'n 96(0)) on OREQ
+138: shift/reduce conflict (shift 72(8), red'n 96(0)) on PLUSPLUS
+138: shift/reduce conflict (shift 73(8), red'n 96(0)) on MINUSMINUS
+138: shift/reduce conflict (shift 57(0), red'n 96(0)) on POW
+138: shift/reduce conflict (shift 58(7), red'n 96(0)) on SHIFTLEFT
+138: shift/reduce conflict (shift 59(7), red'n 96(0)) on SHIFTRIGHT
+138: shift/reduce conflict (shift 80(0), red'n 96(0)) on OPCHAN
+138: shift/reduce conflict (shift 50(2), red'n 96(0)) on '?'
+138: shift/reduce conflict (shift 62(7), red'n 96(0)) on '>'
+138: shift/reduce conflict (shift 64(7), red'n 96(0)) on '<'
+138: shift/reduce conflict (shift 52(8), red'n 96(0)) on '+'
+138: shift/reduce conflict (shift 53(8), red'n 96(0)) on '-'
+138: shift/reduce conflict (shift 54(9), red'n 96(0)) on '*'
+138: shift/reduce conflict (shift 55(9), red'n 96(0)) on '/'
+138: shift/reduce conflict (shift 56(9), red'n 96(0)) on '%'
+138: shift/reduce conflict (shift 51(0), red'n 96(0)) on '.'
+138: shift/reduce conflict (shift 76(0), red'n 96(0)) on '&'
+138: shift/reduce conflict (shift 78(0), red'n 96(0)) on '('
+138: shift/reduce conflict (shift 79(0), red'n 96(0)) on '['
+138: shift/reduce conflict (shift 74(0), red'n 96(0)) on '|'
+state 138
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4764,38 +4667,38 @@ state 139
 	.  reduce 96 (src line 557)
 
 
-140: shift/reduce conflict (shift 60(6), red'n 97(0)) on EQEQ
-140: shift/reduce conflict (shift 61(6), red'n 97(0)) on NEQ
-140: shift/reduce conflict (shift 63(7), red'n 97(0)) on GE
-140: shift/reduce conflict (shift 65(7), red'n 97(0)) on LE
-140: shift/reduce conflict (shift 75(3), red'n 97(0)) on OROR
-140: shift/reduce conflict (shift 77(4), red'n 97(0)) on ANDAND
-140: shift/reduce conflict (shift 66(0), red'n 97(0)) on PLUSEQ
-140: shift/reduce conflict (shift 67(0), red'n 97(0)) on MINUSEQ
-140: shift/reduce conflict (shift 68(0), red'n 97(0)) on MULEQ
-140: shift/reduce conflict (shift 69(0), red'n 97(0)) on DIVEQ
-140: shift/reduce conflict (shift 70(0), red'n 97(0)) on ANDEQ
-140: shift/reduce conflict (shift 71(0), red'n 97(0)) on OREQ
-140: shift/reduce conflict (shift 72(8), red'n 97(0)) on PLUSPLUS
-140: shift/reduce conflict (shift 73(8), red'n 97(0)) on MINUSMINUS
-140: shift/reduce conflict (shift 57(0), red'n 97(0)) on POW
-140: shift/reduce conflict (shift 58(7), red'n 97(0)) on SHIFTLEFT
-140: shift/reduce conflict (shift 59(7), red'n 97(0)) on SHIFTRIGHT
-140: shift/reduce conflict (shift 80(0), red'n 97(0)) on OPCHAN
-140: shift/reduce conflict (shift 50(2), red'n 97(0)) on '?'
-140: shift/reduce conflict (shift 62(7), red'n 97(0)) on '>'
-140: shift/reduce conflict (shift 64(7), red'n 97(0)) on '<'
-140: shift/reduce conflict (shift 52(8), red'n 97(0)) on '+'
-140: shift/reduce conflict (shift 53(8), red'n 97(0)) on '-'
-140: shift/reduce conflict (shift 54(9), red'n 97(0)) on '*'
-140: shift/reduce conflict (shift 55(9), red'n 97(0)) on '/'
-140: shift/reduce conflict (shift 56(9), red'n 97(0)) on '%'
-140: shift/reduce conflict (shift 51(0), red'n 97(0)) on '.'
-140: shift/reduce conflict (shift 76(0), red'n 97(0)) on '&'
-140: shift/reduce conflict (shift 78(0), red'n 97(0)) on '('
-140: shift/reduce conflict (shift 79(0), red'n 97(0)) on '['
-140: shift/reduce conflict (shift 74(0), red'n 97(0)) on '|'
-state 140
+139: shift/reduce conflict (shift 60(6), red'n 97(0)) on EQEQ
+139: shift/reduce conflict (shift 61(6), red'n 97(0)) on NEQ
+139: shift/reduce conflict (shift 63(7), red'n 97(0)) on GE
+139: shift/reduce conflict (shift 65(7), red'n 97(0)) on LE
+139: shift/reduce conflict (shift 75(3), red'n 97(0)) on OROR
+139: shift/reduce conflict (shift 77(4), red'n 97(0)) on ANDAND
+139: shift/reduce conflict (shift 66(0), red'n 97(0)) on PLUSEQ
+139: shift/reduce conflict (shift 67(0), red'n 97(0)) on MINUSEQ
+139: shift/reduce conflict (shift 68(0), red'n 97(0)) on MULEQ
+139: shift/reduce conflict (shift 69(0), red'n 97(0)) on DIVEQ
+139: shift/reduce conflict (shift 70(0), red'n 97(0)) on ANDEQ
+139: shift/reduce conflict (shift 71(0), red'n 97(0)) on OREQ
+139: shift/reduce conflict (shift 72(8), red'n 97(0)) on PLUSPLUS
+139: shift/reduce conflict (shift 73(8), red'n 97(0)) on MINUSMINUS
+139: shift/reduce conflict (shift 57(0), red'n 97(0)) on POW
+139: shift/reduce conflict (shift 58(7), red'n 97(0)) on SHIFTLEFT
+139: shift/reduce conflict (shift 59(7), red'n 97(0)) on SHIFTRIGHT
+139: shift/reduce conflict (shift 80(0), red'n 97(0)) on OPCHAN
+139: shift/reduce conflict (shift 50(2), red'n 97(0)) on '?'
+139: shift/reduce conflict (shift 62(7), red'n 97(0)) on '>'
+139: shift/reduce conflict (shift 64(7), red'n 97(0)) on '<'
+139: shift/reduce conflict (shift 52(8), red'n 97(0)) on '+'
+139: shift/reduce conflict (shift 53(8), red'n 97(0)) on '-'
+139: shift/reduce conflict (shift 54(9), red'n 97(0)) on '*'
+139: shift/reduce conflict (shift 55(9), red'n 97(0)) on '/'
+139: shift/reduce conflict (shift 56(9), red'n 97(0)) on '%'
+139: shift/reduce conflict (shift 51(0), red'n 97(0)) on '.'
+139: shift/reduce conflict (shift 76(0), red'n 97(0)) on '&'
+139: shift/reduce conflict (shift 78(0), red'n 97(0)) on '('
+139: shift/reduce conflict (shift 79(0), red'n 97(0)) on '['
+139: shift/reduce conflict (shift 74(0), red'n 97(0)) on '|'
+state 139
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4865,38 +4768,38 @@ state 140
 	.  reduce 97 (src line 562)
 
 
-141: shift/reduce conflict (shift 60(6), red'n 100(0)) on EQEQ
-141: shift/reduce conflict (shift 61(6), red'n 100(0)) on NEQ
-141: shift/reduce conflict (shift 63(7), red'n 100(0)) on GE
-141: shift/reduce conflict (shift 65(7), red'n 100(0)) on LE
-141: shift/reduce conflict (shift 75(3), red'n 100(0)) on OROR
-141: shift/reduce conflict (shift 77(4), red'n 100(0)) on ANDAND
-141: shift/reduce conflict (shift 66(0), red'n 100(0)) on PLUSEQ
-141: shift/reduce conflict (shift 67(0), red'n 100(0)) on MINUSEQ
-141: shift/reduce conflict (shift 68(0), red'n 100(0)) on MULEQ
-141: shift/reduce conflict (shift 69(0), red'n 100(0)) on DIVEQ
-141: shift/reduce conflict (shift 70(0), red'n 100(0)) on ANDEQ
-141: shift/reduce conflict (shift 71(0), red'n 100(0)) on OREQ
-141: shift/reduce conflict (shift 72(8), red'n 100(0)) on PLUSPLUS
-141: shift/reduce conflict (shift 73(8), red'n 100(0)) on MINUSMINUS
-141: shift/reduce conflict (shift 57(0), red'n 100(0)) on POW
-141: shift/reduce conflict (shift 58(7), red'n 100(0)) on SHIFTLEFT
-141: shift/reduce conflict (shift 59(7), red'n 100(0)) on SHIFTRIGHT
-141: shift/reduce conflict (shift 80(0), red'n 100(0)) on OPCHAN
-141: shift/reduce conflict (shift 50(2), red'n 100(0)) on '?'
-141: shift/reduce conflict (shift 62(7), red'n 100(0)) on '>'
-141: shift/reduce conflict (shift 64(7), red'n 100(0)) on '<'
-141: shift/reduce conflict (shift 52(8), red'n 100(0)) on '+'
-141: shift/reduce conflict (shift 53(8), red'n 100(0)) on '-'
-141: shift/reduce conflict (shift 54(9), red'n 100(0)) on '*'
-141: shift/reduce conflict (shift 55(9), red'n 100(0)) on '/'
-141: shift/reduce conflict (shift 56(9), red'n 100(0)) on '%'
-141: shift/reduce conflict (shift 51(0), red'n 100(0)) on '.'
-141: shift/reduce conflict (shift 76(0), red'n 100(0)) on '&'
-141: shift/reduce conflict (shift 78(0), red'n 100(0)) on '('
-141: shift/reduce conflict (shift 79(0), red'n 100(0)) on '['
-141: shift/reduce conflict (shift 74(0), red'n 100(0)) on '|'
-state 141
+140: shift/reduce conflict (shift 60(6), red'n 100(0)) on EQEQ
+140: shift/reduce conflict (shift 61(6), red'n 100(0)) on NEQ
+140: shift/reduce conflict (shift 63(7), red'n 100(0)) on GE
+140: shift/reduce conflict (shift 65(7), red'n 100(0)) on LE
+140: shift/reduce conflict (shift 75(3), red'n 100(0)) on OROR
+140: shift/reduce conflict (shift 77(4), red'n 100(0)) on ANDAND
+140: shift/reduce conflict (shift 66(0), red'n 100(0)) on PLUSEQ
+140: shift/reduce conflict (shift 67(0), red'n 100(0)) on MINUSEQ
+140: shift/reduce conflict (shift 68(0), red'n 100(0)) on MULEQ
+140: shift/reduce conflict (shift 69(0), red'n 100(0)) on DIVEQ
+140: shift/reduce conflict (shift 70(0), red'n 100(0)) on ANDEQ
+140: shift/reduce conflict (shift 71(0), red'n 100(0)) on OREQ
+140: shift/reduce conflict (shift 72(8), red'n 100(0)) on PLUSPLUS
+140: shift/reduce conflict (shift 73(8), red'n 100(0)) on MINUSMINUS
+140: shift/reduce conflict (shift 57(0), red'n 100(0)) on POW
+140: shift/reduce conflict (shift 58(7), red'n 100(0)) on SHIFTLEFT
+140: shift/reduce conflict (shift 59(7), red'n 100(0)) on SHIFTRIGHT
+140: shift/reduce conflict (shift 80(0), red'n 100(0)) on OPCHAN
+140: shift/reduce conflict (shift 50(2), red'n 100(0)) on '?'
+140: shift/reduce conflict (shift 62(7), red'n 100(0)) on '>'
+140: shift/reduce conflict (shift 64(7), red'n 100(0)) on '<'
+140: shift/reduce conflict (shift 52(8), red'n 100(0)) on '+'
+140: shift/reduce conflict (shift 53(8), red'n 100(0)) on '-'
+140: shift/reduce conflict (shift 54(9), red'n 100(0)) on '*'
+140: shift/reduce conflict (shift 55(9), red'n 100(0)) on '/'
+140: shift/reduce conflict (shift 56(9), red'n 100(0)) on '%'
+140: shift/reduce conflict (shift 51(0), red'n 100(0)) on '.'
+140: shift/reduce conflict (shift 76(0), red'n 100(0)) on '&'
+140: shift/reduce conflict (shift 78(0), red'n 100(0)) on '('
+140: shift/reduce conflict (shift 79(0), red'n 100(0)) on '['
+140: shift/reduce conflict (shift 74(0), red'n 100(0)) on '|'
+state 140
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -4966,20 +4869,20 @@ state 141
 	.  reduce 100 (src line 577)
 
 
-142: shift/reduce conflict (shift 66(0), red'n 101(3)) on PLUSEQ
-142: shift/reduce conflict (shift 67(0), red'n 101(3)) on MINUSEQ
-142: shift/reduce conflict (shift 68(0), red'n 101(3)) on MULEQ
-142: shift/reduce conflict (shift 69(0), red'n 101(3)) on DIVEQ
-142: shift/reduce conflict (shift 70(0), red'n 101(3)) on ANDEQ
-142: shift/reduce conflict (shift 71(0), red'n 101(3)) on OREQ
-142: shift/reduce conflict (shift 57(0), red'n 101(3)) on POW
-142: shift/reduce conflict (shift 80(0), red'n 101(3)) on OPCHAN
-142: shift/reduce conflict (shift 51(0), red'n 101(3)) on '.'
-142: shift/reduce conflict (shift 76(0), red'n 101(3)) on '&'
-142: shift/reduce conflict (shift 78(0), red'n 101(3)) on '('
-142: shift/reduce conflict (shift 79(0), red'n 101(3)) on '['
-142: shift/reduce conflict (shift 74(0), red'n 101(3)) on '|'
-state 142
+141: shift/reduce conflict (shift 66(0), red'n 101(3)) on PLUSEQ
+141: shift/reduce conflict (shift 67(0), red'n 101(3)) on MINUSEQ
+141: shift/reduce conflict (shift 68(0), red'n 101(3)) on MULEQ
+141: shift/reduce conflict (shift 69(0), red'n 101(3)) on DIVEQ
+141: shift/reduce conflict (shift 70(0), red'n 101(3)) on ANDEQ
+141: shift/reduce conflict (shift 71(0), red'n 101(3)) on OREQ
+141: shift/reduce conflict (shift 57(0), red'n 101(3)) on POW
+141: shift/reduce conflict (shift 80(0), red'n 101(3)) on OPCHAN
+141: shift/reduce conflict (shift 51(0), red'n 101(3)) on '.'
+141: shift/reduce conflict (shift 76(0), red'n 101(3)) on '&'
+141: shift/reduce conflict (shift 78(0), red'n 101(3)) on '('
+141: shift/reduce conflict (shift 79(0), red'n 101(3)) on '['
+141: shift/reduce conflict (shift 74(0), red'n 101(3)) on '|'
+state 141
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -5047,38 +4950,38 @@ state 142
 	.  reduce 101 (src line 582)
 
 
-143: shift/reduce conflict (shift 60(6), red'n 102(0)) on EQEQ
-143: shift/reduce conflict (shift 61(6), red'n 102(0)) on NEQ
-143: shift/reduce conflict (shift 63(7), red'n 102(0)) on GE
-143: shift/reduce conflict (shift 65(7), red'n 102(0)) on LE
-143: shift/reduce conflict (shift 75(3), red'n 102(0)) on OROR
-143: shift/reduce conflict (shift 77(4), red'n 102(0)) on ANDAND
-143: shift/reduce conflict (shift 66(0), red'n 102(0)) on PLUSEQ
-143: shift/reduce conflict (shift 67(0), red'n 102(0)) on MINUSEQ
-143: shift/reduce conflict (shift 68(0), red'n 102(0)) on MULEQ
-143: shift/reduce conflict (shift 69(0), red'n 102(0)) on DIVEQ
-143: shift/reduce conflict (shift 70(0), red'n 102(0)) on ANDEQ
-143: shift/reduce conflict (shift 71(0), red'n 102(0)) on OREQ
-143: shift/reduce conflict (shift 72(8), red'n 102(0)) on PLUSPLUS
-143: shift/reduce conflict (shift 73(8), red'n 102(0)) on MINUSMINUS
-143: shift/reduce conflict (shift 57(0), red'n 102(0)) on POW
-143: shift/reduce conflict (shift 58(7), red'n 102(0)) on SHIFTLEFT
-143: shift/reduce conflict (shift 59(7), red'n 102(0)) on SHIFTRIGHT
-143: shift/reduce conflict (shift 80(0), red'n 102(0)) on OPCHAN
-143: shift/reduce conflict (shift 50(2), red'n 102(0)) on '?'
-143: shift/reduce conflict (shift 62(7), red'n 102(0)) on '>'
-143: shift/reduce conflict (shift 64(7), red'n 102(0)) on '<'
-143: shift/reduce conflict (shift 52(8), red'n 102(0)) on '+'
-143: shift/reduce conflict (shift 53(8), red'n 102(0)) on '-'
-143: shift/reduce conflict (shift 54(9), red'n 102(0)) on '*'
-143: shift/reduce conflict (shift 55(9), red'n 102(0)) on '/'
-143: shift/reduce conflict (shift 56(9), red'n 102(0)) on '%'
-143: shift/reduce conflict (shift 51(0), red'n 102(0)) on '.'
-143: shift/reduce conflict (shift 76(0), red'n 102(0)) on '&'
-143: shift/reduce conflict (shift 78(0), red'n 102(0)) on '('
-143: shift/reduce conflict (shift 79(0), red'n 102(0)) on '['
-143: shift/reduce conflict (shift 74(0), red'n 102(0)) on '|'
-state 143
+142: shift/reduce conflict (shift 60(6), red'n 102(0)) on EQEQ
+142: shift/reduce conflict (shift 61(6), red'n 102(0)) on NEQ
+142: shift/reduce conflict (shift 63(7), red'n 102(0)) on GE
+142: shift/reduce conflict (shift 65(7), red'n 102(0)) on LE
+142: shift/reduce conflict (shift 75(3), red'n 102(0)) on OROR
+142: shift/reduce conflict (shift 77(4), red'n 102(0)) on ANDAND
+142: shift/reduce conflict (shift 66(0), red'n 102(0)) on PLUSEQ
+142: shift/reduce conflict (shift 67(0), red'n 102(0)) on MINUSEQ
+142: shift/reduce conflict (shift 68(0), red'n 102(0)) on MULEQ
+142: shift/reduce conflict (shift 69(0), red'n 102(0)) on DIVEQ
+142: shift/reduce conflict (shift 70(0), red'n 102(0)) on ANDEQ
+142: shift/reduce conflict (shift 71(0), red'n 102(0)) on OREQ
+142: shift/reduce conflict (shift 72(8), red'n 102(0)) on PLUSPLUS
+142: shift/reduce conflict (shift 73(8), red'n 102(0)) on MINUSMINUS
+142: shift/reduce conflict (shift 57(0), red'n 102(0)) on POW
+142: shift/reduce conflict (shift 58(7), red'n 102(0)) on SHIFTLEFT
+142: shift/reduce conflict (shift 59(7), red'n 102(0)) on SHIFTRIGHT
+142: shift/reduce conflict (shift 80(0), red'n 102(0)) on OPCHAN
+142: shift/reduce conflict (shift 50(2), red'n 102(0)) on '?'
+142: shift/reduce conflict (shift 62(7), red'n 102(0)) on '>'
+142: shift/reduce conflict (shift 64(7), red'n 102(0)) on '<'
+142: shift/reduce conflict (shift 52(8), red'n 102(0)) on '+'
+142: shift/reduce conflict (shift 53(8), red'n 102(0)) on '-'
+142: shift/reduce conflict (shift 54(9), red'n 102(0)) on '*'
+142: shift/reduce conflict (shift 55(9), red'n 102(0)) on '/'
+142: shift/reduce conflict (shift 56(9), red'n 102(0)) on '%'
+142: shift/reduce conflict (shift 51(0), red'n 102(0)) on '.'
+142: shift/reduce conflict (shift 76(0), red'n 102(0)) on '&'
+142: shift/reduce conflict (shift 78(0), red'n 102(0)) on '('
+142: shift/reduce conflict (shift 79(0), red'n 102(0)) on '['
+142: shift/reduce conflict (shift 74(0), red'n 102(0)) on '|'
+state 142
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -5148,20 +5051,20 @@ state 143
 	.  reduce 102 (src line 587)
 
 
-144: shift/reduce conflict (shift 66(0), red'n 103(4)) on PLUSEQ
-144: shift/reduce conflict (shift 67(0), red'n 103(4)) on MINUSEQ
-144: shift/reduce conflict (shift 68(0), red'n 103(4)) on MULEQ
-144: shift/reduce conflict (shift 69(0), red'n 103(4)) on DIVEQ
-144: shift/reduce conflict (shift 70(0), red'n 103(4)) on ANDEQ
-144: shift/reduce conflict (shift 71(0), red'n 103(4)) on OREQ
-144: shift/reduce conflict (shift 57(0), red'n 103(4)) on POW
-144: shift/reduce conflict (shift 80(0), red'n 103(4)) on OPCHAN
-144: shift/reduce conflict (shift 51(0), red'n 103(4)) on '.'
-144: shift/reduce conflict (shift 76(0), red'n 103(4)) on '&'
-144: shift/reduce conflict (shift 78(0), red'n 103(4)) on '('
-144: shift/reduce conflict (shift 79(0), red'n 103(4)) on '['
-144: shift/reduce conflict (shift 74(0), red'n 103(4)) on '|'
-state 144
+143: shift/reduce conflict (shift 66(0), red'n 103(4)) on PLUSEQ
+143: shift/reduce conflict (shift 67(0), red'n 103(4)) on MINUSEQ
+143: shift/reduce conflict (shift 68(0), red'n 103(4)) on MULEQ
+143: shift/reduce conflict (shift 69(0), red'n 103(4)) on DIVEQ
+143: shift/reduce conflict (shift 70(0), red'n 103(4)) on ANDEQ
+143: shift/reduce conflict (shift 71(0), red'n 103(4)) on OREQ
+143: shift/reduce conflict (shift 57(0), red'n 103(4)) on POW
+143: shift/reduce conflict (shift 80(0), red'n 103(4)) on OPCHAN
+143: shift/reduce conflict (shift 51(0), red'n 103(4)) on '.'
+143: shift/reduce conflict (shift 76(0), red'n 103(4)) on '&'
+143: shift/reduce conflict (shift 78(0), red'n 103(4)) on '('
+143: shift/reduce conflict (shift 79(0), red'n 103(4)) on '['
+143: shift/reduce conflict (shift 74(0), red'n 103(4)) on '|'
+state 143
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -5228,7 +5131,7 @@ state 144
 	.  reduce 103 (src line 592)
 
 
-state 145
+state 144
 	exprs:  exprs.',' opt_terms expr 
 	exprs:  exprs.',' opt_terms IDENT 
 	expr:  expr '(' exprs.VARARG ')' 
@@ -5240,7 +5143,7 @@ state 145
 	.  error
 
 
-state 146
+state 145
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -5313,38 +5216,38 @@ state 146
 	.  error
 
 
-147: shift/reduce conflict (shift 60(6), red'n 121(0)) on EQEQ
-147: shift/reduce conflict (shift 61(6), red'n 121(0)) on NEQ
-147: shift/reduce conflict (shift 63(7), red'n 121(0)) on GE
-147: shift/reduce conflict (shift 65(7), red'n 121(0)) on LE
-147: shift/reduce conflict (shift 75(3), red'n 121(0)) on OROR
-147: shift/reduce conflict (shift 77(4), red'n 121(0)) on ANDAND
-147: shift/reduce conflict (shift 66(0), red'n 121(0)) on PLUSEQ
-147: shift/reduce conflict (shift 67(0), red'n 121(0)) on MINUSEQ
-147: shift/reduce conflict (shift 68(0), red'n 121(0)) on MULEQ
-147: shift/reduce conflict (shift 69(0), red'n 121(0)) on DIVEQ
-147: shift/reduce conflict (shift 70(0), red'n 121(0)) on ANDEQ
-147: shift/reduce conflict (shift 71(0), red'n 121(0)) on OREQ
-147: shift/reduce conflict (shift 72(8), red'n 121(0)) on PLUSPLUS
-147: shift/reduce conflict (shift 73(8), red'n 121(0)) on MINUSMINUS
-147: shift/reduce conflict (shift 57(0), red'n 121(0)) on POW
-147: shift/reduce conflict (shift 58(7), red'n 121(0)) on SHIFTLEFT
-147: shift/reduce conflict (shift 59(7), red'n 121(0)) on SHIFTRIGHT
-147: shift/reduce conflict (shift 80(0), red'n 121(0)) on OPCHAN
-147: shift/reduce conflict (shift 50(2), red'n 121(0)) on '?'
-147: shift/reduce conflict (shift 62(7), red'n 121(0)) on '>'
-147: shift/reduce conflict (shift 64(7), red'n 121(0)) on '<'
-147: shift/reduce conflict (shift 52(8), red'n 121(0)) on '+'
-147: shift/reduce conflict (shift 53(8), red'n 121(0)) on '-'
-147: shift/reduce conflict (shift 54(9), red'n 121(0)) on '*'
-147: shift/reduce conflict (shift 55(9), red'n 121(0)) on '/'
-147: shift/reduce conflict (shift 56(9), red'n 121(0)) on '%'
-147: shift/reduce conflict (shift 51(0), red'n 121(0)) on '.'
-147: shift/reduce conflict (shift 76(0), red'n 121(0)) on '&'
-147: shift/reduce conflict (shift 78(0), red'n 121(0)) on '('
-147: shift/reduce conflict (shift 79(0), red'n 121(0)) on '['
-147: shift/reduce conflict (shift 74(0), red'n 121(0)) on '|'
-state 147
+146: shift/reduce conflict (shift 60(6), red'n 121(0)) on EQEQ
+146: shift/reduce conflict (shift 61(6), red'n 121(0)) on NEQ
+146: shift/reduce conflict (shift 63(7), red'n 121(0)) on GE
+146: shift/reduce conflict (shift 65(7), red'n 121(0)) on LE
+146: shift/reduce conflict (shift 75(3), red'n 121(0)) on OROR
+146: shift/reduce conflict (shift 77(4), red'n 121(0)) on ANDAND
+146: shift/reduce conflict (shift 66(0), red'n 121(0)) on PLUSEQ
+146: shift/reduce conflict (shift 67(0), red'n 121(0)) on MINUSEQ
+146: shift/reduce conflict (shift 68(0), red'n 121(0)) on MULEQ
+146: shift/reduce conflict (shift 69(0), red'n 121(0)) on DIVEQ
+146: shift/reduce conflict (shift 70(0), red'n 121(0)) on ANDEQ
+146: shift/reduce conflict (shift 71(0), red'n 121(0)) on OREQ
+146: shift/reduce conflict (shift 72(8), red'n 121(0)) on PLUSPLUS
+146: shift/reduce conflict (shift 73(8), red'n 121(0)) on MINUSMINUS
+146: shift/reduce conflict (shift 57(0), red'n 121(0)) on POW
+146: shift/reduce conflict (shift 58(7), red'n 121(0)) on SHIFTLEFT
+146: shift/reduce conflict (shift 59(7), red'n 121(0)) on SHIFTRIGHT
+146: shift/reduce conflict (shift 80(0), red'n 121(0)) on OPCHAN
+146: shift/reduce conflict (shift 50(2), red'n 121(0)) on '?'
+146: shift/reduce conflict (shift 62(7), red'n 121(0)) on '>'
+146: shift/reduce conflict (shift 64(7), red'n 121(0)) on '<'
+146: shift/reduce conflict (shift 52(8), red'n 121(0)) on '+'
+146: shift/reduce conflict (shift 53(8), red'n 121(0)) on '-'
+146: shift/reduce conflict (shift 54(9), red'n 121(0)) on '*'
+146: shift/reduce conflict (shift 55(9), red'n 121(0)) on '/'
+146: shift/reduce conflict (shift 56(9), red'n 121(0)) on '%'
+146: shift/reduce conflict (shift 51(0), red'n 121(0)) on '.'
+146: shift/reduce conflict (shift 76(0), red'n 121(0)) on '&'
+146: shift/reduce conflict (shift 78(0), red'n 121(0)) on '('
+146: shift/reduce conflict (shift 79(0), red'n 121(0)) on '['
+146: shift/reduce conflict (shift 74(0), red'n 121(0)) on '|'
+state 146
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -5414,10 +5317,82 @@ state 147
 	.  reduce 121 (src line 682)
 
 
-state 148
+state 147
 	stmt:  expr_many '=' expr_many.    (9)
 
 	.  reduce 9 (src line 116)
+
+
+state 148
+	expr_many:  expr.    (43)
+	exprs:  expr.    (49)
+	expr:  expr.'?' expr ':' expr 
+	expr:  expr.'.' IDENT 
+	expr:  expr.'+' expr 
+	expr:  expr.'-' expr 
+	expr:  expr.'*' expr 
+	expr:  expr.'/' expr 
+	expr:  expr.'%' expr 
+	expr:  expr.POW expr 
+	expr:  expr.SHIFTLEFT expr 
+	expr:  expr.SHIFTRIGHT expr 
+	expr:  expr.EQEQ expr 
+	expr:  expr.NEQ expr 
+	expr:  expr.'>' expr 
+	expr:  expr.GE expr 
+	expr:  expr.'<' expr 
+	expr:  expr.LE expr 
+	expr:  expr.PLUSEQ expr 
+	expr:  expr.MINUSEQ expr 
+	expr:  expr.MULEQ expr 
+	expr:  expr.DIVEQ expr 
+	expr:  expr.ANDEQ expr 
+	expr:  expr.OREQ expr 
+	expr:  expr.PLUSPLUS 
+	expr:  expr.MINUSMINUS 
+	expr:  expr.'|' expr 
+	expr:  expr.OROR expr 
+	expr:  expr.'&' expr 
+	expr:  expr.ANDAND expr 
+	expr:  expr.'(' exprs VARARG ')' 
+	expr:  expr.'(' exprs ')' 
+	expr:  expr.'[' expr ']' 
+	expr:  expr.'[' expr ':' expr ']' 
+	expr:  expr.OPCHAN expr 
+
+	EQEQ  shift 60
+	NEQ  shift 61
+	GE  shift 63
+	LE  shift 65
+	OROR  shift 75
+	ANDAND  shift 77
+	PLUSEQ  shift 66
+	MINUSEQ  shift 67
+	MULEQ  shift 68
+	DIVEQ  shift 69
+	ANDEQ  shift 70
+	OREQ  shift 71
+	PLUSPLUS  shift 72
+	MINUSMINUS  shift 73
+	POW  shift 57
+	SHIFTLEFT  shift 58
+	SHIFTRIGHT  shift 59
+	OPCHAN  shift 80
+	'?'  shift 50
+	','  reduce 49 (src line 315)
+	'>'  shift 62
+	'<'  shift 64
+	'+'  shift 52
+	'-'  shift 53
+	'*'  shift 54
+	'/'  shift 55
+	'%'  shift 56
+	'.'  shift 51
+	'&'  shift 76
+	'('  shift 78
+	'['  shift 79
+	'|'  shift 74
+	.  reduce 43 (src line 288)
 
 
 state 149
@@ -5487,7 +5462,7 @@ state 152
 	expr  goto 189
 
 state 153
-	stmt:  FOR expr_lets ';'.expr ';' expr '{' compstmt '}' 
+	stmt:  WHILE expr_lets ';'.expr ';' expr '{' compstmt '}' 
 
 	IDENT  shift 22
 	NUMBER  shift 23
@@ -5513,7 +5488,26 @@ state 153
 
 	expr  goto 190
 
+ 154: reduce/reduce conflict  (red'ns 123 and 3) on '}'
+154: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
+154: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
 state 154
+	stmt:  WHILE expr '{'.compstmt '}' 
+	opt_terms: .    (123)
+	stmts: .    (3)
+
+	'}'  reduce 3 (src line 77)
+	';'  shift 6
+	'\n'  shift 7
+	.  reduce 123 (src line 693)
+
+	compstmt  goto 191
+	stmts  goto 3
+	opt_terms  goto 2
+	terms  goto 4
+	term  goto 5
+
+state 155
 	expr_lets:  expr_many '='.expr_many 
 	exprs: .    (48)
 
@@ -5539,28 +5533,9 @@ state 154
 	'['  shift 35
 	.  reduce 48 (src line 311)
 
-	expr  goto 90
+	expr  goto 148
 	exprs  goto 42
-	expr_many  goto 191
-
- 155: reduce/reduce conflict  (red'ns 123 and 3) on '}'
-155: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
-155: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
-state 155
-	stmt:  WHILE expr '{'.compstmt '}' 
-	opt_terms: .    (123)
-	stmts: .    (3)
-
-	'}'  reduce 3 (src line 77)
-	';'  shift 6
-	'\n'  shift 7
-	.  reduce 123 (src line 693)
-
-	compstmt  goto 192
-	stmts  goto 3
-	opt_terms  goto 2
-	terms  goto 4
-	term  goto 5
+	expr_many  goto 192
 
  156: reduce/reduce conflict  (red'ns 123 and 3) on '}'
 156: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
@@ -5702,7 +5677,7 @@ state 162
 	expr_idents:  expr_idents.',' opt_terms IDENT 
 	expr:  FUNC '(' expr_idents.')' opt_terms compstmt '}' 
 
-	','  shift 117
+	','  shift 116
 	')'  shift 202
 	.  error
 
@@ -6155,7 +6130,7 @@ state 189
 
 
 state 190
-	stmt:  FOR expr_lets ';' expr.';' expr '{' compstmt '}' 
+	stmt:  WHILE expr_lets ';' expr.';' expr '{' compstmt '}' 
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -6226,16 +6201,16 @@ state 190
 
 
 state 191
-	expr_lets:  expr_many '=' expr_many.    (42)
-
-	.  reduce 42 (src line 283)
-
-
-state 192
 	stmt:  WHILE expr '{' compstmt.'}' 
 
 	'}'  shift 231
 	.  error
+
+
+state 192
+	expr_lets:  expr_many '=' expr_many.    (42)
+
+	.  reduce 42 (src line 283)
 
 
 state 193
@@ -6416,7 +6391,7 @@ state 204
 	expr_idents:  expr_idents.',' opt_terms IDENT 
 	expr:  FUNC IDENT '(' expr_idents.')' opt_terms compstmt '}' 
 
-	','  shift 117
+	','  shift 116
 	')'  shift 244
 	.  error
 
@@ -6647,8 +6622,8 @@ state 218
  219: reduce/reduce conflict  (red'ns 51 and 52) on ','
  219: reduce/reduce conflict  (red'ns 45 and 52) on '}'
  219: reduce/reduce conflict  (red'ns 45 and 52) on ';'
-219: shift/reduce conflict (shift 94(0), red'n 52(5)) on '('
-219: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
+219: shift/reduce conflict (shift 93(0), red'n 52(5)) on '('
+219: shift/reduce conflict (shift 94(0), red'n 52(5)) on '['
  219: reduce/reduce conflict  (red'ns 45 and 52) on '\n'
 state 219
 	expr_many:  exprs ',' opt_terms IDENT.    (45)
@@ -6669,8 +6644,8 @@ state 219
 	','  reduce 51 (src line 323)
 	'}'  reduce 45 (src line 297)
 	';'  reduce 45 (src line 297)
-	'('  shift 94
-	'['  shift 95
+	'('  shift 93
+	'['  shift 94
 	'\n'  reduce 45 (src line 297)
 	.  reduce 52 (src line 328)
 
@@ -6930,9 +6905,9 @@ state 225
  226: reduce/reduce conflict  (red'ns 51 and 52) on ','
  226: reduce/reduce conflict  (red'ns 51 and 52) on '}'
  226: reduce/reduce conflict  (red'ns 51 and 52) on ';'
-226: shift/reduce conflict (shift 94(0), red'n 52(5)) on '('
+226: shift/reduce conflict (shift 93(0), red'n 52(5)) on '('
  226: reduce/reduce conflict  (red'ns 51 and 52) on ')'
-226: shift/reduce conflict (shift 95(0), red'n 52(5)) on '['
+226: shift/reduce conflict (shift 94(0), red'n 52(5)) on '['
  226: reduce/reduce conflict  (red'ns 51 and 52) on ']'
  226: reduce/reduce conflict  (red'ns 51 and 52) on '\n'
 state 226
@@ -6953,9 +6928,9 @@ state 226
 	','  reduce 51 (src line 323)
 	'}'  reduce 51 (src line 323)
 	';'  reduce 51 (src line 323)
-	'('  shift 94
+	'('  shift 93
 	')'  reduce 51 (src line 323)
-	'['  shift 95
+	'['  shift 94
 	']'  reduce 51 (src line 323)
 	'\n'  reduce 51 (src line 323)
 	.  reduce 52 (src line 328)
@@ -7066,7 +7041,7 @@ state 229
 	expr  goto 262
 
 state 230
-	stmt:  FOR expr_lets ';' expr ';'.expr '{' compstmt '}' 
+	stmt:  WHILE expr_lets ';' expr ';'.expr '{' compstmt '}' 
 
 	IDENT  shift 22
 	NUMBER  shift 23
@@ -7723,7 +7698,7 @@ state 262
 
 
 state 263
-	stmt:  FOR expr_lets ';' expr ';' expr.'{' compstmt '}' 
+	stmt:  WHILE expr_lets ';' expr ';' expr.'{' compstmt '}' 
 	expr:  expr.'?' expr ':' expr 
 	expr:  expr.'.' IDENT 
 	expr:  expr.'+' expr 
@@ -8303,7 +8278,7 @@ state 283
 284: shift/reduce conflict (shift 6(0), red'n 3(0)) on ';'
 284: shift/reduce conflict (shift 7(0), red'n 3(0)) on '\n'
 state 284
-	stmt:  FOR expr_lets ';' expr ';' expr '{'.compstmt '}' 
+	stmt:  WHILE expr_lets ';' expr ';' expr '{'.compstmt '}' 
 	opt_terms: .    (123)
 	stmts: .    (3)
 
@@ -8525,7 +8500,7 @@ state 297
 
 
 state 298
-	stmt:  FOR expr_lets ';' expr ';' expr '{' compstmt.'}' 
+	stmt:  WHILE expr_lets ';' expr ';' expr '{' compstmt.'}' 
 
 	'}'  shift 308
 	.  error
@@ -8686,7 +8661,7 @@ state 307
 
 
 state 308
-	stmt:  FOR expr_lets ';' expr ';' expr '{' compstmt '}'.    (18)
+	stmt:  WHILE expr_lets ';' expr ';' expr '{' compstmt '}'.    (18)
 
 	.  reduce 18 (src line 160)
 
@@ -8717,13 +8692,13 @@ state 312
 
 81 terminals, 21 nonterminals
 129 grammar rules, 313/8000 states
-659 shift/reduce, 295 reduce/reduce conflicts reported
+657 shift/reduce, 295 reduce/reduce conflicts reported
 120 working sets used
-memory: parser 256/120000
+memory: parser 255/120000
 289 extra closures
-3266 shift entries, 161 exceptions
-139 goto entries
+3246 shift entries, 162 exceptions
+138 goto entries
 109 entries saved by goto default
-Optimizer space used: output 2493/120000
-2493 table entries, 1129 zero
+Optimizer space used: output 2414/120000
+2414 table entries, 1069 zero
 maximum spread: 81, maximum offset: 306

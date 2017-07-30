@@ -157,7 +157,7 @@ stmt :
 		$$ = &ast.NumForStmt{Name: $2.Lit, Expr1: $4, Expr2: $6, Stmts: $8}
 		$$.SetPosition($1.Position())
 	}
-	| FOR expr_lets ';' expr ';' expr '{' compstmt '}'
+	| WHILE expr_lets ';' expr ';' expr '{' compstmt '}'
 	{
 		$$ = &ast.CForStmt{Expr1: $2, Expr2: $4, Expr3: $6, Stmts: $8}
 		$$.SetPosition($1.Position())
