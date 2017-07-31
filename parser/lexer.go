@@ -349,7 +349,19 @@ retry:
 			lit = string(ch)
 			s.inbrackets = 0
 			s.canequal = false
-		case ':', '%', '?', ',', '^':
+		case '?':
+			s.next()
+			switch s.peek() {
+			case '(':
+				tok = TERNARY
+				lit = "?"
+				s.canequal = true //присваивания внутри тернарного оператора не бывает
+			default:
+				s.back()
+				tok = int(ch)
+				lit = string(ch)
+			}
+		case ':', '%', ',', '^':
 			tok = int(ch)
 			lit = string(ch)
 		case '[':
