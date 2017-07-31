@@ -203,8 +203,8 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		if toBool(rv) {
 			// Then
-			newenv := env.NewEnv()
-			defer newenv.Destroy()
+			newenv := env//.NewEnv()
+			//defer newenv.Destroy()
 			rv, err = Run(stmt.Then, newenv)
 			if err != nil {
 				return rv, NewError(stmt, err)
@@ -234,8 +234,8 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		if !done && len(stmt.Else) > 0 {
 			// Else
-			newenv := env.NewEnv()
-			defer newenv.Destroy()
+			newenv := env//.NewEnv()
+			//defer newenv.Destroy()
 			rv, err = Run(stmt.Else, newenv)
 			if err != nil {
 				return rv, NewError(stmt, err)
