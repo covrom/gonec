@@ -243,15 +243,15 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		return rv, nil
 	case *ast.TryStmt:
-		newenv := env.NewEnv()
-		defer newenv.Destroy()
+		newenv := env//.NewEnv()
+		//defer newenv.Destroy()
 		_, err := Run(stmt.Try, newenv)
 		if err != nil {
 			// Catch
-			cenv := env.NewEnv()
-			defer cenv.Destroy()
+			cenv := env//.NewEnv()
+			//defer cenv.Destroy()
 			// if stmt.Var != "" {
-			// 	cenv.Define(stmt.Var, reflect.ValueOf(err))
+			cenv.Define("описаниеошибки", reflect.ValueOf(err))
 			// }
 			_, e1 := Run(stmt.Catch, cenv)
 			if e1 != nil {
