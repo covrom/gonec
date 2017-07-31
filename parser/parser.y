@@ -384,9 +384,9 @@ expr :
 		$$ = &ast.ConstExpr{Value: $1.Lit}
 		$$.SetPosition($1.Position())
 	}
-	| expr '?' expr ':' expr
+	| '?' '(' expr ',' expr ',' expr ')'
 	{
-		$$ = &ast.TernaryOpExpr{Expr: $1, Lhs: $3, Rhs: $5}
+		$$ = &ast.TernaryOpExpr{Expr: $3, Lhs: $5, Rhs: $7}
 		$$.SetPosition($1.Position())
 	}
 	| expr '.' IDENT
