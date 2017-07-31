@@ -82,6 +82,7 @@ var opName = map[string]int{
 	"по":           TO,
 	"пока":         WHILE,
 	"иначеесли":    ELSIF,
+	"?(":           TERNARY,
 }
 
 var opCanEqual = map[int]bool{
@@ -102,9 +103,10 @@ var opCanEqual = map[int]bool{
 	int('!'): true,
 	NULL:     true,
 	// EACH:     true,
-	TO:    true,
-	WHILE: true,
-	ELSIF: true,
+	TO:      true,
+	WHILE:   true,
+	ELSIF:   true,
+	TERNARY: true,
 }
 
 // Init resets code to scan.
