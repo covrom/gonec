@@ -37,7 +37,6 @@ type Scanner struct {
 	lineHead   int
 	line       int
 	canequal   bool
-	inbrackets int
 }
 
 // opName is correction of operation names.
@@ -181,8 +180,7 @@ retry:
 				lit = "=="
 			default:
 				s.back()
-				//при таком синтаксисе нельзя присваивать анонимные функции, можно только именованные
-				if s.canequal || s.inbrackets > 0 {
+				if s.canequal {
 					tok = EQEQ
 					lit = "=="
 				} else {
@@ -329,6 +327,10 @@ retry:
 		case '\n':
 			tok = int(ch)
 			lit = string(ch)
+			//первое равенство в строке - это будет присваивание
+			//нельзя переносить знак равенства в проверке на равенство в выражениях с присваиванием
+			//можно поставить знак равенства в конце строки и только потом перенести строку
+			s.canequal = false
 		case ';':
 			//смена оператора - меняем признак возможности сравнения
 			tok = int(ch)
@@ -337,15 +339,12 @@ retry:
 		case '(':
 			tok = int(ch)
 			lit = string(ch)
-			s.inbrackets++
 		case ')', ']':
 			tok = int(ch)
 			lit = string(ch)
-			s.inbrackets--
 		case '{', '}':
 			tok = int(ch)
 			lit = string(ch)
-			s.inbrackets = 0
 			s.canequal = false
 		case '?':
 			s.next()
@@ -375,13 +374,11 @@ retry:
 					s.back()
 					tok = int(ch)
 					lit = string(ch)
-					s.inbrackets++
 				}
 			} else {
 				s.back()
 				tok = int(ch)
 				lit = string(ch)
-				s.inbrackets++
 			}
 		default:
 			err = fmt.Errorf(`syntax error "%s"`, string(ch))
