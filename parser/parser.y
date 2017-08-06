@@ -170,6 +170,11 @@ stmt :
 		$$ = &ast.SwitchStmt{Expr: $2, Cases: $4}
 		$$.SetPosition($1.Position())
 	}
+	| SWITCH ':' stmt_cases '}'
+	{
+		$$ = &ast.SelectStmt{Cases: $3}
+		$$.SetPosition($1.Position())
+	}
 	| expr
 	{
 		$$ = &ast.ExprStmt{Expr: $1}

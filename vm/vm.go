@@ -203,7 +203,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		if toBool(rv) {
 			// Then
-			newenv := env//.NewEnv()
+			newenv := env //.NewEnv()
 			//defer newenv.Destroy()
 			rv, err = Run(stmt.Then, newenv)
 			if err != nil {
@@ -234,7 +234,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		if !done && len(stmt.Else) > 0 {
 			// Else
-			newenv := env//.NewEnv()
+			newenv := env //.NewEnv()
 			//defer newenv.Destroy()
 			rv, err = Run(stmt.Else, newenv)
 			if err != nil {
@@ -243,12 +243,12 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		return rv, nil
 	case *ast.TryStmt:
-		newenv := env//.NewEnv()
+		newenv := env //.NewEnv()
 		//defer newenv.Destroy()
 		_, err := Run(stmt.Try, newenv)
 		if err != nil {
 			// Catch
-			cenv := env//.NewEnv()
+			cenv := env //.NewEnv()
 			//defer cenv.Destroy()
 			// if stmt.Var != "" {
 			cenv.Define("описаниеошибки", reflect.ValueOf(err))
@@ -531,6 +531,86 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			rv, err = Run(default_stmt.Stmts, env)
 			if err != nil {
 				return rv, NewError(stmt, err)
+			}
+		}
+		return rv, nil
+	case *ast.SelectStmt:
+		// основные варианты - если нет секции "другое", то обходятся в цикле, пока хотя бы один не сработает
+		// если есть секция "другое" - выполняется она и делается выход из цикла
+	startslct:
+		done := false
+		var rv reflect.Value
+		var err error
+		var default_stmt *ast.DefaultStmt
+		for _, ss := range stmt.Cases {
+			err = nil
+			rv = NilValue
+			if ssd, ok := ss.(*ast.DefaultStmt); ok {
+				default_stmt = ssd
+				continue
+			}
+			case_stmt := ss.(*ast.CaseStmt)
+
+			switch e := case_stmt.Expr.(type) {
+			case *ast.ChanExpr:
+				rhs, err := invokeExpr(e.Rhs, env)
+				if err != nil {
+					return NilValue, NewError(case_stmt.Expr, err)
+				}
+
+				if e.Lhs == nil {
+					if rhs.Kind() == reflect.Chan {
+						var ok bool
+						rv, ok = rhs.TryRecv()
+						if !ok {
+							//не прочитано из канала - идем дальше
+							continue
+						}
+					}
+				} else {
+					lhs, err := invokeExpr(e.Lhs, env)
+					if err != nil {
+						return NilValue, NewError(case_stmt.Expr, err)
+					}
+					if lhs.Kind() == reflect.Chan {
+						ok := lhs.TrySend(rhs)
+						if !ok {
+							// не отправлено в канал
+							continue
+						}
+					} else if rhs.Kind() == reflect.Chan {
+						var ok bool
+						rv, ok = rhs.TryRecv()
+						if !ok {
+							continue
+						}
+						rv, err = invokeLetExpr(e.Lhs, rv, env)
+					}
+				}
+			default:
+				return NilValue, NewStringError(case_stmt.Expr, "При выборе вариантов из каналов допустимы только выражения с каналами")
+			}
+
+			if err != nil {
+				return rv, NewError(stmt, err)
+			}
+
+			rv, err = Run(case_stmt.Stmts, env)
+			if err != nil {
+				return rv, NewError(stmt, err)
+			}
+			done = true
+			break
+		}
+		if !done {
+			if default_stmt != nil {
+				rv, err = Run(default_stmt.Stmts, env)
+				if err != nil {
+					return rv, NewError(stmt, err)
+				}
+			} else {
+				// если нет секции "другое", возвращаемся к выбору из каналов
+				goto startslct
 			}
 		}
 		return rv, nil

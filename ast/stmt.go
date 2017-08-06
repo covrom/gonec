@@ -114,6 +114,12 @@ type SwitchStmt struct {
 	Cases []Stmt
 }
 
+// SelectStmt provide switch statement.
+type SelectStmt struct {
+	StmtImpl
+	Cases []Stmt
+}
+
 // CaseStmt provide switch/case statement.
 type CaseStmt struct {
 	StmtImpl
