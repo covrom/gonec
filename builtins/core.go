@@ -110,7 +110,7 @@ func Import(env *vm.Env) *vm.Env {
 			keys = append(keys, key.String())
 		}
 		// ключи потом обходим в порядке сортировки по алфавиту
-		sort.Sort(sort.StringSlice(keys))
+		sort.Strings(keys)
 		return keys
 	})
 
