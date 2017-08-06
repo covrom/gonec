@@ -9,12 +9,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 
-	"github.com/daviddengcn/go-colortext"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
+	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
 
 	gonec_core "github.com/covrom/gonec/builtins"
@@ -138,10 +137,11 @@ func main() {
 
 		following = false
 		code = ""
-		v := vm.NilValue
+		// v := vm.NilValue
 
 		if err == nil {
-			v, err = vm.Run(stmts, env)
+			// v, err = vm.Run(stmts, env)
+			_, err = vm.Run(stmts, env)
 		}
 		if err != nil {
 			colortext(ct.Red, false, func() {
@@ -164,18 +164,19 @@ func main() {
 			}
 		} else {
 			if interactive {
-				colortext(ct.Black, true, func() {
-					if v == vm.NilValue || !v.IsValid() {
-						fmt.Println("nil")
-					} else {
-						s, ok := v.Interface().(fmt.Stringer)
-						if v.Kind() != reflect.String && ok {
-							fmt.Println(s)
-						} else {
-							fmt.Printf("%#v\n", v.Interface())
-						}
-					}
-				})
+				// colortext(ct.Black, true, func() {
+				// 	if v == vm.NilValue || !v.IsValid() {
+				// 		fmt.Println("nil")
+				// 	} else {
+				// 		s, ok := v.Interface().(fmt.Stringer)
+				// 		if v.Kind() != reflect.String && ok {
+				// 			fmt.Println(s)
+				// 		} else {
+				// 			fmt.Printf("%#v\n", v.Interface())
+				// 		}
+				// 	}
+				// })
+
 			} else {
 				break
 			}
