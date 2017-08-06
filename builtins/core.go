@@ -187,6 +187,18 @@ func Import(env *vm.Env) *vm.Env {
 		return 0.0
 	})
 
+	env.Define("дата", func(v interface{}) time.Time {
+		t:=time.Time{}
+		rv := reflect.ValueOf(v)
+		if rv.Kind() == reflect.String {
+			tt, err := time.Parse(time.RFC3339,v.(string))
+			if err == nil {
+				return tt
+			}
+		}
+		return t
+	})
+	
 	env.Define("вбулево", func(v interface{}) bool {
 		nt := reflect.TypeOf(true)
 		rv := reflect.ValueOf(v)
