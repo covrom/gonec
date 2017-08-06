@@ -198,6 +198,20 @@ func Import(env *vm.Env) *vm.Env {
 		}
 		return t
 	})
+
+	env.Define("нрег", func(v interface{}) string {
+		if b, ok := v.([]byte); ok {
+			return strings.ToLower(string(b))
+		}
+		return strings.ToLower(fmt.Sprint(v))
+	})
+
+	env.Define("врег", func(v interface{}) string {
+		if b, ok := v.([]byte); ok {
+			return strings.ToUpper(string(b))
+		}
+		return strings.ToUpper(fmt.Sprint(v))
+	})
 	
 	env.Define("вбулево", func(v interface{}) bool {
 		nt := reflect.TypeOf(true)
