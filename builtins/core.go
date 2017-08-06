@@ -2,6 +2,7 @@
 package core
 
 import (
+	"sort"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -108,6 +109,8 @@ func Import(env *vm.Env) *vm.Env {
 		for _, key := range mk {
 			keys = append(keys, key.String())
 		}
+		// ключи потом обходим в порядке сортировки по алфавиту
+		sort.Sort(sort.StringSlice(keys))
 		return keys
 	})
 
