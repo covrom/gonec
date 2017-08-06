@@ -560,6 +560,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 
 				if e.Lhs == nil {
 					if rhs.Kind() == reflect.Chan {
+						// есть только правая часть - это чтение из канала без сохранения в переменной слева
 						var ok bool
 						rv, ok = rhs.TryRecv()
 						if !ok {
@@ -573,12 +574,14 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 						return NilValue, NewError(case_stmt.Expr, err)
 					}
 					if lhs.Kind() == reflect.Chan {
+						// слева - канал, тогда пишем в него выражение справа
 						ok := lhs.TrySend(rhs)
 						if !ok {
 							// не отправлено в канал
 							continue
 						}
 					} else if rhs.Kind() == reflect.Chan {
+						// слева - выражение, а справа - канал, тогда выражение - это переменная для присваивания
 						var ok bool
 						rv, ok = rhs.TryRecv()
 						if !ok {
