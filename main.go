@@ -4,6 +4,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
@@ -109,7 +110,7 @@ func main() {
 		os.Args = fs.Args()
 	}
 
-	env := vm.NewEnv(os.Stdout)
+	env := vm.NewEnv()
 	env.Define("args", fsArgs)
 	gonec_core.LoadAllBuiltins(env)
 
@@ -256,7 +257,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 
 			//создаем новое окружение
-			env = vm.NewEnv(w)
+			env = vm.NewEnv()
 			env.Define("args", fsArgs)
 			gonec_core.LoadAllBuiltins(env)
 
@@ -268,13 +269,13 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 		} else {
 			lockSessions.Lock()
 			lastAccess[sid] = time.Now()
-			env.SetStdOut(w)
 			lockSessions.Unlock()
 		}
 
 		w.Header().Set("Sid", sid)
-		
-		log.Println("Сессия:",sid)
+
+		env.SetSid(sid)
+		//log.Println("Сессия:",sid)
 
 		err := ParseAndRun(r.Body, w, env)
 
@@ -331,26 +332,27 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 				right: 0;
 				background: #FFD;
 			}
+			#wrapout {
+				padding: 5px;
+				margin: 10px;
+				position: absolute;
+				top: 75%;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				background: #FFF;
+			}
 			#code, #output, pre, .lines {
 				font-family: Consolas, Roboto Mono, Menlo, monospace;
 				font-size: 11pt;
 			}			
-			#code {
+			#code, #output {
 				color: black;
 				background: inherit;
 				width: 100%;
 				height: 100%;
 				margin: 0;
 				outline: none;
-			}
-			#output {
-				position: absolute;
-				top: 75%;
-				bottom: 0;
-				left: 0;
-				right: 0;
-				padding: 10px;
-				margin: 10px;
 			}
 			#output .system, #output .loading {
 				color: #999;
@@ -394,8 +396,9 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 			<textarea itemprop="description" id="code" name="code" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off"></textarea>
 		</div>
 		<input type="button" value="Выполнить" id="run">
-		<br>
-		<pre><div id="output"></div></pre>
+		<div id="wrapout">
+		<textarea id="output" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off" readonly></textarea>
+		</div>
 		<input type="hidden" id="sid" name="sid" value="">
 	</body>
 	`)
@@ -420,7 +423,7 @@ func Run(srv string) {
 			lockSessions.Unlock()
 		}
 	}()
-	log.Println("Запущен сервер на порту",srv)
+	log.Println("Запущен сервер на порту", srv)
 	log.Fatal(http.ListenAndServe(":"+srv, nil))
 }
 
@@ -431,17 +434,29 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 	}
 	parser.EnableErrorVerbose()
 
-	sb:=string(b);
+	sb := string(b)
 
-	log.Println("--Выполняется код--")
-	log.Println(sb)
+	ls := fmt.Sprintf("--Выполняется код-- %s\n%s\n", env.GetSid(), sb)
 
 	stmts, err := parser.ParseSrc(sb)
 	if err != nil {
 		return err
 	}
+
+	var rb bytes.Buffer
+	env.SetStdOut(&rb)
+
 	_, err = vm.Run(stmts, env)
-	log.Println("--Завершено выполнение кода--")
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	log.Printf("%s--Результат выполнения кода--\n%s\n", ls, rb.String())
+
+	_, err = w.Write(rb.Bytes())
+
 	if err != nil {
 		log.Println(err)
 		return err

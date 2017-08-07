@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -19,11 +20,12 @@ type Env struct {
 	parent    *Env
 	interrupt *bool
 	stdout    io.Writer
+	sid       string
 	sync.RWMutex
 }
 
 // NewEnv creates new global scope.
-func NewEnv(w io.Writer) *Env {
+func NewEnv() *Env {
 	b := false
 
 	return &Env{
@@ -31,7 +33,7 @@ func NewEnv(w io.Writer) *Env {
 		typ:       make(map[string]reflect.Type),
 		parent:    nil,
 		interrupt: &b,
-		stdout:    w,
+		stdout:    os.Stdout,
 	}
 }
 
@@ -47,18 +49,18 @@ func (e *Env) NewEnv() *Env {
 	}
 }
 
-func NewPackage(n string, w io.Writer) *Env {
-	b := false
+// func NewPackage(n string, w io.Writer) *Env {
+// 	b := false
 
-	return &Env{
-		env:       make(map[string]reflect.Value),
-		typ:       make(map[string]reflect.Type),
-		parent:    nil,
-		name:      strings.ToLower(n),
-		interrupt: &b,
-		stdout:    w,
-	}
-}
+// 	return &Env{
+// 		env:       make(map[string]reflect.Value),
+// 		typ:       make(map[string]reflect.Type),
+// 		parent:    nil,
+// 		name:      strings.ToLower(n),
+// 		interrupt: &b,
+// 		stdout:    w,
+// 	}
+// }
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
@@ -266,23 +268,48 @@ func (e *Env) Execute(src string) (reflect.Value, error) {
 }
 
 func (e *Env) Println(a ...interface{}) (n int, err error) {
-	//log.Println(a...)
+	e.RLock()
+	defer e.RUnlock()
 	return fmt.Fprintln(e.stdout, a...)
 }
 
 func (e *Env) Printf(format string, a ...interface{}) (n int, err error) {
+	e.RLock()
+	defer e.RUnlock()
 	return fmt.Fprintf(e.stdout, format, a...)
 }
 
 func (e *Env) Print(a ...interface{}) (n int, err error) {
+	e.RLock()
+	defer e.RUnlock()
 	return fmt.Fprint(e.stdout, a...)
 }
 
 func (e *Env) StdOut() reflect.Value {
+	e.RLock()
+	defer e.RUnlock()
 	return reflect.ValueOf(e.stdout)
-
 }
 
 func (e *Env) SetStdOut(w io.Writer) {
+	e.Lock()
 	e.stdout = w
+	e.Unlock()
+}
+
+func (e *Env) SetSid(s string) error {
+	if e.parent == nil {
+		e.sid = s
+		return e.Define("ГлобальныйИдентификаторСессии", s)
+	} else {
+		return e.parent.SetSid(s)
+	}
+}
+
+func (e *Env) GetSid() string {
+	if e.parent == nil {
+		return e.sid
+	} else {
+		return e.parent.GetSid()
+	}
 }
