@@ -33,7 +33,7 @@ var (
 	fs   = flag.NewFlagSet(os.Args[0], 1)
 	line = fs.String("e", "", "Исполнение одной строчки кода")
 	v    = fs.Bool("v", false, "Версия программы")
-	w    = fs.Bool("web", false, "Запустить вэб-сервер на порту переменной окружения PORT, если не указан параметр -p")
+	w    = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
 	port = fs.String("p", "", "Номер порта вэб-сервера")
 
 	istty = isatty.IsTerminal(os.Stdout.Fd())
@@ -71,8 +71,13 @@ func main() {
 	)
 
 	interactive := fs.NArg() == 0 && *line == ""
-
 	fsArgs = fs.Args()
+
+	penv := os.Getenv("GONEC_WEB")
+	if penv != "" {
+		Run(penv)
+		return
+	}
 
 	if interactive {
 		reader = bufio.NewReader(os.Stdin)
@@ -80,11 +85,7 @@ func main() {
 		os.Args = append([]string{os.Args[0]}, fs.Args()...)
 	} else {
 		if *w {
-			penv := os.Getenv("PORT")
-			if *port=="" && penv != "" {
-				*port = penv
-			}
-			if *port==""{
+			if *port == "" {
 				*port = "5000"
 			}
 			Run(*port)
