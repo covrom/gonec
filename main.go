@@ -73,7 +73,7 @@ func main() {
 	interactive := fs.NArg() == 0 && *line == ""
 	fsArgs = fs.Args()
 
-	penv := os.Getenv("GONEC_WEB")
+	penv := os.Getenv("PORT")
 	if penv != "" {
 		Run(penv)
 		return
