@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"sync"
@@ -17,11 +18,12 @@ type Env struct {
 	typ       map[string]reflect.Type
 	parent    *Env
 	interrupt *bool
+	stdout    io.Writer
 	sync.RWMutex
 }
 
 // NewEnv creates new global scope.
-func NewEnv() *Env {
+func NewEnv(w io.Writer) *Env {
 	b := false
 
 	return &Env{
@@ -29,6 +31,7 @@ func NewEnv() *Env {
 		typ:       make(map[string]reflect.Type),
 		parent:    nil,
 		interrupt: &b,
+		stdout:    w,
 	}
 }
 
@@ -40,10 +43,11 @@ func (e *Env) NewEnv() *Env {
 		parent:    e,
 		name:      e.name,
 		interrupt: e.interrupt,
+		stdout:    e.stdout,
 	}
 }
 
-func NewPackage(n string) *Env {
+func NewPackage(n string, w io.Writer) *Env {
 	b := false
 
 	return &Env{
@@ -52,6 +56,7 @@ func NewPackage(n string) *Env {
 		parent:    nil,
 		name:      strings.ToLower(n),
 		interrupt: &b,
+		stdout:    w,
 	}
 }
 
@@ -62,6 +67,7 @@ func (e *Env) NewPackage(n string) *Env {
 		parent:    e,
 		name:      strings.ToLower(n),
 		interrupt: e.interrupt,
+		stdout:    e.stdout,
 	}
 }
 
@@ -84,11 +90,12 @@ func (e *Env) Destroy() {
 
 // NewModule creates new module scope as global.
 func (e *Env) NewModule(n string) *Env {
-	ni:=strings.ToLower(n)
+	ni := strings.ToLower(n)
 	m := &Env{
 		env:    make(map[string]reflect.Value),
 		parent: e,
 		name:   ni,
+		stdout: e.stdout,
 	}
 	e.Define(ni, m)
 	return m
@@ -159,7 +166,7 @@ func (e *Env) Get(k string) (reflect.Value, error) {
 func (e *Env) Set(k string, v interface{}) error {
 	e.Lock()
 	defer e.Unlock()
-	ki:=strings.ToLower(k)
+	ki := strings.ToLower(k)
 	if _, ok := e.env[ki]; ok {
 		val, ok := v.(reflect.Value)
 		if !ok {
@@ -256,4 +263,26 @@ func (e *Env) Execute(src string) (reflect.Value, error) {
 		return NilValue, err
 	}
 	return Run(stmts, e)
+}
+
+func (e *Env) Println(a ...interface{}) (n int, err error) {
+	//log.Println(a...)
+	return fmt.Fprintln(e.stdout, a...)
+}
+
+func (e *Env) Printf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(e.stdout, format, a...)
+}
+
+func (e *Env) Print(a ...interface{}) (n int, err error) {
+	return fmt.Fprint(e.stdout, a...)
+}
+
+func (e *Env) StdOut() reflect.Value {
+	return reflect.ValueOf(e.stdout)
+
+}
+
+func (e *Env) SetStdOut(w io.Writer) {
+	e.stdout = w
 }

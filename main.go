@@ -78,19 +78,19 @@ func main() {
 		Run(penv)
 		return
 	}
+	if *w {
+		if *port == "" {
+			*port = "5000"
+		}
+		Run(*port)
+		return
+	}
 
 	if interactive {
 		reader = bufio.NewReader(os.Stdin)
 		source = "typein"
 		os.Args = append([]string{os.Args[0]}, fs.Args()...)
 	} else {
-		if *w {
-			if *port == "" {
-				*port = "5000"
-			}
-			Run(*port)
-			return
-		}
 		if *line != "" {
 			b = []byte(*line)
 			source = "argument"
@@ -109,7 +109,7 @@ func main() {
 		os.Args = fs.Args()
 	}
 
-	env := vm.NewEnv()
+	env := vm.NewEnv(os.Stdout)
 	env.Define("args", fsArgs)
 	gonec_core.LoadAllBuiltins(env)
 
@@ -228,7 +228,7 @@ func mustGenerateRandomString(s int) string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func handlerMain(w http.ResponseWriter, r *http.Request) {
+func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 	if r.ContentLength > 1<<26 {
 		time.Sleep(time.Second) //анти-ddos
@@ -256,7 +256,7 @@ func handlerMain(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 
 			//создаем новое окружение
-			env = vm.NewEnv()
+			env = vm.NewEnv(w)
 			env.Define("args", fsArgs)
 			gonec_core.LoadAllBuiltins(env)
 
@@ -266,10 +266,15 @@ func handlerMain(w http.ResponseWriter, r *http.Request) {
 			lockSessions.Unlock()
 			w.Header().Set("Newsid", "true")
 		} else {
+			lockSessions.Lock()
 			lastAccess[sid] = time.Now()
+			env.SetStdOut(w)
+			lockSessions.Unlock()
 		}
 
 		w.Header().Set("Sid", sid)
+		
+		log.Println("Сессия:",sid)
 
 		err := ParseAndRun(r.Body, w, env)
 
@@ -286,9 +291,120 @@ func handlerMain(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handlerIndex(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, `<!doctype html>
+	<html lang="ru">
+	<head>	
+		<meta charset="utf-8">
+		<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+		
+		<title>Интерпретатор языка Гонец</title>
+
+		<style type="text/css">
+			#head {
+				float: left;
+				padding: 15px 10px;
+				font-size: 20px;
+				font-family: sans-serif;
+			}
+			input[type=button] {
+				margin: 10px;
+				height: 30px;
+				border: 1px solid #375EAB;
+				font-size: 16px;
+				font-family: sans-serif;
+				background: #375EAB;
+				color: white;
+				position: static;
+				top: 1px;
+				border-radius: 5px;
+			}
+			#wrap, #about {
+				padding: 5px;
+				margin: 10px;
+				position: absolute;
+				top: 40px;
+				bottom: 25%;
+				left: 0;
+				right: 0;
+				background: #FFD;
+			}
+			#code, #output, pre, .lines {
+				font-family: Consolas, Roboto Mono, Menlo, monospace;
+				font-size: 11pt;
+			}			
+			#code {
+				color: black;
+				background: inherit;
+				width: 100%;
+				height: 100%;
+				margin: 0;
+				outline: none;
+			}
+			#output {
+				position: absolute;
+				top: 75%;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				padding: 10px;
+				margin: 10px;
+			}
+			#output .system, #output .loading {
+				color: #999;
+			}
+			#output .stderr, #output .error {
+				color: #900;
+			}
+			
+		</style>
+
+		<script type='text/javascript'>
+			$(document).ready(function() {
+				$('#code').attr('wrap', 'off');
+				$('#run').click(function(){
+					var body = $("textarea#code").val();
+					$.ajax('/gonec', {
+						type: 'POST',
+						data: body,
+						processData : false,
+						dataType: 'text',
+						cache: false,
+						beforeSend: function(xhr){
+							xhr.overrideMimeType("text/plain");
+							xhr.setRequestHeader('Sid', $("#sid").val());
+						},
+						success: function(data, textStatus, request) {
+							$("#output").text(data);
+							$("#sid").val(request.getResponseHeader('Sid'));
+						},
+						error: function(xhr, status, error) {
+							$("#output").text(xhr.responseText);
+						}
+					});
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<div id="head" itemprop="name">Интерпретатор ГОНЕЦ `+version+`</div>
+		<div id="wrap">
+			<textarea itemprop="description" id="code" name="code" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off"></textarea>
+		</div>
+		<input type="button" value="Выполнить" id="run">
+		<br>
+		<pre><div id="output"></div></pre>
+		<input type="hidden" id="sid" name="sid" value="">
+	</body>
+	`)
+}
+
 // Run запускает микросервис интерпретатора по адресу и порту
 func Run(srv string) {
-	http.HandleFunc(APIPath, handlerMain)
+	http.HandleFunc("/", handlerIndex)
+	http.HandleFunc(APIPath, handlerAPI)
 	//добавляем горутину на принудительное закрытие сессий через 10 мин без активности
 	go func() {
 		for {
@@ -304,6 +420,7 @@ func Run(srv string) {
 			lockSessions.Unlock()
 		}
 	}()
+	log.Println("Запущен сервер на порту",srv)
 	log.Fatal(http.ListenAndServe(":"+srv, nil))
 }
 
@@ -313,12 +430,20 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 		return err
 	}
 	parser.EnableErrorVerbose()
-	stmts, err := parser.ParseSrc(string(b))
+
+	sb:=string(b);
+
+	log.Println("--Выполняется код--")
+	log.Println(sb)
+
+	stmts, err := parser.ParseSrc(sb)
 	if err != nil {
 		return err
 	}
 	_, err = vm.Run(stmts, env)
+	log.Println("--Завершено выполнение кода--")
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	return nil

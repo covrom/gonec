@@ -325,9 +325,10 @@ func Import(env *vm.Env) *vm.Env {
 		panic(e)
 	})
 
-	env.Define("вывести", fmt.Print)
-	env.Define("сообщить", fmt.Println)
-	env.Define("сообщитьф", fmt.Printf)
+	env.Define("вывести", env.Print)
+	env.Define("сообщить", env.Println)
+	env.Define("сообщитьф", env.Printf)
+	env.Define("stdout", env.StdOut())
 	env.Define("закрыть", func(e interface{}) {
 		reflect.ValueOf(e).Close()
 	})
@@ -338,6 +339,7 @@ func Import(env *vm.Env) *vm.Env {
 	env.DefineType("строка", "")
 	return env
 }
+
 
 // toSlice takes in a "generic" slice and converts and copies
 // it's elements into the typed slice pointed at by ptr.
