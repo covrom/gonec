@@ -305,6 +305,7 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 
 		<style type="text/css">
 			#head {
+				color: #7F6C5F;
 				float: left;
 				padding: 15px 10px;
 				font-size: 20px;
@@ -313,46 +314,51 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 			input[type=button] {
 				margin: 10px;
 				height: 30px;
-				border: 1px solid #375EAB;
+				border: 1px solid #FF7822;
 				font-size: 16px;
 				font-family: sans-serif;
-				background: #375EAB;
-				color: white;
+				background: #FF7822;
+				color: #FFECDF;
 				position: static;
 				top: 1px;
 				border-radius: 5px;
 			}
 			#wrap, #about {
-				padding: 5px;
 				margin: 10px;
 				position: absolute;
-				top: 40px;
+				top: 45px;
 				bottom: 25%;
 				left: 0;
 				right: 0;
-				background: #FFD;
+				background: #FFECDF;
 			}
 			#wrapout {
-				padding: 5px;
 				margin: 10px;
 				position: absolute;
 				top: 75%;
 				bottom: 0;
 				left: 0;
 				right: 0;
-				background: #FFF;
+				background: #7F6C5F;
+				border: none;
 			}
 			#code, #output, pre, .lines {
 				font-family: Consolas, Roboto Mono, Menlo, monospace;
 				font-size: 11pt;
 			}			
 			#code, #output {
-				color: black;
+				border-width: 0;
 				background: inherit;
 				width: 100%;
 				height: 100%;
 				margin: 0;
 				outline: none;
+			}
+			#code {
+				color: black;
+			}
+			#output {
+				color: white;
 			}
 			#output .system, #output .loading {
 				color: #999;
@@ -390,8 +396,8 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 			});
 		</script>
 	</head>
-	<body>
-		<div id="head" itemprop="name">Интерпретатор ГОНЕЦ `+version+`</div>
+	<body bgcolor=#CCBDB3>
+		<div id="head" itemprop="name"><b>Интерпретатор ГОНЕЦ `+version+`</b></div>
 		<div id="wrap">
 			<textarea itemprop="description" id="code" name="code" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off"></textarea>
 		</div>
