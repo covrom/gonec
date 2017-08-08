@@ -2,11 +2,11 @@
 package core
 
 import (
-	"sort"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -188,10 +188,10 @@ func Import(env *vm.Env) *vm.Env {
 	})
 
 	env.Define("дата", func(v interface{}) time.Time {
-		t:=time.Time{}
+		t := time.Time{}
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.String {
-			tt, err := time.Parse(time.RFC3339,v.(string))
+			tt, err := time.Parse(time.RFC3339, v.(string))
 			if err == nil {
 				return tt
 			}
@@ -212,7 +212,7 @@ func Import(env *vm.Env) *vm.Env {
 		}
 		return strings.ToUpper(fmt.Sprint(v))
 	})
-	
+
 	env.Define("вбулево", func(v interface{}) bool {
 		nt := reflect.TypeOf(true)
 		rv := reflect.ValueOf(v)
@@ -283,7 +283,8 @@ func Import(env *vm.Env) *vm.Env {
 	})
 
 	env.Define("типзнч", func(v interface{}) string {
-		return reflect.TypeOf(v).String()
+		
+		return env.TypeName(reflect.TypeOf(v))
 	})
 
 	env.Define("каналтипа", func(t reflect.Type) reflect.Value {
@@ -337,9 +338,10 @@ func Import(env *vm.Env) *vm.Env {
 	env.DefineType("число", float64(0.0))
 	env.DefineType("булево", true)
 	env.DefineType("строка", "")
+	env.DefineType("массив", []interface{}{})
+	env.DefineType("структура", map[string]interface{}{})
 	return env
 }
-
 
 // toSlice takes in a "generic" slice and converts and copies
 // it's elements into the typed slice pointed at by ptr.

@@ -133,6 +133,22 @@ func (e *Env) Addr(k string) (reflect.Value, error) {
 	return e.parent.Addr(k)
 }
 
+// TypeName определяет имя типа по типу значения
+func (e *Env) TypeName(t reflect.Type) string {
+	e.RLock()
+	defer e.RUnlock()
+
+	for k, v := range e.typ {
+		if v == t {
+			return k
+		}
+	}
+	if e.parent == nil {
+		return t.String()
+	}
+	return e.parent.TypeName(t)
+}
+
 // Type returns type which specified symbol. It goes to upper scope until
 // found or returns error.
 func (e *Env) Type(k string) (reflect.Type, error) {
