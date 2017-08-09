@@ -213,6 +213,13 @@ func Import(env *vm.Env) *vm.Env {
 		return strings.ToUpper(fmt.Sprint(v))
 	})
 
+	env.Define("формат", func(v, s interface{}) (string, error) {
+		if b, ok := s.([]byte); ok {
+			return fmt.Sprintf(string(b), v), nil
+		}
+		return "", fmt.Errorf("Форматная строка должна быть типом строки")
+	})
+
 	env.Define("вбулево", func(v interface{}) bool {
 		nt := reflect.TypeOf(true)
 		rv := reflect.ValueOf(v)
@@ -283,7 +290,7 @@ func Import(env *vm.Env) *vm.Env {
 	})
 
 	env.Define("типзнч", func(v interface{}) string {
-		
+
 		return env.TypeName(reflect.TypeOf(v))
 	})
 

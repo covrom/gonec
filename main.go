@@ -463,8 +463,13 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 	_, err = vm.Run(stmts, env)
 
 	if err != nil {
-		log.Println(err)
-		return err
+		if e, ok := err.(*vm.Error); ok {
+			env.Printf("Ошибка исполнения:%d:%d %s\n", e.Pos.Line, e.Pos.Column, err)
+		} else if e, ok := err.(*parser.Error); ok {
+			env.Printf("Ошибка в коде:%d:%d %s\n", e.Pos.Line, e.Pos.Column, err)
+		} else {
+			env.Println(err)
+		}
 	}
 
 	log.Printf("%s--Результат выполнения кода--\n%s\n", ls, rb.String())
