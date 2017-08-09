@@ -70,39 +70,39 @@ func LoadAllBuiltins(env *vm.Env) {
 		"github.com/daviddengcn/go-colortext": gonec_colortext.Import,
 	}
 
-	env.Define("импорт", func(s string) (interface{}, error) {
+	env.Define("импорт", func(s string) interface{} {
 		if loader, ok := pkgs[strings.ToLower(s)]; ok {
 			m := loader(env)
-			return m, nil
+			return m
 		}
-		return nil, fmt.Errorf("package '%s' not found", s)
+		panic(fmt.Sprintf("Пакет '%s' не найден", s))
 	})
 
 }
 
 // Import defines core language builtins - len, range, println, int64, etc.
 func Import(env *vm.Env) *vm.Env {
-	env.Define("длина", func(v interface{}) (int64, error) {
+	env.Define("длина", func(v interface{}) int64 {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
 		}
 		if rv.Kind() == reflect.String {
-			return int64(len([]byte(rv.String()))), nil
+			return int64(len([]byte(rv.String())))
 		}
 		if rv.Kind() != reflect.Array && rv.Kind() != reflect.Slice {
-			return 0, fmt.Errorf("Аргумент должен быть строкой или коллекцией")
+			panic("Аргумент должен быть строкой или коллекцией")
 		}
-		return int64(rv.Len()), nil
+		return int64(rv.Len())
 	})
 
-	env.Define("ключи", func(v interface{}) ([]string, error) {
+	env.Define("ключи", func(v interface{}) []string {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
 		}
 		if rv.Kind() != reflect.Map {
-			return nil, fmt.Errorf("Аргумент должен быть структурой")
+			panic("Аргумент должен быть структурой")
 		}
 		keys := []string{}
 		mk := rv.MapKeys()
@@ -111,15 +111,15 @@ func Import(env *vm.Env) *vm.Env {
 		}
 		// ключи потом обходим в порядке сортировки по алфавиту
 		sort.Strings(keys)
-		return keys, nil
+		return keys
 	})
 
-	env.Define("диапазон", func(args ...int64) ([]int64, error) {
+	env.Define("диапазон", func(args ...int64) []int64 {
 		if len(args) < 1 {
-			return nil, fmt.Errorf("Отсутствуют аргументы")
+			panic("Отсутствуют аргументы")
 		}
 		if len(args) > 2 {
-			return nil, fmt.Errorf("Должен быть только один аргумент")
+			panic("Должен быть только один аргумент")
 		}
 		var min, max int64
 		if len(args) == 1 {
@@ -133,7 +133,7 @@ func Import(env *vm.Env) *vm.Env {
 		for i := min; i <= max; i++ {
 			arr = append(arr, i)
 		}
-		return arr, nil
+		return arr
 	})
 
 	env.Define("встроку", func(v interface{}) string {
@@ -188,15 +188,16 @@ func Import(env *vm.Env) *vm.Env {
 	})
 
 	env.Define("дата", func(v interface{}) time.Time {
-		t := time.Time{}
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.String {
 			tt, err := time.Parse(time.RFC3339, v.(string))
 			if err == nil {
 				return tt
+			} else {
+				panic(err)
 			}
 		}
-		return t
+		panic("Дата может быть представлена только строкой в формате RFC3339")
 	})
 
 	env.Define("нрег", func(v interface{}) string {
@@ -213,11 +214,11 @@ func Import(env *vm.Env) *vm.Env {
 		return strings.ToUpper(fmt.Sprint(v))
 	})
 
-	env.Define("формат", func(v, s interface{}) (string, error) {
+	env.Define("формат", func(v, s interface{}) string {
 		if b, ok := s.([]byte); ok {
-			return fmt.Sprintf(string(b), v), nil
+			return fmt.Sprintf(string(b), v)
 		}
-		return "", fmt.Errorf("Форматная строка должна быть типом строки")
+		panic("Форматная строка должна быть типом строки")
 	})
 
 	env.Define("вбулево", func(v interface{}) bool {
@@ -303,10 +304,10 @@ func Import(env *vm.Env) *vm.Env {
 		return err == nil
 	})
 
-	env.Define("загрузитьивыполнить", func(s string) (interface{}, error) {
+	env.Define("загрузитьивыполнить", func(s string) interface{} {
 		body, err := ioutil.ReadFile(s)
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
 		scanner := new(parser.Scanner)
 		scanner.Init(string(body))
@@ -314,18 +315,18 @@ func Import(env *vm.Env) *vm.Env {
 		if err != nil {
 			if pe, ok := err.(*parser.Error); ok {
 				pe.Filename = s
-				return nil, pe
+				panic(pe)
 			}
-			return nil, err
+			panic(err)
 		}
 		rv, err := vm.Run(stmts, env)
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
 		if rv.IsValid() && rv.CanInterface() {
-			return rv.Interface(), nil
+			return rv.Interface()
 		}
-		return nil, nil
+		return nil
 	})
 
 	env.Define("паника", func(e interface{}) {
