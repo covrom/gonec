@@ -1404,6 +1404,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			return reflect.ValueOf(true), nil
 		case "false":
 			return reflect.ValueOf(false), nil
+		case "null":
+			return reflect.ValueOf("NULL"), nil
 		}
 		return reflect.ValueOf(nil), nil
 	case *ast.AnonCallExpr:
