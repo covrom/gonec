@@ -70,39 +70,39 @@ func LoadAllBuiltins(env *vm.Env) {
 		"github.com/daviddengcn/go-colortext": gonec_colortext.Import,
 	}
 
-	env.Define("импорт", func(s string) interface{} {
+	env.Define("импорт", func(s string) (interface{}, error) {
 		if loader, ok := pkgs[strings.ToLower(s)]; ok {
 			m := loader(env)
-			return m
+			return m, nil
 		}
-		panic(fmt.Sprintf("package '%s' not found", s))
+		return nil, fmt.Errorf("package '%s' not found", s)
 	})
 
 }
 
 // Import defines core language builtins - len, range, println, int64, etc.
 func Import(env *vm.Env) *vm.Env {
-	env.Define("длина", func(v interface{}) int64 {
+	env.Define("длина", func(v interface{}) (int64, error) {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
 		}
 		if rv.Kind() == reflect.String {
-			return int64(len([]byte(rv.String())))
+			return int64(len([]byte(rv.String()))), nil
 		}
 		if rv.Kind() != reflect.Array && rv.Kind() != reflect.Slice {
-			panic("Argument #1 should be array")
+			return 0, fmt.Errorf("Аргумент должен быть строкой или коллекцией")
 		}
-		return int64(rv.Len())
+		return int64(rv.Len()), nil
 	})
 
-	env.Define("ключи", func(v interface{}) []string {
+	env.Define("ключи", func(v interface{}) ([]string, error) {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
 		}
 		if rv.Kind() != reflect.Map {
-			panic("Argument #1 should be map")
+			return nil, fmt.Errorf("Аргумент должен быть структурой")
 		}
 		keys := []string{}
 		mk := rv.MapKeys()
@@ -111,15 +111,15 @@ func Import(env *vm.Env) *vm.Env {
 		}
 		// ключи потом обходим в порядке сортировки по алфавиту
 		sort.Strings(keys)
-		return keys
+		return keys, nil
 	})
 
-	env.Define("обойти", func(args ...int64) []int64 {
+	env.Define("диапазон", func(args ...int64) ([]int64, error) {
 		if len(args) < 1 {
-			panic("Missing arguments")
+			return nil, fmt.Errorf("Отсутствуют аргументы")
 		}
 		if len(args) > 2 {
-			panic("Too many arguments")
+			return nil, fmt.Errorf("Должен быть только один аргумент")
 		}
 		var min, max int64
 		if len(args) == 1 {
@@ -133,7 +133,7 @@ func Import(env *vm.Env) *vm.Env {
 		for i := min; i <= max; i++ {
 			arr = append(arr, i)
 		}
-		return arr
+		return arr, nil
 	})
 
 	env.Define("встроку", func(v interface{}) string {
@@ -303,10 +303,10 @@ func Import(env *vm.Env) *vm.Env {
 		return err == nil
 	})
 
-	env.Define("загрузитьивыполнить", func(s string) interface{} {
+	env.Define("загрузитьивыполнить", func(s string) (interface{}, error) {
 		body, err := ioutil.ReadFile(s)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		scanner := new(parser.Scanner)
 		scanner.Init(string(body))
@@ -314,18 +314,18 @@ func Import(env *vm.Env) *vm.Env {
 		if err != nil {
 			if pe, ok := err.(*parser.Error); ok {
 				pe.Filename = s
-				panic(pe)
+				return nil, pe
 			}
-			panic(err)
+			return nil, err
 		}
 		rv, err := vm.Run(stmts, env)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		if rv.IsValid() && rv.CanInterface() {
-			return rv.Interface()
+			return rv.Interface(), nil
 		}
-		return nil
+		return nil, nil
 	})
 
 	env.Define("паника", func(e interface{}) {
