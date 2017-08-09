@@ -295,6 +295,12 @@ func (e *Env) Printf(format string, a ...interface{}) (n int, err error) {
 	return fmt.Fprintf(e.stdout, format, a...)
 }
 
+func (e *Env) Sprintf(format string, a ...interface{}) string {
+	e.RLock()
+	defer e.RUnlock()
+	return fmt.Sprintf(format, a...)
+}
+
 func (e *Env) Print(a ...interface{}) (n int, err error) {
 	e.RLock()
 	defer e.RUnlock()
