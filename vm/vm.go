@@ -1329,6 +1329,9 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 		}
 		switch e.Operator {
+		
+		// TODO: улучшить скорость отработки операторов, расширить возможные варианты
+		
 		case "+":
 			if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
 				return reflect.ValueOf(toString(lhsV) + toString(rhsV)), nil
