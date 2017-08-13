@@ -33,6 +33,7 @@ const APIPath = "/gonec"
 var (
 	fs   = flag.NewFlagSet(os.Args[0], 1)
 	line = fs.String("e", "", "Исполнение одной строчки кода")
+	testingMode = fs.Bool("t", false, "Режим вывода отладочной информации")
 	v    = fs.Bool("v", false, "Версия программы")
 	w    = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
 	port = fs.String("p", "", "Номер порта вэб-сервера")
@@ -452,7 +453,11 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 
 	ls := fmt.Sprintf("--Выполняется код-- %s\n%s\n", env.GetSid(), sb)
 
+	//замер производительности
+	tstart := time.Now()
 	stmts, err := parser.ParseSrc(sb)
+	tsParse := time.Since(tstart)
+	
 	if err != nil {
 		return err
 	}
@@ -460,7 +465,9 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 	var rb bytes.Buffer
 	env.SetStdOut(&rb)
 
+	tstart = time.Now()
 	_, err = vm.Run(stmts, env)
+	tsRun := time.Since(tstart)
 
 	if err != nil {
 		if e, ok := err.(*vm.Error); ok {
@@ -472,6 +479,11 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 		}
 	}
 
+	if *testingMode{
+		env.Printf("Время компиляции: %v\n", tsParse)
+		env.Printf("Время исполнения: %v\n", tsRun)
+	}
+	
 	log.Printf("%s--Результат выполнения кода--\n%s\n", ls, rb.String())
 
 	_, err = w.Write(rb.Bytes())

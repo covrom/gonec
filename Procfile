@@ -1,1 +1,1 @@
-web: gonec
+web: gonec -t
