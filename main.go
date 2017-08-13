@@ -27,7 +27,7 @@ import (
 	gonec_core "github.com/covrom/gonec/builtins"
 )
 
-const version = "1.2a"
+const version = "1.3a"
 const APIPath = "/gonec"
 
 var (
