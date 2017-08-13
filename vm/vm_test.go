@@ -20,8 +20,8 @@ func testInterrupt() {
 		}
 	}
 
-	env.Define("println", fmt.Println)
-	env.Define("sleep", sleepFunc)
+	env.DefineS("println", fmt.Println)
+	env.DefineS("sleep", sleepFunc)
 
 	script := `
 sleep("2s")
