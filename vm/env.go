@@ -8,20 +8,21 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/parser"
 )
 
 // Env provides interface to run VM. This mean function scope and blocked-scope.
 // If stack goes to blocked-scope, it will make new Env.
 type Env struct {
+	sync.RWMutex
 	name      string
-	env       map[string]reflect.Value
-	typ       map[string]reflect.Type
+	env       map[int]reflect.Value
+	typ       map[int]reflect.Type
 	parent    *Env
 	interrupt *bool
 	stdout    io.Writer
 	sid       string
-	sync.RWMutex
 }
 
 // NewEnv creates new global scope.
@@ -29,8 +30,8 @@ func NewEnv() *Env {
 	b := false
 
 	return &Env{
-		env:       make(map[string]reflect.Value),
-		typ:       make(map[string]reflect.Type),
+		env:       make(map[int]reflect.Value),
+		typ:       make(map[int]reflect.Type),
 		parent:    nil,
 		interrupt: &b,
 		stdout:    os.Stdout,
@@ -40,8 +41,8 @@ func NewEnv() *Env {
 // NewEnv creates new child scope.
 func (e *Env) NewEnv() *Env {
 	return &Env{
-		env:       make(map[string]reflect.Value),
-		typ:       make(map[string]reflect.Type),
+		env:       make(map[int]reflect.Value),
+		typ:       make(map[int]reflect.Type),
 		parent:    e,
 		name:      e.name,
 		interrupt: e.interrupt,
@@ -64,8 +65,8 @@ func (e *Env) NewEnv() *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:       make(map[string]reflect.Value),
-		typ:       make(map[string]reflect.Type),
+		env:       make(map[int]reflect.Value),
+		typ:       make(map[int]reflect.Type),
 		parent:    e,
 		name:      strings.ToLower(n),
 		interrupt: e.interrupt,
@@ -92,14 +93,15 @@ func (e *Env) Destroy() {
 
 // NewModule creates new module scope as global.
 func (e *Env) NewModule(n string) *Env {
-	ni := strings.ToLower(n)
+	//ni := strings.ToLower(n)
 	m := &Env{
-		env:    make(map[string]reflect.Value),
+		env:    make(map[int]reflect.Value),
+		typ:    make(map[int]reflect.Type),
 		parent: e,
-		name:   ni,
+		name:   n, //ni,
 		stdout: e.stdout,
 	}
-	e.Define(ni, m)
+	e.Define(ast.UniqueNames.Set(n), m)
 	return m
 }
 
@@ -120,143 +122,128 @@ func (e *Env) GetName() string {
 
 // Addr returns pointer value which specified symbol. It goes to upper scope until
 // found or returns error.
-func (e *Env) Addr(k string) (reflect.Value, error) {
+func (e *Env) Addr(k int) (reflect.Value, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	if v, ok := e.env[strings.ToLower(k)]; ok {
-		return v.Addr(), nil
+	for ee := e; ee != nil; ee = ee.parent {
+		if v, ok := ee.env[k]; ok {
+			return v.Addr(), nil
+		}
 	}
-	if e.parent == nil {
-		return NilValue, fmt.Errorf("Undefined symbol '%s'", k)
-	}
-	return e.parent.Addr(k)
+	return NilValue, fmt.Errorf("Имя неопределено '%s'", ast.UniqueNames.Get(k))
 }
 
 // TypeName определяет имя типа по типу значения
-func (e *Env) TypeName(t reflect.Type) string {
+func (e *Env) TypeName(t reflect.Type) int {
 	e.RLock()
 	defer e.RUnlock()
 
-	for k, v := range e.typ {
-		if v == t {
-			return k
+	for ee := e; ee != nil; ee = ee.parent {
+		for k, v := range ee.typ {
+			if v == t {
+				return k
+			}
 		}
 	}
-	if e.parent == nil {
-		return t.String()
-	}
-	return e.parent.TypeName(t)
+	return ast.UniqueNames.Set(t.String())
 }
 
 // Type returns type which specified symbol. It goes to upper scope until
 // found or returns error.
-func (e *Env) Type(k string) (reflect.Type, error) {
+func (e *Env) Type(k int) (reflect.Type, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	if v, ok := e.typ[strings.ToLower(k)]; ok {
-		return v, nil
+	for ee := e; ee != nil; ee = ee.parent {
+		if v, ok := ee.typ[k]; ok {
+			return v, nil
+		}
 	}
-	if e.parent == nil {
-		return NilType, fmt.Errorf("Undefined type '%s'", k)
-	}
-	return e.parent.Type(k)
+	return NilType, fmt.Errorf("Тип неопределен '%s'", ast.UniqueNames.Get(k))
 }
 
 // Get returns value which specified symbol. It goes to upper scope until
 // found or returns error.
-func (e *Env) Get(k string) (reflect.Value, error) {
+func (e *Env) Get(k int) (reflect.Value, error) {
 	e.RLock()
 	defer e.RUnlock()
 
-	if v, ok := e.env[strings.ToLower(k)]; ok {
-		return v, nil
+	for ee := e; ee != nil; ee = ee.parent {
+		if v, ok := ee.env[k]; ok {
+			return v, nil
+		}
 	}
-	if e.parent == nil {
-		return NilValue, fmt.Errorf("Undefined symbol '%s'", k)
-	}
-	return e.parent.Get(k)
+	return NilValue, fmt.Errorf("Имя неопределено '%s'", ast.UniqueNames.Get(k))
 }
 
 // Set modifies value which specified as symbol. It goes to upper scope until
 // found or returns error.
-func (e *Env) Set(k string, v interface{}) error {
+func (e *Env) Set(k int, v interface{}) error {
 	e.Lock()
 	defer e.Unlock()
-	ki := strings.ToLower(k)
-	if _, ok := e.env[ki]; ok {
-		val, ok := v.(reflect.Value)
-		if !ok {
-			val = reflect.ValueOf(v)
+
+	for ee := e; ee != nil; ee = ee.parent {
+		if _, ok := ee.env[k]; ok {
+			val, ok := v.(reflect.Value)
+			if !ok {
+				val = reflect.ValueOf(v)
+			}
+			ee.env[k] = val
+			return nil
 		}
-		e.env[ki] = val
-		return nil
 	}
-	if e.parent == nil {
-		return fmt.Errorf("Unknown symbol '%s'", k)
-	}
-	return e.parent.Set(ki, v)
+	return fmt.Errorf("Имя неопределено '%s'", ast.UniqueNames.Get(k))
 }
 
 // DefineGlobal defines symbol in global scope.
-func (e *Env) DefineGlobal(k string, v interface{}) error {
-	if e.parent == nil {
-		return e.Define(k, v)
+func (e *Env) DefineGlobal(k int, v interface{}) error {
+	for ee := e; ee != nil; ee = ee.parent {
+		if ee.parent == nil {
+			return ee.Define(k, v)
+		}
 	}
-	return e.parent.DefineGlobal(k, v)
+	return fmt.Errorf("Отсутствует глобальный контекст!")
 }
 
 // DefineType defines type which specifis symbol in global scope.
-func (e *Env) DefineType(k string, t interface{}) error {
-	if strings.Contains(k, ".") {
-		return fmt.Errorf("Unknown symbol '%s'", k)
-	}
-	global := e
-	keys := []string{strings.ToLower(k)}
-
-	e.RLock()
-	for global.parent != nil {
-		if global.name != "" {
-			keys = append(keys, global.name)
+func (e *Env) DefineType(k int, t interface{}) error {
+	for ee := e; ee != nil; ee = ee.parent {
+		if ee.parent == nil {
+			typ, ok := t.(reflect.Type)
+			if !ok {
+				typ = reflect.TypeOf(t)
+			}
+			ee.Lock()
+			ee.typ[k] = typ
+			ee.Unlock()
+			return nil
 		}
-		global = global.parent
 	}
-	e.RUnlock()
+	return fmt.Errorf("Отсутствует глобальный контекст!")
+}
 
-	for i, j := 0, len(keys)-1; i < j; i, j = i+1, j-1 {
-		keys[i], keys[j] = keys[j], keys[i]
-	}
-
-	typ, ok := t.(reflect.Type)
-	if !ok {
-		typ = reflect.TypeOf(t)
-	}
-
-	global.Lock()
-	global.typ[strings.Join(keys, ".")] = typ
-	global.Unlock()
-
-	return nil
+func (e *Env) DefineTypeS(k string, t interface{}) error {
+	return e.DefineType(ast.UniqueNames.Set(k),t)
 }
 
 // Define defines symbol in current scope.
-func (e *Env) Define(k string, v interface{}) error {
-	if strings.Contains(k, ".") {
-		return fmt.Errorf("Unknown symbol '%s'", k)
-	}
+func (e *Env) Define(k int, v interface{}) error {
 	val, ok := v.(reflect.Value)
 	if !ok {
 		val = reflect.ValueOf(v)
 	}
 
 	e.Lock()
-	e.env[strings.ToLower(k)] = val
+	e.env[k] = val
 	e.Unlock()
 
 	return nil
 }
 
+func (e *Env) DefineS(k string, v interface{}) error {
+	return e.Define(ast.UniqueNames.Set(k),v)
+}
 // String return the name of current scope.
 func (e *Env) String() string {
 	e.RLock()
@@ -269,7 +256,7 @@ func (e *Env) String() string {
 func (e *Env) Dump() {
 	e.RLock()
 	for k, v := range e.env {
-		fmt.Printf("%v = %#v\n", k, v)
+		e.Printf("%d %s = %#v\n", k, ast.UniqueNames.Get(k), v)
 	}
 	e.RUnlock()
 }
@@ -320,18 +307,20 @@ func (e *Env) SetStdOut(w io.Writer) {
 }
 
 func (e *Env) SetSid(s string) error {
-	if e.parent == nil {
-		e.sid = s
-		return e.Define("ГлобальныйИдентификаторСессии", s)
-	} else {
-		return e.parent.SetSid(s)
+	for ee := e; ee != nil; ee = ee.parent {
+		if ee.parent == nil {
+			ee.sid = s
+			return ee.Define(ast.UniqueNames.Set("ГлобальныйИдентификаторСессии"), s)
+		}
 	}
+	return fmt.Errorf("Отсутствует глобальный контекст!")
 }
 
 func (e *Env) GetSid() string {
-	if e.parent == nil {
-		return e.sid
-	} else {
-		return e.parent.GetSid()
+	for ee := e; ee != nil; ee = ee.parent {
+		if ee.parent == nil {
+			return ee.sid
+		}
 	}
+	return ""
 }

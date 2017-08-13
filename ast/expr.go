@@ -1,5 +1,41 @@
 package ast
 
+import (
+	"fmt"
+	"strings"
+)
+
+// уникальные названия переменных, индекс используется в AST-дереве
+type EnvNames []string
+
+func NewEnvNames() *EnvNames {
+	en := EnvNames(make([]string, 0, 200))
+	return &en
+}
+
+func (en *EnvNames) Set(n string) int {
+	ns := strings.ToLower(n)
+	l := len(*en)
+	for i := 0; i < l; i++ {
+		if (*en)[i] == ns {
+			return i
+		}
+	}
+	*en = append(*en, ns)
+	return l
+}
+
+func (en *EnvNames) Get(i int) string {
+	if i >= 0 && i < len(*en) {
+		return (*en)[i]
+	} else {
+		panic(fmt.Sprintf("Не найден идентификатор переменной id=%d", i))
+	}
+}
+
+// все переменные
+var UniqueNames = NewEnvNames()
+
 // Expr provides all of interfaces for expression.
 type Expr interface {
 	Pos
@@ -49,6 +85,7 @@ type MapExpr struct {
 type IdentExpr struct {
 	ExprImpl
 	Lit string
+	Id int
 }
 
 // UnaryExpr provide unary minus expression. ex: -1, ^1, ~1.
@@ -95,7 +132,7 @@ type TernaryOpExpr struct {
 type CallExpr struct {
 	ExprImpl
 	Func     interface{}
-	Name     string
+	Name     int //string
 	SubExprs []Expr
 	VarArg   bool
 	Go       bool
@@ -135,9 +172,9 @@ type SliceExpr struct {
 // FuncExpr provide function expression.
 type FuncExpr struct {
 	ExprImpl
-	Name   string
+	Name   int //string
 	Stmts  []Stmt
-	Args   []string
+	Args   []int //string
 	VarArg bool
 }
 
@@ -167,7 +204,7 @@ type AssocExpr struct {
 // NewExpr provide expression to make new instance.
 type NewExpr struct {
 	ExprImpl
-	Type string
+	Type int //string
 }
 
 // ConstExpr provide expression for constant variable.
@@ -183,23 +220,23 @@ type ChanExpr struct {
 }
 
 type Type struct {
-	Name string
+	Name int //string
 }
 
 type MakeExpr struct {
 	ExprImpl
-	Type string
+	Type int //string
 }
 
 type MakeChanExpr struct {
 	ExprImpl
-	Type     string
+	Type     int //string
 	SizeExpr Expr
 }
 
 type MakeArrayExpr struct {
 	ExprImpl
-	Type    string
+	Type    int //string
 	LenExpr Expr
 	CapExpr Expr
 }

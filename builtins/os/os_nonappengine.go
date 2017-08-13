@@ -9,5 +9,5 @@ import (
 )
 
 func handleAppEngine(m *vm.Env) {
-	m.Define("Getppid", reflect.ValueOf(pkg.Getppid))
+	m.DefineS("Getppid", reflect.ValueOf(pkg.Getppid))
 }

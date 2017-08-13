@@ -27,7 +27,7 @@ func (p ss) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("sort")
-	m.Define("Ints", func(arr interface{}) interface{} {
+	m.DefineS("Ints", func(arr interface{}) interface{} {
 		if iarr, ok := arr.([]int); ok {
 			s.Ints(iarr)
 		} else {
@@ -35,7 +35,7 @@ func Import(env *vm.Env) *vm.Env {
 		}
 		return arr
 	})
-	m.Define("Float64s", func(arr interface{}) interface{} {
+	m.DefineS("Float64s", func(arr interface{}) interface{} {
 		if farr, ok := arr.([]float64); ok {
 			s.Float64s(farr)
 		} else {
@@ -43,7 +43,7 @@ func Import(env *vm.Env) *vm.Env {
 		}
 		return arr
 	})
-	m.Define("Strings", func(arr interface{}) interface{} {
+	m.DefineS("Strings", func(arr interface{}) interface{} {
 		if sarr, ok := arr.([]string); ok {
 			s.Strings(sarr)
 		} else {

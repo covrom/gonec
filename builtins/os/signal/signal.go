@@ -10,9 +10,9 @@ import (
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("os/signal")
 
-	//m.Define("Ignore", pkg.Ignore)
-	m.Define("Notify", pkg.Notify)
-	//m.Define("Reset", pkg.Reset)
-	m.Define("Stop", pkg.Stop)
+	//m.DefineS("Ignore", pkg.Ignore)
+	m.DefineS("Notify", pkg.Notify)
+	//m.DefineS("Reset", pkg.Reset)
+	m.DefineS("Stop", pkg.Stop)
 	return m
 }

@@ -40,7 +40,7 @@ import (
 	expr_many              []ast.Expr
 	expr_pair              ast.Expr
 	expr_pairs             []ast.Expr
-	expr_idents            []string
+	expr_idents            []int
 	tok                    ast.Token
 	term                   ast.Token
 	terms                  ast.Token
@@ -137,7 +137,7 @@ stmt :
 	}
 	| MODULE IDENT '{' compstmt '}'
 	{
-		$$ = &ast.ModuleStmt{Name: $2.Lit, Stmts: $4}
+		$$ = &ast.ModuleStmt{Name: ast.UniqueNames.Set($2.Lit), Stmts: $4}
 		$$.SetPosition($1.Position())
 	}
 	| stmt_if
@@ -147,12 +147,12 @@ stmt :
 	}
 	| FOR EACH IDENT IN expr '{' compstmt '}'
 	{
-		$$ = &ast.ForStmt{Var: $3.Lit, Value: $5, Stmts: $7}
+		$$ = &ast.ForStmt{Var: ast.UniqueNames.Set($3.Lit), Value: $5, Stmts: $7}
 		$$.SetPosition($1.Position())
 	}
 	| FOR IDENT '=' expr TO expr '{' compstmt '}'
 	{
-		$$ = &ast.NumForStmt{Name: $2.Lit, Expr1: $4, Expr2: $6, Stmts: $8}
+		$$ = &ast.NumForStmt{Name: ast.UniqueNames.Set($2.Lit), Expr1: $4, Expr2: $6, Stmts: $8}
 		$$.SetPosition($1.Position())
 	}
 	| WHILE expr '{' compstmt '}'
@@ -267,15 +267,15 @@ expr_pairs :
 
 expr_idents :
 	{
-		$$ = []string{}
+		$$ = []int{}
 	}
 	| IDENT
 	{
-		$$ = []string{$1.Lit}
+		$$ = []int{ast.UniqueNames.Set($1.Lit)}
 	}
 	| expr_idents ',' opt_terms IDENT
 	{
-		$$ = append($1, $4.Lit)
+		$$ = append($1, ast.UniqueNames.Set($4.Lit))
 	}
 
 expr_many :
@@ -289,16 +289,16 @@ expr_many :
 	}
 	| exprs ',' opt_terms IDENT
 	{
-		$$ = append($1, &ast.IdentExpr{Lit: $4.Lit})
+		$$ = append($1, &ast.IdentExpr{Lit: $4.Lit, Id: ast.UniqueNames.Set($4.Lit)})
 	}
 
 typ : IDENT
 	{
-		$$ = ast.Type{Name: $1.Lit}
+		$$ = ast.Type{Name: ast.UniqueNames.Set($1.Lit)}
 	}
 	| typ '.' IDENT
 	{
-		$$ = ast.Type{Name: $1.Name + "." + $3.Lit}
+		$$ = ast.Type{Name: ast.UniqueNames.Set(ast.UniqueNames.Get($1.Name) + "." + $3.Lit)}
 	}
 
 exprs :
@@ -315,13 +315,13 @@ exprs :
 	}
 	| exprs ',' opt_terms IDENT
 	{
-		$$ = append($1, &ast.IdentExpr{Lit: $4.Lit})
+		$$ = append($1, &ast.IdentExpr{Lit: $4.Lit, Id: ast.UniqueNames.Set($4.Lit)})
 	}
 
 expr :
 	IDENT
 	{
-		$$ = &ast.IdentExpr{Lit: $1.Lit}
+		$$ = &ast.IdentExpr{Lit: $1.Lit, Id: ast.UniqueNames.Set($1.Lit)}
 		$$.SetPosition($1.Position())
 	}
 	| NUMBER
@@ -346,7 +346,7 @@ expr :
 	}
 	| '&' IDENT %prec UNARY
 	{
-		$$ = &ast.AddrExpr{Expr: &ast.IdentExpr{Lit: $2.Lit}}
+		$$ = &ast.AddrExpr{Expr: &ast.IdentExpr{Lit: $2.Lit, Id: ast.UniqueNames.Set($2.Lit)}}
 		$$.SetPosition($2.Position())
 	}
 	| '&' expr '.' IDENT %prec UNARY
@@ -356,7 +356,7 @@ expr :
 	}
 	| '*' IDENT %prec UNARY
 	{
-		$$ = &ast.DerefExpr{Expr: &ast.IdentExpr{Lit: $2.Lit}}
+		$$ = &ast.DerefExpr{Expr: &ast.IdentExpr{Lit: $2.Lit, Id: ast.UniqueNames.Set($2.Lit)}}
 		$$.SetPosition($2.Position())
 	}
 	| '*' expr '.' IDENT %prec UNARY
@@ -401,22 +401,22 @@ expr :
 	}
 	| FUNC '(' expr_idents ')' opt_terms compstmt '}'
 	{
-		$$ = &ast.FuncExpr{Args: $3, Stmts: $6}
+		$$ = &ast.FuncExpr{Name:ast.UniqueNames.Set("<анонимная функция>"), Args: $3, Stmts: $6}
 		$$.SetPosition($1.Position())
 	}
 	| FUNC '(' IDENT VARARG ')' opt_terms compstmt '}'
 	{
-		$$ = &ast.FuncExpr{Args: []string{$3.Lit}, Stmts: $7, VarArg: true}
+		$$ = &ast.FuncExpr{Name:ast.UniqueNames.Set("<анонимная функция>"), Args: []int{ast.UniqueNames.Set($3.Lit)}, Stmts: $7, VarArg: true}
 		$$.SetPosition($1.Position())
 	}
 	| FUNC IDENT '(' expr_idents ')' opt_terms compstmt '}'
 	{
-		$$ = &ast.FuncExpr{Name: $2.Lit, Args: $4, Stmts: $7}
+		$$ = &ast.FuncExpr{Name: ast.UniqueNames.Set($2.Lit), Args: $4, Stmts: $7}
 		$$.SetPosition($1.Position())
 	}
 	| FUNC IDENT '(' IDENT VARARG ')' opt_terms compstmt '}'
 	{
-		$$ = &ast.FuncExpr{Name: $2.Lit, Args: []string{$4.Lit}, Stmts: $8, VarArg: true}
+		$$ = &ast.FuncExpr{Name: ast.UniqueNames.Set($2.Lit), Args: []int{ast.UniqueNames.Set($4.Lit)}, Stmts: $8, VarArg: true}
 		$$.SetPosition($1.Position())
 	}
 	| '[' opt_terms exprs opt_terms ']'
@@ -589,22 +589,22 @@ expr :
 	}
 	| IDENT '(' exprs VARARG ')'
 	{
-		$$ = &ast.CallExpr{Name: $1.Lit, SubExprs: $3, VarArg: true}
+		$$ = &ast.CallExpr{Name: ast.UniqueNames.Set($1.Lit), SubExprs: $3, VarArg: true}
 		$$.SetPosition($1.Position())
 	}
 	| IDENT '(' exprs ')'
 	{
-		$$ = &ast.CallExpr{Name: $1.Lit, SubExprs: $3}
+		$$ = &ast.CallExpr{Name: ast.UniqueNames.Set($1.Lit), SubExprs: $3}
 		$$.SetPosition($1.Position())
 	}
 	| GO IDENT '(' exprs VARARG ')'
 	{
-		$$ = &ast.CallExpr{Name: $2.Lit, SubExprs: $4, VarArg: true, Go: true}
+		$$ = &ast.CallExpr{Name: ast.UniqueNames.Set($2.Lit), SubExprs: $4, VarArg: true, Go: true}
 		$$.SetPosition($2.Position())
 	}
 	| GO IDENT '(' exprs ')'
 	{
-		$$ = &ast.CallExpr{Name: $2.Lit, SubExprs: $4, Go: true}
+		$$ = &ast.CallExpr{Name: ast.UniqueNames.Set($2.Lit), SubExprs: $4, Go: true}
 		$$.SetPosition($2.Position())
 	}
 	| expr '(' exprs VARARG ')'
@@ -629,7 +629,7 @@ expr :
 	}
 	| IDENT '[' expr ']'
 	{
-		$$ = &ast.ItemExpr{Value: &ast.IdentExpr{Lit: $1.Lit}, Index: $3}
+		$$ = &ast.ItemExpr{Value: &ast.IdentExpr{Lit: $1.Lit, Id: ast.UniqueNames.Set($1.Lit)}, Index: $3}
 		$$.SetPosition($1.Position())
 	}
 	| expr '[' expr ']'
@@ -639,7 +639,7 @@ expr :
 	}
 	| IDENT '[' expr ':' expr ']'
 	{
-		$$ = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: $1.Lit}, Begin: $3, End: $5}
+		$$ = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: $1.Lit, Id: ast.UniqueNames.Set($1.Lit)}, Begin: $3, End: $5}
 		$$.SetPosition($1.Position())
 	}
 	| expr '[' expr ':' expr ']'

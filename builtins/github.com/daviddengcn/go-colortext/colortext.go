@@ -30,7 +30,7 @@ func colorOf(name string) ct.Color {
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("ct")
 
-	m.Define("ChangeColor", func(fg string, fa bool, rest ...interface{}) {
+	m.DefineS("ChangeColor", func(fg string, fa bool, rest ...interface{}) {
 		if len(rest) == 2 {
 			bg, ok := rest[0].(string)
 			if !ok {
@@ -46,7 +46,7 @@ func Import(env *vm.Env) *vm.Env {
 		}
 	})
 
-	m.Define("ResetColor", func() {
+	m.DefineS("ResetColor", func() {
 		ct.ResetColor()
 	})
 	return m

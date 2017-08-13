@@ -11,7 +11,7 @@ import (
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("url")
-	m.DefineType("Values", make(u.Values))
-	m.Define("Parse", u.Parse)
+	m.DefineTypeS("Values", make(u.Values))
+	m.DefineS("Parse", u.Parse)
 	return m
 }

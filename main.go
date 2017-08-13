@@ -111,7 +111,7 @@ func main() {
 	}
 
 	env := vm.NewEnv()
-	env.Define("args", fsArgs)
+	env.DefineS("аргументызапуска", fsArgs)
 	gonec_core.LoadAllBuiltins(env)
 
 	for {
@@ -258,7 +258,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 			//создаем новое окружение
 			env = vm.NewEnv()
-			env.Define("args", fsArgs)
+			env.DefineS("аргументызапуска", fsArgs)
 			gonec_core.LoadAllBuiltins(env)
 
 			lockSessions.Lock()

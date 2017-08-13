@@ -9,8 +9,8 @@ import (
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("exec")
-	m.Define("ErrNotFound", e.ErrNotFound)
-	m.Define("LookPath", e.LookPath)
-	m.Define("Command", e.Command)
+	m.DefineS("ErrNotFound", e.ErrNotFound)
+	m.DefineS("LookPath", e.LookPath)
+	m.DefineS("Command", e.Command)
 	return m
 }

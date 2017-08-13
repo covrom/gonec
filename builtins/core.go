@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
 
@@ -40,7 +41,7 @@ import (
 	gonec_colortext "github.com/covrom/gonec/builtins/github.com/daviddengcn/go-colortext"
 )
 
-// LoadAllBuiltins is a convenience function that loads all defined builtins.
+// LoadAllBuiltins is a convenience function that loads all defineSd builtins.
 func LoadAllBuiltins(env *vm.Env) {
 	Import(env)
 
@@ -70,7 +71,7 @@ func LoadAllBuiltins(env *vm.Env) {
 		"github.com/daviddengcn/go-colortext": gonec_colortext.Import,
 	}
 
-	env.Define("импорт", func(s string) interface{} {
+	env.DefineS("импорт", func(s string) interface{} {
 		if loader, ok := pkgs[strings.ToLower(s)]; ok {
 			m := loader(env)
 			return m
@@ -80,9 +81,9 @@ func LoadAllBuiltins(env *vm.Env) {
 
 }
 
-// Import defines core language builtins - len, range, println, int64, etc.
+// Import defineSs core language builtins - len, range, println, int64, etc.
 func Import(env *vm.Env) *vm.Env {
-	env.Define("длина", func(v interface{}) int64 {
+	env.DefineS("длина", func(v interface{}) int64 {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
@@ -96,7 +97,7 @@ func Import(env *vm.Env) *vm.Env {
 		return int64(rv.Len())
 	})
 
-	env.Define("ключи", func(v interface{}) []string {
+	env.DefineS("ключи", func(v interface{}) []string {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
@@ -114,7 +115,7 @@ func Import(env *vm.Env) *vm.Env {
 		return keys
 	})
 
-	env.Define("диапазон", func(args ...int64) []int64 {
+	env.DefineS("диапазон", func(args ...int64) []int64 {
 		if len(args) < 1 {
 			panic("Отсутствуют аргументы")
 		}
@@ -136,14 +137,14 @@ func Import(env *vm.Env) *vm.Env {
 		return arr
 	})
 
-	env.Define("встроку", func(v interface{}) string {
+	env.DefineS("встроку", func(v interface{}) string {
 		if b, ok := v.([]byte); ok {
 			return string(b)
 		}
 		return fmt.Sprint(v)
 	})
 
-	env.Define("вцелоечисло", func(v interface{}) int64 {
+	env.DefineS("вцелоечисло", func(v interface{}) int64 {
 		nt := reflect.TypeOf(1)
 		rv := reflect.ValueOf(v)
 		if rv.Type().ConvertibleTo(nt) {
@@ -167,7 +168,7 @@ func Import(env *vm.Env) *vm.Env {
 		return 0
 	})
 
-	env.Define("вчисло", func(v interface{}) float64 {
+	env.DefineS("вчисло", func(v interface{}) float64 {
 		nt := reflect.TypeOf(1.0)
 		rv := reflect.ValueOf(v)
 		if rv.Type().ConvertibleTo(nt) {
@@ -187,7 +188,7 @@ func Import(env *vm.Env) *vm.Env {
 		return 0.0
 	})
 
-	env.Define("дата", func(v interface{}) time.Time {
+	env.DefineS("дата", func(v interface{}) time.Time {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.String {
 			tt, err := time.Parse(time.RFC3339, v.(string))
@@ -200,23 +201,23 @@ func Import(env *vm.Env) *vm.Env {
 		panic("Дата может быть представлена только строкой в формате RFC3339")
 	})
 
-	env.Define("нрег", func(v interface{}) string {
+	env.DefineS("нрег", func(v interface{}) string {
 		if b, ok := v.([]byte); ok {
 			return strings.ToLower(string(b))
 		}
 		return strings.ToLower(fmt.Sprint(v))
 	})
 
-	env.Define("врег", func(v interface{}) string {
+	env.DefineS("врег", func(v interface{}) string {
 		if b, ok := v.([]byte); ok {
 			return strings.ToUpper(string(b))
 		}
 		return strings.ToUpper(fmt.Sprint(v))
 	})
 
-	env.Define("формат", env.Sprintf)
+	env.DefineS("формат", env.Sprintf)
 
-	env.Define("вбулево", func(v interface{}) bool {
+	env.DefineS("вбулево", func(v interface{}) bool {
 		nt := reflect.TypeOf(true)
 		rv := reflect.ValueOf(v)
 		if rv.Type().ConvertibleTo(nt) {
@@ -238,68 +239,67 @@ func Import(env *vm.Env) *vm.Env {
 		return false
 	})
 
-	env.Define("всимвол", func(s rune) string {
+	env.DefineS("всимвол", func(s rune) string {
 		return string(s)
 	})
 
-	env.Define("вруну", func(s string) rune {
+	env.DefineS("вруну", func(s string) rune {
 		if len(s) == 0 {
 			return 0
 		}
 		return []rune(s)[0]
 	})
 
-	env.Define("вбайтслайс", func(s string) []byte {
+	env.DefineS("вбайтслайс", func(s string) []byte {
 		return []byte(s)
 	})
 
-	env.Define("вслайсрун", func(s string) []rune {
+	env.DefineS("вслайсрун", func(s string) []rune {
 		return []rune(s)
 	})
 
-	env.Define("вбулевслайс", func(v []interface{}) []bool {
+	env.DefineS("вбулевслайс", func(v []interface{}) []bool {
 		var result []bool
 		toSlice(v, &result)
 		return result
 	})
 
-	env.Define("вслайсчисел", func(v []interface{}) []float64 {
+	env.DefineS("вслайсчисел", func(v []interface{}) []float64 {
 		var result []float64
 		toSlice(v, &result)
 		return result
 	})
 
-	env.Define("вслайсцелыхчисел", func(v []interface{}) []int64 {
+	env.DefineS("вслайсцелыхчисел", func(v []interface{}) []int64 {
 		var result []int64
 		toSlice(v, &result)
 		return result
 	})
 
-	env.Define("вслайсстрок", func(v []interface{}) []string {
+	env.DefineS("вслайсстрок", func(v []interface{}) []string {
 		var result []string
 		toSlice(v, &result)
 		return result
 	})
 
-	env.Define("вдлительность", func(v int64) time.Duration {
+	env.DefineS("вдлительность", func(v int64) time.Duration {
 		return time.Duration(v)
 	})
 
-	env.Define("типзнч", func(v interface{}) string {
-
-		return env.TypeName(reflect.TypeOf(v))
+	env.DefineS("типзнч", func(v interface{}) string {
+		return ast.UniqueNames.Get(env.TypeName(reflect.TypeOf(v)))
 	})
 
-	env.Define("каналтипа", func(t reflect.Type) reflect.Value {
+	env.DefineS("каналтипа", func(t reflect.Type) reflect.Value {
 		return reflect.MakeChan(t, 1)
 	})
 
-	env.Define("присвоенозначение", func(s string) bool {
-		_, err := env.Get(s)
+	env.DefineS("присвоенозначение", func(s string) bool {
+		_, err := env.Get(ast.UniqueNames.Set(s))
 		return err == nil
 	})
 
-	env.Define("загрузитьивыполнить", func(s string) interface{} {
+	env.DefineS("загрузитьивыполнить", func(s string) interface{} {
 		body, err := ioutil.ReadFile(s)
 		if err != nil {
 			panic(err)
@@ -324,25 +324,25 @@ func Import(env *vm.Env) *vm.Env {
 		return nil
 	})
 
-	env.Define("паника", func(e interface{}) {
+	env.DefineS("паника", func(e interface{}) {
 		os.Setenv("GONEC_DEBUG", "1")
 		panic(e)
 	})
 
-	env.Define("вывести", env.Print)
-	env.Define("сообщить", env.Println)
-	env.Define("сообщитьф", env.Printf)
-	env.Define("stdout", env.StdOut())
-	env.Define("закрыть", func(e interface{}) {
+	env.DefineS("вывести", env.Print)
+	env.DefineS("сообщить", env.Println)
+	env.DefineS("сообщитьф", env.Printf)
+	env.DefineS("stdout", env.StdOut())
+	env.DefineS("закрыть", func(e interface{}) {
 		reflect.ValueOf(e).Close()
 	})
 
-	env.DefineType("целоечисло", int64(0))
-	env.DefineType("число", float64(0.0))
-	env.DefineType("булево", true)
-	env.DefineType("строка", "")
-	env.DefineType("массив", []interface{}{})
-	env.DefineType("структура", map[string]interface{}{})
+	env.DefineTypeS("целоечисло", int64(0))
+	env.DefineTypeS("число", float64(0.0))
+	env.DefineTypeS("булево", true)
+	env.DefineTypeS("строка", "")
+	env.DefineTypeS("массив", []interface{}{})
+	env.DefineTypeS("структура", map[string]interface{}{})
 	return env
 }
 

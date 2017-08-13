@@ -41,7 +41,7 @@ type TryStmt struct {
 // ForStmt provide "for in" expression statement.
 type ForStmt struct {
 	StmtImpl
-	Var   string
+	Var   int //string
 	Value Expr
 	Stmts []Stmt
 }
@@ -49,7 +49,7 @@ type ForStmt struct {
 // NumForStmt name = expr1 to expr2
 type NumForStmt struct {
 	StmtImpl
-	Name string
+	Name int //string
 	Expr1 Expr
 	Expr2 Expr
 	Stmts []Stmt
@@ -96,14 +96,14 @@ type ThrowStmt struct {
 // ModuleStmt provide "module" expression statement.
 type ModuleStmt struct {
 	StmtImpl
-	Name  string
+	Name  int //string
 	Stmts []Stmt
 }
 
 // VarStmt provide statement to let variables in current scope.
 type VarStmt struct {
 	StmtImpl
-	Names []string
+	Names []int //string
 	Exprs []Expr
 }
 

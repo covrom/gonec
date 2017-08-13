@@ -251,7 +251,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			cenv := env //.NewEnv()
 			//defer cenv.Destroy()
 			// if stmt.Var != "" {
-			cenv.Define("описаниеошибки", reflect.ValueOf(err))
+			cenv.Define(ast.UniqueNames.Set("описаниеошибки"), reflect.ValueOf(err))
 			// }
 			_, e1 := Run(stmt.Catch, cenv)
 			if e1 != nil {
@@ -493,7 +493,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		return rv, NewStringError(stmt, fmt.Sprint(rv.Interface()))
 	case *ast.ModuleStmt:
 		newenv := env.NewEnv()
-		newenv.SetName(stmt.Name)
+		//newenv.SetName(stmt.Name)
 		rv, err := Run(stmt.Stmts, newenv)
 		if err != nil {
 			return rv, NewError(stmt, err)
@@ -750,11 +750,11 @@ func toInt64(v reflect.Value) int64 {
 func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, error) {
 	switch lhs := expr.(type) {
 	case *ast.IdentExpr:
-		if env.Set(lhs.Lit, rv) != nil {
+		if env.Set(lhs.Id, rv) != nil {
 			if strings.Contains(lhs.Lit, ".") {
-				return NilValue, NewErrorf(expr, "Undefined symbol '%s'", lhs.Lit)
+				return NilValue, NewErrorf(expr, "Имя неопределено '%s'", lhs.Lit)
 			}
-			env.Define(lhs.Lit, rv)
+			env.Define(lhs.Id, rv)
 		}
 		return rv, nil
 	case *ast.MemberExpr:
@@ -893,7 +893,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		return reflect.ValueOf(i), nil
 	case *ast.IdentExpr:
-		return env.Get(e.Lit)
+		return env.Get(e.Id)
 	case *ast.StringExpr:
 		return reflect.ValueOf(e.Lit), nil
 	case *ast.ArrayExpr:
@@ -921,7 +921,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		var err error
 		switch ee := e.Expr.(type) {
 		case *ast.IdentExpr:
-			v, err = env.Get(ee.Lit)
+			v, err = env.Get(ee.Id)
 			if err != nil {
 				return v, err
 			}
@@ -938,9 +938,9 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			if v.IsValid() && v.CanInterface() {
 				if vme, ok := v.Interface().(*Env); ok {
-					m, err := vme.Get(ee.Name)
+					m, err := vme.Get(ast.UniqueNames.Set(ee.Name))
 					if !m.IsValid() || err != nil {
-						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
 					return m, nil
 				}
@@ -980,7 +980,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		var err error
 		switch ee := e.Expr.(type) {
 		case *ast.IdentExpr:
-			v, err = env.Get(ee.Lit)
+			v, err = env.Get(ee.Id)
 			if err != nil {
 				return v, err
 			}
@@ -997,7 +997,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			if v.IsValid() && v.CanInterface() {
 				if vme, ok := v.Interface().(*Env); ok {
-					m, err := vme.Get(ee.Name)
+					m, err := vme.Get(ast.UniqueNames.Set(ee.Name))
 					if !m.IsValid() || err != nil {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
 					}
@@ -1028,7 +1028,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				v = m
 			}
 		default:
-			return NilValue, NewStringError(expr, "Invalid operation for the value")
+			return NilValue, NewStringError(expr, "Неверная операция над значением")
 		}
 		if !v.CanAddr() {
 			i := v.Interface()
@@ -1051,7 +1051,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		case "!":
 			return reflect.ValueOf(!toBool(v)), nil
 		default:
-			return NilValue, NewStringError(e, "Unknown operator ''")
+			return NilValue, NewStringError(e, "Неизвестный оператор ''")
 		}
 	case *ast.ParenExpr:
 		v, err := invokeExpr(e.SubExpr, env)
@@ -1098,9 +1098,9 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if v.IsValid() && v.CanInterface() {
 			if vme, ok := v.Interface().(*Env); ok {
-				m, err := vme.Get(e.Name)
+				m, err := vme.Get(ast.UniqueNames.Set(e.Name))
 				if !m.IsValid() || err != nil {
-					return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", e.Name))
+					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
 				return m, nil
 			}
@@ -1114,7 +1114,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			if v.Kind() == reflect.Struct {
 				m = v.FieldByName(e.Name)
 				if !m.IsValid() {
-					return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", e.Name))
+					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
 			} else if v.Kind() == reflect.Map {
 				m = v.MapIndex(reflect.ValueOf(e.Name))
@@ -1219,7 +1219,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		switch e.Operator {
 		case "++":
 			if alhs, ok := e.Lhs.(*ast.IdentExpr); ok {
-				v, err := env.Get(alhs.Lit)
+				v, err := env.Get(alhs.Id)
 				if err != nil {
 					return v, err
 				}
@@ -1228,14 +1228,14 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				} else {
 					v = reflect.ValueOf(toInt64(v) + 1)
 				}
-				if env.Set(alhs.Lit, v) != nil {
-					env.Define(alhs.Lit, v)
+				if env.Set(alhs.Id, v) != nil {
+					env.Define(alhs.Id, v)
 				}
 				return v, nil
 			}
 		case "--":
 			if alhs, ok := e.Lhs.(*ast.IdentExpr); ok {
-				v, err := env.Get(alhs.Lit)
+				v, err := env.Get(alhs.Id)
 				if err != nil {
 					return v, err
 				}
@@ -1244,8 +1244,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				} else {
 					v = reflect.ValueOf(toInt64(v) - 1)
 				}
-				if env.Set(alhs.Lit, v) != nil {
-					env.Define(alhs.Lit, v)
+				if env.Set(alhs.Id, v) != nil {
+					env.Define(alhs.Id, v)
 				}
 				return v, nil
 			}
@@ -1329,9 +1329,9 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 		}
 		switch e.Operator {
-		
+
 		// TODO: улучшить скорость отработки операторов, расширить возможные варианты
-		
+
 		case "+":
 			if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
 				return reflect.ValueOf(toString(lhsV) + toString(rhsV)), nil

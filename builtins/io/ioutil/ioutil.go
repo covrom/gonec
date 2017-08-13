@@ -9,9 +9,9 @@ import (
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("iotuil")
-	m.Define("ReadAll", u.ReadAll)
-	m.Define("ReadDir", u.ReadDir)
-	m.Define("ReadFile", u.ReadFile)
-	m.Define("WriteFile", u.WriteFile)
+	m.DefineS("ReadAll", u.ReadAll)
+	m.DefineS("ReadDir", u.ReadDir)
+	m.DefineS("ReadFile", u.ReadFile)
+	m.DefineS("WriteFile", u.WriteFile)
 	return m
 }

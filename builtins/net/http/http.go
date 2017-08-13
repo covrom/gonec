@@ -31,10 +31,10 @@ func (c *Client) Get(args ...reflect.Value) (reflect.Value, error) {
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("http")
-	m.Define("DefaultClient", h.DefaultClient)
-	m.Define("NewServeMux", h.NewServeMux)
-	m.Define("Handle", h.Handle)
-	m.Define("HandleFunc", h.HandleFunc)
-	m.Define("ListenAndServe", h.ListenAndServe)
+	m.DefineS("DefaultClient", h.DefaultClient)
+	m.DefineS("NewServeMux", h.NewServeMux)
+	m.DefineS("Handle", h.Handle)
+	m.DefineS("HandleFunc", h.HandleFunc)
+	m.DefineS("ListenAndServe", h.ListenAndServe)
 	return m
 }

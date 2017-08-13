@@ -8,6 +8,6 @@ import (
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewModule("errors")
-	m.Define("New", pkg.New)
+	m.DefineS("New", pkg.New)
 	return m
 }

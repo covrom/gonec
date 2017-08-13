@@ -9,13 +9,13 @@ import (
 
 func Import(env *vm.Env) *vm.Env {
 	m := env.NewPackage("sort")
-	m.Define("Match", r.Match)
-	m.Define("MatchReader", r.MatchReader)
-	m.Define("MatchString", r.MatchString)
-	m.Define("QuoteMeta", r.QuoteMeta)
-	m.Define("Compile", r.Compile)
-	m.Define("CompilePOSIX", r.CompilePOSIX)
-	m.Define("MustCompile", r.MustCompile)
-	m.Define("MustCompilePOSIX", r.MustCompilePOSIX)
+	m.DefineS("Match", r.Match)
+	m.DefineS("MatchReader", r.MatchReader)
+	m.DefineS("MatchString", r.MatchString)
+	m.DefineS("QuoteMeta", r.QuoteMeta)
+	m.DefineS("Compile", r.Compile)
+	m.DefineS("CompilePOSIX", r.CompilePOSIX)
+	m.DefineS("MustCompile", r.MustCompile)
+	m.DefineS("MustCompilePOSIX", r.MustCompilePOSIX)
 	return m
 }
