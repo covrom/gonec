@@ -1,0 +1,12 @@
+а = []
+для н=1 по 1000000 цикл
+  а=а+[н]+[н*10]
+конеццикла
+к=0
+для каждого н из а цикл
+  к=к+н
+конеццикла
+сообщить(к)
+
+#gonec.exe -web -t
+#go tool pprof -svg ./gonec.exe http://localhost:5000/debug/pprof/profile?seconds=10 > cpu.svg

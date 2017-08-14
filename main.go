@@ -24,19 +24,22 @@ import (
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
 
+	_ "net/http/pprof"
+	
 	gonec_core "github.com/covrom/gonec/builtins"
+
 )
 
 const version = "1.3a"
 const APIPath = "/gonec"
 
 var (
-	fs   = flag.NewFlagSet(os.Args[0], 1)
-	line = fs.String("e", "", "Исполнение одной строчки кода")
+	fs          = flag.NewFlagSet(os.Args[0], 1)
+	line        = fs.String("e", "", "Исполнение одной строчки кода")
 	testingMode = fs.Bool("t", false, "Режим вывода отладочной информации")
-	v    = fs.Bool("v", false, "Версия программы")
-	w    = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
-	port = fs.String("p", "", "Номер порта вэб-сервера")
+	v           = fs.Bool("v", false, "Версия программы")
+	w           = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
+	port        = fs.String("p", "", "Номер порта вэб-сервера")
 
 	istty = isatty.IsTerminal(os.Stdout.Fd())
 
@@ -58,6 +61,7 @@ func colortext(color ct.Color, bright bool, f func()) {
 }
 
 func main() {
+
 	fs.Parse(os.Args[1:])
 	if *v {
 		fmt.Println(version)
@@ -457,7 +461,7 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 	tstart := time.Now()
 	stmts, err := parser.ParseSrc(sb)
 	tsParse := time.Since(tstart)
-	
+
 	if err != nil {
 		return err
 	}
@@ -479,11 +483,11 @@ func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
 		}
 	}
 
-	if *testingMode{
+	if *testingMode {
 		env.Printf("Время компиляции: %v\n", tsParse)
 		env.Printf("Время исполнения: %v\n", tsRun)
 	}
-	
+
 	log.Printf("%s--Результат выполнения кода--\n%s\n", ls, rb.String())
 
 	_, err = w.Write(rb.Bytes())
