@@ -351,7 +351,7 @@ expr :
 	}
 	| '&' expr '.' IDENT %prec UNARY
 	{
-		$$ = &ast.AddrExpr{Expr: &ast.MemberExpr{Expr: $2, Name: $4.Lit}}
+		$$ = &ast.AddrExpr{Expr: &ast.MemberExpr{Expr: $2, Name: ast.UniqueNames.Set($4.Lit)}}
 		$$.SetPosition($2.Position())
 	}
 	| '*' IDENT %prec UNARY
@@ -361,7 +361,7 @@ expr :
 	}
 	| '*' expr '.' IDENT %prec UNARY
 	{
-		$$ = &ast.DerefExpr{Expr: &ast.MemberExpr{Expr: $2, Name: $4.Lit}}
+		$$ = &ast.DerefExpr{Expr: &ast.MemberExpr{Expr: $2, Name: ast.UniqueNames.Set($4.Lit)}}
 		$$.SetPosition($2.Position())
 	}
 	| STRING
@@ -396,7 +396,7 @@ expr :
 	}
 	| expr '.' IDENT
 	{
-		$$ = &ast.MemberExpr{Expr: $1, Name: $3.Lit}
+		$$ = &ast.MemberExpr{Expr: $1, Name: ast.UniqueNames.Set($3.Lit)}
 		$$.SetPosition($1.Position())
 	}
 	| FUNC '(' expr_idents ')' opt_terms compstmt '}'

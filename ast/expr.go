@@ -3,31 +3,48 @@ package ast
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // уникальные названия переменных, индекс используется в AST-дереве
-type EnvNames []string
+type EnvNames struct {
+	sync.RWMutex
+	names   map[string]int
+	handles map[int]string
+	iter    int
+}
 
 func NewEnvNames() *EnvNames {
-	en := EnvNames(make([]string, 0, 200))
+	en := EnvNames{
+		names:   make(map[string]int, 200),
+		handles: make(map[int]string, 200),
+		iter:    1,
+	}
 	return &en
 }
 
 func (en *EnvNames) Set(n string) int {
 	ns := strings.ToLower(n)
-	l := len(*en)
-	for i := 0; i < l; i++ {
-		if (*en)[i] == ns {
-			return i
-		}
+	en.RLock()
+	if i, ok := en.names[ns]; ok {
+		en.RUnlock()
+		return i
 	}
-	*en = append(*en, ns)
-	return l
+	en.RUnlock()
+	en.Lock()
+	i := en.iter
+	en.names[ns] = i
+	en.handles[i] = n
+	en.iter++
+	en.Unlock()
+	return i
 }
 
 func (en *EnvNames) Get(i int) string {
-	if i >= 0 && i < len(*en) {
-		return (*en)[i]
+	en.RLock()
+	defer en.RUnlock()
+	if s, ok := en.handles[i]; ok {
+		return s
 	} else {
 		panic(fmt.Sprintf("Не найден идентификатор переменной id=%d", i))
 	}
@@ -85,7 +102,7 @@ type MapExpr struct {
 type IdentExpr struct {
 	ExprImpl
 	Lit string
-	Id int
+	Id  int
 }
 
 // UnaryExpr provide unary minus expression. ex: -1, ^1, ~1.
@@ -151,7 +168,7 @@ type AnonCallExpr struct {
 type MemberExpr struct {
 	ExprImpl
 	Expr Expr
-	Name string
+	Name int //string
 }
 
 // ItemExpr provide expression to refer Map/Array item.

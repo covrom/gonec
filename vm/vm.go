@@ -778,13 +778,13 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Struct {
-			v = v.FieldByName(lhs.Name)
+			v = v.FieldByName(ast.UniqueNames.Get(lhs.Name))
 			if !v.CanSet() {
 				return NilValue, NewStringError(expr, "Cannot assignable")
 			}
 			v.Set(rv)
 		} else if v.Kind() == reflect.Map {
-			v.SetMapIndex(reflect.ValueOf(lhs.Name), rv)
+			v.SetMapIndex(reflect.ValueOf(ast.UniqueNames.Get(lhs.Name)), rv)
 		} else {
 			if !v.CanSet() {
 				return NilValue, NewStringError(expr, "Cannot assignable")
@@ -806,7 +806,7 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
 			if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс должен быть целым числом")
 			}
 			ii := int(i.Int())
 			if ii < 0 || ii >= v.Len() {
@@ -821,7 +821,7 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		}
 		if v.Kind() == reflect.Map {
 			if i.Kind() != reflect.String {
-				return NilValue, NewStringError(expr, "Map key should be string")
+				return NilValue, NewStringError(expr, "Ключ должен быть строкой")
 			}
 			v.SetMapIndex(i, rv)
 			return rv, nil
@@ -938,7 +938,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			if v.IsValid() && v.CanInterface() {
 				if vme, ok := v.Interface().(*Env); ok {
-					m, err := vme.Get(ast.UniqueNames.Set(ee.Name))
+					m, err := vme.Get(ee.Name)
 					if !m.IsValid() || err != nil {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
@@ -946,18 +946,18 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				}
 			}
 
-			m := v.MethodByName(ee.Name)
+			m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
 			if !m.IsValid() {
 				if v.Kind() == reflect.Ptr {
 					v = v.Elem()
 				}
 				if v.Kind() == reflect.Struct {
-					m = v.FieldByName(ee.Name)
+					m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
 					}
 				} else if v.Kind() == reflect.Map {
-					m = v.MapIndex(reflect.ValueOf(ee.Name))
+					m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(ee.Name)))
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
 					}
@@ -997,7 +997,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			if v.IsValid() && v.CanInterface() {
 				if vme, ok := v.Interface().(*Env); ok {
-					m, err := vme.Get(ast.UniqueNames.Set(ee.Name))
+					m, err := vme.Get(ee.Name)
 					if !m.IsValid() || err != nil {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
 					}
@@ -1005,18 +1005,18 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				}
 			}
 
-			m := v.MethodByName(ee.Name)
+			m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
 			if !m.IsValid() {
 				if v.Kind() == reflect.Ptr {
 					v = v.Elem()
 				}
 				if v.Kind() == reflect.Struct {
-					m = v.FieldByName(ee.Name)
+					m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
 					}
 				} else if v.Kind() == reflect.Map {
-					m = v.MapIndex(reflect.ValueOf(ee.Name))
+					m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(ee.Name)))
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
 					}
@@ -1098,7 +1098,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if v.IsValid() && v.CanInterface() {
 			if vme, ok := v.Interface().(*Env); ok {
-				m, err := vme.Get(ast.UniqueNames.Set(e.Name))
+				m, err := vme.Get(e.Name)
 				if !m.IsValid() || err != nil {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
@@ -1106,18 +1106,18 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 		}
 
-		m := v.MethodByName(e.Name)
+		m := v.MethodByName(ast.UniqueNames.Get(e.Name))
 		if !m.IsValid() {
 			if v.Kind() == reflect.Ptr {
 				v = v.Elem()
 			}
 			if v.Kind() == reflect.Struct {
-				m = v.FieldByName(e.Name)
+				m = v.FieldByName(ast.UniqueNames.Get(e.Name))
 				if !m.IsValid() {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
 			} else if v.Kind() == reflect.Map {
-				m = v.MapIndex(reflect.ValueOf(e.Name))
+				m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(e.Name)))
 				if !m.IsValid() {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", e.Name))
 				}

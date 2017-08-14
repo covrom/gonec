@@ -1564,7 +1564,7 @@ yydefault:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		//line ./parser/parser.y:353
 		{
-			yyVAL.expr = &ast.AddrExpr{Expr: &ast.MemberExpr{Expr: yyDollar[2].expr, Name: yyDollar[4].tok.Lit}}
+			yyVAL.expr = &ast.AddrExpr{Expr: &ast.MemberExpr{Expr: yyDollar[2].expr, Name: ast.UniqueNames.Set(yyDollar[4].tok.Lit)}}
 			yyVAL.expr.SetPosition(yyDollar[2].expr.Position())
 		}
 	case 58:
@@ -1578,7 +1578,7 @@ yydefault:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		//line ./parser/parser.y:363
 		{
-			yyVAL.expr = &ast.DerefExpr{Expr: &ast.MemberExpr{Expr: yyDollar[2].expr, Name: yyDollar[4].tok.Lit}}
+			yyVAL.expr = &ast.DerefExpr{Expr: &ast.MemberExpr{Expr: yyDollar[2].expr, Name: ast.UniqueNames.Set(yyDollar[4].tok.Lit)}}
 			yyVAL.expr.SetPosition(yyDollar[2].expr.Position())
 		}
 	case 60:
@@ -1627,7 +1627,7 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line ./parser/parser.y:398
 		{
-			yyVAL.expr = &ast.MemberExpr{Expr: yyDollar[1].expr, Name: yyDollar[3].tok.Lit}
+			yyVAL.expr = &ast.MemberExpr{Expr: yyDollar[1].expr, Name: ast.UniqueNames.Set(yyDollar[3].tok.Lit)}
 			yyVAL.expr.SetPosition(yyDollar[1].expr.Position())
 		}
 	case 67:
