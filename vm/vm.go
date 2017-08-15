@@ -845,10 +845,10 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
 			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			ii := int(rb.Int())
 			if ii < 0 || ii >= v.Len() {
@@ -1140,7 +1140,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
 			if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			ii := int(i.Int())
 			if ii < 0 || ii >= v.Len() {
@@ -1181,10 +1181,10 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
 			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			ii := int(rb.Int())
 			if ii < 0 || ii > v.Len() {
@@ -1198,10 +1198,10 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if v.Kind() == reflect.String {
 			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Array index should be int")
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			r := []rune(v.String())
 			ii := int(rb.Int())
