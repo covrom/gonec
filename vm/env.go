@@ -123,10 +123,10 @@ func (e *Env) GetName() string {
 // Addr returns pointer value which specified symbol. It goes to upper scope until
 // found or returns error.
 func (e *Env) Addr(k int) (reflect.Value, error) {
-	e.RLock()
-	defer e.RUnlock()
 
 	for ee := e; ee != nil; ee = ee.parent {
+		ee.RLock()
+		defer ee.RUnlock()
 		if v, ok := ee.env[k]; ok {
 			return v.Addr(), nil
 		}
@@ -136,10 +136,10 @@ func (e *Env) Addr(k int) (reflect.Value, error) {
 
 // TypeName определяет имя типа по типу значения
 func (e *Env) TypeName(t reflect.Type) int {
-	e.RLock()
-	defer e.RUnlock()
 
 	for ee := e; ee != nil; ee = ee.parent {
+		ee.RLock()
+		defer ee.RUnlock()
 		for k, v := range ee.typ {
 			if v == t {
 				return k
@@ -152,10 +152,10 @@ func (e *Env) TypeName(t reflect.Type) int {
 // Type returns type which specified symbol. It goes to upper scope until
 // found or returns error.
 func (e *Env) Type(k int) (reflect.Type, error) {
-	e.RLock()
-	defer e.RUnlock()
 
 	for ee := e; ee != nil; ee = ee.parent {
+		ee.RLock()
+		defer ee.RUnlock()
 		if v, ok := ee.typ[k]; ok {
 			return v, nil
 		}
@@ -166,10 +166,10 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 // Get returns value which specified symbol. It goes to upper scope until
 // found or returns error.
 func (e *Env) Get(k int) (reflect.Value, error) {
-	e.RLock()
-	defer e.RUnlock()
 
 	for ee := e; ee != nil; ee = ee.parent {
+		ee.RLock()
+		defer ee.RUnlock()
 		if v, ok := ee.env[k]; ok {
 			return v, nil
 		}
@@ -180,15 +180,16 @@ func (e *Env) Get(k int) (reflect.Value, error) {
 // Set modifies value which specified as symbol. It goes to upper scope until
 // found or returns error.
 func (e *Env) Set(k int, v interface{}) error {
-	e.Lock()
-	defer e.Unlock()
+
+	val, ok := v.(reflect.Value)
+	if !ok {
+		val = reflect.ValueOf(v)
+	}
 
 	for ee := e; ee != nil; ee = ee.parent {
+		ee.Lock()
+		defer ee.Unlock()
 		if _, ok := ee.env[k]; ok {
-			val, ok := v.(reflect.Value)
-			if !ok {
-				val = reflect.ValueOf(v)
-			}
 			ee.env[k] = val
 			return nil
 		}
@@ -224,7 +225,7 @@ func (e *Env) DefineType(k int, t interface{}) error {
 }
 
 func (e *Env) DefineTypeS(k string, t interface{}) error {
-	return e.DefineType(ast.UniqueNames.Set(k),t)
+	return e.DefineType(ast.UniqueNames.Set(k), t)
 }
 
 // Define defines symbol in current scope.
@@ -242,8 +243,9 @@ func (e *Env) Define(k int, v interface{}) error {
 }
 
 func (e *Env) DefineS(k string, v interface{}) error {
-	return e.Define(ast.UniqueNames.Set(k),v)
+	return e.Define(ast.UniqueNames.Set(k), v)
 }
+
 // String return the name of current scope.
 func (e *Env) String() string {
 	e.RLock()
@@ -271,39 +273,40 @@ func (e *Env) Execute(src string) (reflect.Value, error) {
 }
 
 func (e *Env) Println(a ...interface{}) (n int, err error) {
-	e.RLock()
-	defer e.RUnlock()
+	// e.RLock()
+	// defer e.RUnlock()
 	return fmt.Fprintln(e.stdout, a...)
 }
 
 func (e *Env) Printf(format string, a ...interface{}) (n int, err error) {
-	e.RLock()
-	defer e.RUnlock()
+	// e.RLock()
+	// defer e.RUnlock()
 	return fmt.Fprintf(e.stdout, format, a...)
 }
 
 func (e *Env) Sprintf(format string, a ...interface{}) string {
-	e.RLock()
-	defer e.RUnlock()
+	// e.RLock()
+	// defer e.RUnlock()
 	return fmt.Sprintf(format, a...)
 }
 
 func (e *Env) Print(a ...interface{}) (n int, err error) {
-	e.RLock()
-	defer e.RUnlock()
+	// e.RLock()
+	// defer e.RUnlock()
 	return fmt.Fprint(e.stdout, a...)
 }
 
 func (e *Env) StdOut() reflect.Value {
-	e.RLock()
-	defer e.RUnlock()
+	// e.RLock()
+	// defer e.RUnlock()
 	return reflect.ValueOf(e.stdout)
 }
 
 func (e *Env) SetStdOut(w io.Writer) {
-	e.Lock()
+	// e.Lock()
+	//пренебрегаем возможными коллизиями при установке потока вывода, т.к. это совсем редкая операция
 	e.stdout = w
-	e.Unlock()
+	// e.Unlock()
 }
 
 func (e *Env) SetSid(s string) error {
@@ -319,6 +322,7 @@ func (e *Env) SetSid(s string) error {
 func (e *Env) GetSid() string {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
+			// пренебрегаем возможными коллизиями, т.к. изменение номера сессии - это совсем редкая операция
 			return ee.sid
 		}
 	}
