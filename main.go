@@ -30,7 +30,7 @@ import (
 
 )
 
-const version = "1.3a"
+const version = "1.4a"
 const APIPath = "/gonec"
 
 var (
