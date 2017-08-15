@@ -647,29 +647,29 @@ expr :
 		$$ = &ast.SliceExpr{Value: $1, Begin: $3, End: $5}
 		$$.SetPosition($1.Position())
 	}
-	| MAKE '(' typ ')'
+	| MAKE typ
 	{
-		$$ = &ast.MakeExpr{Type: $3.Name}
+		$$ = &ast.MakeExpr{Type: $2.Name}
 		$$.SetPosition($1.Position())
 	}
-	| MAKE '(' CHAN typ ')'
+	| MAKE CHAN
 	{
-		$$ = &ast.MakeChanExpr{Type: $4.Name, SizeExpr: nil}
+		$$ = &ast.MakeChanExpr{SizeExpr: nil}
 		$$.SetPosition($1.Position())
 	}
-	| MAKE '(' CHAN typ ',' expr ')'
+	| MAKE CHAN '(' expr ')'
 	{
-		$$ = &ast.MakeChanExpr{Type: $4.Name, SizeExpr: $6}
+		$$ = &ast.MakeChanExpr{SizeExpr: $4}
 		$$.SetPosition($1.Position())
 	}
-	| MAKE '(' ARRAYLIT typ ',' expr ')'
+	| ARRAYLIT '(' expr ')'
 	{
-		$$ = &ast.MakeArrayExpr{Type: $4.Name, LenExpr: $6}
+		$$ = &ast.MakeArrayExpr{LenExpr: $3}
 		$$.SetPosition($1.Position())
 	}
-	| MAKE '(' ARRAYLIT typ ',' expr ',' expr ')'
+	| ARRAYLIT '(' expr ',' expr ')'
 	{
-		$$ = &ast.MakeArrayExpr{Type: $4.Name, LenExpr: $6, CapExpr: $8}
+		$$ = &ast.MakeArrayExpr{LenExpr: $3, CapExpr: $5}
 		$$.SetPosition($1.Position())
 	}
 	| expr OPCHAN expr

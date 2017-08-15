@@ -247,13 +247,13 @@ type MakeExpr struct {
 
 type MakeChanExpr struct {
 	ExprImpl
-	Type     int //string
+	// Type     int //string
 	SizeExpr Expr
 }
 
 type MakeArrayExpr struct {
 	ExprImpl
-	Type    int //string
+	// Type    int //string
 	LenExpr Expr
 	CapExpr Expr
 }

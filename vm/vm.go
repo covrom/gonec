@@ -826,7 +826,7 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			v.SetMapIndex(i, rv)
 			return rv, nil
 		}
-		return v, NewStringError(expr, "Invalid operation")
+		return v, NewStringError(expr, "Неверная операция")
 	case *ast.SliceExpr:
 		v, err := invokeExpr(lhs.Value, env)
 		if err != nil {
@@ -865,9 +865,9 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			vv.Set(rv)
 			return rv, nil
 		}
-		return v, NewStringError(expr, "Invalid operation")
+		return v, NewStringError(expr, "Неверная операция")
 	}
-	return NilValue, NewStringError(expr, "Invalid operation")
+	return NilValue, NewStringError(expr, "Неверная операция")
 }
 
 // invokeExpr evaluates one expression.
@@ -954,22 +954,22 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				if v.Kind() == reflect.Struct {
 					m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
 					if !m.IsValid() {
-						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
 				} else if v.Kind() == reflect.Map {
 					m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(ee.Name)))
 					if !m.IsValid() {
-						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
 				} else {
-					return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 				}
 				v = m
 			} else {
 				v = m
 			}
 		default:
-			return NilValue, NewStringError(expr, "Invalid operation for the value")
+			return NilValue, NewStringError(expr, "Неверная операция for the value")
 		}
 		if v.Kind() != reflect.Ptr {
 			return NilValue, NewStringError(expr, "Cannot deference for the value")
@@ -999,7 +999,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				if vme, ok := v.Interface().(*Env); ok {
 					m, err := vme.Get(ee.Name)
 					if !m.IsValid() || err != nil {
-						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
 					return m, nil
 				}
@@ -1013,15 +1013,15 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				if v.Kind() == reflect.Struct {
 					m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
 					if !m.IsValid() {
-						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
 				} else if v.Kind() == reflect.Map {
 					m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(ee.Name)))
 					if !m.IsValid() {
-						return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
 				} else {
-					return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", ee.Name))
+					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 				}
 				v = m
 			} else {
@@ -1119,10 +1119,10 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			} else if v.Kind() == reflect.Map {
 				m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(e.Name)))
 				if !m.IsValid() {
-					return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", e.Name))
+					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
 			} else {
-				return NilValue, NewStringError(expr, fmt.Sprintf("Invalid operation '%s'", e.Name))
+				return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 			}
 		}
 		return m, nil
@@ -1162,7 +1162,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			return reflect.ValueOf(rs[ii]), nil
 		}
-		return v, NewStringError(expr, "Invalid operation")
+		return v, NewStringError(expr, "Неверная операция")
 	case *ast.SliceExpr:
 		v, err := invokeExpr(e.Value, env)
 		if err != nil {
@@ -1214,7 +1214,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			return reflect.ValueOf(string(r[ii:ij])), nil
 		}
-		return v, NewStringError(expr, "Invalid operation")
+		return v, NewStringError(expr, "Неверная операция")
 	case *ast.AssocExpr:
 		switch e.Operator {
 		case "++":
@@ -1583,10 +1583,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		return reflect.Zero(rt), nil
 	case *ast.MakeChanExpr:
-		typ, err := env.Type(e.Type)
-		if err != nil {
-			return NilValue, err
-		}
+
 		var size int
 		if e.SizeExpr != nil {
 			rv, err := invokeExpr(e.SizeExpr, env)
@@ -1595,7 +1592,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 			size = int(toInt64(rv))
 		}
-		return func() (reflect.Value, error) {
+		return func() (refval reflect.Value, err error) {
 			defer func() {
 				if os.Getenv("GONEC_DEBUG") == "" {
 					if ex := recover(); ex != nil {
@@ -1607,13 +1604,10 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 					}
 				}
 			}()
-			return reflect.MakeChan(reflect.ChanOf(reflect.BothDir, typ), size), nil
+			return reflect.ValueOf(make(chan interface{}, size)), nil
 		}()
 	case *ast.MakeArrayExpr:
-		typ, err := env.Type(e.Type)
-		if err != nil {
-			return NilValue, err
-		}
+
 		var alen int
 		if e.LenExpr != nil {
 			rv, err := invokeExpr(e.LenExpr, env)
@@ -1632,7 +1626,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		} else {
 			acap = alen
 		}
-		return func() (reflect.Value, error) {
+		return func() (refval reflect.Value, err error) {
 			defer func() {
 				if os.Getenv("GONEC_DEBUG") == "" {
 					if ex := recover(); ex != nil {
@@ -1644,7 +1638,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 					}
 				}
 			}()
-			return reflect.MakeSlice(reflect.SliceOf(typ), alen, acap), nil
+			return reflect.ValueOf(make([]interface{}, alen, acap)), nil
 		}()
 	case *ast.ChanExpr:
 		rhs, err := invokeExpr(e.Rhs, env)
@@ -1673,7 +1667,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				return invokeLetExpr(e.Lhs, rv, env)
 			}
 		}
-		return NilValue, NewStringError(expr, "Invalid operation for chan")
+		return NilValue, NewStringError(expr, "Неверная операция for chan")
 	default:
 		return NilValue, NewStringError(expr, "Unknown expression")
 	}

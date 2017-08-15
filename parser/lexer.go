@@ -32,11 +32,11 @@ func (e *Error) Error() string {
 
 // Scanner stores informations for lexer.
 type Scanner struct {
-	src        []rune
-	offset     int
-	lineHead   int
-	line       int
-	canequal   bool
+	src      []rune
+	offset   int
+	lineHead int
+	line     int
+	canequal bool
 }
 
 // opName is correction of operation names.
@@ -51,7 +51,7 @@ var opName = map[string]int{
 	"продолжить":        CONTINUE,
 	"из":                IN,
 	"иначе":             ELSE,
-	"новый":             NEW,
+	"создать":           NEW,
 	"истина":            TRUE,
 	"ложь":              FALSE,
 	"неопределено":      NIL,
@@ -59,12 +59,12 @@ var opName = map[string]int{
 	"попытка":           TRY,
 	"исключение":        CATCH,
 	// "окончательно":      FINALLY,
-	"выбор":   SWITCH,
-	"когда":   CASE,
-	"другое":  DEFAULT,
-	"старт":   GO,
-	"канал":   CHAN,
-	"создать": MAKE,
+	"выбор":  SWITCH,
+	"когда":  CASE,
+	"другое": DEFAULT,
+	"старт":  GO,
+	"канал":  CHAN,
+	"новый":  MAKE,
 
 	"или":          OROR,
 	"и":            ANDAND,
@@ -101,9 +101,9 @@ var opCanEqual = map[int]bool{
 	int('!'): true,
 	NULL:     true,
 	// EACH:     true,
-	TO:      true,
-	WHILE:   true,
-	ELSIF:   true,
+	TO:    true,
+	WHILE: true,
+	ELSIF: true,
 }
 
 // Init resets code to scan.
@@ -365,7 +365,7 @@ retry:
 			s.next()
 			if s.peek() == ']' {
 				s.next()
-				if isLetter(s.peek()) {
+				if s.peek()=='(' {
 					s.back()
 					tok = ARRAYLIT
 					lit = "[]"
