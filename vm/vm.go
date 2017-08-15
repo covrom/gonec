@@ -1160,7 +1160,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			if ii < 0 || ii >= len(rs) {
 				return NilValue, nil
 			}
-			return reflect.ValueOf(rs[ii]), nil
+			return reflect.ValueOf(string(rs[ii])), nil
 		}
 		return v, NewStringError(expr, "Неверная операция")
 	case *ast.SliceExpr:
