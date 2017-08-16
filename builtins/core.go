@@ -137,7 +137,37 @@ func Import(env *vm.Env) *vm.Env {
 		return arr
 	})
 
+	env.DefineS("дата", func(v interface{}) time.Time {
+		rv := reflect.ValueOf(v)
+		if rv.Kind() == reflect.String {
+			tt, err := time.Parse(time.RFC3339, v.(string))
+			if err == nil {
+				return tt
+			} else {
+				panic(err)
+			}
+		}
+		panic("Дата может быть представлена только строкой в формате RFC3339")
+	})
 
+	env.DefineS("нрег", func(v interface{}) string {
+		if b, ok := v.([]byte); ok {
+			return strings.ToLower(string(b))
+		}
+		return strings.ToLower(fmt.Sprint(v))
+	})
+
+	env.DefineS("врег", func(v interface{}) string {
+		if b, ok := v.([]byte); ok {
+			return strings.ToUpper(string(b))
+		}
+		return strings.ToUpper(fmt.Sprint(v))
+	})
+
+	env.DefineS("формат", env.Sprintf)
+	
+
+	/////////////
 	env.DefineS("вцелоечисло", func(v interface{}) int64 {
 		nt := reflect.TypeOf(1)
 		rv := reflect.ValueOf(v)
@@ -182,34 +212,6 @@ func Import(env *vm.Env) *vm.Env {
 		return 0.0
 	})
 
-	env.DefineS("дата", func(v interface{}) time.Time {
-		rv := reflect.ValueOf(v)
-		if rv.Kind() == reflect.String {
-			tt, err := time.Parse(time.RFC3339, v.(string))
-			if err == nil {
-				return tt
-			} else {
-				panic(err)
-			}
-		}
-		panic("Дата может быть представлена только строкой в формате RFC3339")
-	})
-
-	env.DefineS("нрег", func(v interface{}) string {
-		if b, ok := v.([]byte); ok {
-			return strings.ToLower(string(b))
-		}
-		return strings.ToLower(fmt.Sprint(v))
-	})
-
-	env.DefineS("врег", func(v interface{}) string {
-		if b, ok := v.([]byte); ok {
-			return strings.ToUpper(string(b))
-		}
-		return strings.ToUpper(fmt.Sprint(v))
-	})
-
-	env.DefineS("формат", env.Sprintf)
 
 	env.DefineS("вбулево", func(v interface{}) bool {
 		nt := reflect.TypeOf(true)

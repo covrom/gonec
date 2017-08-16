@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -650,7 +651,7 @@ func toBool(v reflect.Value) bool {
 	case reflect.Bool:
 		return v.Bool()
 	case reflect.String:
-		vlow:= strings.ToLower(v.String())
+		vlow := strings.ToLower(v.String())
 		if vlow == "true" || vlow == "истина" {
 			return true
 		}
@@ -746,6 +747,95 @@ func toInt64(v reflect.Value) int64 {
 		}
 	}
 	return 0
+}
+
+func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skipCollections bool) (reflect.Value, error) {
+	if skipCollections && (rv.Kind() == reflect.Array || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Struct) {
+		return rv, nil
+	}
+	if rv.Kind() == reflect.Interface {
+		rv = rv.Elem()
+	}
+	if rv.Kind() == nt.Kind() {
+		return rv, nil
+	}
+
+	switch rv.Kind() {
+	case reflect.Array, reflect.Slice:
+		// преобразуем в такой же слайс, но с типизированными значениями, и копируем их с новым типом
+		rs := reflect.MakeSlice(reflect.SliceOf(nt), 0, rv.Cap())
+		for i := 0; i < rv.Len(); i++ {
+			iv := rv.Index(i)
+			// конверсия вложенных массивов и структур не производится
+			rsi, err := typeCastConvert(iv, nt, expr, true)
+			if err != nil {
+				return rv, NewError(expr, err)
+			}
+			rs = reflect.Append(rs, rsi)
+		}
+		return rs, nil
+	case reflect.Chan:
+		// преобразуем в канал с типизированными значениями, и копируем содержимое канала с новым типом, если там что-то было
+		rs := reflect.MakeChan(reflect.ChanOf(reflect.BothDir,nt), rv.Len())
+		for v:=range rv.Interface().(chan )
+		
+	case reflect.Map:
+
+	case reflect.String:
+		switch nt.Kind() {
+		case reflect.Bool:
+			if strings.ToLower(toString(rv)) == "истина" {
+				return reflect.ValueOf(true), nil
+			} else {
+				return reflect.ValueOf(false), nil
+			}
+		case reflect.Array:
+			return reflect.ValueOf([]rune(toString(rv))), nil
+		case reflect.Map:
+			//парсим json из строки и пытаемся получить мапу
+			var rm map[string]interface{}
+			if err := json.Unmarshal([]byte(toString(rv)), rm); err != nil {
+				return rv, NewError(expr, err)
+			}
+			return reflect.ValueOf(rm), nil
+		default:
+			// в числа преобразуем стандартно
+			if rv.Type().ConvertibleTo(nt) {
+				return rv.Convert(nt), nil
+			}
+		}
+	case reflect.Bool:
+		switch nt.Kind() {
+		case reflect.String:
+			if toBool(rv) {
+				return reflect.ValueOf("Истина"), nil
+			} else {
+				return reflect.ValueOf("Ложь"), nil
+			}
+		case reflect.Int64:
+			if toBool(rv) {
+				return reflect.ValueOf(int64(1)), nil
+			} else {
+				return reflect.ValueOf(int64(0)), nil
+			}
+		case reflect.Float64:
+			if toBool(rv) {
+				return reflect.ValueOf(float64(1.0)), nil
+			} else {
+				return reflect.ValueOf(float64(0.0)), nil
+			}
+		}
+	case reflect.Float32, reflect.Float64,
+		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		// числа конвертируются стандартно
+		if rv.Type().ConvertibleTo(nt) {
+			return rv.Convert(nt), nil
+		}
+	}
+
+	return NilValue, NewStringError(expr, "Приведение типа недопустимо")
+
 }
 
 func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, error) {
@@ -1575,7 +1665,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		return rhsV, nil
 	case *ast.TypeCast:
-		// TODO: приведение типов, включая приведение типов в массиве как новый типизированный массив
+		// приведение типов, включая приведение типов в массиве как новый типизированный массив
 		// убрать из стандартной библиотеки функции преобразования
 		nt, err := env.Type(e.Type)
 		if err != nil {
@@ -1585,39 +1675,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		if err != nil {
 			return rv, NewError(expr, err)
 		}
-		if rv.Kind() == reflect.Interface {
-			rv = rv.Elem()
-		}
 
-		switch rv.Kind() {
-		case reflect.Array, reflect.Slice:
-
-		case reflect.Chan:
-
-		case reflect.Map:
-
-		case reflect.String:
-
-		case reflect.Bool:
-			switch nt.Kind(){
-				case reflect.String:
-					if toBool(rv){
-						return reflect.ValueOf("Истина"),nil
-					}else{
-						return reflect.ValueOf("Ложь"),nil
-					}
-					
-			}
-		case reflect.Float32, reflect.Float64,
-			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			// числа конвертируются стандартно
-			if rv.Type().ConvertibleTo(nt) {
-				return rv.Convert(nt), nil
-			}
-		}
-
-		return NilValue, NewStringError(expr, "Приведение типа недопустимо")
+		return typeCastConvert(rv, nt, e, false)
 
 	case *ast.MakeExpr:
 		rt, err := env.Type(e.Type)
