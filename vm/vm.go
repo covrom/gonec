@@ -776,7 +776,7 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 		default:
 			// преобразуем в такой же слайс, но с типизированными значениями, и копируем их с новым типом
 			
-			// TODO: проверить на indirect (см. вслайсбайт, например, там toSlice)
+			// TODO: проверить на indirect (см. вслайсчисел, например, там toSlice)
 			
 			rs := reflect.MakeSlice(reflect.SliceOf(nt), 0, rv.Cap())
 			for i := 0; i < rv.Len(); i++ {
