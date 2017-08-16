@@ -1573,6 +1573,11 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			return rhsV, NewError(expr, err)
 		}
 		return rhsV, nil
+	case *ast.TypeCast:
+		// TODO: приведение типов, включая приведение типов в массиве как новый типизированный массив
+		// убрать из стандартной библиотеки функции преобразования
+		
+
 	case *ast.MakeExpr:
 		rt, err := env.Type(e.Type)
 		if err != nil {

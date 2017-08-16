@@ -240,6 +240,12 @@ type Type struct {
 	Name int //string
 }
 
+type TypeCast struct {
+	ExprImpl
+	Type int
+	CastExpr Expr
+}
+
 type MakeExpr struct {
 	ExprImpl
 	Type int //string

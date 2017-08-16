@@ -672,6 +672,11 @@ expr :
 		$$ = &ast.MakeArrayExpr{LenExpr: $3, CapExpr: $5}
 		$$.SetPosition($1.Position())
 	}
+	| typ '(' expr ')'
+	{
+		$$ = &ast.TypeCast{Type: $1.Name, CastExpr: $3}
+		$$.SetPosition($3.Position())
+	}
 	| expr OPCHAN expr
 	{
 		$$ = &ast.ChanExpr{Lhs: $1, Rhs: $3}
