@@ -166,75 +166,6 @@ func Import(env *vm.Env) *vm.Env {
 
 	env.DefineS("формат", env.Sprintf)
 	
-
-	/////////////
-	env.DefineS("вцелоечисло", func(v interface{}) int64 {
-		nt := reflect.TypeOf(1)
-		rv := reflect.ValueOf(v)
-		if rv.Type().ConvertibleTo(nt) {
-			return rv.Convert(nt).Int()
-		}
-		if rv.Kind() == reflect.String {
-			i, err := strconv.ParseInt(v.(string), 10, 64)
-			if err == nil {
-				return i
-			}
-			f, err := strconv.ParseFloat(v.(string), 64)
-			if err == nil {
-				return int64(f)
-			}
-		}
-		if rv.Kind() == reflect.Bool {
-			if v.(bool) {
-				return 1
-			}
-		}
-		return 0
-	})
-
-	env.DefineS("вчисло", func(v interface{}) float64 {
-		nt := reflect.TypeOf(1.0)
-		rv := reflect.ValueOf(v)
-		if rv.Type().ConvertibleTo(nt) {
-			return rv.Convert(nt).Float()
-		}
-		if rv.Kind() == reflect.String {
-			f, err := strconv.ParseFloat(v.(string), 64)
-			if err == nil {
-				return f
-			}
-		}
-		if rv.Kind() == reflect.Bool {
-			if v.(bool) {
-				return 1.0
-			}
-		}
-		return 0.0
-	})
-
-
-	env.DefineS("вбулево", func(v interface{}) bool {
-		nt := reflect.TypeOf(true)
-		rv := reflect.ValueOf(v)
-		if rv.Type().ConvertibleTo(nt) {
-			return rv.Convert(nt).Bool()
-		}
-		if rv.Type().ConvertibleTo(reflect.TypeOf(1.0)) && rv.Convert(reflect.TypeOf(1.0)).Float() > 0.0 {
-			return true
-		}
-		if rv.Kind() == reflect.String {
-			s := strings.ToLower(v.(string))
-			if s == "y" || s == "yes" {
-				return true
-			}
-			b, err := strconv.ParseBool(s)
-			if err == nil {
-				return b
-			}
-		}
-		return false
-	})
-
 	env.DefineS("кодсимвола", func(s string) rune {
 		if len(s) == 0 {
 			return 0
@@ -242,6 +173,7 @@ func Import(env *vm.Env) *vm.Env {
 		return []rune(s)[0]
 	})
 
+	// TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	env.DefineS("вбайтслайс", func(s string) []byte {
 		return []byte(s)
 	})
@@ -278,12 +210,12 @@ func Import(env *vm.Env) *vm.Env {
 		return time.Duration(v)
 	})
 
+	//////////////////////////////////////////////////////////
+
+	
+
 	env.DefineS("типзнч", func(v interface{}) string {
 		return ast.UniqueNames.Get(env.TypeName(reflect.TypeOf(v)))
-	})
-
-	env.DefineS("каналтипа", func(t reflect.Type) reflect.Value {
-		return reflect.MakeChan(t, 1)
 	})
 
 	env.DefineS("присвоенозначение", func(s string) bool {

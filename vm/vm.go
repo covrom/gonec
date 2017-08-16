@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/parser"
@@ -750,47 +751,75 @@ func toInt64(v reflect.Value) int64 {
 }
 
 func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skipCollections bool) (reflect.Value, error) {
-	if skipCollections && (rv.Kind() == reflect.Array || rv.Kind() == reflect.Slice || rv.Kind() == reflect.Map || rv.Kind() == reflect.Struct) {
+	rvkind := rv.Kind()
+	if skipCollections && (rvkind == reflect.Array || rvkind == reflect.Slice ||
+		rvkind == reflect.Map || rvkind == reflect.Struct || rvkind == reflect.Chan) {
 		return rv, nil
 	}
-	if rv.Kind() == reflect.Interface {
+	if rvkind == reflect.Interface {
 		rv = rv.Elem()
 	}
-	if rv.Kind() == nt.Kind() {
+	if rvkind == nt.Kind() {
 		return rv, nil
 	}
 
-	switch rv.Kind() {
+	switch rvkind {
 	case reflect.Array, reflect.Slice:
-		// преобразуем в такой же слайс, но с типизированными значениями, и копируем их с новым типом
-		rs := reflect.MakeSlice(reflect.SliceOf(nt), 0, rv.Cap())
-		for i := 0; i < rv.Len(); i++ {
-			iv := rv.Index(i)
-			// конверсия вложенных массивов и структур не производится
-			rsi, err := typeCastConvert(iv, nt, expr, true)
+		switch nt.Kind() {
+		case reflect.String:
+			// сериализуем в json
+			b, err := json.Marshal(rv.Interface())
 			if err != nil {
 				return rv, NewError(expr, err)
 			}
-			rs = reflect.Append(rs, rsi)
+			return reflect.ValueOf(string(b)), nil
+		default:
+			// преобразуем в такой же слайс, но с типизированными значениями, и копируем их с новым типом
+			
+			// TODO: проверить на indirect (см. вслайсбайт, например, там toSlice)
+			
+			rs := reflect.MakeSlice(reflect.SliceOf(nt), 0, rv.Cap())
+			for i := 0; i < rv.Len(); i++ {
+				iv := rv.Index(i)
+				// конверсия вложенных массивов и структур не производится
+				rsi, err := typeCastConvert(iv, nt, expr, true)
+				if err != nil {
+					return rv, NewError(expr, err)
+				}
+				rs = reflect.Append(rs, rsi)
+			}
+			return rs, nil
 		}
-		return rs, nil
 	case reflect.Chan:
-		// преобразуем в канал с типизированными значениями, и копируем содержимое канала с новым типом, если там что-то было
-		rs := reflect.MakeChan(reflect.ChanOf(reflect.BothDir,nt), rv.Len())
-		for v:=range rv.Interface().(chan )
-		
+		// возвращаем новый канал с типизированными значениями и прежним размером буфера
+		return reflect.MakeChan(reflect.ChanOf(reflect.BothDir, nt), rv.Cap()), nil
 	case reflect.Map:
-
+		switch nt.Kind() {
+		case reflect.String:
+			// сериализуем в json
+			b, err := json.Marshal(rv.Interface())
+			if err != nil {
+				return rv, NewError(expr, err)
+			}
+			return reflect.ValueOf(string(b)), nil
+		}
 	case reflect.String:
 		switch nt.Kind() {
-		case reflect.Bool:
-			if strings.ToLower(toString(rv)) == "истина" {
-				return reflect.ValueOf(true), nil
-			} else {
-				return reflect.ValueOf(false), nil
+		case reflect.Float64:
+			if rv.Type().ConvertibleTo(nt) {
+				return rv.Convert(nt), nil
 			}
-		case reflect.Array:
-			return reflect.ValueOf([]rune(toString(rv))), nil
+			f, err := strconv.ParseFloat(toString(rv), 64)
+			if err == nil {
+				return reflect.ValueOf(f), nil
+			}
+		case reflect.Array, reflect.Slice:
+			//парсим json из строки и пытаемся получить массив
+			var rm []interface{}
+			if err := json.Unmarshal([]byte(toString(rv)), rm); err != nil {
+				return rv, NewError(expr, err)
+			}
+			return reflect.ValueOf(rm), nil
 		case reflect.Map:
 			//парсим json из строки и пытаемся получить мапу
 			var rm map[string]interface{}
@@ -798,8 +827,32 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 				return rv, NewError(expr, err)
 			}
 			return reflect.ValueOf(rm), nil
+		case reflect.Int64:
+			if rv.Type().ConvertibleTo(nt) {
+				return rv.Convert(nt), nil
+			}
+			i, err := strconv.ParseInt(toString(rv), 10, 64)
+			if err == nil {
+				return reflect.ValueOf(i), nil
+			}
+			f, err := strconv.ParseFloat(toString(rv), 64)
+			if err == nil {
+				return reflect.ValueOf(int64(f)), nil
+			}
+		case reflect.Bool:
+			s := strings.ToLower(toString(rv))
+			if s == "истина" {
+				return reflect.ValueOf(true), nil
+			}
+			if rv.Type().ConvertibleTo(reflect.TypeOf(1.0)) && rv.Convert(reflect.TypeOf(1.0)).Float() > 0.0 {
+				return reflect.ValueOf(true), nil
+			}
+			b, err := strconv.ParseBool(s)
+			if err == nil {
+				return reflect.ValueOf(b), nil
+			}
+			return reflect.ValueOf(false), nil
 		default:
-			// в числа преобразуем стандартно
 			if rv.Type().ConvertibleTo(nt) {
 				return rv.Convert(nt), nil
 			}
@@ -832,10 +885,20 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 		if rv.Type().ConvertibleTo(nt) {
 			return rv.Convert(nt), nil
 		}
+	case reflect.Struct:
+		if t, ok := rv.Interface().(time.Time); ok {
+			// это дата/время - конвертируем в секунды (целые или с плавающей запятой) или в формат RFC3339
+			switch nt.Kind() {
+			case reflect.String:
+				return reflect.ValueOf(t.Format(time.RFC3339)), nil
+			case reflect.Int64:
+				return reflect.ValueOf(t.Unix()), nil
+			case reflect.Float64:
+				return reflect.ValueOf(float64(t.UnixNano()) / 1e9), nil
+			}
+		}
 	}
-
 	return NilValue, NewStringError(expr, "Приведение типа недопустимо")
-
 }
 
 func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, error) {
