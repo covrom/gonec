@@ -775,10 +775,7 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 			return reflect.ValueOf(string(b)), nil
 		default:
 			// преобразуем в такой же слайс, но с типизированными значениями, и копируем их с новым типом
-			
-			// TODO: проверить на indirect (см. вслайсчисел, например, там toSlice)
-			
-			rs := reflect.MakeSlice(reflect.SliceOf(nt), 0, rv.Cap())
+			rs := reflect.MakeSlice(reflect.SliceOf(nt), rv.Len(), rv.Cap())
 			for i := 0; i < rv.Len(); i++ {
 				iv := rv.Index(i)
 				// конверсия вложенных массивов и структур не производится
@@ -786,7 +783,8 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 				if err != nil {
 					return rv, NewError(expr, err)
 				}
-				rs = reflect.Append(rs, rsi)
+				rs.Index(i).Set(rsi)
+				//rs = reflect.Append(rs, rsi)
 			}
 			return rs, nil
 		}
