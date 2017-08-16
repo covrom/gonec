@@ -7,7 +7,6 @@ import (
 	"os"
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -165,7 +164,7 @@ func Import(env *vm.Env) *vm.Env {
 	})
 
 	env.DefineS("формат", env.Sprintf)
-	
+
 	env.DefineS("кодсимвола", func(s string) rune {
 		if len(s) == 0 {
 			return 0
@@ -211,8 +210,6 @@ func Import(env *vm.Env) *vm.Env {
 	})
 
 	//////////////////////////////////////////////////////////
-
-	
 
 	env.DefineS("типзнч", func(v interface{}) string {
 		return ast.UniqueNames.Get(env.TypeName(reflect.TypeOf(v)))
