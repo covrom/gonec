@@ -631,7 +631,7 @@ func toString(v reflect.Value) string {
 		return v.String()
 	}
 	if !v.IsValid() {
-		return "nil"
+		return "Неопределено"
 	}
 	return fmt.Sprint(v.Interface())
 }
@@ -650,7 +650,8 @@ func toBool(v reflect.Value) bool {
 	case reflect.Bool:
 		return v.Bool()
 	case reflect.String:
-		if v.String() == "true" {
+		vlow:= strings.ToLower(v.String())
+		if vlow == "true" || vlow == "истина" {
 			return true
 		}
 		if toInt64(v) != 0 {
@@ -1576,8 +1577,47 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 	case *ast.TypeCast:
 		// TODO: приведение типов, включая приведение типов в массиве как новый типизированный массив
 		// убрать из стандартной библиотеки функции преобразования
-		
-		return NilValue, nil
+		nt, err := env.Type(e.Type)
+		if err != nil {
+			return NilValue, err
+		}
+		rv, err := invokeExpr(e.CastExpr, env)
+		if err != nil {
+			return rv, NewError(expr, err)
+		}
+		if rv.Kind() == reflect.Interface {
+			rv = rv.Elem()
+		}
+
+		switch rv.Kind() {
+		case reflect.Array, reflect.Slice:
+
+		case reflect.Chan:
+
+		case reflect.Map:
+
+		case reflect.String:
+
+		case reflect.Bool:
+			switch nt.Kind(){
+				case reflect.String:
+					if toBool(rv){
+						return reflect.ValueOf("Истина"),nil
+					}else{
+						return reflect.ValueOf("Ложь"),nil
+					}
+					
+			}
+		case reflect.Float32, reflect.Float64,
+			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			// числа конвертируются стандартно
+			if rv.Type().ConvertibleTo(nt) {
+				return rv.Convert(nt), nil
+			}
+		}
+
+		return NilValue, NewStringError(expr, "Приведение типа недопустимо")
 
 	case *ast.MakeExpr:
 		rt, err := env.Type(e.Type)

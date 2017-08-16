@@ -92,7 +92,7 @@ func Import(env *vm.Env) *vm.Env {
 			return int64(len([]byte(rv.String())))
 		}
 		if rv.Kind() != reflect.Array && rv.Kind() != reflect.Slice {
-			panic("Аргумент должен быть строкой или коллекцией")
+			panic("Аргумент должен быть строкой или массивом")
 		}
 		return int64(rv.Len())
 	})
@@ -137,12 +137,6 @@ func Import(env *vm.Env) *vm.Env {
 		return arr
 	})
 
-	env.DefineS("встроку", func(v interface{}) string {
-		if b, ok := v.([]byte); ok {
-			return string(b)
-		}
-		return fmt.Sprint(v)
-	})
 
 	env.DefineS("вцелоечисло", func(v interface{}) int64 {
 		nt := reflect.TypeOf(1)
@@ -239,11 +233,7 @@ func Import(env *vm.Env) *vm.Env {
 		return false
 	})
 
-	env.DefineS("всимвол", func(s rune) string {
-		return string(s)
-	})
-
-	env.DefineS("вруну", func(s string) rune {
+	env.DefineS("кодсимвола", func(s string) rune {
 		if len(s) == 0 {
 			return 0
 		}
