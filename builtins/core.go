@@ -181,30 +181,6 @@ func Import(env *vm.Env) *vm.Env {
 		return []rune(s)
 	})
 
-	env.DefineS("вбулевслайс", func(v []interface{}) []bool {
-		var result []bool
-		toSlice(v, &result)
-		return result
-	})
-
-	env.DefineS("вслайсчисел", func(v []interface{}) []float64 {
-		var result []float64
-		toSlice(v, &result)
-		return result
-	})
-
-	env.DefineS("вслайсцелыхчисел", func(v []interface{}) []int64 {
-		var result []int64
-		toSlice(v, &result)
-		return result
-	})
-
-	env.DefineS("вслайсстрок", func(v []interface{}) []string {
-		var result []string
-		toSlice(v, &result)
-		return result
-	})
-
 	env.DefineS("вдлительность", func(v int64) time.Duration {
 		return time.Duration(v)
 	})
@@ -267,23 +243,4 @@ func Import(env *vm.Env) *vm.Env {
 	return env
 }
 
-// toSlice takes in a "generic" slice and converts and copies
-// it's elements into the typed slice pointed at by ptr.
-// Note that this is a costly operation.
-func toSlice(from []interface{}, ptr interface{}) {
-	// Value of the pointer to the target
-	obj := reflect.Indirect(reflect.ValueOf(ptr))
-	// We can't just convert from interface{} to whatever the target is (diff memory layout),
-	// so we need to create a New slice of the proper type and copy the values individually
-	t := reflect.TypeOf(ptr).Elem()
-	slice := reflect.MakeSlice(t, len(from), len(from))
-	// Copying the data, val is an adressable Pointer of the actual target type
-	val := reflect.Indirect(reflect.New(t.Elem()))
-	for i := 0; i < len(from); i++ {
-		v := reflect.ValueOf(from[i])
-		val.Set(v)
-		slice.Index(i).Set(v)
-	}
-	// Ok now assign our slice to the target pointer
-	obj.Set(slice)
-}
+
