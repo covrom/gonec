@@ -814,7 +814,7 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 		case reflect.Array, reflect.Slice:
 			//парсим json из строки и пытаемся получить массив
 			var rm []interface{}
-			if err := json.Unmarshal([]byte(toString(rv)), rm); err != nil {
+			if err := json.Unmarshal([]byte(toString(rv)), &rm); err != nil {
 				return rv, NewError(expr, err)
 			}
 			return reflect.ValueOf(rm), nil
