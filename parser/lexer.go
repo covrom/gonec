@@ -37,6 +37,8 @@ type Scanner struct {
 	lineHead int
 	line     int
 	canequal bool
+	typecast bool
+	castType string
 }
 
 // opName is correction of operation names.
@@ -81,6 +83,13 @@ var opName = map[string]int{
 	"по":           TO,
 	"пока":         WHILE,
 	"иначеесли":    ELSIF,
+
+	"строка":     TYPECAST,
+	"число":      TYPECAST,
+	"булево":     TYPECAST,
+	"целоечисло": TYPECAST,
+	"массив":     TYPECAST,
+	"структура":  TYPECAST,
 }
 
 var opCanEqual = map[int]bool{
@@ -113,6 +122,15 @@ func (s *Scanner) Init(src string) {
 
 // Scan analyses token, and decide identify or literals.
 func (s *Scanner) Scan() (tok int, lit string, pos ast.Position, err error) {
+	if s.typecast {
+		//вставляем название типа
+		s.typecast = false
+		tok = IDENT
+		lit = s.castType
+		pos = s.pos()
+		err = nil
+		return
+	}
 retry:
 	s.skipBlank()
 	pos = s.pos()
@@ -122,9 +140,14 @@ retry:
 		if err != nil {
 			return
 		}
-		if name, ok := opName[strings.ToLower(lit)]; ok {
+		lowlit := strings.ToLower(lit)
+		if name, ok := opName[lowlit]; ok {
 			tok = name
 			_, s.canequal = opCanEqual[tok]
+			if tok == TYPECAST {
+				s.typecast = true
+				s.castType = lowlit
+			}
 		} else {
 			tok = IDENT
 		}
@@ -365,7 +388,7 @@ retry:
 			s.next()
 			if s.peek() == ']' {
 				s.next()
-				if s.peek()=='(' {
+				if s.peek() == '(' {
 					s.back()
 					tok = ARRAYLIT
 					lit = "[]"
