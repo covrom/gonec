@@ -9,7 +9,7 @@
 [![Docs](/button_doc.png)](https://github.com/covrom/gonec/wiki)
 [![Demo](/button_play.png)](https://gonec.herokuapp.com/)
 
-[Чат в гиттере](https://gitter.im/gonec)
+[Чат в гиттере](https://gitter.im/gonec/Lobby)
 
 ## Цели
 
