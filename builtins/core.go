@@ -138,13 +138,22 @@ func Import(env *vm.Env) *vm.Env {
 
 	env.DefineS("дата", func(v interface{}) time.Time {
 		rv := reflect.ValueOf(v)
-		if rv.Kind() == reflect.String {
+		switch rv.Kind() {
+		case reflect.String:
 			tt, err := time.Parse(time.RFC3339, v.(string))
 			if err == nil {
 				return tt
 			} else {
 				panic(err)
 			}
+		case reflect.Float32, reflect.Float64:
+			rti := int64(rv.Float())
+			rtins := int64((rv.Float() - float64(rti))*1e9)
+			return time.Unix(rti, rtins)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			rti := rv.Int()
+			return time.Unix(rti, 0)
 		}
 		panic("Дата может быть представлена только строкой в формате RFC3339")
 	})
@@ -242,5 +251,3 @@ func Import(env *vm.Env) *vm.Env {
 	env.DefineTypeS("структура", map[string]interface{}{})
 	return env
 }
-
-
