@@ -756,8 +756,14 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 		rvkind == reflect.Map || rvkind == reflect.Struct || rvkind == reflect.Chan) {
 		return rv, nil
 	}
-	if rvkind == reflect.Interface {
+	if rvkind == reflect.Interface || rvkind == reflect.Ptr {
 		rv = rv.Elem()
+		rvkind = rv.Kind()
+	}
+	// учитываем случай двойной вложенности указателя или интерфейса в указателе
+	if rvkind == reflect.Interface || rvkind == reflect.Ptr {
+		rv = rv.Elem()
+		rvkind = rv.Kind()
 	}
 	if rvkind == nt.Kind() {
 		return rv, nil
