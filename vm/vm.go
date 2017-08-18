@@ -30,10 +30,10 @@ type Error struct {
 }
 
 var (
-	BreakError     = errors.New("Unexpected break statement")
-	ContinueError  = errors.New("Unexpected continue statement")
-	ReturnError    = errors.New("Unexpected return statement")
-	InterruptError = errors.New("Execution interrupted")
+	BreakError     = errors.New("Неверное применение оператора Прервать")
+	ContinueError  = errors.New("Неверное применение оператора Продолжить")
+	ReturnError    = errors.New("Неверное применение оператора Возврат")
+	InterruptError = errors.New("Выполнение прервано")
 )
 
 // NewStringError makes error interface with message.
@@ -76,7 +76,7 @@ func (e *Error) Error() string {
 type Func func(args ...reflect.Value) (reflect.Value, error)
 
 func (f Func) String() string {
-	return fmt.Sprintf("[Func: %p]", f)
+	return fmt.Sprintf("[Функция: %p]", f)
 }
 
 func ToFunc(f Func) reflect.Value {
@@ -620,7 +620,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 		}
 		return rv, nil
 	default:
-		return NilValue, NewStringError(stmt, "unknown statement")
+		return NilValue, NewStringError(stmt, "неизвестная конструкция")
 	}
 }
 
@@ -929,7 +929,7 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		}
 
 		if !v.IsValid() {
-			return NilValue, NewStringError(expr, "Cannot assignable")
+			return NilValue, NewStringError(expr, "Поле недоступно")
 		}
 
 		if v.Kind() == reflect.Ptr {
@@ -938,14 +938,14 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		if v.Kind() == reflect.Struct {
 			v = v.FieldByName(ast.UniqueNames.Get(lhs.Name))
 			if !v.CanSet() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
 			v.Set(rv)
 		} else if v.Kind() == reflect.Map {
 			v.SetMapIndex(reflect.ValueOf(ast.UniqueNames.Get(lhs.Name)), rv)
 		} else {
 			if !v.CanSet() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
 			v.Set(rv)
 		}
@@ -968,11 +968,11 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			}
 			ii := int(i.Int())
 			if ii < 0 || ii >= v.Len() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Индекс за пределами допустимого диапазона")
 			}
 			vv := v.Index(ii)
 			if !vv.CanSet() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
 			vv.Set(rv)
 			return rv, nil
@@ -1010,15 +1010,15 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			}
 			ii := int(rb.Int())
 			if ii < 0 || ii >= v.Len() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Индекс за пределами допустимого диапазона")
 			}
 			ij := int(re.Int())
 			if ij < 0 || ij >= v.Len() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Индекс за пределами допустимого диапазона")
 			}
 			vv := v.Slice(ii, ij)
 			if !vv.CanSet() {
-				return NilValue, NewStringError(expr, "Cannot assignable")
+				return NilValue, NewStringError(expr, "Диапазон не может быть изменен")
 			}
 			vv.Set(rv)
 			return rv, nil
@@ -1130,7 +1130,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			return NilValue, NewStringError(expr, "Неверная операция for the value")
 		}
 		if v.Kind() != reflect.Ptr {
-			return NilValue, NewStringError(expr, "Cannot deference for the value")
+			return NilValue, NewStringError(expr, "Невозможно извлечь значение ссылки")
 		}
 		return v.Elem(), nil
 	case *ast.AddrExpr:
@@ -1222,7 +1222,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			return func(args ...reflect.Value) (reflect.Value, error) {
 				if !expr.VarArg {
 					if len(args) != len(expr.Args) {
-						return NilValue, NewStringError(expr, "Arguments Number of mismatch")
+						return NilValue, NewStringError(expr, "Неверное количество аргументов")
 					}
 				}
 				newenv := env.NewEnv()
@@ -1308,7 +1308,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if v.Kind() == reflect.Map {
 			if i.Kind() != reflect.String {
-				return NilValue, NewStringError(expr, "Map key should be string")
+				return NilValue, NewStringError(expr, "Ключ структуры должен быть строкой")
 			}
 			return v.MapIndex(i), nil
 		}
@@ -1557,7 +1557,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		case "<<":
 			return reflect.ValueOf(toInt64(lhsV) << uint64(toInt64(rhsV))), nil
 		default:
-			return NilValue, NewStringError(expr, "Unknown operator")
+			return NilValue, NewStringError(expr, "Неизвестный оператор")
 		}
 	case *ast.ConstExpr:
 		switch e.Value {
@@ -1578,7 +1578,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			f = f.Elem()
 		}
 		if f.Kind() != reflect.Func {
-			return f, NewStringError(expr, "Unknown function")
+			return f, NewStringError(expr, "Неизвестная функция")
 		}
 		return invokeExpr(&ast.CallExpr{Func: f, SubExprs: e.SubExprs, VarArg: e.VarArg, Go: e.Go}, env)
 	case *ast.CallExpr:
@@ -1834,13 +1834,13 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			} else if rhs.Kind() == reflect.Chan {
 				rv, ok := rhs.Recv()
 				if !ok {
-					return NilValue, NewErrorf(expr, "Failed to send to channel")
+					return NilValue, NewErrorf(expr, "Ошибка работы с каналом")
 				}
 				return invokeLetExpr(e.Lhs, rv, env)
 			}
 		}
-		return NilValue, NewStringError(expr, "Неверная операция for chan")
+		return NilValue, NewStringError(expr, "Неверная операция с каналом")
 	default:
-		return NilValue, NewStringError(expr, "Unknown expression")
+		return NilValue, NewStringError(expr, "Неизвестное выражение")
 	}
 }
