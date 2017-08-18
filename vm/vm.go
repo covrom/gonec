@@ -789,7 +789,10 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 				if err != nil {
 					return rv, NewError(expr, err)
 				}
-				rs.Index(i).Set(rsi)
+				sv := rs.Index(i)
+				if sv.CanSet() {
+					sv.Set(rsi)
+				}
 				//rs = reflect.Append(rs, rsi)
 			}
 			return rs, nil
@@ -806,6 +809,20 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 				return rv, NewError(expr, err)
 			}
 			return reflect.ValueOf(string(b)), nil
+		case reflect.Struct:
+			// для приведения в структурные типы - можно использовать мапу для заполнения полей
+			rs := reflect.New(nt) // указатель на новую структуру
+			//заполняем экспортируемые неанонимные поля, если их находим в мапе
+			for i := 0; i < nt.NumField(); i++ {
+				f := nt.Field(i)
+				if f.PkgPath == "" && !f.Anonymous {
+					fv := rs.FieldByName(f.Name)
+					if fv.IsValid() && fv.CanSet() {
+						fv.Set(rv.MapIndex(reflect.ValueOf(f.Name)))
+					}
+				}
+			}
+			return rs, nil
 		}
 	case reflect.String:
 		switch nt.Kind() {
@@ -831,6 +848,13 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 				return rv, NewError(expr, err)
 			}
 			return reflect.ValueOf(rm), nil
+		case reflect.Struct:
+			//парсим json из строки и пытаемся получить указатель на структуру
+			rm := reflect.New(nt)
+			if err := json.Unmarshal([]byte(toString(rv)), rm); err != nil {
+				return rv, NewError(expr, err)
+			}
+			return rm, nil
 		case reflect.Int64:
 			if rv.Type().ConvertibleTo(nt) {
 				return rv.Convert(nt), nil
@@ -899,6 +923,29 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 				return reflect.ValueOf(t.Unix()), nil
 			case reflect.Float64:
 				return reflect.ValueOf(float64(t.UnixNano()) / 1e9), nil
+			}
+		} else {
+			switch nt.Kind() {
+			case reflect.Map:
+				// структура может быть приведена в мапу
+				rs := make(map[string]interface{})
+				rtyp := rv.Type()
+				for i := 0; i < rtyp.NumField(); i++ {
+					f := rtyp.Field(i)
+					fv := rv.Field(i)
+					if f.PkgPath == "" && !f.Anonymous {
+						rs[f.Name] = fv.Interface()
+					}
+				}
+				return reflect.ValueOf(rs), nil
+			case reflect.String:
+				// сериализуем структуру в json
+				b, err := json.Marshal(rv.Interface())
+				if err != nil {
+					return rv, NewError(expr, err)
+				}
+				return reflect.ValueOf(string(b)), nil
+
 			}
 		}
 	}
