@@ -857,11 +857,11 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 			return reflect.ValueOf(rm), nil
 		case reflect.Struct:
 			//парсим json из строки и пытаемся получить указатель на структуру
-			rm := reflect.New(nt)
+			rm := reflect.New(nt).Interface()
 			if err := json.Unmarshal([]byte(toString(rv)), rm); err != nil {
 				return rv, NewError(expr, err)
 			}
-			return rm, nil
+			return reflect.ValueOf(rm), nil
 		case reflect.Int64:
 			if rv.Type().ConvertibleTo(nt) {
 				return rv.Convert(nt), nil
