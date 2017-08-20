@@ -80,11 +80,18 @@ func LoadAllBuiltins(env *vm.Env) {
 
 }
 
+/////////////////
 // TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
 type TttStructTest struct {
 	A int
 	B string
 }
+
+// обратите внимание - русскоязычное название метода для структуры
+func (tst TttStructTest) ВСтроку() string{
+	return fmt.Sprintf("A=%v, B=%v", tst.A, tst.B)
+}
+/////////////////
 
 // Import defineSs core language builtins - len, range, println, int64, etc.
 func Import(env *vm.Env) *vm.Env {
