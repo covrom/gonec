@@ -1781,7 +1781,19 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 	case *ast.TypeCast:
 		// приведение типов, включая приведение типов в массиве как новый типизированный массив
 		// убрать из стандартной библиотеки функции преобразования
-		nt, err := env.Type(e.Type)
+		eType := e.Type
+		if e.TypeExpr != nil {
+			// создаем по имени типа
+			ev, err := invokeExpr(e.TypeExpr, env)
+			if err != nil {
+				return NilValue, NewError(expr, err)
+			}
+			if ev.Kind() != reflect.String {
+				return NilValue, NewStringError(expr, "Имя типа должно быть строкой")
+			}
+			eType = ast.UniqueNames.Set(toString(ev))
+		}
+		nt, err := env.Type(eType)
 		if err != nil {
 			return NilValue, err
 		}
@@ -1793,7 +1805,19 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		return typeCastConvert(rv, nt, e, false)
 
 	case *ast.MakeExpr:
-		rt, err := env.Type(e.Type)
+		eType := e.Type
+		if e.TypeExpr != nil {
+			// создаем по имени типа
+			ev, err := invokeExpr(e.TypeExpr, env)
+			if err != nil {
+				return NilValue, NewError(expr, err)
+			}
+			if ev.Kind() != reflect.String {
+				return NilValue, NewStringError(expr, "Имя типа должно быть строкой")
+			}
+			eType = ast.UniqueNames.Set(toString(ev))
+		}
+		rt, err := env.Type(eType)
 		if err != nil {
 			return NilValue, NewError(expr, err)
 		}

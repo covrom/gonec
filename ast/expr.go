@@ -243,12 +243,14 @@ type Type struct {
 type TypeCast struct {
 	ExprImpl
 	Type int
+	TypeExpr Expr // должен быть строкой
 	CastExpr Expr
 }
 
 type MakeExpr struct {
 	ExprImpl
 	Type int //string
+	TypeExpr Expr // должен быть строкой
 }
 
 type MakeChanExpr struct {
