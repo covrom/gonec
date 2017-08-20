@@ -4,6 +4,7 @@ package parser
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"unicode"
 
 	"strings"
@@ -650,5 +651,76 @@ func ParseSrc(src string) ([]ast.Stmt, error) {
 	scanner := &Scanner{
 		src: []rune(src),
 	}
-	return Parse(scanner)
+	prs, err := Parse(scanner)
+	if err != nil {
+		return prs, err
+	}
+	// оптимизируем дерево AST
+	// 1. свертка констант
+	prs, err = constFolding(prs)
+	// if err != nil {
+	// 	return prs, err
+	// }
+
+	return prs, err
+}
+
+func constFolding(inast []ast.Stmt) ([]ast.Stmt, error) {
+	for i, st := range inast {
+		switch s := st.(type) {
+		case *ast.ExprStmt:
+			switch e := s.Expr.(type) {
+			case *ast.BinOpExpr:
+
+				var r1, r2 reflect.Value
+
+				switch v := e.Lhs.(type) {
+				case *ast.ConstExpr:
+					r1 = reflect.ValueOf(ast.InvokeConst(v.Value, reflect.Value{}))
+				}
+
+				switch v := e.Rhs.(type) {
+				case *ast.ConstExpr:
+					r2 = reflect.ValueOf(ast.InvokeConst(v.Value, reflect.Value{}))
+				}
+
+				if r1.IsValid() && r2.IsValid() {
+					rop, err := ast.EvalBinOp(e.Operator, r1, r2, reflect.Value{})
+					if err != nil {
+						return inast, err
+					}
+					inast[i].(*ast.ExprStmt).Expr = &ast.ConstExpr{Value: ast.ToString(rop)}
+				}
+
+				// TODO: остальные типы выражений
+
+			}
+		case *ast.VarStmt:
+
+		case *ast.LetsStmt:
+
+		case *ast.IfStmt:
+
+		case *ast.TryStmt:
+
+		case *ast.LoopStmt:
+
+		case *ast.ForStmt:
+
+		case *ast.NumForStmt:
+
+		case *ast.ReturnStmt:
+
+		case *ast.ThrowStmt:
+
+		case *ast.ModuleStmt:
+
+		case *ast.SwitchStmt:
+
+		case *ast.SelectStmt:
+
+		}
+
+	}
+	return inast, nil
 }

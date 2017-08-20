@@ -371,22 +371,22 @@ expr :
 	}
 	| TRUE
 	{
-		$$ = &ast.ConstExpr{Value: $1.Lit}
+		$$ = &ast.ConstExpr{Value: "истина"}
 		$$.SetPosition($1.Position())
 	}
 	| FALSE
 	{
-		$$ = &ast.ConstExpr{Value: $1.Lit}
+		$$ = &ast.ConstExpr{Value: "ложь"}
 		$$.SetPosition($1.Position())
 	}
 	| NIL
 	{
-		$$ = &ast.ConstExpr{Value: $1.Lit}
+		$$ = &ast.ConstExpr{Value: "неопределено"}
 		$$.SetPosition($1.Position())
 	}
 	| NULL
 	{
-		$$ = &ast.ConstExpr{Value: $1.Lit}
+		$$ = &ast.ConstExpr{Value: "null"}
 		$$.SetPosition($1.Position())
 	}
 	| TERNARY expr ',' expr ',' expr ')'

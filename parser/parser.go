@@ -1627,28 +1627,28 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line ./parser/parser.y:373
 		{
-			yyVAL.expr = &ast.ConstExpr{Value: yyDollar[1].tok.Lit}
+			yyVAL.expr = &ast.ConstExpr{Value: "истина"}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 62:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line ./parser/parser.y:378
 		{
-			yyVAL.expr = &ast.ConstExpr{Value: yyDollar[1].tok.Lit}
+			yyVAL.expr = &ast.ConstExpr{Value: "ложь"}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 63:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line ./parser/parser.y:383
 		{
-			yyVAL.expr = &ast.ConstExpr{Value: yyDollar[1].tok.Lit}
+			yyVAL.expr = &ast.ConstExpr{Value: "неопределено"}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 64:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line ./parser/parser.y:388
 		{
-			yyVAL.expr = &ast.ConstExpr{Value: yyDollar[1].tok.Lit}
+			yyVAL.expr = &ast.ConstExpr{Value: "null"}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 65:
