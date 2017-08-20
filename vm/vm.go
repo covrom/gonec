@@ -959,6 +959,28 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 	return NilValue, NewStringError(expr, "Приведение типа недопустимо")
 }
 
+func methodByNameCI(v reflect.Value, name int) reflect.Value {
+	tv := v.Type()
+	for i := 0; i < tv.NumMethod(); i++ {
+		meth := tv.Method(i)
+		if ast.UniqueNames.Set(meth.Name) == name {
+			return v.Method(i)
+		}
+	}
+	return reflect.Value{}
+}
+
+func fieldByNameCI(v reflect.Value, name int) reflect.Value {
+	tv := v.Type()
+	for i := 0; i < tv.NumField(); i++ {
+		f := tv.Field(i)
+		if f.PkgPath == "" && !f.Anonymous && ast.UniqueNames.Set(f.Name) == name {
+			return v.Field(i)
+		}
+	}
+	return reflect.Value{}
+}
+
 func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, error) {
 	switch lhs := expr.(type) {
 	case *ast.IdentExpr:
@@ -990,7 +1012,8 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Struct {
-			v = v.FieldByName(ast.UniqueNames.Get(lhs.Name))
+			// v = v.FieldByName(ast.UniqueNames.Get(lhs.Name))
+			v = fieldByNameCI(v, lhs.Name)
 			if !v.CanSet() {
 				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
@@ -1158,13 +1181,16 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				}
 			}
 
-			m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
+			//m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
+			m := methodByNameCI(v, ee.Name)
+
 			if !m.IsValid() {
 				if v.Kind() == reflect.Ptr {
 					v = v.Elem()
 				}
 				if v.Kind() == reflect.Struct {
-					m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
+					// m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
+					m = fieldByNameCI(v, ee.Name)
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
@@ -1217,13 +1243,16 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				}
 			}
 
-			m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
+			// m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
+			m := methodByNameCI(v, ee.Name)
+
 			if !m.IsValid() {
 				if v.Kind() == reflect.Ptr {
 					v = v.Elem()
 				}
 				if v.Kind() == reflect.Struct {
-					m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
+					// m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
+					m = fieldByNameCI(v, ee.Name)
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
@@ -1318,13 +1347,16 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 		}
 
-		m := v.MethodByName(ast.UniqueNames.Get(e.Name))
+		// m := v.MethodByName(ast.UniqueNames.Get(e.Name))
+		m := methodByNameCI(v, e.Name)
+
 		if !m.IsValid() {
 			if v.Kind() == reflect.Ptr {
 				v = v.Elem()
 			}
 			if v.Kind() == reflect.Struct {
-				m = v.FieldByName(ast.UniqueNames.Get(e.Name))
+				// m = v.FieldByName(ast.UniqueNames.Get(e.Name))
+				m = fieldByNameCI(v, e.Name)
 				if !m.IsValid() {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
