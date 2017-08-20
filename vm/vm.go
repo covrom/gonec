@@ -816,9 +816,16 @@ func typeCastConvert(rv reflect.Value, nt reflect.Type, expr *ast.TypeCast, skip
 			for i := 0; i < nt.NumField(); i++ {
 				f := nt.Field(i)
 				if f.PkgPath == "" && !f.Anonymous {
-					fv := rs.FieldByName(f.Name)
-					if fv.IsValid() && fv.CanSet() {
-						fv.Set(rv.MapIndex(reflect.ValueOf(f.Name)))
+					setv := reflect.Indirect(rv.MapIndex(reflect.ValueOf(f.Name)))
+					if setv.Kind() == reflect.Interface {
+						setv = setv.Elem()
+					}
+					fv := rs.Elem().FieldByName(f.Name)
+					if setv.IsValid() && fv.IsValid() && fv.CanSet() {
+						if fv.Kind() != setv.Kind() && setv.Type().ConvertibleTo(fv.Type()) {
+							setv = setv.Convert(fv.Type())
+						}
+						fv.Set(setv)
 					}
 				}
 			}

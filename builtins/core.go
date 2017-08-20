@@ -80,6 +80,12 @@ func LoadAllBuiltins(env *vm.Env) {
 
 }
 
+// TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
+type TttStructTest struct {
+	A int
+	B string
+}
+
 // Import defineSs core language builtins - len, range, println, int64, etc.
 func Import(env *vm.Env) *vm.Env {
 	env.DefineS("длина", func(v interface{}) int64 {
@@ -148,7 +154,7 @@ func Import(env *vm.Env) *vm.Env {
 			}
 		case reflect.Float32, reflect.Float64:
 			rti := int64(rv.Float())
-			rtins := int64((rv.Float() - float64(rti))*1e9)
+			rtins := int64((rv.Float() - float64(rti)) * 1e9)
 			return time.Unix(rti, rtins)
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -249,5 +255,10 @@ func Import(env *vm.Env) *vm.Env {
 	env.DefineTypeS("строка", "")
 	env.DefineTypeS("массив", []interface{}{})
 	env.DefineTypeS("структура", map[string]interface{}{})
+
+	//////////////////
+	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})
+	/////////////////////
+
 	return env
 }
