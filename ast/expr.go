@@ -58,6 +58,20 @@ func (en *EnvNames) Get(i int) string {
 // все переменные
 var UniqueNames = NewEnvNames()
 
+type Nullable interface {
+	null()
+	String()
+}
+
+type NullType struct {
+	Nullable
+}
+
+func (x *NullType) null()          {}
+func (x *NullType) String() string { return "NULL" }
+
+var NullVar = NullType{}
+
 // Expr provides all of interfaces for expression.
 type Expr interface {
 	Pos
@@ -271,6 +285,12 @@ type MakeArrayExpr struct {
 	CapExpr Expr
 }
 
+// хранит реальное значение, рассчитанное на этапе оптимизации AST
+type NativeExpr struct {
+	ExprImpl
+	Value reflect.Value
+}
+
 // Функции для работы с литералами
 func InvokeConst(v string, defval reflect.Value) reflect.Value {
 	switch strings.ToLower(v) {
@@ -279,9 +299,30 @@ func InvokeConst(v string, defval reflect.Value) reflect.Value {
 	case "ложь":
 		return reflect.ValueOf(false)
 	case "null":
-		return reflect.ValueOf("NULL")
+		return reflect.ValueOf(NullVar)
 	}
 	return defval
+}
+
+func InvokeNumber(lit string, defval reflect.Value) (reflect.Value, error) {
+	if strings.Contains(lit, ".") || strings.Contains(lit, "e") {
+		v, err := strconv.ParseFloat(lit, 64)
+		if err != nil {
+			return defval, err
+		}
+		return reflect.ValueOf(float64(v)), nil
+	}
+	var i int64
+	var err error
+	if strings.HasPrefix(lit, "0x") {
+		i, err = strconv.ParseInt(lit[2:], 16, 64)
+	} else {
+		i, err = strconv.ParseInt(lit, 10, 64)
+	}
+	if err != nil {
+		return defval, err
+	}
+	return reflect.ValueOf(i), nil
 }
 
 func EvalBinOp(op string, lhsV, rhsV, defval reflect.Value) (reflect.Value, error) {
@@ -371,10 +412,10 @@ func ToString(v reflect.Value) string {
 	if !v.IsValid() {
 		return "Неопределено"
 	}
-	if v.Kind()==reflect.Bool{
-		if v.Bool(){
+	if v.Kind() == reflect.Bool {
+		if v.Bool() {
 			return "Истина"
-		}else{
+		} else {
 			return "Ложь"
 		}
 	}

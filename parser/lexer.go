@@ -669,32 +669,13 @@ func constFolding(inast []ast.Stmt) ([]ast.Stmt, error) {
 	for i, st := range inast {
 		switch s := st.(type) {
 		case *ast.ExprStmt:
-			switch e := s.Expr.(type) {
-			case *ast.BinOpExpr:
-
-				var r1, r2 reflect.Value
-
-				switch v := e.Lhs.(type) {
-				case *ast.ConstExpr:
-					r1 = reflect.ValueOf(ast.InvokeConst(v.Value, reflect.Value{}))
-				}
-
-				switch v := e.Rhs.(type) {
-				case *ast.ConstExpr:
-					r2 = reflect.ValueOf(ast.InvokeConst(v.Value, reflect.Value{}))
-				}
-
-				if r1.IsValid() && r2.IsValid() {
-					rop, err := ast.EvalBinOp(e.Operator, r1, r2, reflect.Value{})
-					if err != nil {
-						return inast, err
-					}
-					inast[i].(*ast.ExprStmt).Expr = &ast.ConstExpr{Value: ast.ToString(rop)}
-				}
-
-				// TODO: остальные типы выражений
-
+			rop, err := invokeExprFolding(s.Expr)
+			if err == nil {
+				// TODO: это присвоение надо делать в вызываемой функции, а не тут
+				inast[i].(*ast.ExprStmt).Expr = &ast.NativeExpr{Value: rop}
 			}
+
+			// TODO: остальные типы и проход в глубину
 		case *ast.VarStmt:
 
 		case *ast.LetsStmt:
@@ -723,4 +704,64 @@ func constFolding(inast []ast.Stmt) ([]ast.Stmt, error) {
 
 	}
 	return inast, nil
+}
+
+func invokeExprFolding(expr ast.Expr) (reflect.Value, error) {
+	var err error
+	switch e := expr.(type) {
+	case *ast.BinOpExpr:
+
+		var r1, r2 reflect.Value
+
+		switch v := e.Lhs.(type) {
+		case *ast.NativeExpr:
+			r1 = v.Value
+		case *ast.ConstExpr:
+			r1 = ast.InvokeConst(v.Value, reflect.Value{})
+		case *ast.NumberExpr:
+			r1, err = ast.InvokeNumber(v.Lit, reflect.Value{})
+			if err != nil {
+				return r1, err
+			}
+		case *ast.StringExpr:
+			r1 = reflect.ValueOf(v.Lit)
+		case *ast.BinOpExpr, *ast.UnaryExpr, *ast.ParenExpr, *ast.TernaryOpExpr:
+			r1, err = invokeExprFolding(v)
+			if err != nil {
+				return r1, err
+			}
+		}
+
+		switch v := e.Rhs.(type) {
+		case *ast.NativeExpr:
+			r2 = v.Value
+		case *ast.ConstExpr:
+			r2 = ast.InvokeConst(v.Value, reflect.Value{})
+		case *ast.NumberExpr:
+			r2, err = ast.InvokeNumber(v.Lit, reflect.Value{})
+			if err != nil {
+				return r2, err
+			}
+		case *ast.StringExpr:
+			r2 = reflect.ValueOf(v.Lit)
+		case *ast.BinOpExpr, *ast.UnaryExpr, *ast.ParenExpr, *ast.TernaryOpExpr:
+			r2, err = invokeExprFolding(v)
+			if err != nil {
+				return r2, err
+			}
+		}
+
+		if r1.IsValid() && r2.IsValid() {
+			return ast.EvalBinOp(e.Operator, r1, r2, reflect.Value{})
+		}
+
+	// TODO: остальные типы выражений и проход в глубину прежде, чем вычислять текущее выражение
+	case *ast.UnaryExpr:
+
+	case *ast.ParenExpr:
+
+	case *ast.TernaryOpExpr:
+
+	}
+	return reflect.Value{}, fmt.Errorf("Невозможно сократить выражение")
 }

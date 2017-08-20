@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/covrom/gonec/ast"
@@ -748,25 +747,14 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 // invokeExpr evaluates one expression.
 func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 	switch e := expr.(type) {
+	case *ast.NativeExpr:
+		return e.Value, nil
 	case *ast.NumberExpr:
-		if strings.Contains(e.Lit, ".") || strings.Contains(e.Lit, "e") {
-			v, err := strconv.ParseFloat(e.Lit, 64)
-			if err != nil {
-				return NilValue, NewError(expr, err)
-			}
-			return reflect.ValueOf(float64(v)), nil
-		}
-		var i int64
-		var err error
-		if strings.HasPrefix(e.Lit, "0x") {
-			i, err = strconv.ParseInt(e.Lit[2:], 16, 64)
-		} else {
-			i, err = strconv.ParseInt(e.Lit, 10, 64)
-		}
+		i, err := ast.InvokeNumber(e.Lit, NilValue)
 		if err != nil {
 			return NilValue, NewError(expr, err)
 		}
-		return reflect.ValueOf(i), nil
+		return i, nil
 	case *ast.IdentExpr:
 		return env.Get(e.Id)
 	case *ast.StringExpr:
