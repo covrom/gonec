@@ -781,7 +781,13 @@ func FieldByNameCI(v reflect.Value, name int) reflect.Value {
 	return reflect.Value{}
 }
 
-func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int) {
+func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
+	if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
+		return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
+	}
+	if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
+		return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
+	}
 	// границы как в python:
 	// положительный - имеет максимум до длины (len)
 	// отрицательный - считается с конца с минимумом -длина
@@ -791,7 +797,7 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int) {
 	// правая граница как в python - исключается
 
 	// левая граница включая
-	if rb.IsNil() {
+	if rb.Interface() == nil {
 		ii = 0
 	} else {
 		ii = int(rb.Int())
@@ -809,7 +815,7 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int) {
 		}
 	}
 	// правая граница не включая
-	if re.IsNil() {
+	if re.Interface() == nil {
 		ij = vlen
 	} else {
 		ij = int(re.Int())
@@ -830,16 +836,13 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int) {
 }
 
 func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
-	if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-		return defval, fmt.Errorf("Индекс должен быть целым числом")
-	}
-	if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-		return defval, fmt.Errorf("Индекс должен быть целым числом")
-	}
 
 	vlen := v.Len()
 
-	ii, ij := LeftRightBounds(rb, re, vlen)
+	ii, ij, err := LeftRightBounds(rb, re, vlen)
+	if err != nil {
+		return defval, err
+	}
 
 	if ij < ii {
 		return defval, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
@@ -850,20 +853,17 @@ func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
 
 func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, err error) {
 
-	if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-		return nil, 0, 0, fmt.Errorf("Индекс должен быть целым числом")
-	}
-	if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-		return nil, 0, 0, fmt.Errorf("Индекс должен быть целым числом")
-	}
-
 	r := []rune(v.String())
 	vlen := len(r)
 
-	ii, ij = LeftRightBounds(rb, re, vlen)
+	ii, ij, err = LeftRightBounds(rb, re, vlen)
+	if err != nil {
+		return 
+	}
 
 	if ij < ii {
-		return nil, 0, 0, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
+		err = fmt.Errorf("Окончание диапазона не может быть раньше его начала")
+		return
 	}
 
 	return r, ii, ij, nil

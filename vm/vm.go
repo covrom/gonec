@@ -690,6 +690,7 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 				return NilValue, NewStringError(expr, "Индекс за пределами границ")
 			}
 
+			// для элементов массивов и слайсов это работает, а для строк - нет
 			vv := v.Index(ii)
 			if !vv.CanSet() {
 				return NilValue, NewStringError(expr, "Значение не может быть изменено")
@@ -716,7 +717,10 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			}
 			// заменяем руну
 			r[ii] = rvs[0]
-			return reflect.ValueOf(string(r)), nil
+
+			// для строк здесь неадресуемое значение, поэтому, переприсваиваем
+			vv := reflect.ValueOf(string(r))
+			return invokeLetExpr(lhs.Value, vv, env)
 		}
 		if v.Kind() == reflect.Map {
 			if i.Kind() != reflect.String {
@@ -743,15 +747,21 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
-			vv, err := ast.SliceAt(v, rb, re, NilValue)
+
+			vlen := v.Len()
+			ii, ij, err := ast.LeftRightBounds(rb, re, vlen)
 			if err != nil {
 				return NilValue, NewError(expr, err)
 			}
-			if !vv.CanSet() {
-				return NilValue, NewStringError(expr, "Диапазон не может быть изменен")
+			if ij < ii {
+				return NilValue, NewStringError(expr, "Окончание диапазона не может быть раньше его начала")
 			}
-			vv.Set(rv)
-			return rv, nil
+			vv:=v.Slice(ii, ij)
+			if vv.Len()!=rv.Len(){
+				return NilValue, NewStringError(expr, "Размер массива должен быть равен ширине диапазона")
+			}
+			reflect.Copy(vv, rv)
+			return v, nil
 		}
 		if v.Kind() == reflect.String {
 
@@ -761,14 +771,15 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			}
 
 			rvs := []rune(rv.String())
-			if len(rvs) != len(r) {
+			if len(rvs) != len(r[ii:ij]) {
 				return NilValue, NewStringError(expr, "Длина строки должна быть равна длине диапазона")
 			}
 
 			// заменяем руны
 			copy(r[ii:ij], rvs)
 
-			return reflect.ValueOf(string(r)), nil
+			vv := reflect.ValueOf(string(r))
+			return invokeLetExpr(lhs.Value, vv, env)
 		}
 
 		return v, NewStringError(expr, "Неверная операция")

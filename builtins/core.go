@@ -83,13 +83,13 @@ func LoadAllBuiltins(env *vm.Env) {
 /////////////////
 // TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
 type TttStructTest struct {
-	A int
-	B string
+	ПолеЦелоеЧисло int
+	ПолеСтрока string
 }
 
 // обратите внимание - русскоязычное название метода для структуры
 func (tst TttStructTest) ВСтроку() string{
-	return fmt.Sprintf("A=%v, B=%v", tst.A, tst.B)
+	return fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)
 }
 /////////////////
 
