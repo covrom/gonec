@@ -909,19 +909,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		if err != nil {
 			return v, NewError(expr, err)
 		}
-		switch e.Operator {
-		case "-":
-			if v.Kind() == reflect.Float64 {
-				return reflect.ValueOf(-v.Float()), nil
-			}
-			return reflect.ValueOf(-v.Int()), nil
-		case "^":
-			return reflect.ValueOf(^ast.ToInt64(v)), nil
-		case "!":
-			return reflect.ValueOf(!ast.ToBool(v)), nil
-		default:
-			return NilValue, NewStringError(e, "Неизвестный оператор ''")
-		}
+		r, err := ast.EvalUnOp(e.Operator, v, NilValue)
+		return r, NewError(expr, err)
 	case *ast.ParenExpr:
 		v, err := invokeExpr(e.SubExpr, env)
 		if err != nil {
@@ -1200,8 +1189,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				rhsV = rhsV.Elem()
 			}
 		}
-		retval, err := ast.EvalBinOp(e.Operator, lhsV, rhsV, NilValue)
-		return retval, NewError(expr, err)
+		r, err := ast.EvalBinOp(e.Operator, lhsV, rhsV, NilValue)
+		return r, NewError(expr, err)
 	case *ast.ConstExpr:
 		return ast.InvokeConst(e.Value, NilValue), nil
 	case *ast.AnonCallExpr:

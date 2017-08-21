@@ -325,6 +325,22 @@ func InvokeNumber(lit string, defval reflect.Value) (reflect.Value, error) {
 	return reflect.ValueOf(i), nil
 }
 
+func EvalUnOp(op string, v, defval reflect.Value) (reflect.Value, error) {
+	switch op {
+	case "-":
+		if v.Kind() == reflect.Float64 {
+			return reflect.ValueOf(-v.Float()), nil
+		}
+		return reflect.ValueOf(-v.Int()), nil
+	case "^":
+		return reflect.ValueOf(^ToInt64(v)), nil
+	case "!":
+		return reflect.ValueOf(!ToBool(v)), nil
+	default:
+		return defval, fmt.Errorf("Неизвестный оператор")
+	}
+}
+
 func EvalBinOp(op string, lhsV, rhsV, defval reflect.Value) (reflect.Value, error) {
 	switch op {
 
