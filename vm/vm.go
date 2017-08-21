@@ -739,14 +739,22 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		if err != nil {
 			return v, NewError(expr, err)
 		}
-		rb, err := invokeExpr(lhs.Begin, env)
-		if err != nil {
-			return rb, NewError(expr, err)
+		var rb, re reflect.Value
+
+		if lhs.Begin != nil {
+			rb, err = invokeExpr(lhs.Begin, env)
+			if err != nil {
+				return rb, NewError(expr, err)
+			}
 		}
-		re, err := invokeExpr(lhs.End, env)
-		if err != nil {
-			return re, NewError(expr, err)
+
+		if lhs.End != nil {
+			re, err = invokeExpr(lhs.End, env)
+			if err != nil {
+				return re, NewError(expr, err)
+			}
 		}
+
 		if v.Kind() == reflect.Interface {
 			v = v.Elem()
 		}
@@ -1095,14 +1103,23 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		if err != nil {
 			return v, NewError(expr, err)
 		}
-		rb, err := invokeExpr(e.Begin, env)
-		if err != nil {
-			return rb, NewError(expr, err)
+
+		var rb, re reflect.Value
+
+		if e.Begin != nil {
+			rb, err = invokeExpr(e.Begin, env)
+			if err != nil {
+				return rb, NewError(expr, err)
+			}
 		}
-		re, err := invokeExpr(e.End, env)
-		if err != nil {
-			return re, NewError(expr, err)
+
+		if e.End != nil {
+			re, err = invokeExpr(e.End, env)
+			if err != nil {
+				return re, NewError(expr, err)
+			}
 		}
+
 		if v.Kind() == reflect.Interface {
 			v = v.Elem()
 		}
@@ -1446,7 +1463,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		if rt.Kind() == reflect.Map {
 			return reflect.MakeMap(reflect.MapOf(rt.Key(), rt.Elem())).Convert(rt), nil
 		}
-		if rt.Kind() == reflect.Struct{
+		if rt.Kind() == reflect.Struct {
 			// структуру создаем всегда ссылочной
 			// иначе не работает присвоение полей через рефлексию
 			return reflect.New(rt), nil

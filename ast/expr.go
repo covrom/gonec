@@ -762,7 +762,7 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	// TODO: оптимизировать, сохраняя кэш в env
 	tv := v.Type()
-	nm:=tv.NumMethod()
+	nm := tv.NumMethod()
 	for i := 0; i < nm; i++ {
 		meth := tv.Method(i)
 		if UniqueNames.Set(meth.Name) == name {
@@ -775,7 +775,7 @@ func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	// TODO: оптимизировать, сохраняя кэш в env
 	tv := v.Type()
-	nf:=tv.NumField()
+	nf := tv.NumField()
 	for i := 0; i < nf; i++ {
 		f := tv.Field(i)
 		if f.PkgPath == "" && !f.Anonymous && UniqueNames.Set(f.Name) == name {
@@ -786,12 +786,6 @@ func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 }
 
 func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
-	if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-		return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
-	}
-	if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-		return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
-	}
 	// границы как в python:
 	// положительный - имеет максимум до длины (len)
 	// отрицательный - считается с конца с минимумом -длина
@@ -801,9 +795,12 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
 	// правая граница как в python - исключается
 
 	// левая граница включая
-	if rb.Interface() == nil {
+	if !rb.IsValid() {
 		ii = 0
 	} else {
+		if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
+			return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
+		}
 		ii = int(rb.Int())
 	}
 
@@ -819,9 +816,12 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
 		}
 	}
 	// правая граница не включая
-	if re.Interface() == nil {
+	if !re.IsValid() {
 		ij = vlen
 	} else {
+		if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
+			return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
+		}
 		ij = int(re.Int())
 	}
 

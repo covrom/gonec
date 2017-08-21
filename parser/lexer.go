@@ -658,7 +658,7 @@ func ParseSrc(src string) ([]ast.Stmt, error) {
 	// оптимизируем дерево AST
 	// свертка констант и нативные значения
 	prs = constFolding(prs)
-	// log.Printf("%#v\n", prs)
+	// fmt.Printf("%#v\n", prs[0].(*ast.LetsStmt).Rhss[0].(*ast.SliceExpr))
 
 	return prs, err
 }

@@ -17,8 +17,7 @@ func TestParseSrc(t *testing.T) {
 			name: "Свертка констант",
 			args: args{
 				src: `
-					а=(4+1)-6/3
-					сообщить([1,2,3,[4]])
+					а="узцкещпоцз"[1:]
 					`,
 			},
 			wantErr: false,
