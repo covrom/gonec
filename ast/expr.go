@@ -760,6 +760,7 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 }
 
 func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
+	// TODO: оптимизировать, сохраняя кэш в env
 	tv := v.Type()
 	nm:=tv.NumMethod()
 	for i := 0; i < nm; i++ {
@@ -772,6 +773,7 @@ func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 }
 
 func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
+	// TODO: оптимизировать, сохраняя кэш в env
 	tv := v.Type()
 	nf:=tv.NumField()
 	for i := 0; i < nf; i++ {
