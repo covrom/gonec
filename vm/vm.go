@@ -652,7 +652,11 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		}
 		switch v.Kind() {
 		case reflect.Struct:
-			v = ast.FieldByNameCI(v, lhs.Name)
+			// fmt.Println(ast.UniqueNames.Get(lhs.Name))
+			v, err := ast.FieldByNameCI(v, lhs.Name)
+			if err != nil {
+				return NilValue, NewError(expr, err)
+			}
 			if !v.CanSet() {
 				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
@@ -756,8 +760,8 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			if ij < ii {
 				return NilValue, NewStringError(expr, "Окончание диапазона не может быть раньше его начала")
 			}
-			vv:=v.Slice(ii, ij)
-			if vv.Len()!=rv.Len(){
+			vv := v.Slice(ii, ij)
+			if vv.Len() != rv.Len() {
 				return NilValue, NewStringError(expr, "Размер массива должен быть равен ширине диапазона")
 			}
 			reflect.Copy(vv, rv)
@@ -853,7 +857,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 
 			//m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
-			m := ast.MethodByNameCI(v, ee.Name)
+			m, _ := ast.MethodByNameCI(v, ee.Name)
+			// ошибку не обрабатываем, т.к. ищем дальше
 
 			if !m.IsValid() {
 				if v.Kind() == reflect.Ptr {
@@ -861,7 +866,10 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				}
 				if v.Kind() == reflect.Struct {
 					// m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
-					m = ast.FieldByNameCI(v, ee.Name)
+					m, err = ast.FieldByNameCI(v, ee.Name)
+					if err != nil {
+						return NilValue, NewStringError(expr, "Метод или поле не найдено")
+					}
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
@@ -915,7 +923,8 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 
 			// m := v.MethodByName(ast.UniqueNames.Get(ee.Name))
-			m := ast.MethodByNameCI(v, ee.Name)
+			m, _ := ast.MethodByNameCI(v, ee.Name)
+			// ошибку не обрабатываем, т.к. ищем поле
 
 			if !m.IsValid() {
 				if v.Kind() == reflect.Ptr {
@@ -923,7 +932,10 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				}
 				if v.Kind() == reflect.Struct {
 					// m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
-					m = ast.FieldByNameCI(v, ee.Name)
+					m, err = ast.FieldByNameCI(v, ee.Name)
+					if err != nil {
+						return NilValue, NewStringError(expr, "Метод или поле не найдено")
+					}
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
 					}
@@ -1007,14 +1019,18 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 		}
 
-		m := ast.MethodByNameCI(v, e.Name)
+		m, _ := ast.MethodByNameCI(v, e.Name)
+		// ошибку не обрабатываем, ищем потом поле
 
 		if !m.IsValid() {
 			if v.Kind() == reflect.Ptr {
 				v = v.Elem()
 			}
 			if v.Kind() == reflect.Struct {
-				m = ast.FieldByNameCI(v, e.Name)
+				m, err = ast.FieldByNameCI(v, e.Name)
+				if err != nil {
+					return NilValue, NewStringError(expr, "Метод или поле не найдено")
+				}
 				if !m.IsValid() {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
 				}
@@ -1429,6 +1445,11 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		if rt.Kind() == reflect.Map {
 			return reflect.MakeMap(reflect.MapOf(rt.Key(), rt.Elem())).Convert(rt), nil
+		}
+		if rt.Kind() == reflect.Struct{
+			// структуру создаем всегда ссылочной
+			// иначе не работает присвоение полей через рефлексию
+			return reflect.New(rt), nil
 		}
 		return reflect.Zero(rt), nil
 	case *ast.MakeChanExpr:

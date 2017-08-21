@@ -759,26 +759,28 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 	return defval, fmt.Errorf("Приведение типа недопустимо")
 }
 
-func MethodByNameCI(v reflect.Value, name int) reflect.Value {
+func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	tv := v.Type()
-	for i := 0; i < tv.NumMethod(); i++ {
+	nm:=tv.NumMethod()
+	for i := 0; i < nm; i++ {
 		meth := tv.Method(i)
 		if UniqueNames.Set(meth.Name) == name {
-			return v.Method(i)
+			return v.MethodByName(meth.Name), nil
 		}
 	}
-	return reflect.Value{}
+	return reflect.Value{}, fmt.Errorf("Метод не найден")
 }
 
-func FieldByNameCI(v reflect.Value, name int) reflect.Value {
+func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	tv := v.Type()
-	for i := 0; i < tv.NumField(); i++ {
+	nf:=tv.NumField()
+	for i := 0; i < nf; i++ {
 		f := tv.Field(i)
 		if f.PkgPath == "" && !f.Anonymous && UniqueNames.Set(f.Name) == name {
-			return v.Field(i)
+			return v.FieldByName(f.Name), nil
 		}
 	}
-	return reflect.Value{}
+	return reflect.Value{}, fmt.Errorf("Поле не найдено")
 }
 
 func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
@@ -858,7 +860,7 @@ func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, 
 
 	ii, ij, err = LeftRightBounds(rb, re, vlen)
 	if err != nil {
-		return 
+		return
 	}
 
 	if ij < ii {

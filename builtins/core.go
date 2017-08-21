@@ -84,13 +84,14 @@ func LoadAllBuiltins(env *vm.Env) {
 // TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
 type TttStructTest struct {
 	ПолеЦелоеЧисло int
-	ПолеСтрока string
+	ПолеСтрока     string
 }
 
 // обратите внимание - русскоязычное название метода для структуры
-func (tst TttStructTest) ВСтроку() string{
+func (tst TttStructTest) ВСтроку() string {
 	return fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)
 }
+
 /////////////////
 
 // Import defineSs core language builtins - len, range, println, int64, etc.
