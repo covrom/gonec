@@ -748,7 +748,9 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 	switch e := expr.(type) {
 	case *ast.NativeExpr:
-		// log.Println("Use native value!")
+
+		// log.Printf("Use native value %#v\n", e.Value)
+
 		return e.Value, nil
 	case *ast.NumberExpr:
 		i, err := ast.InvokeNumber(e.Lit, NilValue)

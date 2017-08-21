@@ -4,7 +4,6 @@ package parser
 import (
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"unicode"
 
@@ -659,7 +658,7 @@ func ParseSrc(src string) ([]ast.Stmt, error) {
 	// оптимизируем дерево AST
 	// свертка констант и нативные значения
 	prs = constFolding(prs)
-	log.Printf("%#v\n", prs)
+	// log.Printf("%#v\n", prs)
 
 	return prs, err
 }
@@ -739,6 +738,10 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 			}
 		}
 		return e
+	case *ast.LetExpr:
+		e.Lhs = simplifyExprFolding(e.Lhs)
+		e.Rhs = simplifyExprFolding(e.Rhs)
+		return e
 	case *ast.UnaryExpr:
 		e.Expr = simplifyExprFolding(e.Expr)
 		v := exprAsValue(e.Expr)
@@ -790,14 +793,24 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		} else {
 			return &ast.NativeExpr{Value: reflect.ValueOf(a)}
 		}
-	case *ast.PairExpr:
-		e.Value = simplifyExprFolding(e.Value)
-		return e
 	case *ast.MapExpr:
+		waserrors := false
+		m := make(map[string]interface{})
 		for k, v := range e.MapExpr {
-			e.MapExpr[k] = simplifyExprFolding(v)
+			vv := simplifyExprFolding(v)
+			e.MapExpr[k] = vv
+			arg := exprAsValue(vv)
+			if arg.IsValid() {
+				m[k] = arg.Interface()
+			} else {
+				waserrors = true
+			}
 		}
-		return e
+		if waserrors {
+			return e
+		} else {
+			return &ast.NativeExpr{Value: reflect.ValueOf(m)}
+		}
 	case *ast.CallExpr:
 		for i := range e.SubExprs {
 			e.SubExprs[i] = simplifyExprFolding(e.SubExprs[i])
@@ -809,13 +822,60 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 			e.SubExprs[i] = simplifyExprFolding(e.SubExprs[i])
 		}
 		return e
+	case *ast.ItemExpr:
+		e.Value = simplifyExprFolding(e.Value)
+		e.Index = simplifyExprFolding(e.Index)
+		return e
+	case *ast.LetsExpr:
+		for i2, e2 := range e.Lhss {
+			e.Lhss[i2] = simplifyExprFolding(e2)
+		}
+		for i2, e2 := range e.Rhss {
+			e.Rhss[i2] = simplifyExprFolding(e2)
+		}
+		return e
+	case *ast.AssocExpr:
+		e.Lhs = simplifyExprFolding(e.Lhs)
+		e.Rhs = simplifyExprFolding(e.Rhs)
+		return e
+	case *ast.ChanExpr:
+		e.Lhs = simplifyExprFolding(e.Lhs)
+		e.Rhs = simplifyExprFolding(e.Rhs)
+		return e
+	case *ast.MakeArrayExpr:
+		e.CapExpr = simplifyExprFolding(e.CapExpr)
+		e.LenExpr = simplifyExprFolding(e.LenExpr)
+		return e
+	case *ast.TypeCast:
+		e.CastExpr = simplifyExprFolding(e.CastExpr)
+		e.TypeExpr = simplifyExprFolding(e.TypeExpr)
+		return e
+	case *ast.MakeExpr:
+		e.TypeExpr = simplifyExprFolding(e.TypeExpr)
+		return e
+	case *ast.MakeChanExpr:
+		e.SizeExpr = simplifyExprFolding(e.SizeExpr)
+		return e
+	case *ast.PairExpr:
+		e.Value = simplifyExprFolding(e.Value)
+		return e
 	case *ast.AddrExpr:
 		e.Expr = simplifyExprFolding(e.Expr)
 		return e
 	case *ast.DerefExpr:
 		e.Expr = simplifyExprFolding(e.Expr)
 		return e
-
+	case *ast.MemberExpr:
+		e.Expr = simplifyExprFolding(e.Expr)
+		return e
+	case *ast.SliceExpr:
+		e.Value = simplifyExprFolding(e.Value)
+		e.Begin = simplifyExprFolding(e.Begin)
+		e.End = simplifyExprFolding(e.End)
+		return e
+	case *ast.FuncExpr:
+		e.Stmts = constFolding(e.Stmts)
+		return e
 	default:
 		// одиночные значения - преобразовываем в нативные
 		r := exprAsValue(e)
