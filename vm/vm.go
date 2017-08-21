@@ -743,12 +743,6 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
-			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
-			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
 			vv, err := ast.SliceAt(v, rb, re, NilValue)
 			if err != nil {
 				return NilValue, NewError(expr, err)
@@ -760,12 +754,6 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			return rv, nil
 		}
 		if v.Kind() == reflect.String {
-			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
-			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
 
 			r, ii, ij, err := ast.StringToRuneSliceAt(v, rb, re)
 			if err != nil {
@@ -1046,8 +1034,11 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
 			ii := int(i.Int())
+			if ii < 0 {
+				ii += v.Len()
+			}
 			if ii < 0 || ii >= v.Len() {
-				return NilValue, nil
+				return NilValue, NewStringError(expr, "Индекс за пределами границ")
 			}
 			return v.Index(ii), nil
 		}
@@ -1058,10 +1049,16 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			return v.MapIndex(i), nil
 		}
 		if v.Kind() == reflect.String {
+			if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
+			}
 			rs := []rune(v.Interface().(string))
 			ii := int(i.Int())
+			if ii < 0 {
+				ii += len(rs)
+			}
 			if ii < 0 || ii >= len(rs) {
-				return NilValue, nil
+				return NilValue, NewStringError(expr, "Индекс за пределами границ")
 			}
 			return reflect.ValueOf(string(rs[ii])), nil
 		}
@@ -1083,13 +1080,6 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			v = v.Elem()
 		}
 		if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
-			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
-			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
-
 			rv, err := ast.SliceAt(v, rb, re, NilValue)
 			if err != nil {
 				return NilValue, NewError(expr, err)
@@ -1097,12 +1087,6 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			return rv, nil
 		}
 		if v.Kind() == reflect.String {
-			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
-			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
-			}
 			rv, err := ast.StringAt(v, rb, re, NilValue)
 			if err != nil {
 				return NilValue, NewError(expr, err)

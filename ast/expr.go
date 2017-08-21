@@ -781,8 +781,7 @@ func FieldByNameCI(v reflect.Value, name int) reflect.Value {
 	return reflect.Value{}
 }
 
-func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
-	vlen := v.Len()
+func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int) {
 	// границы как в python:
 	// положительный - имеет максимум до длины (len)
 	// отрицательный - считается с конца с минимумом -длина
@@ -792,7 +791,12 @@ func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
 	// правая граница как в python - исключается
 
 	// левая граница включая
-	ii := int(rb.Int())
+	if rb.IsNil() {
+		ii = 0
+	} else {
+		ii = int(rb.Int())
+	}
+
 	switch {
 	case ii > 0:
 		if ii >= vlen {
@@ -805,7 +809,12 @@ func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
 		}
 	}
 	// правая граница не включая
-	ij := int(re.Int())
+	if re.IsNil() {
+		ij = vlen
+	} else {
+		ij = int(re.Int())
+	}
+
 	switch {
 	case ij > 0:
 		if ij > vlen {
@@ -817,6 +826,20 @@ func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
 			ij = 0
 		}
 	}
+	return
+}
+
+func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
+	if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
+		return defval, fmt.Errorf("Индекс должен быть целым числом")
+	}
+	if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
+		return defval, fmt.Errorf("Индекс должен быть целым числом")
+	}
+
+	vlen := v.Len()
+
+	ii, ij := LeftRightBounds(rb, re, vlen)
 
 	if ij < ii {
 		return defval, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
@@ -827,35 +850,17 @@ func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
 
 func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, err error) {
 
+	if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
+		return nil, 0, 0, fmt.Errorf("Индекс должен быть целым числом")
+	}
+	if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
+		return nil, 0, 0, fmt.Errorf("Индекс должен быть целым числом")
+	}
+
 	r := []rune(v.String())
 	vlen := len(r)
 
-	// левая граница включая
-	ii = int(rb.Int())
-	switch {
-	case ii > 0:
-		if ii >= vlen {
-			ii = vlen - 1
-		}
-	case ii < 0:
-		ii += vlen
-		if ii < 0 {
-			ii = 0
-		}
-	}
-	// правая граница не включая
-	ij = int(re.Int())
-	switch {
-	case ij > 0:
-		if ij > vlen {
-			ij = vlen
-		}
-	case ij < 0:
-		ij += vlen
-		if ij < 0 {
-			ij = 0
-		}
-	}
+	ii, ij = LeftRightBounds(rb, re, vlen)
 
 	if ij < ii {
 		return nil, 0, 0, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
