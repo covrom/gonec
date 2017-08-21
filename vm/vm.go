@@ -650,16 +650,16 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 		if v.Kind() == reflect.Ptr {
 			v = v.Elem()
 		}
-		if v.Kind() == reflect.Struct {
-			// v = v.FieldByName(ast.UniqueNames.Get(lhs.Name))
+		switch v.Kind() {
+		case reflect.Struct:
 			v = ast.FieldByNameCI(v, lhs.Name)
 			if !v.CanSet() {
 				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
 			v.Set(rv)
-		} else if v.Kind() == reflect.Map {
+		case reflect.Map:
 			v.SetMapIndex(reflect.ValueOf(ast.UniqueNames.Get(lhs.Name)), rv)
-		} else {
+		default:
 			if !v.CanSet() {
 				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
@@ -683,15 +683,40 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 				return NilValue, NewStringError(expr, "Индекс должен быть целым числом")
 			}
 			ii := int(i.Int())
-			if ii < 0 || ii >= v.Len() {
-				return NilValue, NewStringError(expr, "Индекс за пределами допустимого диапазона")
+			if ii < 0 {
+				ii += v.Len()
 			}
+			if ii < 0 || ii >= v.Len() {
+				return NilValue, NewStringError(expr, "Индекс за пределами границ")
+			}
+
 			vv := v.Index(ii)
 			if !vv.CanSet() {
 				return NilValue, NewStringError(expr, "Значение не может быть изменено")
 			}
 			vv.Set(rv)
 			return rv, nil
+		}
+		if v.Kind() == reflect.String {
+			if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+				return NilValue, NewStringError(expr, "Индекс должен быть целым числом")
+			}
+			rvs := []rune(rv.String())
+			if len(rvs) != 1 {
+				return NilValue, NewStringError(expr, "Длина строки должна быть ровно один символ")
+			}
+			r := []rune(v.String())
+			vlen := len(r)
+			ii := int(i.Int())
+			if ii < 0 {
+				ii += vlen
+			}
+			if ii < 0 || ii >= vlen {
+				return NilValue, NewStringError(expr, "Индекс за пределами границ")
+			}
+			// заменяем руну
+			r[ii] = rvs[0]
+			return reflect.ValueOf(string(r)), nil
 		}
 		if v.Kind() == reflect.Map {
 			if i.Kind() != reflect.String {
@@ -724,21 +749,40 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
 				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
-			ii := int(rb.Int())
-			if ii < 0 || ii >= v.Len() {
-				return NilValue, NewStringError(expr, "Индекс за пределами допустимого диапазона")
+			vv, err := ast.SliceAt(v, rb, re, NilValue)
+			if err != nil {
+				return NilValue, NewError(expr, err)
 			}
-			ij := int(re.Int())
-			if ij < 0 || ij >= v.Len() {
-				return NilValue, NewStringError(expr, "Индекс за пределами допустимого диапазона")
-			}
-			vv := v.Slice(ii, ij)
 			if !vv.CanSet() {
 				return NilValue, NewStringError(expr, "Диапазон не может быть изменен")
 			}
 			vv.Set(rv)
 			return rv, nil
 		}
+		if v.Kind() == reflect.String {
+			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
+			}
+			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
+				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
+			}
+
+			r, ii, ij, err := ast.StringToRuneSliceAt(v, rb, re)
+			if err != nil {
+				return NilValue, NewError(expr, err)
+			}
+
+			rvs := []rune(rv.String())
+			if len(rvs) != len(r) {
+				return NilValue, NewStringError(expr, "Длина строки должна быть равна длине диапазона")
+			}
+
+			// заменяем руны
+			copy(r[ii:ij], rvs)
+
+			return reflect.ValueOf(string(r)), nil
+		}
+
 		return v, NewStringError(expr, "Неверная операция")
 	}
 	return NilValue, NewStringError(expr, "Неверная операция")
@@ -748,9 +792,6 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 	switch e := expr.(type) {
 	case *ast.NativeExpr:
-
-		// log.Printf("Use native value %#v\n", e.Value)
-
 		return e.Value, nil
 	case *ast.NumberExpr:
 		i, err := ast.InvokeNumber(e.Lit, NilValue)
@@ -838,7 +879,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				v = m
 			}
 		default:
-			return NilValue, NewStringError(expr, "Неверная операция for the value")
+			return NilValue, NewStringError(expr, "Неверная операция для значения")
 		}
 		if v.Kind() != reflect.Ptr {
 			return NilValue, NewStringError(expr, "Невозможно извлечь значение ссылки")
@@ -967,7 +1008,6 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			}
 		}
 
-		// m := v.MethodByName(ast.UniqueNames.Get(e.Name))
 		m := ast.MethodByNameCI(v, e.Name)
 
 		if !m.IsValid() {
@@ -975,7 +1015,6 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				v = v.Elem()
 			}
 			if v.Kind() == reflect.Struct {
-				// m = v.FieldByName(ast.UniqueNames.Get(e.Name))
 				m = ast.FieldByNameCI(v, e.Name)
 				if !m.IsValid() {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
@@ -1050,15 +1089,12 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
 				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
-			ii := int(rb.Int())
-			if ii < 0 || ii > v.Len() {
-				return NilValue, nil
+
+			rv, err := ast.SliceAt(v, rb, re, NilValue)
+			if err != nil {
+				return NilValue, NewError(expr, err)
 			}
-			ij := int(re.Int())
-			if ij < 0 || ij > v.Len() {
-				return v, nil
-			}
-			return v.Slice(ii, ij), nil
+			return rv, nil
 		}
 		if v.Kind() == reflect.String {
 			if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
@@ -1067,16 +1103,11 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
 				return NilValue, NewStringError(expr, "Индекс массива должен быть целым числом")
 			}
-			r := []rune(v.String())
-			ii := int(rb.Int())
-			if ii < 0 || ii >= len(r) {
-				return NilValue, nil
+			rv, err := ast.StringAt(v, rb, re, NilValue)
+			if err != nil {
+				return NilValue, NewError(expr, err)
 			}
-			ij := int(re.Int())
-			if ij < 0 || ij >= len(r) {
-				return NilValue, nil
-			}
-			return reflect.ValueOf(string(r[ii:ij])), nil
+			return rv, nil
 		}
 		return v, NewStringError(expr, "Неверная операция")
 	case *ast.AssocExpr:

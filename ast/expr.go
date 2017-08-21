@@ -780,3 +780,96 @@ func FieldByNameCI(v reflect.Value, name int) reflect.Value {
 	}
 	return reflect.Value{}
 }
+
+func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
+	vlen := v.Len()
+	// границы как в python:
+	// положительный - имеет максимум до длины (len)
+	// отрицательный - считается с конца с минимумом -длина
+	// если выходит за макс. границу - возвращаем пустой слайс
+	// если выходит за мин. границу - считаем =0
+
+	// правая граница как в python - исключается
+
+	// левая граница включая
+	ii := int(rb.Int())
+	switch {
+	case ii > 0:
+		if ii >= vlen {
+			ii = vlen - 1
+		}
+	case ii < 0:
+		ii += vlen
+		if ii < 0 {
+			ii = 0
+		}
+	}
+	// правая граница не включая
+	ij := int(re.Int())
+	switch {
+	case ij > 0:
+		if ij > vlen {
+			ij = vlen
+		}
+	case ij < 0:
+		ij += vlen
+		if ij < 0 {
+			ij = 0
+		}
+	}
+
+	if ij < ii {
+		return defval, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
+	}
+
+	return v.Slice(ii, ij), nil
+}
+
+func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, err error) {
+
+	r := []rune(v.String())
+	vlen := len(r)
+
+	// левая граница включая
+	ii = int(rb.Int())
+	switch {
+	case ii > 0:
+		if ii >= vlen {
+			ii = vlen - 1
+		}
+	case ii < 0:
+		ii += vlen
+		if ii < 0 {
+			ii = 0
+		}
+	}
+	// правая граница не включая
+	ij = int(re.Int())
+	switch {
+	case ij > 0:
+		if ij > vlen {
+			ij = vlen
+		}
+	case ij < 0:
+		ij += vlen
+		if ij < 0 {
+			ij = 0
+		}
+	}
+
+	if ij < ii {
+		return nil, 0, 0, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
+	}
+
+	return r, ii, ij, nil
+}
+
+func StringAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
+
+	r, ii, ij, err := StringToRuneSliceAt(v, rb, re)
+	if err != nil {
+		return defval, err
+	}
+
+	return reflect.ValueOf(string(r[ii:ij])), nil
+}

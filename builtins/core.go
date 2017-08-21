@@ -194,20 +194,13 @@ func Import(env *vm.Env) *vm.Env {
 		return []rune(s)[0]
 	})
 
-	// TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	env.DefineS("вбайтслайс", func(s string) []byte {
+	env.DefineS("вбайты", func(s string) []byte {
 		return []byte(s)
 	})
 
-	env.DefineS("вслайсрун", func(s string) []rune {
+	env.DefineS("вруны", func(s string) []rune {
 		return []rune(s)
 	})
-
-	env.DefineS("вдлительность", func(v int64) time.Duration {
-		return time.Duration(v)
-	})
-
-	//////////////////////////////////////////////////////////
 
 	env.DefineS("типзнч", func(v interface{}) string {
 		return ast.UniqueNames.Get(env.TypeName(reflect.TypeOf(v)))
