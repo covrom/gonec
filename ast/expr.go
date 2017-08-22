@@ -781,14 +781,13 @@ var StructMethodIndexes = struct {
 func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	tv := v.Type()
 	var fullname string
+	// методы ссылок - вычисляем отдельно
 	if tv.Kind() == reflect.Ptr {
 		fullname = tv.Elem().PkgPath() + "." + tv.Elem().Name() + ".*" + UniqueNames.GetLowerCase(name)
 	} else {
 		fullname = tv.PkgPath() + "." + tv.Name() + "." + UniqueNames.GetLowerCase(name)
 	}
-
 	// fmt.Println("GET METHOD: " + fullname)
-
 	if idx, ok := StructMethodIndexes.Cache[UniqueNames.Set(fullname)]; ok {
 		return v.Method(idx), nil
 	}
@@ -803,14 +802,12 @@ var StructFieldIndexes = struct {
 
 func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	tv := v.Type()
+	// у ссылок поля не будут найдены - это правильно
 	fullname := tv.PkgPath() + "." + tv.Name() + "." + UniqueNames.GetLowerCase(name)
-
 	// fmt.Println("GET FIELD: " + fullname)
-
 	if idx, ok := StructFieldIndexes.Cache[UniqueNames.Set(fullname)]; ok {
 		return v.FieldByIndex(idx), nil
 	}
-
 	return reflect.Value{}, fmt.Errorf("Поле %s не найдено", fullname)
 }
 
