@@ -16,6 +16,7 @@ type EnvNames struct {
 	sync.RWMutex
 	names   map[string]int
 	handles map[int]string
+	handlow map[int]string
 	iter    int
 }
 
@@ -23,6 +24,7 @@ func NewEnvNames() *EnvNames {
 	en := EnvNames{
 		names:   make(map[string]int, 200),
 		handles: make(map[int]string, 200),
+		handlow: make(map[int]string, 200),
 		iter:    1,
 	}
 	return &en
@@ -40,6 +42,7 @@ func (en *EnvNames) Set(n string) int {
 	i := en.iter
 	en.names[ns] = i
 	en.handles[i] = n
+	en.handlow[i] = ns
 	en.iter++
 	en.Unlock()
 	return i
@@ -49,6 +52,16 @@ func (en *EnvNames) Get(i int) string {
 	en.RLock()
 	defer en.RUnlock()
 	if s, ok := en.handles[i]; ok {
+		return s
+	} else {
+		panic(fmt.Sprintf("Не найден идентификатор переменной id=%d", i))
+	}
+}
+
+func (en *EnvNames) GetLowerCase(i int) string {
+	en.RLock()
+	defer en.RUnlock()
+	if s, ok := en.handlow[i]; ok {
 		return s
 	} else {
 		panic(fmt.Sprintf("Не найден идентификатор переменной id=%d", i))
@@ -759,29 +772,36 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 	return defval, fmt.Errorf("Приведение типа недопустимо")
 }
 
+var StructMethodIndexes = struct {
+	Cache map[int]int // pkg.typename.methname из UniqueNames
+}{
+	Cache: make(map[int]int, 200),
+}
+
 func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
-	// TODO: оптимизировать, сохраняя кэш в env
 	tv := v.Type()
-	nm := tv.NumMethod()
-	for i := 0; i < nm; i++ {
-		meth := tv.Method(i)
-		if UniqueNames.Set(meth.Name) == name {
-			return v.MethodByName(meth.Name), nil
-		}
+	basicpath := tv.PkgPath() + "." + tv.Name() + "."
+
+	if idx, ok := StructMethodIndexes.Cache[UniqueNames.Set(basicpath+UniqueNames.GetLowerCase(name))]; ok {
+		return v.Method(idx), nil
 	}
 	return reflect.Value{}, fmt.Errorf("Метод не найден")
 }
 
+var StructFieldIndexes = struct {
+	Cache map[int][]int // // pkg.typename.fieldname из UniqueNames
+}{
+	Cache: make(map[int][]int, 200),
+}
+
 func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
-	// TODO: оптимизировать, сохраняя кэш в env
 	tv := v.Type()
-	nf := tv.NumField()
-	for i := 0; i < nf; i++ {
-		f := tv.Field(i)
-		if f.PkgPath == "" && !f.Anonymous && UniqueNames.Set(f.Name) == name {
-			return v.FieldByName(f.Name), nil
-		}
+	basicpath := tv.PkgPath() + "." + tv.Name() + "."
+
+	if idx, ok := StructFieldIndexes.Cache[UniqueNames.Set(basicpath+UniqueNames.GetLowerCase(name))]; ok {
+		return v.FieldByIndex(idx), nil
 	}
+
 	return reflect.Value{}, fmt.Errorf("Поле не найдено")
 }
 

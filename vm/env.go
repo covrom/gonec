@@ -216,8 +216,32 @@ func (e *Env) DefineType(k int, t interface{}) error {
 				typ = reflect.TypeOf(t)
 			}
 			ee.Lock()
+			defer ee.Unlock()
 			ee.typ[k] = typ
-			ee.Unlock()
+			// пишем в кэш индексы полей и методов для структур
+			if typ.Kind() == reflect.Struct {
+				basicpath := typ.PkgPath() + "." + typ.Name() + "."
+				//методы
+				nm := typ.NumMethod()
+				for i := 0; i < nm; i++ {
+					meth := typ.Method(i)
+					// только экспортируемые
+					if meth.PkgPath == "" {
+						namtyp := ast.UniqueNames.Set(basicpath + meth.Name)
+						ast.StructMethodIndexes.Cache[namtyp] = meth.Index
+					}
+				}
+				//поля
+				nm = typ.NumField()
+				for i := 0; i < nm; i++ {
+					field := typ.Field(i)
+					// только экспортируемые неанонимные поля
+					if field.PkgPath == "" && !field.Anonymous {
+						namtyp := ast.UniqueNames.Set(basicpath + field.Name)
+						ast.StructFieldIndexes.Cache[namtyp] = field.Index
+					}
+				}
+			}
 			return nil
 		}
 	}
