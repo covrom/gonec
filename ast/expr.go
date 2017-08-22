@@ -780,29 +780,38 @@ var StructMethodIndexes = struct {
 
 func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	tv := v.Type()
-	basicpath := tv.PkgPath() + "." + tv.Name() + "."
+	var fullname string
+	if tv.Kind() == reflect.Ptr {
+		fullname = tv.Elem().PkgPath() + "." + tv.Elem().Name() + ".*" + UniqueNames.GetLowerCase(name)
+	} else {
+		fullname = tv.PkgPath() + "." + tv.Name() + "." + UniqueNames.GetLowerCase(name)
+	}
 
-	if idx, ok := StructMethodIndexes.Cache[UniqueNames.Set(basicpath+UniqueNames.GetLowerCase(name))]; ok {
+	// fmt.Println("GET METHOD: " + fullname)
+
+	if idx, ok := StructMethodIndexes.Cache[UniqueNames.Set(fullname)]; ok {
 		return v.Method(idx), nil
 	}
-	return reflect.Value{}, fmt.Errorf("Метод не найден")
+	return reflect.Value{}, fmt.Errorf("Метод %s не найден", fullname)
 }
 
 var StructFieldIndexes = struct {
-	Cache map[int][]int // // pkg.typename.fieldname из UniqueNames
+	Cache map[int][]int // pkg.typename.fieldname из UniqueNames
 }{
 	Cache: make(map[int][]int, 200),
 }
 
 func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
 	tv := v.Type()
-	basicpath := tv.PkgPath() + "." + tv.Name() + "."
+	fullname := tv.PkgPath() + "." + tv.Name() + "." + UniqueNames.GetLowerCase(name)
 
-	if idx, ok := StructFieldIndexes.Cache[UniqueNames.Set(basicpath+UniqueNames.GetLowerCase(name))]; ok {
+	// fmt.Println("GET FIELD: " + fullname)
+
+	if idx, ok := StructFieldIndexes.Cache[UniqueNames.Set(fullname)]; ok {
 		return v.FieldByIndex(idx), nil
 	}
 
-	return reflect.Value{}, fmt.Errorf("Поле не найдено")
+	return reflect.Value{}, fmt.Errorf("Поле %s не найдено", fullname)
 }
 
 func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {

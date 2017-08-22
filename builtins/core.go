@@ -88,7 +88,11 @@ type TttStructTest struct {
 }
 
 // обратите внимание - русскоязычное название метода для структуры
-func (tst TttStructTest) ВСтроку() string {
+func (tst *TttStructTest) ВСтроку() string {
+	return fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)
+}
+
+func (tst TttStructTest) ВСтроку2() string {
 	return fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)
 }
 

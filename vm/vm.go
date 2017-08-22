@@ -876,7 +876,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 					// m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
 					m, err = ast.FieldByNameCI(v, ee.Name)
 					if err != nil {
-						return NilValue, NewStringError(expr, "Метод или поле не найдено")
+						return NilValue, NewStringError(expr, "Метод или поле не найдено: "+ast.UniqueNames.Get(ee.Name))
 					}
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
@@ -942,7 +942,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 					// m = v.FieldByName(ast.UniqueNames.Get(ee.Name))
 					m, err = ast.FieldByNameCI(v, ee.Name)
 					if err != nil {
-						return NilValue, NewStringError(expr, "Метод или поле не найдено")
+						return NilValue, NewStringError(expr, "Метод или поле не найдено: "+ast.UniqueNames.Get(ee.Name))
 					}
 					if !m.IsValid() {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
@@ -1037,7 +1037,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			if v.Kind() == reflect.Struct {
 				m, err = ast.FieldByNameCI(v, e.Name)
 				if err != nil {
-					return NilValue, NewStringError(expr, "Метод или поле не найдено")
+					return NilValue, NewStringError(expr, "Метод или поле не найдено: "+ast.UniqueNames.Get(e.Name))
 				}
 				if !m.IsValid() {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))
