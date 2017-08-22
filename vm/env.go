@@ -219,9 +219,13 @@ func (e *Env) DefineType(k int, t interface{}) error {
 			defer ee.Unlock()
 			ee.typ[k] = typ
 			// пишем в кэш индексы полей и методов для структур
+			// для работы со структурами нам нужен конкретный тип
+			if typ.Kind() == reflect.Ptr {
+				typ = typ.Elem()
+			}
 			if typ.Kind() == reflect.Struct {
-
-				// методы берем у ссылки на структуру, они включают методы самой структуры
+				// методы берем в т.ч. у ссылки на структуру, они включают методы самой структуры
+				// это будут разные методы для разных reflect.Value
 				ptyp := reflect.TypeOf(reflect.New(typ).Interface())
 				basicpath := typ.PkgPath() + "." + typ.Name() + "."
 
@@ -232,9 +236,7 @@ func (e *Env) DefineType(k int, t interface{}) error {
 					// только экспортируемые
 					if meth.PkgPath == "" {
 						namtyp := ast.UniqueNames.Set(basicpath + meth.Name)
-
 						// fmt.Println("SET METHOD: "+basicpath+meth.Name, meth.Index)
-
 						ast.StructMethodIndexes.Cache[namtyp] = meth.Index
 					}
 				}
@@ -244,9 +246,7 @@ func (e *Env) DefineType(k int, t interface{}) error {
 					// только экспортируемые
 					if meth.PkgPath == "" {
 						namtyp := ast.UniqueNames.Set(basicpath + "*" + meth.Name)
-
 						// fmt.Println("SET *METHOD: "+basicpath+"*"+meth.Name, meth.Index)
-
 						ast.StructMethodIndexes.Cache[namtyp] = meth.Index
 					}
 				}
@@ -258,9 +258,7 @@ func (e *Env) DefineType(k int, t interface{}) error {
 					// только экспортируемые неанонимные поля
 					if field.PkgPath == "" && !field.Anonymous {
 						namtyp := ast.UniqueNames.Set(basicpath + field.Name)
-
 						// fmt.Println("SET FIELD: "+basicpath+field.Name, field.Index)
-
 						ast.StructFieldIndexes.Cache[namtyp] = field.Index
 					}
 				}
