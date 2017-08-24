@@ -32,9 +32,9 @@ type IfStmt struct {
 // TryStmt provide "try/catch/finally" statement.
 type TryStmt struct {
 	StmtImpl
-	Try     []Stmt
+	Try []Stmt
 	// Var     string
-	Catch   []Stmt
+	Catch []Stmt
 	// Finally []Stmt
 }
 
@@ -49,7 +49,7 @@ type ForStmt struct {
 // NumForStmt name = expr1 to expr2
 type NumForStmt struct {
 	StmtImpl
-	Name int //string
+	Name  int //string
 	Expr1 Expr
 	Expr2 Expr
 	Stmts []Stmt
