@@ -1,12 +1,14 @@
-package ast
+package bincode
+
+import "github.com/covrom/gonec/ast"
 
 type BinStmt interface {
-	Pos
+	ast.Pos
 	binstmt()
 }
 
 type BinStmtImpl struct {
-	PosImpl
+	ast.PosImpl
 }
 
 func (x *BinStmtImpl) binstmt() {}

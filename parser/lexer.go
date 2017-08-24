@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/bincode"
 )
 
 const (
@@ -658,6 +659,9 @@ func ParseSrc(src string) ([]ast.Stmt, error) {
 	// свертка констант и нативные значения
 	prs = constFolding(prs)
 	// fmt.Printf("%#v\n", prs[0].(*ast.LetsStmt).Rhss[0].(*ast.SliceExpr))
+	lid := 0
+	bin := bincode.BinaryCode(prs, 0, &lid)
+	fmt.Printf("%#v\n", bin)
 
 	return prs, err
 }
