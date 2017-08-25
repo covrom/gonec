@@ -19,6 +19,49 @@ type BinCode []BinStmt
 // команды байткода
 //////////////////////
 
+const (
+	_    = iota
+	ADD  // +
+	SUB  // -
+	MUL  // *
+	QUO  // /
+	REM  // %
+	EQL  // ==
+	NEQ  // !=
+	GTR  // >
+	GEQ  // >=
+	LSS  // <
+	LEQ  // <=
+	OR   // |
+	LOR  // ||
+	AND  // &
+	LAND // &&
+	POW  //**
+	SHL  // <<
+	SHR  // >>
+)
+
+var OperMap = map[string]int{
+	"+":  ADD,  // +
+	"-":  SUB,  // -
+	"*":  MUL,  // *
+	"/":  QUO,  // /
+	"%":  REM,  // %
+	"==": EQL,  // ==
+	"!=": NEQ,  // !=
+	">":  GTR,  // >
+	">=": GEQ,  // >=
+	"<":  LSS,  // <
+	"<=": LEQ,  // <=
+	"|":  OR,   // |
+	"||": LOR,  // ||
+	"&":  AND,  // &
+	"&&": LAND, // &&
+	"**": POW,  //**
+	"<<": SHL,  // <<
+	">>": SHR,  // >>
+}
+
 type BinLOAD struct {
 	BinStmtImpl
 
@@ -127,49 +170,6 @@ type BinJFALSE struct {
 
 	Reg    int
 	JumpTo int
-}
-
-const (
-	_    = iota
-	ADD  // +
-	SUB  // -
-	MUL  // *
-	QUO  // /
-	REM  // %
-	EQL  // ==
-	NEQ  // !=
-	GTR  // >
-	GEQ  // >=
-	LSS  // <
-	LEQ  // <=
-	OR   // |
-	LOR  // ||
-	AND  // &
-	LAND // &&
-	POW  //**
-	SHL  // <<
-	SHR  // >>
-)
-
-var OperMap = map[string]int{
-	"+":  ADD,  // +
-	"-":  SUB,  // -
-	"*":  MUL,  // *
-	"/":  QUO,  // /
-	"%":  REM,  // %
-	"==": EQL,  // ==
-	"!=": NEQ,  // !=
-	">":  GTR,  // >
-	">=": GEQ,  // >=
-	"<":  LSS,  // <
-	"<=": LEQ,  // <=
-	"|":  OR,   // |
-	"||": LOR,  // ||
-	"&":  AND,  // &
-	"&&": LAND, // &&
-	"**": POW,  //**
-	"<<": SHL,  // <<
-	">>": SHR,  // >>
 }
 
 type BinOPER struct {
