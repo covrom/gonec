@@ -300,8 +300,6 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 	case *ast.LetExpr:
 		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
-	case *ast.AssocExpr:
-
 	case *ast.NewExpr:
 
 	case *ast.ChanExpr:
@@ -314,6 +312,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 
 	case *ast.MakeArrayExpr:
 
+	case *ast.AssocExpr:
+	
 	}
 
 	return
