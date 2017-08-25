@@ -209,27 +209,33 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 
 	case *ast.CallExpr:
+		// если это анонимный вызхов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg
+		var regoff int
+		if e.Name == 0 {
+			regoff = 1
+		}
+
 		// помещаем аргументы
 		// либо в серию регистров, начиная с reg, если их <=7
 		// либо в массив аргументов в reg
 		if len(e.SubExprs) <= 7 {
 			for i := 0; i < len(e.SubExprs); i++ {
-				bins = append(bins, addBinExpr(e.SubExprs[i], reg+i, lid)...)
+				bins = append(bins, addBinExpr(e.SubExprs[i], reg+i+regoff, lid)...)
 			}
 		} else {
 			bins = appendBin(bins,
 				&BinMAKESLICE{
-					Reg: reg,
+					Reg: reg + regoff,
 					Len: len(e.SubExprs),
 					Cap: len(e.SubExprs),
 				}, e)
 
 			for i, ee := range e.SubExprs {
 				// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-				bins = append(bins, addBinExpr(ee, reg+1, lid)...)
+				bins = append(bins, addBinExpr(ee, reg+1+regoff, lid)...)
 				bins = appendBin(bins,
 					&BinSETIDX{
-						Reg:    reg,
+						Reg:    reg + regoff,
 						Index:  i,
 						ValReg: reg + 1,
 					}, ee)
@@ -239,12 +245,21 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			&BinCALL{
 				Name:    e.Name,
 				NumArgs: len(e.SubExprs),
-				RegArgs: reg,
+				RegArgs: reg, // для анонимных (Name==0) - тут будет функция, иначе первый аргумент (см. выше)
 				VarArg:  e.VarArg,
 				Go:      e.Go,
 			}, e)
 
 	case *ast.AnonCallExpr:
+		// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
+		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
+		// далее аргументы, как при вызове обычной функции
+		bins = append(bins, addBinExpr(&ast.CallExpr{
+			Name:     0,
+			SubExprs: e.SubExprs,
+			VarArg:   e.VarArg,
+			Go:       e.Go,
+		}, reg, lid)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
 
 	case *ast.MemberExpr:
 
