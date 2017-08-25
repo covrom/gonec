@@ -26,6 +26,13 @@ type BinLOAD struct {
 	Val interface{}
 }
 
+type BinMV struct {
+	BinStmtImpl
+
+	RegFrom int
+	RegTo   int
+}
+
 type BinCASTNUM struct {
 	BinStmtImpl
 
@@ -69,6 +76,12 @@ type BinGET struct {
 	Reg    int
 	Id     int
 	Dotted bool // содержит точку "."
+}
+
+type BinSET struct {
+	BinStmtImpl
+
+	Reg int // регистр с именем (строкой), сюда же возвращается id имени, записанного в ast.UniqueNames.Set()
 }
 
 type BinUNARY struct {
@@ -215,4 +228,43 @@ type BinFUNC struct {
 	Code   BinCode
 	Args   []int // идентификаторы параметров
 	VarArg bool
+}
+
+type BinCASTTYPE struct {
+	BinStmtImpl
+
+	Reg     int
+	TypeReg int
+}
+
+type BinMAKE struct {
+	BinStmtImpl
+
+	Reg int // здесь id типа, и сюда же пишем новое значение
+}
+
+type BinMAKECHAN struct {
+	BinStmtImpl
+
+	Reg int // тут размер буфера (0=без буфера), сюда же помещается созданный канал
+}
+
+type BinMAKEARR struct {
+	BinStmtImpl
+
+	Reg    int // тут длина, сюда же помещается слайс
+	RegCap int
+}
+
+type BinCHANRECV struct {
+	BinStmtImpl
+
+	Reg int // сюда же помещается результат
+}
+
+type BinCHANSEND struct {
+	BinStmtImpl
+
+	Reg    int // канал
+	ValReg int
 }

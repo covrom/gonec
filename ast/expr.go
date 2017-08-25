@@ -251,10 +251,10 @@ type AssocExpr struct {
 }
 
 // NewExpr provide expression to make new instance.
-type NewExpr struct {
-	ExprImpl
-	Type int //string
-}
+// type NewExpr struct {
+// 	ExprImpl
+// 	Type int //string
+// }
 
 // ConstExpr provide expression for constant variable.
 type ConstExpr struct {

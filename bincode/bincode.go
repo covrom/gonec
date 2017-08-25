@@ -29,6 +29,9 @@ func appendBin(bins BinCode, b BinStmt, e ast.Expr) BinCode {
 }
 
 func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
+	if expr == nil {
+		return
+	}
 	switch e := expr.(type) {
 	case *ast.NativeExpr:
 		// добавляем команду загрузки значения
@@ -300,20 +303,80 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 	case *ast.LetExpr:
 		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
-	case *ast.NewExpr:
-
-	case *ast.ChanExpr:
-
 	case *ast.TypeCast:
-
+		bins = append(bins, addBinExpr(e.CastExpr, reg, lid)...)
+		if e.TypeExpr == nil {
+			bins = appendBin(bins,
+				&BinLOAD{
+					Reg: reg + 1,
+					Val: e.Type,
+				}, e)
+		} else {
+			bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid)...)
+			bins = appendBin(bins,
+				&BinSET{
+					Reg: reg + 1,
+				}, e)
+		}
+		bins = appendBin(bins,
+			&BinCASTTYPE{
+				Reg:     reg,
+				TypeReg: reg + 1,
+			}, e)
 	case *ast.MakeExpr:
-
+		if e.TypeExpr == nil {
+			bins = appendBin(bins,
+				&BinLOAD{
+					Reg: reg,
+					Val: e.Type,
+				}, e)
+		} else {
+			bins = append(bins, addBinExpr(e.TypeExpr, reg, lid)...)
+			bins = appendBin(bins,
+				&BinSET{
+					Reg: reg,
+				}, e)
+		}
+		bins = appendBin(bins,
+			&BinMAKE{
+				Reg: reg,
+			}, e)
 	case *ast.MakeChanExpr:
-
+		if e.SizeExpr == nil {
+			bins = appendBin(bins,
+				&BinLOAD{
+					Reg: reg,
+					Val: int(0),
+				}, e)
+		} else {
+			bins = append(bins, addBinExpr(e.SizeExpr, reg, lid)...)
+		}
+		bins = appendBin(bins,
+			&BinMAKECHAN{
+				Reg: reg,
+			}, e)
 	case *ast.MakeArrayExpr:
+		bins = append(bins, addBinExpr(e.LenExpr, reg, lid)...)
+		if e.CapExpr == nil {
+			bins = appendBin(bins,
+				&BinMV{
+					RegFrom: reg,
+					RegTo:   reg + 1,
+				}, e)
+		} else {
+			bins = append(bins, addBinExpr(e.CapExpr, reg+1, lid)...)
+		}
+		bins = appendBin(bins,
+			&BinMAKEARR{
+				Reg:    reg,
+				RegCap: reg + 1,
+			}, e)
+	case *ast.ChanExpr:
+		// TODO: тут все зависит от операндов слева и справа, канал там, или переменная, будут условные переходы и присвоение
 
 	case *ast.AssocExpr:
-	
+		// TODO: тут будет присвоение
+
 	}
 
 	return

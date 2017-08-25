@@ -1224,12 +1224,12 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 	// 		}
 	// 	}
 	// 	return rvs, nil
-	case *ast.NewExpr:
-		rt, err := env.Type(e.Type)
-		if err != nil {
-			return NilValue, NewError(expr, err)
-		}
-		return reflect.New(rt), nil
+	// case *ast.NewExpr:
+	// 	rt, err := env.Type(e.Type)
+	// 	if err != nil {
+	// 		return NilValue, NewError(expr, err)
+	// 	}
+	// 	return reflect.New(rt), nil
 	case *ast.BinOpExpr:
 		lhsV := NilValue
 		rhsV := NilValue
