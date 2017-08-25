@@ -279,7 +279,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		bins = appendBin(bins,
 			&BinGETIDX{
 				Reg:   reg,
-				Index: reg + 1,
+				RegIndex: reg + 1,
 			}, e)
 	case *ast.SliceExpr:
 		// только вычисление субслайса
@@ -314,7 +314,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		} else {
 			bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid)...)
 			bins = appendBin(bins,
-				&BinSET{
+				&BinSETNAME{
 					Reg: reg + 1,
 				}, e)
 		}
@@ -333,7 +333,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		} else {
 			bins = append(bins, addBinExpr(e.TypeExpr, reg, lid)...)
 			bins = appendBin(bins,
-				&BinSET{
+				&BinSETNAME{
 					Reg: reg,
 				}, e)
 		}

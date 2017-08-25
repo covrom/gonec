@@ -1,6 +1,10 @@
 package bincode
 
-import "github.com/covrom/gonec/ast"
+import (
+	"fmt"
+
+	"github.com/covrom/gonec/ast"
+)
 
 type BinStmt interface {
 	ast.Pos
@@ -9,11 +13,20 @@ type BinStmt interface {
 
 type BinStmtImpl struct {
 	ast.PosImpl
+	fmt.Stringer
 }
 
 func (x *BinStmtImpl) binstmt() {}
 
 type BinCode []BinStmt
+
+func (v BinCode) String() string {
+	s := ""
+	for _, e := range v {
+		s += fmt.Sprintf("%v\n", e)
+	}
+	return s
+}
 
 //////////////////////
 // команды байткода
@@ -62,11 +75,36 @@ var OperMap = map[string]int{
 	">>": SHR,  // >>
 }
 
+var OperMapR = map[int]string{
+	ADD:  "+",  // +
+	SUB:  "-",  // -
+	MUL:  "*",  // *
+	QUO:  "/",  // /
+	REM:  "%",  // %
+	EQL:  "==", // ==
+	NEQ:  "!=", // !=
+	GTR:  ">",  // >
+	GEQ:  ">=", // >=
+	LSS:  "<",  // <
+	LEQ:  "<=", // <=
+	OR:   "|",  // |
+	LOR:  "||", // ||
+	AND:  "&",  // &
+	LAND: "&&", // &&
+	POW:  "**", //**
+	SHL:  "<<", // <<
+	SHR:  ">>", // >>
+}
+
 type BinLOAD struct {
 	BinStmtImpl
 
 	Reg int
 	Val interface{}
+}
+
+func (v BinLOAD) String() string {
+	return fmt.Sprintf("LOAD r%d, %#v", v.Reg, v.Val)
 }
 
 type BinMV struct {
@@ -76,10 +114,18 @@ type BinMV struct {
 	RegTo   int
 }
 
+func (v BinMV) String() string {
+	return fmt.Sprintf("MV r%d, r%d", v.RegTo, v.RegFrom)
+}
+
 type BinCASTNUM struct {
 	BinStmtImpl
 
 	Reg int
+}
+
+func (v BinCASTNUM) String() string {
+	return fmt.Sprintf("CAST r%d, NUMBER", v.Reg)
 }
 
 type BinMAKESLICE struct {
@@ -90,6 +136,10 @@ type BinMAKESLICE struct {
 	Cap int
 }
 
+func (v BinMAKESLICE) String() string {
+	return fmt.Sprintf("MAKESLICE r%d, LEN %d, CAP %d", v.Reg, v.Len, v.Cap)
+}
+
 type BinSETIDX struct {
 	BinStmtImpl
 
@@ -98,11 +148,19 @@ type BinSETIDX struct {
 	ValReg int
 }
 
+func (v BinSETIDX) String() string {
+	return fmt.Sprintf("SETIDX r%d[%d], r%d", v.Reg, v.Index, v.ValReg)
+}
+
 type BinMAKEMAP struct {
 	BinStmtImpl
 
 	Reg int
 	Len int
+}
+
+func (v BinMAKEMAP) String() string {
+	return fmt.Sprintf("MAKEMAP r%d, LEN %d", v.Reg, v.Len)
 }
 
 type BinSETKEY struct {
@@ -113,6 +171,10 @@ type BinSETKEY struct {
 	ValReg int
 }
 
+func (v BinSETKEY) String() string {
+	return fmt.Sprintf("SETKEY r%d[%q], r%d", v.Reg, v.Key, v.ValReg)
+}
+
 type BinGET struct {
 	BinStmtImpl
 
@@ -121,10 +183,29 @@ type BinGET struct {
 	Dotted bool // содержит точку "."
 }
 
+func (v BinGET) String() string {
+	return fmt.Sprintf("GET r%d, %q", v.Reg, ast.UniqueNames.Get(v.Id))
+}
+
 type BinSET struct {
 	BinStmtImpl
 
+	Id  int // id переменной
+	Reg int // регистр со значением
+}
+
+func (v BinSET) String() string {
+	return fmt.Sprintf("SET %q, r%d", ast.UniqueNames.Get(v.Id), v.Reg)
+}
+
+type BinSETNAME struct {
+	BinStmtImpl
+
 	Reg int // регистр с именем (строкой), сюда же возвращается id имени, записанного в ast.UniqueNames.Set()
+}
+
+func (v BinSETNAME) String() string {
+	return fmt.Sprintf("SETNAME r%d", v.Reg)
 }
 
 type BinUNARY struct {
@@ -134,10 +215,18 @@ type BinUNARY struct {
 	Op  rune // - ! ^
 }
 
+func (v BinUNARY) String() string {
+	return fmt.Sprintf("UNARY %sr%d", string(v.Op), v.Reg)
+}
+
 type BinADDR struct {
 	BinStmtImpl
 
 	Reg int
+}
+
+func (v BinADDR) String() string {
+	return fmt.Sprintf("ADDR r%d", v.Reg)
 }
 
 type BinUNREF struct {
@@ -146,16 +235,28 @@ type BinUNREF struct {
 	Reg int
 }
 
+func (v BinUNREF) String() string {
+	return fmt.Sprintf("UNREF r%d", v.Reg)
+}
+
 type BinLABEL struct {
 	BinStmtImpl
 
 	Label int
 }
 
+func (v BinLABEL) String() string {
+	return fmt.Sprintf("L%d:", v.Label)
+}
+
 type BinJMP struct {
 	BinStmtImpl
 
 	JumpTo int
+}
+
+func (v BinJMP) String() string {
+	return fmt.Sprintf("JMP L%d", v.JumpTo)
 }
 
 type BinJTRUE struct {
@@ -165,11 +266,19 @@ type BinJTRUE struct {
 	JumpTo int
 }
 
+func (v BinJTRUE) String() string {
+	return fmt.Sprintf("JTRUE r%d, L%d", v.Reg, v.JumpTo)
+}
+
 type BinJFALSE struct {
 	BinStmtImpl
 
 	Reg    int
 	JumpTo int
+}
+
+func (v BinJFALSE) String() string {
+	return fmt.Sprintf("JFALSE r%d, L%d", v.Reg, v.JumpTo)
 }
 
 type BinOPER struct {
@@ -178,6 +287,10 @@ type BinOPER struct {
 	RegL int // сюда же помещается результат
 	RegR int
 	Op   int
+}
+
+func (v BinOPER) String() string {
+	return fmt.Sprintf("OP r%d, %q, r%d", v.RegL, OperMapR[v.Op], v.RegR)
 }
 
 type BinCALL struct {
@@ -198,6 +311,13 @@ type BinCALL struct {
 	Go bool // признак необходимости запуска в новой горутине
 }
 
+func (v BinCALL) String() string {
+	if v.Name == 0 {
+		return fmt.Sprintf("CALL ANON r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go)
+	}
+	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v", ast.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go)
+}
+
 type BinGETMEMBER struct {
 	BinStmtImpl
 
@@ -205,11 +325,19 @@ type BinGETMEMBER struct {
 	Name int
 }
 
+func (v BinGETMEMBER) String() string {
+	return fmt.Sprintf("GETMEMBER r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
+}
+
 type BinGETIDX struct {
 	BinStmtImpl
 
-	Reg   int
-	Index int
+	Reg      int
+	RegIndex int
+}
+
+func (v BinGETIDX) String() string {
+	return fmt.Sprintf("GETIDX r%d[r%d]", v.Reg, v.RegIndex)
 }
 
 type BinGETSUBSLICE struct {
@@ -220,14 +348,33 @@ type BinGETSUBSLICE struct {
 	EndReg   int
 }
 
+func (v BinGETSUBSLICE) String() string {
+	return fmt.Sprintf("SLICE r%d[r%d : r%d]", v.Reg, v.BeginReg, v.EndReg)
+}
+
 type BinFUNC struct {
 	BinStmtImpl
 
-	Reg    int // регистр, в который сохранияется значение определяемой функции типа func
+	Reg    int // регистр, в который сохраняется значение определяемой функции типа func
 	Name   int
 	Code   BinCode
 	Args   []int // идентификаторы параметров
 	VarArg bool
+}
+
+func (v BinFUNC) String() string {
+	s := ""
+	for _, a := range v.Args {
+		if s != "" {
+			s += ", "
+		}
+		s += ast.UniqueNames.Get(a)
+	}
+	vrg := ""
+	if v.VarArg {
+		vrg = "..."
+	}
+	return fmt.Sprintf("FUNC r%d, %q, (%s %s)\n{\n%v}\n", v.Reg, ast.UniqueNames.Get(v.Name), s, vrg, v.Code)
 }
 
 type BinCASTTYPE struct {
@@ -237,16 +384,28 @@ type BinCASTTYPE struct {
 	TypeReg int
 }
 
+func (v BinCASTTYPE) String() string {
+	return fmt.Sprintf("CAST r%d AS TYPE r%d", v.Reg, v.TypeReg)
+}
+
 type BinMAKE struct {
 	BinStmtImpl
 
 	Reg int // здесь id типа, и сюда же пишем новое значение
 }
 
+func (v BinMAKE) String() string {
+	return fmt.Sprintf("MAKE r%d AS TYPE r%d", v.Reg, v.Reg)
+}
+
 type BinMAKECHAN struct {
 	BinStmtImpl
 
 	Reg int // тут размер буфера (0=без буфера), сюда же помещается созданный канал
+}
+
+func (v BinMAKECHAN) String() string {
+	return fmt.Sprintf("MAKECHAN r%d SIZE r%d", v.Reg, v.Reg)
 }
 
 type BinMAKEARR struct {
@@ -256,10 +415,18 @@ type BinMAKEARR struct {
 	RegCap int
 }
 
+func (v BinMAKEARR) String() string {
+	return fmt.Sprintf("MAKESLICE r%d, LEN r%d, CAP r%d", v.Reg, v.Reg, v.RegCap)
+}
+
 type BinCHANRECV struct {
 	BinStmtImpl
 
 	Reg int // сюда же помещается результат
+}
+
+func (v BinCHANRECV) String() string {
+	return fmt.Sprintf("<-CHAN r%d, r%d", v.Reg, v.Reg)
 }
 
 type BinCHANSEND struct {
@@ -267,4 +434,8 @@ type BinCHANSEND struct {
 
 	Reg    int // канал
 	ValReg int
+}
+
+func (v BinCHANSEND) String() string {
+	return fmt.Sprintf("CHAN<- r%d, r%d", v.Reg, v.ValReg)
 }
