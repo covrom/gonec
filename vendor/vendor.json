@@ -1,5 +1,4 @@
 {
-	"heroku.goVersion": "1.9",
 	"comment": "",
 	"ignore": "test",
 	"package": [
@@ -16,5 +15,8 @@
 			"revisionTime": "2017-03-22T23:44:13Z"
 		}
 	],
-	"rootPath": "github.com/covrom/gonec"
+	"rootPath": "github.com/covrom/gonec",
+	"heroku": {
+		"goVersion": "go1.9"
+	}
 }
