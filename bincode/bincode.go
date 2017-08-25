@@ -173,7 +173,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			bins = append(bins, addBinExpr(e.Rhs, reg+1, lid)...)
 			bins = appendBin(bins,
 				&BinOPER{
-					RegL: reg,
+					RegL: reg, // сюда же помещается результат
 					RegR: reg + 1,
 					Op:   oper,
 				}, e)
@@ -209,7 +209,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 
 	case *ast.CallExpr:
-		// если это анонимный вызхов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg
+		// если это анонимный вызов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg
 		var regoff int
 		if e.Name == 0 {
 			regoff = 1
@@ -262,17 +262,44 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		}, reg, lid)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
 
 	case *ast.MemberExpr:
-
+		// здесь идет только вычисление значения свойства
+		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
+		bins = appendBin(bins,
+			&BinGETMEMBER{
+				Name: e.Name,
+				Reg:  reg,
+			}, e)
 	case *ast.ItemExpr:
-
+		// только вычисление значения по индексу
+		bins = append(bins, addBinExpr(e.Value, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Index, reg+1, lid)...)
+		bins = appendBin(bins,
+			&BinGETIDX{
+				Reg:   reg,
+				Index: reg + 1,
+			}, e)
 	case *ast.SliceExpr:
-
+		// только вычисление субслайса
+		bins = append(bins, addBinExpr(e.Value, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Begin, reg+1, lid)...)
+		bins = append(bins, addBinExpr(e.End, reg+2, lid)...)
+		bins = appendBin(bins,
+			&BinGETSUBSLICE{
+				Reg:      reg,
+				BeginReg: reg + 1,
+				EndReg:   reg + 2,
+			}, e)
 	case *ast.FuncExpr:
-
+		bins = appendBin(bins,
+			&BinFUNC{
+				Reg:    reg,
+				Name:   e.Name,
+				Code:   BinaryCode(e.Stmts, 0, lid),
+				Args:   e.Args,
+				VarArg: e.VarArg,
+			}, e)
 	case *ast.LetExpr:
-
-	case *ast.LetsExpr:
-
+		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
 	case *ast.AssocExpr:
 
 	case *ast.NewExpr:

@@ -169,14 +169,14 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		e.Value = simplifyExprFolding(e.Value)
 		e.Index = simplifyExprFolding(e.Index)
 		return e
-	case *ast.LetsExpr:
-		for i2, e2 := range e.Lhss {
-			e.Lhss[i2] = simplifyExprFolding(e2)
-		}
-		for i2, e2 := range e.Rhss {
-			e.Rhss[i2] = simplifyExprFolding(e2)
-		}
-		return e
+	// case *ast.LetsExpr:
+	// 	for i2, e2 := range e.Lhss {
+	// 		e.Lhss[i2] = simplifyExprFolding(e2)
+	// 	}
+	// 	for i2, e2 := range e.Rhss {
+	// 		e.Rhss[i2] = simplifyExprFolding(e2)
+	// 	}
+	// 	return e
 	case *ast.AssocExpr:
 		e.Lhs = simplifyExprFolding(e.Lhs)
 		e.Rhs = simplifyExprFolding(e.Rhs)

@@ -1192,38 +1192,38 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			rv = rv.Elem()
 		}
 		return invokeLetExpr(e.Lhs, rv, env)
-	case *ast.LetsExpr:
-		rv := NilValue
-		var err error
-		vs := []interface{}{}
-		for _, rhs := range e.Rhss {
-			rv, err = invokeExpr(rhs, env)
-			if err != nil {
-				return rv, NewError(rhs, err)
-			}
-			if rv == NilValue {
-				vs = append(vs, nil)
-			} else if rv.IsValid() && rv.CanInterface() {
-				vs = append(vs, rv.Interface())
-			} else {
-				vs = append(vs, nil)
-			}
-		}
-		rvs := reflect.ValueOf(vs)
-		for i, lhs := range e.Lhss {
-			if i >= rvs.Len() {
-				break
-			}
-			v := rvs.Index(i)
-			if v.Kind() == reflect.Interface {
-				v = v.Elem()
-			}
-			_, err = invokeLetExpr(lhs, v, env)
-			if err != nil {
-				return rvs, NewError(lhs, err)
-			}
-		}
-		return rvs, nil
+	// case *ast.LetsExpr:
+	// 	rv := NilValue
+	// 	var err error
+	// 	vs := []interface{}{}
+	// 	for _, rhs := range e.Rhss {
+	// 		rv, err = invokeExpr(rhs, env)
+	// 		if err != nil {
+	// 			return rv, NewError(rhs, err)
+	// 		}
+	// 		if rv == NilValue {
+	// 			vs = append(vs, nil)
+	// 		} else if rv.IsValid() && rv.CanInterface() {
+	// 			vs = append(vs, rv.Interface())
+	// 		} else {
+	// 			vs = append(vs, nil)
+	// 		}
+	// 	}
+	// 	rvs := reflect.ValueOf(vs)
+	// 	for i, lhs := range e.Lhss {
+	// 		if i >= rvs.Len() {
+	// 			break
+	// 		}
+	// 		v := rvs.Index(i)
+	// 		if v.Kind() == reflect.Interface {
+	// 			v = v.Elem()
+	// 		}
+	// 		_, err = invokeLetExpr(lhs, v, env)
+	// 		if err != nil {
+	// 			return rvs, NewError(lhs, err)
+	// 		}
+	// 	}
+	// 	return rvs, nil
 	case *ast.NewExpr:
 		rt, err := env.Type(e.Type)
 		if err != nil {

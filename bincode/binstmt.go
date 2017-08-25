@@ -162,7 +162,7 @@ var OperMap = map[string]int{
 type BinOPER struct {
 	BinStmtImpl
 
-	RegL int
+	RegL int // сюда же помещается результат
 	RegR int
 	Op   int
 }
@@ -183,4 +183,36 @@ type BinCALL struct {
 	VarArg bool
 
 	Go bool // признак необходимости запуска в новой горутине
+}
+
+type BinGETMEMBER struct {
+	BinStmtImpl
+
+	Reg  int
+	Name int
+}
+
+type BinGETIDX struct {
+	BinStmtImpl
+
+	Reg   int
+	Index int
+}
+
+type BinGETSUBSLICE struct {
+	BinStmtImpl
+
+	Reg      int
+	BeginReg int
+	EndReg   int
+}
+
+type BinFUNC struct {
+	BinStmtImpl
+
+	Reg    int // регистр, в который сохранияется значение определяемой функции типа func
+	Name   int
+	Code   BinCode
+	Args   []int // идентификаторы параметров
+	VarArg bool
 }

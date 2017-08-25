@@ -235,12 +235,12 @@ type LetExpr struct {
 }
 
 // LetsExpr provide multiple expression of let.
-type LetsExpr struct {
-	ExprImpl
-	Lhss     []Expr
-	Operator string
-	Rhss     []Expr
-}
+// type LetsExpr struct {
+// 	ExprImpl
+// 	Lhss     []Expr
+// 	Operator string
+// 	Rhss     []Expr
+// }
 
 // AssocExpr provide expression to assoc operation.
 type AssocExpr struct {
