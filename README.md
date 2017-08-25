@@ -8,8 +8,7 @@
 [![Download](/button_down.png)](https://github.com/covrom/gonec/releases)
 [![Docs](/button_doc.png)](https://github.com/covrom/gonec/wiki)
 [![Demo site](/button_play.png)](https://gonec.herokuapp.com/)
-
-[Чат в гиттере](https://gitter.im/gonec/Lobby)
+[![Chat](/button_chat.png)](https://gitter.im/gonec/Lobby)
 
 ## Цели
 

@@ -13,6 +13,8 @@ type BinStmtImpl struct {
 
 func (x *BinStmtImpl) binstmt() {}
 
+type BinCode []BinStmt
+
 //////////////////////
 // команды байткода
 //////////////////////

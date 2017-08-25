@@ -10,7 +10,7 @@ import (
 // компиляция в байткод
 ///////////////////////////////////////////////////////////////
 
-func BinaryCode(inast []ast.Stmt, reg int, lid *int) (outast []BinStmt) {
+func BinaryCode(inast []ast.Stmt, reg int, lid *int) (outast BinCode) {
 	for _, st := range inast {
 		// перебираем все подвыражения и команды, и выстраиваем их в линию
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
@@ -23,12 +23,12 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (outast []BinStmt) {
 	return
 }
 
-func appendBin(bins []BinStmt, b BinStmt, e ast.Expr) []BinStmt {
+func appendBin(bins BinCode, b BinStmt, e ast.Expr) BinCode {
 	b.SetPosition(e.Position())
 	return append(bins, b)
 }
 
-func addBinExpr(expr ast.Expr, reg int, lid *int) (bins []BinStmt) {
+func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 	switch e := expr.(type) {
 	case *ast.NativeExpr:
 		// добавляем команду загрузки значения
