@@ -661,7 +661,7 @@ func ParseSrc(src string) ([]ast.Stmt, error) {
 	// fmt.Printf("%#v\n", prs[0].(*ast.LetsStmt).Rhss[0].(*ast.SliceExpr))
 	lid := 0
 	bin := bincode.BinaryCode(prs, 0, &lid)
-	fmt.Printf("%v\n", bin)
+	fmt.Println(bin)
 
 	return prs, err
 }
