@@ -603,3 +603,37 @@ type BinMODULE struct {
 func (v BinMODULE) String() string {
 	return fmt.Sprintf("MODULE %s\n{\n%v}\n", ast.UniqueNames.Get(v.Name), v.Code)
 }
+
+type BinERROR struct {
+	BinStmtImpl
+
+	Error string
+}
+
+func (v BinERROR) String() string {
+	return fmt.Sprintf("ERROR %q", v.Error)
+}
+
+type BinTRYRECV struct {
+	BinStmtImpl
+
+	Reg    int // на входе канал, на выходе тоже
+	RegVal int // получаемое значение
+	RegOk  int // успешное чтение, или не было чтения, или в Reg не канал
+}
+
+func (v BinTRYRECV) String() string {
+	return fmt.Sprintf("TRYRECV r%d, OK r%d", v.Reg, v.RegOk)
+}
+
+type BinTRYSEND struct {
+	BinStmtImpl
+
+	Reg    int // на входе канал, на выходе тоже
+	RegVal int // регистр со значением для отправки
+	RegOk  int // успешно передано в канал, или не было передачи, или в Reg не канал
+}
+
+func (v BinTRYSEND) String() string {
+	return fmt.Sprintf("TRYSEND r%d, r%d, OK r%d", v.Reg, v.RegVal, v.RegOk)
+}

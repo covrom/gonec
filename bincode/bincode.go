@@ -336,14 +336,124 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						Reg:  reg + 2,
 						Reg1: reg,
 						Reg2: reg + 1,
-					}, s)
+					}, case_stmt)
 
 				bins = appendBin(bins,
 					&BinJFALSE{
 						Reg:    reg + 2,
 						JumpTo: li,
-					}, s)
+					}, case_stmt)
 				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid)...)
+				bins = appendBin(bins,
+					&BinJMP{
+						JumpTo: lend,
+					}, case_stmt)
+
+				bins = appendBin(bins,
+					&BinLABEL{
+						Label: li,
+					}, case_stmt)
+			}
+			if default_stmt != nil {
+				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid)...)
+			}
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lend,
+				}, s)
+
+		case *ast.SelectStmt:
+			*lid++
+			lend := *lid
+			var default_stmt *ast.DefaultStmt
+			for _, ss := range s.Cases {
+				if ssd, ok := ss.(*ast.DefaultStmt); ok {
+					default_stmt = ssd
+					continue
+				}
+				*lid++
+				li := *lid
+				case_stmt := ss.(*ast.CaseStmt)
+				e, ok := case_stmt.Expr.(*ast.ChanExpr)
+				if !ok {
+					bins = appendBin(bins,
+						&BinERROR{
+							Error: "При выборе вариантов из каналов допустимы только выражения с каналами",
+						}, case_stmt)
+					continue
+				}
+				// определяем значение справа
+				bins = append(bins, addBinExpr(e.Rhs, reg, lid)...)
+				if e.Lhs == nil {
+					// слева нет значения - это временное чтение из канала без сохранения значения в переменной
+					bins = appendBin(bins,
+						&BinTRYRECV{
+							Reg:    reg,
+							RegVal: reg + 1,
+							RegOk:  reg + 2,
+						}, e.Rhs)
+					bins = appendBin(bins,
+						&BinJFALSE{
+							Reg:    reg + 2,
+							JumpTo: li,
+						}, s)
+				} else {
+					// значение слева
+					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid)...)
+					// слева канал - пишем в него правое
+					bins = appendBin(bins,
+						&BinTRYSEND{
+							Reg:    reg + 1,
+							RegVal: reg,
+							RegOk:  reg + 2,
+						}, e.Lhs)
+
+					*lid++
+					li2 := *lid
+
+					bins = appendBin(bins,
+						&BinJTRUE{
+							Reg:    reg + 2,
+							JumpTo: li2,
+						}, s)
+
+					// иначе справа канал, а слева переменная (установим, если прочитали из канала)
+					bins = appendBin(bins,
+						&BinTRYRECV{
+							Reg:    reg,
+							RegVal: reg + 1,
+							RegOk:  reg + 2,
+						}, e.Rhs)
+					bins = appendBin(bins,
+						&BinJFALSE{
+							Reg:    reg + 2,
+							JumpTo: li,
+						}, s)
+
+					switch ee := e.Lhs.(type) {
+					case *ast.IdentExpr:
+						bins = appendBin(bins,
+							&BinSET{
+								Reg: reg + 1,
+								Id:  ee.Id,
+							}, s)
+
+					case *ast.MemberExpr:
+
+					case *ast.ItemExpr:
+
+					case *ast.SliceExpr:
+					}
+
+					bins = appendBin(bins,
+						&BinLABEL{
+							Label: li2,
+						}, s)
+
+				}
+
+				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid)...)
+
 				bins = appendBin(bins,
 					&BinJMP{
 						JumpTo: lend,
@@ -361,10 +471,6 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: lend,
 				}, s)
-
-		case *ast.SelectStmt:
-			// объявляем начало выбора из каналов
-			
 
 		case *ast.LetsStmt:
 
@@ -739,6 +845,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 	case *ast.ChanExpr:
 		// TODO: тут все зависит от операндов слева и справа, канал там, или переменная, будут условные переходы и присвоение
+		// возвращает в reg+1 булево значение - прочитано/записано, или нет
+		// есть тип CHANSEND / RECV
 
 	case *ast.AssocExpr:
 		// TODO: тут будет присвоение
