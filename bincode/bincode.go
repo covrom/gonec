@@ -113,8 +113,9 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// инициализируем итератор, параметры цикла и цикл в стеке циклов
 			bins = appendBin(bins,
 				&BinFOREACH{
-					Reg:     reg,
-					RegIter: regiter,
+					Reg:        reg,
+					RegIter:    regiter,
+					BreakLabel: lend,
 				}, s)
 			*lid++
 			li := *lid
@@ -172,9 +173,10 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// инициализируем итератор, параметры цикла и цикл в стеке циклов
 			bins = appendBin(bins,
 				&BinFORNUM{
-					Reg:     reg,
-					RegFrom: regfrom,
-					RegTo:   regto,
+					Reg:        reg,
+					RegFrom:    regfrom,
+					RegTo:      regto,
+					BreakLabel: lend,
 				}, s)
 			*lid++
 			li := *lid
@@ -187,7 +189,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			bins = appendBin(bins,
 				&BinNEXTNUM{
 					Reg:    reg,
-					JumpTo: lend,
+					JumpTo: lend, // сюда же переходим по Прервать
 				}, s)
 			// устанавливаем переменную-итератор
 			bins = appendBin(bins,
@@ -216,10 +218,54 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.LoopStmt:
+			*lid++
+			lend := *lid
+			*lid++
+			li := *lid
+			bins = appendBin(bins,
+				&BinWHILE{
+					Reg:        reg,
+					BreakLabel: lend,
+				}, s)
+			// очередная итерация
+			// сюда же переходим по Продолжить
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: li,
+				}, s)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			bins = appendBin(bins,
+				&BinJFALSE{
+					Reg:    reg,
+					JumpTo: lend,
+				}, s)
+			// тело цикла
+			bins = append(bins, BinaryCode(s.Stmts, reg+1, lid)...)
+
+			// повторяем итерацию
+			bins = appendBin(bins,
+				&BinJMP{
+					JumpTo: li,
+				}, s)
+
+			// КонецЦикла
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lend,
+				}, s)
+			// снимаем со стека наличие цикла для Прервать и Продолжить
+			bins = appendBin(bins,
+				&BinPOPFOR{
+					Reg: reg,
+				}, s)
 
 		case *ast.BreakStmt:
+			bins = appendBin(bins,
+				&BinBREAK{}, s)
 
 		case *ast.ContinueStmt:
+			bins = appendBin(bins,
+				&BinCONTINUE{}, s)
 
 		case *ast.ReturnStmt:
 

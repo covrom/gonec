@@ -474,12 +474,13 @@ func (v BinPOPTRY) String() string {
 type BinFOREACH struct {
 	BinStmtImpl
 
-	Reg     int // регистр для итерационного выбора из него значений
-	RegIter int // в этот регистр будет записываться итератор
+	Reg        int // регистр для итерационного выбора из него значений
+	RegIter    int // в этот регистр будет записываться итератор
+	BreakLabel int
 }
 
 func (v BinFOREACH) String() string {
-	return fmt.Sprintf("FOREACH r%d, ITER r%d", v.Reg, v.RegIter)
+	return fmt.Sprintf("FOREACH r%d, ITER r%d, BREAK TO L%d", v.Reg, v.RegIter, v.BreakLabel)
 }
 
 type BinNEXT struct {
@@ -510,20 +511,21 @@ func (v BinPOPFOR) String() string {
 type BinFORNUM struct {
 	BinStmtImpl
 
-	Reg     int // регистр для итерационного значения
-	RegFrom int // регистр с начальным значением
-	RegTo   int // регистр с конечным значением
+	Reg        int // регистр для итерационного значения
+	RegFrom    int // регистр с начальным значением
+	RegTo      int // регистр с конечным значением
+	BreakLabel int
 }
 
 func (v BinFORNUM) String() string {
-	return fmt.Sprintf("FORNUM r%d, FROM r%d, TO r%d", v.Reg, v.RegFrom, v.RegTo)
+	return fmt.Sprintf("FORNUM r%d, FROM r%d, TO r%d, BREAK TO L%d", v.Reg, v.RegFrom, v.RegTo, v.BreakLabel)
 }
 
 type BinNEXTNUM struct {
 	BinStmtImpl
 
-	Reg int // следующее значение итератора
-	JumpTo  int // переход в случае, если значение после увеличения стало больше, чем ранее определенное в RegTo
+	Reg    int // следующее значение итератора
+	JumpTo int // переход в случае, если значение после увеличения стало больше, чем ранее определенное в RegTo
 	// туда же переходим по Прервать
 }
 
@@ -531,3 +533,29 @@ func (v BinNEXTNUM) String() string {
 	return fmt.Sprintf("NEXTNUM r%d, ENDLOOP L%d", v.Reg, v.JumpTo)
 }
 
+type BinWHILE struct {
+	BinStmtImpl
+
+	Reg        int // регистр для условия
+	BreakLabel int
+}
+
+func (v BinWHILE) String() string {
+	return fmt.Sprintf("WHILE r%d, BREAK TO L%d", v.Reg, v.BreakLabel)
+}
+
+type BinBREAK struct {
+	BinStmtImpl
+}
+
+func (v BinBREAK) String() string {
+	return fmt.Sprintf("BREAK")
+}
+
+type BinCONTINUE struct {
+	BinStmtImpl
+}
+
+func (v BinCONTINUE) String() string {
+	return fmt.Sprintf("CONTINUE")
+}
