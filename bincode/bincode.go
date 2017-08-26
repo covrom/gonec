@@ -268,6 +268,38 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinCONTINUE{}, s)
 
 		case *ast.ReturnStmt:
+			if len(s.Exprs) == 0 {
+				bins = appendBin(bins,
+					&BinLOAD{
+						Reg: reg, // основной регистр
+						Val: nil,
+					}, s)
+			}
+			if len(s.Exprs) == 1 {
+				// одиночное значение в reg
+				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid)...)
+			} else {
+				// создание слайса в reg
+				bins = appendBin(bins,
+					&BinMAKESLICE{
+						Reg: reg,
+						Len: len(s.Exprs),
+						Cap: len(s.Exprs),
+					}, s)
+
+				for i, ee := range s.Exprs {
+					bins = append(bins, addBinExpr(ee, reg+1, lid)...)
+					bins = appendBin(bins,
+						&BinSETIDX{
+							Reg:    reg,
+							Index:  i,
+							ValReg: reg + 1,
+						}, ee)
+				}
+			}
+			// в reg имеем значение или структуру возврата
+			bins = appendBin(bins,
+				&BinRET{}, s)
 
 		case *ast.ThrowStmt:
 
@@ -556,14 +588,26 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				EndReg:   reg + 2,
 			}, e)
 	case *ast.FuncExpr:
+		*lid++
+		lend := *lid
 		bins = appendBin(bins,
 			&BinFUNC{
-				Reg:    reg,
-				Name:   e.Name,
-				Code:   BinaryCode(e.Stmts, 0, lid),
-				Args:   e.Args,
-				VarArg: e.VarArg,
+				Reg:      reg,
+				Name:     e.Name,
+				Code:     BinaryCode(e.Stmts, 0, lid),
+				Args:     e.Args,
+				VarArg:   e.VarArg,
+				ReturnTo: lend,
 			}, e)
+		// КонецФункции
+		bins = appendBin(bins,
+			&BinLABEL{
+				Label: lend,
+			}, e)
+		// возвращаем значения в регистре reg, установленные функцией
+		bins = appendBin(bins,
+			&BinRET{}, e)
+
 	case *ast.LetExpr:
 		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
 	case *ast.TypeCast:

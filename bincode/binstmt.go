@@ -355,11 +355,12 @@ func (v BinGETSUBSLICE) String() string {
 type BinFUNC struct {
 	BinStmtImpl
 
-	Reg    int // регистр, в который сохраняется значение определяемой функции типа func
-	Name   int
-	Code   BinCode
-	Args   []int // идентификаторы параметров
-	VarArg bool
+	Reg      int // регистр, в который сохраняется значение определяемой функции типа func
+	Name     int
+	Code     BinCode
+	Args     []int // идентификаторы параметров
+	VarArg   bool
+	ReturnTo int //метка инструкции возврата из функции
 }
 
 func (v BinFUNC) String() string {
@@ -558,4 +559,12 @@ type BinCONTINUE struct {
 
 func (v BinCONTINUE) String() string {
 	return fmt.Sprintf("CONTINUE")
+}
+
+type BinRET struct {
+	BinStmtImpl
+}
+
+func (v BinRET) String() string {
+	return fmt.Sprintf("RETURN")
 }
