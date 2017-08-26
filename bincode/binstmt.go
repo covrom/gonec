@@ -468,7 +468,7 @@ type BinPOPTRY struct {
 }
 
 func (v BinPOPTRY) String() string {
-	return fmt.Sprintf("POPTRY r%d",v.Reg)
+	return fmt.Sprintf("POPTRY r%d", v.Reg)
 }
 
 type BinFOREACH struct {
@@ -476,11 +476,10 @@ type BinFOREACH struct {
 
 	Reg     int // регистр для итерационного выбора из него значений
 	RegIter int // в этот регистр будет записываться итератор
-	RegExit int // в этот регистр помещается значение для выхода из цикла по равенству
 }
 
 func (v BinFOREACH) String() string {
-	return fmt.Sprintf("FOREACH r%d, ITER r%d, EXIT r%d", v.Reg, v.RegIter, v.RegExit)
+	return fmt.Sprintf("FOREACH r%d, ITER r%d", v.Reg, v.RegIter)
 }
 
 type BinNEXT struct {
@@ -500,10 +499,35 @@ func (v BinNEXT) String() string {
 
 type BinPOPFOR struct {
 	BinStmtImpl
-	
+
 	Reg int // снимаем со стека циклов конструкцию с этим регистром
 }
 
 func (v BinPOPFOR) String() string {
-	return fmt.Sprintf("POPFOR r%d",v.Reg)
+	return fmt.Sprintf("POPFOR r%d", v.Reg)
 }
+
+type BinFORNUM struct {
+	BinStmtImpl
+
+	Reg     int // регистр для итерационного значения
+	RegFrom int // регистр с начальным значением
+	RegTo   int // регистр с конечным значением
+}
+
+func (v BinFORNUM) String() string {
+	return fmt.Sprintf("FORNUM r%d, FROM r%d, TO r%d", v.Reg, v.RegFrom, v.RegTo)
+}
+
+type BinNEXTNUM struct {
+	BinStmtImpl
+
+	Reg int // следующее значение итератора
+	JumpTo  int // переход в случае, если значение после увеличения стало больше, чем ранее определенное в RegTo
+	// туда же переходим по Прервать
+}
+
+func (v BinNEXTNUM) String() string {
+	return fmt.Sprintf("NEXTNUM r%d, ENDLOOP L%d", v.Reg, v.JumpTo)
+}
+
