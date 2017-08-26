@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"runtime"
 	"errors"
 	"fmt"
 	"os"
@@ -611,6 +612,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 				}
 			} else {
 				// если нет секции "другое", возвращаемся к выбору из каналов
+				runtime.Gosched()
 				goto startslct
 			}
 		}

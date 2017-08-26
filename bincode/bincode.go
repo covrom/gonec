@@ -363,6 +363,8 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.SelectStmt:
+			// объявляем начало выбора из каналов
+			
 
 		case *ast.LetsStmt:
 
