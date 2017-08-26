@@ -364,6 +364,13 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 		case *ast.SelectStmt:
 			*lid++
+			lstart := *lid
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lstart,
+				}, s)
+
+			*lid++
 			lend := *lid
 			var default_stmt *ast.DefaultStmt
 			for _, ss := range s.Cases {
@@ -430,20 +437,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 							JumpTo: li,
 						}, s)
 
-					switch ee := e.Lhs.(type) {
-					case *ast.IdentExpr:
-						bins = appendBin(bins,
-							&BinSET{
-								Reg: reg + 1,
-								Id:  ee.Id,
-							}, s)
-
-					case *ast.MemberExpr:
-
-					case *ast.ItemExpr:
-
-					case *ast.SliceExpr:
-					}
+					bins = append(bins, addBinLetExpr(e.Lhs, reg+1, lid)...)
 
 					bins = appendBin(bins,
 						&BinLABEL{
@@ -451,21 +445,32 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						}, s)
 
 				}
-
+				// отправили или прочитали - выполняем ветку кода и выходим из цикла
 				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid)...)
 
+				// выходим из цикла
 				bins = appendBin(bins,
 					&BinJMP{
 						JumpTo: lend,
 					}, case_stmt)
 
+				// к следующему case
 				bins = appendBin(bins,
 					&BinLABEL{
 						Label: li,
 					}, s)
 			}
+			// если ни одна из веток не сработала - проверяем default
 			if default_stmt != nil {
 				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid)...)
+			} else {
+				// допускаем обработку других горутин
+				bins = appendBin(bins,
+					&BinGOSHED{}, s)
+				bins = appendBin(bins,
+					&BinJMP{
+						JumpTo: lstart,
+					}, s)
 			}
 			bins = appendBin(bins,
 				&BinLABEL{
@@ -484,6 +489,29 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 func appendBin(bins BinCode, b BinStmt, e ast.Pos) BinCode {
 	b.SetPosition(e.Position())
 	return append(bins, b)
+}
+
+func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
+	// присваиваем значению переменной из e значение из регистра reg
+	switch ee := e.(type) {
+	case *ast.IdentExpr:
+		bins = appendBin(bins,
+			&BinSET{
+				Reg: reg,
+				Id:  ee.Id,
+			}, e)
+
+	case *ast.MemberExpr:
+
+	case *ast.ItemExpr:
+
+	case *ast.SliceExpr:
+
+	default:
+		// ошибка
+
+	}
+	return
 }
 
 func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {

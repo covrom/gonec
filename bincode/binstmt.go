@@ -637,3 +637,11 @@ type BinTRYSEND struct {
 func (v BinTRYSEND) String() string {
 	return fmt.Sprintf("TRYSEND r%d, r%d, OK r%d", v.Reg, v.RegVal, v.RegOk)
 }
+
+type BinGOSHED struct {
+	BinStmtImpl
+}
+
+func (v BinGOSHED) String() string {
+	return fmt.Sprintf("GOSHED")
+}
