@@ -96,7 +96,58 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.ForStmt:
+			// для каждого
+			bins = append(bins, addBinExpr(s.Value, reg, lid)...)
 
+			*lid++
+			lend := *lid
+
+			regiter := reg + 1
+			regexit := reg + 2
+			regval := reg + 3
+			regsub := reg + 4
+			// инициализируем итератор
+			bins = appendBin(bins,
+				&BinFOREACH{
+					Reg:     reg,
+					RegIter: regiter,
+					RegExit: regexit,
+				}, s)
+			*lid++
+			li := *lid
+			// очередная итерация
+			// сюда же переходим по Продолжить
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: li,
+				}, s)
+			bins = appendBin(bins,
+				&BinNEXT{
+					Reg:     reg,
+					RegIter: regiter,
+					RegVal:  regval,
+					JumpTo:  lend,
+				}, s)
+			// устанавливаем переменную-итератор
+			bins = appendBin(bins,
+				&BinSET{
+					Reg: regval,
+					Id:  s.Var,
+				}, s)
+
+			bins = append(bins, BinaryCode(s.Stmts, regsub, lid)...)
+
+			// повторяем итерацию
+			bins = appendBin(bins,
+				&BinJMP{
+					JumpTo: li,
+				}, s)
+
+			// КонецЦикла
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lend,
+				}, s)
 		case *ast.NumForStmt:
 
 		case *ast.LoopStmt:

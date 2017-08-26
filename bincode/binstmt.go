@@ -443,7 +443,7 @@ func (v BinCHANSEND) String() string {
 type BinTRY struct {
 	BinStmtImpl
 
-	Reg    int // регистр, куда будет помещаться error во время выполнения последующего кода
+	Reg int // регистр, куда будет помещаться error во время выполнения последующего кода
 }
 
 func (v BinTRY) String() string {
@@ -459,4 +459,31 @@ type BinCATCH struct {
 
 func (v BinCATCH) String() string {
 	return fmt.Sprintf("CATCH r%d, NOERR L%d", v.Reg, v.JumpTo)
+}
+
+type BinFOREACH struct {
+	BinStmtImpl
+
+	Reg int // регистр для итерационного выбора из него значений
+	RegIter int // в этот регистр будет записываться итератор
+	RegExit  int // в этот регистр помещается значение для выхода из цикла по равенству
+}
+
+func (v BinFOREACH) String() string {
+	return fmt.Sprintf("FOREACH r%d, ITER r%d, EXIT r%d", v.Reg, v.RegIter, v.RegExit)
+}
+
+type BinNEXT struct {
+	BinStmtImpl
+
+	Reg int // выбираем из этого регистра следующее значение и помещаем в регистр RegVal
+	// это может быть очередное значение из слайса или из канала, зависит от типа значения в Reg
+	RegVal  int
+	RegIter int // регистр с итератором, инициализированным FOREACH
+	JumpTo  int // переход в случае, если нет очередного значения (достигнут конец выборки)
+	// туда же переходим по Прервать
+}
+
+func (v BinNEXT) String() string {
+	return fmt.Sprintf("NEXT r%d, FROM r%d, ITER r%d, ENDLOOP L%d", v.RegVal, v.Reg, v.RegIter, v.JumpTo)
 }
