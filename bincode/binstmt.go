@@ -464,7 +464,7 @@ func (v BinCATCH) String() string {
 type BinPOPTRY struct {
 	BinStmtImpl
 
-	Reg int
+	Reg int // снимаем со стека исключений конструкцию с этим регистром
 }
 
 func (v BinPOPTRY) String() string {
@@ -501,7 +501,7 @@ func (v BinNEXT) String() string {
 type BinPOPFOR struct {
 	BinStmtImpl
 	
-	Reg int
+	Reg int // снимаем со стека циклов конструкцию с этим регистром
 }
 
 func (v BinPOPFOR) String() string {
