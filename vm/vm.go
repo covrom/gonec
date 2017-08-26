@@ -249,7 +249,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 			cenv := env //.NewEnv()
 			//defer cenv.Destroy()
 			// if stmt.Var != "" {
-			cenv.Define(ast.UniqueNames.Set("описаниеошибки"), reflect.ValueOf(err))
+			cenv.Define(ast.UniqueNames.Set("описаниеошибки"), reflect.ValueOf(err)) // переделать на функцию
 			// }
 			_, e1 := Run(stmt.Catch, cenv)
 			if e1 != nil {

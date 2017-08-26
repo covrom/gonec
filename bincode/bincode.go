@@ -72,6 +72,28 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Label: lend,
 				}, s)
 		case *ast.TryStmt:
+			// эта инструкция сообщает, в каком регистре будет отслеживаться ошибка выполнения кода до блока CATCH
+			// по-умолчанию, ошибка в регистрах не отслеживается, а передается по уровням исполнения вирт. машины
+			bins = appendBin(bins,
+				&BinTRY{
+					Reg: reg,
+				}, s)
+			bins = append(bins, BinaryCode(s.Try, reg+1, lid)...) // чтобы не затереть регистр с ошибкой, увеличиваем номер
+			// CATCH работает как JFALSE, и определяет функцию ОписаниеОшибки()
+			*lid++
+			lend := *lid
+			bins = appendBin(bins,
+				&BinCATCH{
+					Reg:    reg,
+					JumpTo: lend,
+				}, s)
+			// тело обработки ошибки
+			bins = append(bins, BinaryCode(s.Catch, reg, lid)...) // регистр с ошибкой больше не нужен, текст определен функцией
+			// КонецПопытки
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lend,
+				}, s)
 
 		case *ast.ForStmt:
 

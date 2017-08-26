@@ -439,3 +439,24 @@ type BinCHANSEND struct {
 func (v BinCHANSEND) String() string {
 	return fmt.Sprintf("CHAN<- r%d, r%d", v.Reg, v.ValReg)
 }
+
+type BinTRY struct {
+	BinStmtImpl
+
+	Reg    int // регистр, куда будет помещаться error во время выполнения последующего кода
+}
+
+func (v BinTRY) String() string {
+	return fmt.Sprintf("TRY r%d", v.Reg)
+}
+
+type BinCATCH struct {
+	BinStmtImpl
+
+	Reg    int
+	JumpTo int
+}
+
+func (v BinCATCH) String() string {
+	return fmt.Sprintf("CATCH r%d, NOERR L%d", v.Reg, v.JumpTo)
+}
