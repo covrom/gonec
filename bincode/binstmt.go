@@ -461,12 +461,20 @@ func (v BinCATCH) String() string {
 	return fmt.Sprintf("CATCH r%d, NOERR L%d", v.Reg, v.JumpTo)
 }
 
+type BinDROPTRY struct {
+	BinStmtImpl
+}
+
+func (v BinDROPTRY) String() string {
+	return "DROPTRY"
+}
+
 type BinFOREACH struct {
 	BinStmtImpl
 
-	Reg int // регистр для итерационного выбора из него значений
+	Reg     int // регистр для итерационного выбора из него значений
 	RegIter int // в этот регистр будет записываться итератор
-	RegExit  int // в этот регистр помещается значение для выхода из цикла по равенству
+	RegExit int // в этот регистр помещается значение для выхода из цикла по равенству
 }
 
 func (v BinFOREACH) String() string {
@@ -486,4 +494,12 @@ type BinNEXT struct {
 
 func (v BinNEXT) String() string {
 	return fmt.Sprintf("NEXT r%d, FROM r%d, ITER r%d, ENDLOOP L%d", v.RegVal, v.Reg, v.RegIter, v.JumpTo)
+}
+
+type BinDROPFOREACH struct {
+	BinStmtImpl
+}
+
+func (v BinDROPFOREACH) String() string {
+	return "DROPFOREACH"
 }
