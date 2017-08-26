@@ -563,8 +563,20 @@ func (v BinCONTINUE) String() string {
 
 type BinRET struct {
 	BinStmtImpl
+
+	Reg int
 }
 
 func (v BinRET) String() string {
-	return fmt.Sprintf("RETURN")
+	return fmt.Sprintf("RETURN r%d", v.Reg)
+}
+
+type BinTHROW struct {
+	BinStmtImpl
+
+	Reg int
+}
+
+func (v BinTHROW) String() string {
+	return fmt.Sprintf("THROW r%d", v.Reg)
 }

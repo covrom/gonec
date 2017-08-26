@@ -299,9 +299,16 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			}
 			// в reg имеем значение или структуру возврата
 			bins = appendBin(bins,
-				&BinRET{}, s)
+				&BinRET{
+					Reg: reg,
+				}, s)
 
 		case *ast.ThrowStmt:
+			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			bins = appendBin(bins,
+				&BinTHROW{
+					Reg: reg,
+				}, s)
 
 		case *ast.ModuleStmt:
 
@@ -606,7 +613,9 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 		// возвращаем значения в регистре reg, установленные функцией
 		bins = appendBin(bins,
-			&BinRET{}, e)
+			&BinRET{
+				Reg: reg,
+			}, e)
 
 	case *ast.LetExpr:
 		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
