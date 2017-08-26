@@ -18,6 +18,9 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 		case *ast.ExprStmt:
 			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
 		case *ast.IfStmt:
+			*lid++
+			lend := *lid
+			// Если
 			bins = append(bins, addBinExpr(s.If, reg, lid)...)
 			*lid++
 			lf := *lid
@@ -26,17 +29,13 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Reg:    reg,
 					JumpTo: lf,
 				}, s)
-			// если истина - берем Then выражение
+			// Тогда
 			bins = append(bins, BinaryCode(s.Then, reg, lid)...)
-			// прыгаем в конец
-			*lid++
-			lend := *lid
 			bins = appendBin(bins,
 				&BinJMP{
 					JumpTo: lend,
 				}, s)
-
-			// ElseIf
+			// ИначеЕсли
 			bins = appendBin(bins,
 				&BinLABEL{
 					Label: lf,
@@ -63,6 +62,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						Label: li,
 					}, stmtif)
 			}
+			// Иначе
 			if len(s.Else) > 0 {
 				bins = append(bins, BinaryCode(s.Else, reg, lid)...)
 			}
