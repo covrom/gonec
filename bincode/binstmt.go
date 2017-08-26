@@ -118,6 +118,18 @@ func (v BinMV) String() string {
 	return fmt.Sprintf("MV r%d, r%d", v.RegTo, v.RegFrom)
 }
 
+type BinEQUAL struct {
+	BinStmtImpl
+
+	Reg  int // результат сравнения помещаем сюда, тип "булево"
+	Reg1 int
+	Reg2 int
+}
+
+func (v BinEQUAL) String() string {
+	return fmt.Sprintf("EQUAL r%d, r%d == r%d", v.Reg, v.Reg1, v.Reg2)
+}
+
 type BinCASTNUM struct {
 	BinStmtImpl
 

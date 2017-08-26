@@ -317,6 +317,50 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Code: BinaryCode(s.Stmts, 0, lid),
 				}, s)
 		case *ast.SwitchStmt:
+			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			// сравниваем с каждым case
+			*lid++
+			lend := *lid
+			var default_stmt *ast.DefaultStmt
+			for _, ss := range s.Cases {
+				if ssd, ok := ss.(*ast.DefaultStmt); ok {
+					default_stmt = ssd
+					continue
+				}
+				*lid++
+				li := *lid
+				case_stmt := ss.(*ast.CaseStmt)
+				bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid)...)
+				bins = appendBin(bins,
+					&BinEQUAL{
+						Reg:  reg + 2,
+						Reg1: reg,
+						Reg2: reg + 1,
+					}, s)
+
+				bins = appendBin(bins,
+					&BinJFALSE{
+						Reg:    reg + 2,
+						JumpTo: li,
+					}, s)
+				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid)...)
+				bins = appendBin(bins,
+					&BinJMP{
+						JumpTo: lend,
+					}, case_stmt)
+
+				bins = appendBin(bins,
+					&BinLABEL{
+						Label: li,
+					}, s)
+			}
+			if default_stmt != nil {
+				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid)...)
+			}
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lend,
+				}, s)
 
 		case *ast.SelectStmt:
 
