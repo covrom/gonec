@@ -94,9 +94,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: lend,
 				}, s)
-			// сбрасываем состояние обработки ошибок, чтобы последующий код не был включен в обработку
+			// снимаем со стека состояние обработки ошибок, чтобы последующий код не был включен в текущую обработку
 			bins = appendBin(bins,
-				&BinDROPTRY{}, s)
+				&BinPOPTRY{
+					Reg: reg,
+				}, s)
 
 		case *ast.ForStmt:
 			// для каждого
@@ -151,9 +153,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: lend,
 				}, s)
-			// сбрасываем наличие цикла
+			// снимаем со стека наличие цикла для Прервать и Продолжить
 			bins = appendBin(bins,
-				&BinDROPFOREACH{}, s)
+				&BinPOPFOR{
+					Reg: reg,
+				}, s)
 
 		case *ast.NumForStmt:
 

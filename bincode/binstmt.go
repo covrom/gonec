@@ -461,12 +461,14 @@ func (v BinCATCH) String() string {
 	return fmt.Sprintf("CATCH r%d, NOERR L%d", v.Reg, v.JumpTo)
 }
 
-type BinDROPTRY struct {
+type BinPOPTRY struct {
 	BinStmtImpl
+
+	Reg int
 }
 
-func (v BinDROPTRY) String() string {
-	return "DROPTRY"
+func (v BinPOPTRY) String() string {
+	return fmt.Sprintf("POPTRY r%d",v.Reg)
 }
 
 type BinFOREACH struct {
@@ -496,10 +498,12 @@ func (v BinNEXT) String() string {
 	return fmt.Sprintf("NEXT r%d, FROM r%d, ITER r%d, ENDLOOP L%d", v.RegVal, v.Reg, v.RegIter, v.JumpTo)
 }
 
-type BinDROPFOREACH struct {
+type BinPOPFOR struct {
 	BinStmtImpl
+	
+	Reg int
 }
 
-func (v BinDROPFOREACH) String() string {
-	return "DROPFOREACH"
+func (v BinPOPFOR) String() string {
+	return fmt.Sprintf("POPFOR r%d",v.Reg)
 }
