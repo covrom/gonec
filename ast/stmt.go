@@ -56,13 +56,13 @@ type NumForStmt struct {
 }
 
 // CForStmt provide C-style "for (;;)" expression statement.
-type CForStmt struct {
-	StmtImpl
-	Expr1 Expr
-	Expr2 Expr
-	Expr3 Expr
-	Stmts []Stmt
-}
+// type CForStmt struct {
+// 	StmtImpl
+// 	Expr1 Expr
+// 	Expr2 Expr
+// 	Expr3 Expr
+// 	Stmts []Stmt
+// }
 
 // LoopStmt provide "for expr" expression statement.
 type LoopStmt struct {

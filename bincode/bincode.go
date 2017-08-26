@@ -10,20 +10,99 @@ import (
 // компиляция в байткод
 ///////////////////////////////////////////////////////////////
 
-func BinaryCode(inast []ast.Stmt, reg int, lid *int) (outast BinCode) {
+func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 	for _, st := range inast {
 		// перебираем все подвыражения и команды, и выстраиваем их в линию
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
 		switch s := st.(type) {
 		case *ast.ExprStmt:
-			outast = append(outast, addBinExpr(s.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+		case *ast.IfStmt:
+			bins = append(bins, addBinExpr(s.If, reg, lid)...)
+			*lid++
+			lf := *lid
+			bins = appendBin(bins,
+				&BinJFALSE{
+					Reg:    reg,
+					JumpTo: lf,
+				}, s)
+			// если истина - берем Then выражение
+			bins = append(bins, BinaryCode(s.Then, reg, lid)...)
+			// прыгаем в конец
+			*lid++
+			lend := *lid
+			bins = appendBin(bins,
+				&BinJMP{
+					JumpTo: lend,
+				}, s)
+
+			// ElseIf
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lf,
+				}, s)
+
+			for _, elif := range s.ElseIf {
+				stmtif := elif.(*ast.IfStmt)
+				bins = append(bins, addBinExpr(stmtif.If, reg, lid)...)
+				// если ложь, то перейдем на следующее условие
+				*lid++
+				li := *lid
+				bins = appendBin(bins,
+					&BinJFALSE{
+						Reg:    reg,
+						JumpTo: li,
+					}, stmtif)
+				bins = append(bins, BinaryCode(stmtif.Then, reg, lid)...)
+				bins = appendBin(bins,
+					&BinJMP{
+						JumpTo: lend,
+					}, stmtif)
+				bins = appendBin(bins,
+					&BinLABEL{
+						Label: li,
+					}, stmtif)
+			}
+			if len(s.Else) > 0 {
+				bins = append(bins, BinaryCode(s.Else, reg, lid)...)
+			}
+			// КонецЕсли
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: lend,
+				}, s)
+		case *ast.TryStmt:
+
+		case *ast.ForStmt:
+
+		case *ast.NumForStmt:
+
+		case *ast.LoopStmt:
+
+		case *ast.BreakStmt:
+
+		case *ast.ContinueStmt:
+
+		case *ast.ReturnStmt:
+
+		case *ast.ThrowStmt:
+
+		case *ast.ModuleStmt:
+
+		case *ast.SwitchStmt:
+
+		case *ast.SelectStmt:
+
+		case *ast.LetsStmt:
+
+		case *ast.VarStmt:
 
 		}
 	}
 	return
 }
 
-func appendBin(bins BinCode, b BinStmt, e ast.Expr) BinCode {
+func appendBin(bins BinCode, b BinStmt, e ast.Pos) BinCode {
 	b.SetPosition(e.Position())
 	return append(bins, b)
 }
@@ -278,7 +357,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		bins = append(bins, addBinExpr(e.Index, reg+1, lid)...)
 		bins = appendBin(bins,
 			&BinGETIDX{
-				Reg:   reg,
+				Reg:      reg,
 				RegIndex: reg + 1,
 			}, e)
 	case *ast.SliceExpr:
