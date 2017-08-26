@@ -580,3 +580,14 @@ type BinTHROW struct {
 func (v BinTHROW) String() string {
 	return fmt.Sprintf("THROW r%d", v.Reg)
 }
+
+type BinMODULE struct {
+	BinStmtImpl
+
+	Name int
+	Code BinCode
+}
+
+func (v BinMODULE) String() string {
+	return fmt.Sprintf("MODULE %s\n{\n%v}\n", ast.UniqueNames.Get(v.Name), v.Code)
+}

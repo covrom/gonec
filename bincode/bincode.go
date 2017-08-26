@@ -311,7 +311,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.ModuleStmt:
-
+			bins = appendBin(bins,
+				&BinMODULE{
+					Name: s.Name,
+					Code: BinaryCode(s.Stmts, 0, lid),
+				}, s)
 		case *ast.SwitchStmt:
 
 		case *ast.SelectStmt:
