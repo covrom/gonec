@@ -144,6 +144,7 @@ SETMEMBER r1."ПолеСтрока", r0
 LOAD r0, "АВ"
 GET r1, "а"
 GETMEMBER r1, "ПолеСтрока"
+LOAD r2, <nil>
 LOAD r3, 2
 SETSLICE r1[r2:r3], r0
 GET r0, "а"

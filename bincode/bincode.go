@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/covrom/gonec/env"
+
 	"github.com/covrom/gonec/ast"
 )
 
@@ -595,11 +597,11 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 
 func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 	if expr == nil {
-		// bins = appendBin(bins,
-		// 	&BinLOAD{
-		// 		Reg: reg,
-		// 		Val: nil,
-		// 	}, expr)
+		bins = appendBin(bins,
+			&BinLOAD{
+				Reg: reg,
+				Val: nil,
+			}, &ast.NativeExpr{Value: env.NilValue})
 		return
 	}
 	switch e := expr.(type) {
