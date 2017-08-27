@@ -481,26 +481,55 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// если справа одно выражение - присваиваем его всем левым
 			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 			if len(s.Rhss) == 1 {
-				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid)...)			
+				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid)...)
 				for _, e := range s.Lhss {
 					bins = append(bins, addBinLetExpr(e, reg, lid)...)
 				}
 			} else {
 				if len(s.Lhss) == len(s.Rhss) {
 					for i, e := range s.Lhss {
-						bins = append(bins, addBinExpr(s.Rhss[i], reg, lid)...)			
+						bins = append(bins, addBinExpr(s.Rhss[i], reg, lid)...)
 						bins = append(bins, addBinLetExpr(e, reg, lid)...)
 					}
 				} else {
 					// ошибка
 					bins = appendBin(bins,
-					&BinERROR{
-						Error: "Количество переменных и значений должно совпадать или значение должно быть одно",
-					}, s)
+						&BinERROR{
+							Error: "Количество переменных и значений должно совпадать или значение должно быть одно",
+						}, s)
 				}
 			}
 
 		case *ast.VarStmt:
+			// если справа одно выражение - присваиваем его всем левым
+			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
+			if len(s.Exprs) == 1 {
+				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid)...)
+				for _, e := range s.Names {
+					bins = appendBin(bins,
+						&BinSET{
+							Reg: reg,
+							Id:  e,
+						}, s)
+				}
+			} else {
+				if len(s.Exprs) == len(s.Names) {
+					for i, e := range s.Exprs {
+						bins = append(bins, addBinExpr(e, reg, lid)...)
+						bins = appendBin(bins,
+							&BinSET{
+								Reg: reg,
+								Id:  s.Names[i],
+							}, s)
+					}
+				} else {
+					// ошибка
+					bins = appendBin(bins,
+						&BinERROR{
+							Error: "Количество переменных и значений должно совпадать или значение должно быть одно",
+						}, s)
+				}
+			}
 
 		}
 	}
