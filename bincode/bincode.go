@@ -553,6 +553,13 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 
 	case *ast.MemberExpr:
+		bins = append(bins, addBinExpr(ee.Expr, reg+1, lid)...)
+		bins = appendBin(bins,
+		&BinSETMEMBER{
+			Reg: reg+1,
+			Id:  ee.Name,
+			RegVal: reg,
+		}, e)
 
 	case *ast.ItemExpr:
 

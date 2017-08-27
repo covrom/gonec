@@ -211,6 +211,18 @@ func (v BinSET) String() string {
 	return fmt.Sprintf("SET %q, r%d", ast.UniqueNames.Get(v.Id), v.Reg)
 }
 
+type BinSETMEMBER struct {
+	BinStmtImpl
+
+	Reg    int // регистр со структтурой или мапой
+	Id     int // id поля структуры или мапы
+	RegVal int // регистр со значением
+}
+
+func (v BinSETMEMBER) String() string {
+	return fmt.Sprintf("SETMEMBER r%d.%q, r%d", v.Reg, ast.UniqueNames.Get(v.Id), v.RegVal)
+}
+
 type BinSETNAME struct {
 	BinStmtImpl
 
