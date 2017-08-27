@@ -236,9 +236,9 @@ func (v BinSETNAME) String() string {
 type BinSETITEM struct {
 	BinStmtImpl
 
-	Reg    int
-	RegIndex  int
-	RegVal int
+	Reg      int
+	RegIndex int
+	RegVal   int
 }
 
 func (v BinSETITEM) String() string {
@@ -248,10 +248,10 @@ func (v BinSETITEM) String() string {
 type BinSETSLICE struct {
 	BinStmtImpl
 
-	Reg    int
-	RegBegin  int
-	RegEnd  int
-	RegVal int
+	Reg      int
+	RegBegin int
+	RegEnd   int
+	RegVal   int
 }
 
 func (v BinSETSLICE) String() string {
@@ -506,11 +506,12 @@ func (v BinISKIND) String() string {
 type BinTRY struct {
 	BinStmtImpl
 
-	Reg int // регистр, куда будет помещаться error во время выполнения последующего кода
+	Reg    int // регистр, куда будет помещаться error во время выполнения последующего кода
+	JumpTo int // метка блока обработки ошибки
 }
 
 func (v BinTRY) String() string {
-	return fmt.Sprintf("TRY r%d", v.Reg)
+	return fmt.Sprintf("TRY r%d, CATCH L%d", v.Reg, v.JumpTo)
 }
 
 type BinCATCH struct {
@@ -527,11 +528,11 @@ func (v BinCATCH) String() string {
 type BinPOPTRY struct {
 	BinStmtImpl
 
-	Reg int // снимаем со стека исключений конструкцию с этим регистром
+	CatchLabel int // снимаем со стека исключений конструкцию с этим регистром
 }
 
 func (v BinPOPTRY) String() string {
-	return fmt.Sprintf("POPTRY r%d", v.Reg)
+	return fmt.Sprintf("POPTRY L%d", v.CatchLabel)
 }
 
 type BinFOREACH struct {

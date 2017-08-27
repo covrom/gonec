@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/covrom/gonec/ast"
 )
@@ -59,6 +61,8 @@ func (e *Error) Error() string {
 	return e.Message
 }
 
+type CatchFunc func() string
+
 // Func is function interface to reflect functions internaly.
 type Func func(args ...reflect.Value) (reflect.Value, error)
 
@@ -73,8 +77,10 @@ func ToFunc(f Func) reflect.Value {
 // Регистры виртуальной машины
 
 type VMRegs struct {
-	Reg    []interface{} // регистры значений
-	Labels map[int]int   // [label]=index в BinCode
+	Reg       []interface{} // регистры значений
+	Labels    map[int]int   // [label]=index в BinCode
+	TryLabel  []int         // последний элемент - это метка на текущий обработчик CATCH
+	TryRegErr []int         // последний элемент - это регистр с ошибкой текущего обработчика
 }
 
 const initlenregs = 20
@@ -88,8 +94,10 @@ func NewVMRegs(stmts BinCode) *VMRegs {
 		}
 	}
 	return &VMRegs{
-		Reg:    make([]interface{}, initlenregs),
-		Labels: lbls,
+		Reg:       make([]interface{}, initlenregs),
+		Labels:    lbls,
+		TryLabel:  make([]int, 0, 5),
+		TryRegErr: make([]int, 0, 5),
 	}
 }
 
@@ -102,4 +110,50 @@ func (v *VMRegs) Set(reg int, val interface{}) {
 		}
 		v.Reg[reg] = val
 	}
+}
+
+func (v *VMRegs) PushTry(reg, label int) {
+	v.TryRegErr = append(v.TryRegErr, reg)
+	v.TryLabel = append(v.TryLabel, label)
+}
+
+func (v *VMRegs) TopTryLabel() int {
+	l := len(v.TryLabel)
+	if l == 0 {
+		return -1
+	}
+	return v.TryLabel[l-1]
+}
+
+func (v *VMRegs) PopTry() (reg int, label int) {
+	l := len(v.TryLabel)
+	if l == 0 {
+		return -1, -1
+	}
+	reg = v.TryRegErr[l-1]
+	v.TryRegErr = v.TryRegErr[0 : l-1]
+	label = v.TryLabel[l-1]
+	v.TryLabel = v.TryLabel[0 : l-1]
+	return
+}
+
+func InvokeNumber(lit string) (interface{}, error) {
+	if strings.Contains(lit, ".") || strings.Contains(lit, "e") || strings.Contains(lit, "E") {
+		v, err := strconv.ParseFloat(lit, 64)
+		if err != nil {
+			return v, err
+		}
+		return v, nil
+	}
+	var i int64
+	var err error
+	if strings.HasPrefix(lit, "0x") {
+		i, err = strconv.ParseInt(lit[2:], 16, 64)
+	} else {
+		i, err = strconv.ParseInt(lit, 10, 64)
+	}
+	if err != nil {
+		return i, err
+	}
+	return i, nil
 }
