@@ -1,22 +1,23 @@
 package vm
 
 import (
-	"runtime"
 	"errors"
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"strings"
 
 	"github.com/covrom/gonec/ast"
+	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 )
 
 var (
-	NilValue   = reflect.ValueOf((*interface{})(nil))
-	NilType    = reflect.TypeOf((*interface{})(nil))
-	TrueValue  = reflect.ValueOf(true)
-	FalseValue = reflect.ValueOf(false)
+	NilValue   = envir.NilValue
+	NilType    = envir.NilType
+	TrueValue  = envir.TrueValue
+	FalseValue = envir.FalseValue
 )
 
 // Error provides a convenient interface for handling runtime error.
@@ -81,7 +82,7 @@ func ToFunc(f Func) reflect.Value {
 }
 
 // Run executes statements in the specified environment.
-func Run(stmts []ast.Stmt, env *Env) (reflect.Value, error) {
+func Run(stmts []ast.Stmt, env *envir.Env) (reflect.Value, error) {
 	rv := NilValue
 	var err error
 	for _, stmt := range stmts {
@@ -107,22 +108,15 @@ func Run(stmts []ast.Stmt, env *Env) (reflect.Value, error) {
 // Note that the execution is not instantly aborted: after a call to Interrupt,
 // the current running statement will finish, but the next statement will not run,
 // and instead will return a NilValue and an InterruptError.
-func Interrupt(env *Env) {
-	env.Lock()
-	*(env.interrupt) = true
-	env.Unlock()
+func Interrupt(env *envir.Env) {
+	env.Interrupt()
 }
 
 // RunSingleStmt executes one statement in the specified environment.
-func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
-	env.Lock()
-	if *(env.interrupt) {
-		*(env.interrupt) = false
-		env.Unlock()
-
+func RunSingleStmt(stmt ast.Stmt, env *envir.Env) (reflect.Value, error) {
+	if env.CheckInterrupt() {
 		return NilValue, InterruptError
 	}
-	env.Unlock()
 
 	switch stmt := stmt.(type) {
 	case *ast.ExprStmt:
@@ -622,7 +616,7 @@ func RunSingleStmt(stmt ast.Stmt, env *Env) (reflect.Value, error) {
 	}
 }
 
-func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, error) {
+func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *envir.Env) (reflect.Value, error) {
 	switch lhs := expr.(type) {
 	case *ast.IdentExpr:
 		if env.Set(lhs.Id, rv) != nil {
@@ -802,7 +796,7 @@ func invokeLetExpr(expr ast.Expr, rv reflect.Value, env *Env) (reflect.Value, er
 }
 
 // invokeExpr evaluates one expression.
-func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
+func invokeExpr(expr ast.Expr, env *envir.Env) (reflect.Value, error) {
 	switch e := expr.(type) {
 	case *ast.NativeExpr:
 		return e.Value, nil
@@ -857,7 +851,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				v = v.Index(0)
 			}
 			if v.IsValid() && v.CanInterface() {
-				if vme, ok := v.Interface().(*Env); ok {
+				if vme, ok := v.Interface().(*envir.Env); ok {
 					m, err := vme.Get(ee.Name)
 					if !m.IsValid() || err != nil {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
@@ -923,7 +917,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 				v = v.Index(0)
 			}
 			if v.IsValid() && v.CanInterface() {
-				if vme, ok := v.Interface().(*Env); ok {
+				if vme, ok := v.Interface().(*envir.Env); ok {
 					m, err := vme.Get(ee.Name)
 					if !m.IsValid() || err != nil {
 						return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", ee.Name))
@@ -983,7 +977,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 		}
 		return v, nil
 	case *ast.FuncExpr:
-		f := reflect.ValueOf(func(expr *ast.FuncExpr, env *Env) Func {
+		f := reflect.ValueOf(func(expr *ast.FuncExpr, env *envir.Env) Func {
 			return func(args ...reflect.Value) (reflect.Value, error) {
 				if !expr.VarArg {
 					if len(args) != len(expr.Args) {
@@ -1020,7 +1014,7 @@ func invokeExpr(expr ast.Expr, env *Env) (reflect.Value, error) {
 			v = v.Index(0)
 		}
 		if v.IsValid() && v.CanInterface() {
-			if vme, ok := v.Interface().(*Env); ok {
+			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(e.Name)
 				if !m.IsValid() || err != nil {
 					return NilValue, NewStringError(expr, fmt.Sprintf("Неверная операция '%s'", e.Name))

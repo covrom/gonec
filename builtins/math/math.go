@@ -4,10 +4,10 @@ package math
 import (
 	t "math"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("math")
 	m.DefineS("Abs", t.Abs)
 	m.DefineS("Acos", t.Acos)

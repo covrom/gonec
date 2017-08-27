@@ -3,10 +3,11 @@ package errors
 
 import (
 	pkg "errors"
-	"github.com/covrom/gonec/vm"
+
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewModule("errors")
 	m.DefineS("New", pkg.New)
 	return m

@@ -2,7 +2,7 @@
 
 package sort
 
-import "github.com/covrom/gonec/vm"
+import envir "github.com/covrom/gonec/env"
 
-func handleGo18(m *vm.Env) {
+func handleGo18(m *envir.Env) {
 }

@@ -4,10 +4,10 @@ package exec
 import (
 	e "os/exec"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("exec")
 	m.DefineS("ErrNotFound", e.ErrNotFound)
 	m.DefineS("LookPath", e.LookPath)

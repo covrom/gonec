@@ -4,8 +4,8 @@
 package colortext
 
 import (
+	envir "github.com/covrom/gonec/env"
 	"github.com/daviddengcn/go-colortext"
-	"github.com/covrom/gonec/vm"
 )
 
 var ntoc = map[string]ct.Color{
@@ -27,7 +27,7 @@ func colorOf(name string) ct.Color {
 	return ct.None
 }
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("ct")
 
 	m.DefineS("ChangeColor", func(fg string, fa bool, rest ...interface{}) {

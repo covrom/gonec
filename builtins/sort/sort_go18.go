@@ -5,10 +5,10 @@ package sort
 import (
 	s "sort"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func handleGo18(m *vm.Env) {
+func handleGo18(m *envir.Env) {
 	m.DefineS("Slice", func(arr interface{}, less func(i, j int) bool) interface{} {
 		s.Slice(arr, less)
 		return arr

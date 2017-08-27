@@ -19,15 +19,15 @@ import (
 	"sync"
 	"time"
 
+	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
 
 	_ "net/http/pprof"
-	
-	gonec_core "github.com/covrom/gonec/builtins"
 
+	gonec_core "github.com/covrom/gonec/builtins"
 )
 
 const version = "1.8b"
@@ -45,7 +45,7 @@ var (
 
 	fsArgs []string
 
-	sessions     = map[string]*vm.Env{}
+	sessions     = map[string]*envir.Env{}
 	lastAccess   = map[string]time.Time{}
 	lockSessions = sync.RWMutex{}
 )
@@ -115,7 +115,7 @@ func main() {
 		os.Args = fs.Args()
 	}
 
-	env := vm.NewEnv()
+	env := envir.NewEnv()
 	env.DefineS("аргументызапуска", fsArgs)
 	gonec_core.LoadAllBuiltins(env)
 
@@ -262,7 +262,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 
 			//создаем новое окружение
-			env = vm.NewEnv()
+			env = envir.NewEnv()
 			env.DefineS("аргументызапуска", fsArgs)
 			gonec_core.LoadAllBuiltins(env)
 
@@ -324,7 +324,7 @@ func Run(srv string) {
 	log.Fatal(http.ListenAndServe(":"+srv, nil))
 }
 
-func ParseAndRun(r io.Reader, w io.Writer, env *vm.Env) (err error) {
+func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err

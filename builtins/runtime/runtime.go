@@ -2,11 +2,12 @@
 package runtime
 
 import (
-	"github.com/covrom/gonec/vm"
 	pkg "runtime"
+
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewModule("runtime")
 	//m.DefineS("BlockProfile", pkg.BlockProfile)
 	//m.DefineS("Breakpoint", pkg.Breakpoint)

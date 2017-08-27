@@ -4,10 +4,10 @@ package time
 import (
 	t "time"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("time")
 	m.DefineS("After", t.After)
 	m.DefineS("Sleep", t.Sleep)

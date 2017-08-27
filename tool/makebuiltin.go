@@ -108,15 +108,15 @@ func main() {
 		}
 		sort.Strings(keys)
 		_, pn := filepath.Split(pkg)
-		fmt.Printf(`// Package %s implements %s interface for anko script.
+		fmt.Printf(`// Package %s implements %s interface for gonec script.
 package %s
 
 import (
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 	pkg "%s"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewModule("%s")
 `, pn, pkg, pn, pkg, pn)
 		for _, k := range keys {

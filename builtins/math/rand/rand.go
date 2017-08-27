@@ -4,10 +4,10 @@ package rand
 import (
 	t "math/rand"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("rand")
 	m.DefineS("ExpFloat64", t.ExpFloat64)
 	m.DefineS("Float32", t.Float32)

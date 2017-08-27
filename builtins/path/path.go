@@ -4,10 +4,10 @@ package path
 import (
 	pkg "path"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("path")
 	m.DefineS("Base", pkg.Base)
 	m.DefineS("Clean", pkg.Clean)

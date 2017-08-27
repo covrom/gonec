@@ -3,11 +3,12 @@
 package os
 
 import (
-	"github.com/covrom/gonec/vm"
 	pkg "os"
 	"reflect"
+
+	envir "github.com/covrom/gonec/env"
 )
 
-func handleAppEngine(m *vm.Env) {
+func handleAppEngine(m *envir.Env) {
 	m.DefineS("Getppid", reflect.ValueOf(pkg.Getppid))
 }

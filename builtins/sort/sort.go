@@ -4,7 +4,7 @@ package sort
 import (
 	s "sort"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
 type is []interface{}
@@ -25,7 +25,7 @@ func (p ss) Len() int           { return len(p) }
 func (p ss) Less(i, j int) bool { return p[i].(string) < p[j].(string) }
 func (p ss) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("sort")
 	m.DefineS("Ints", func(arr interface{}) interface{} {
 		if iarr, ok := arr.([]int); ok {

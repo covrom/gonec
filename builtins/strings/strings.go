@@ -4,10 +4,10 @@ package strings
 import (
 	pkg "strings"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("strings")
 	m.DefineS("Contains", pkg.Contains)
 	m.DefineS("ContainsAny", pkg.ContainsAny)

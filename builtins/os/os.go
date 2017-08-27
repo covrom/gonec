@@ -5,10 +5,10 @@ import (
 	pkg "os"
 	"reflect"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("os")
 	m.DefineS("Args", pkg.Args)
 	m.DefineS("Chdir", pkg.Chdir)

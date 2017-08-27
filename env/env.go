@@ -1,4 +1,4 @@
-package vm
+package env
 
 import (
 	"fmt"
@@ -9,7 +9,13 @@ import (
 	"sync"
 
 	"github.com/covrom/gonec/ast"
-	"github.com/covrom/gonec/parser"
+)
+
+var (
+	NilValue   = reflect.ValueOf((*interface{})(nil))
+	NilType    = reflect.TypeOf((*interface{})(nil))
+	TrueValue  = reflect.ValueOf(true)
+	FalseValue = reflect.ValueOf(false)
 )
 
 // Env provides interface to run VM. This mean function scope and blocked-scope.
@@ -309,13 +315,13 @@ func (e *Env) Dump() {
 }
 
 // Execute parses and runs source in current scope.
-func (e *Env) Execute(src string) (reflect.Value, error) {
-	stmts, err := parser.ParseSrc(src)
-	if err != nil {
-		return NilValue, err
-	}
-	return Run(stmts, e)
-}
+// func (e *Env) Execute(src string) (reflect.Value, error) {
+// 	stmts, err := parser.ParseSrc(src)
+// 	if err != nil {
+// 		return NilValue, err
+// 	}
+// 	return Run(stmts, e)
+// }
 
 func (e *Env) Println(a ...interface{}) (n int, err error) {
 	// e.RLock()
@@ -372,4 +378,20 @@ func (e *Env) GetSid() string {
 		}
 	}
 	return ""
+}
+
+func (e *Env) Interrupt() {
+	e.Lock()
+	*(e.interrupt) = true
+	e.Unlock()
+}
+
+func (e *Env) CheckInterrupt() bool {
+	e.Lock()
+	defer e.Unlock()
+	if *(e.interrupt) {
+		*(e.interrupt) = false
+		return true
+	}
+	return false
 }

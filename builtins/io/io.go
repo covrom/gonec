@@ -4,10 +4,10 @@ package io
 import (
 	pkg "io"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("io")
 	m.DefineS("Copy", pkg.Copy)
 	m.DefineS("CopyN", pkg.CopyN)

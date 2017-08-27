@@ -4,10 +4,10 @@ package sort
 import (
 	r "regexp"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("sort")
 	m.DefineS("Match", r.Match)
 	m.DefineS("MatchReader", r.MatchReader)

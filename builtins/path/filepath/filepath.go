@@ -4,10 +4,10 @@ package filepath
 import (
 	f "path/filepath"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("filepath")
 	m.DefineS("Join", f.Join)
 	m.DefineS("Clean", f.Join)

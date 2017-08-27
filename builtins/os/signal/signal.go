@@ -4,10 +4,10 @@ package signal
 import (
 	pkg "os/signal"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("os/signal")
 
 	//m.DefineS("Ignore", pkg.Ignore)

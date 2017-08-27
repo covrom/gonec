@@ -6,12 +6,13 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
-	"runtime"
 
 	"github.com/covrom/gonec/ast"
+	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
 
@@ -42,10 +43,10 @@ import (
 )
 
 // LoadAllBuiltins is a convenience function that loads all defineSd builtins.
-func LoadAllBuiltins(env *vm.Env) {
+func LoadAllBuiltins(env *envir.Env) {
 	Import(env)
 
-	pkgs := map[string]func(env *vm.Env) *vm.Env{
+	pkgs := map[string]func(env *envir.Env) *envir.Env{
 		"encoding/json": gonec_encoding_json.Import,
 		"errors":        gonec_errors.Import,
 		"flag":          gonec_flag.Import,
@@ -100,7 +101,7 @@ func (tst TttStructTest) ВСтроку2() string {
 /////////////////
 
 // Import defineSs core language builtins - len, range, println, int64, etc.
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	env.DefineS("длина", func(v interface{}) int64 {
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Interface {

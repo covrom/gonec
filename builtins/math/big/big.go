@@ -4,10 +4,10 @@ package big
 import (
 	t "math/big"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewModule("big")
 	m.DefineS("Above", t.Above)
 	m.DefineS("AwayFromZero", t.AwayFromZero)

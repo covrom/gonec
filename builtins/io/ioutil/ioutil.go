@@ -4,10 +4,10 @@ package ioutil
 import (
 	u "io/ioutil"
 
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func Import(env *vm.Env) *vm.Env {
+func Import(env *envir.Env) *envir.Env {
 	m := env.NewPackage("iotuil")
 	m.DefineS("ReadAll", u.ReadAll)
 	m.DefineS("ReadDir", u.ReadDir)

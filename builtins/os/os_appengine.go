@@ -3,8 +3,8 @@
 package os
 
 import (
-	"github.com/covrom/gonec/vm"
+	envir "github.com/covrom/gonec/env"
 )
 
-func handleAppEngine(m *vm.Env) {
+func handleAppEngine(m *envir.Env) {
 }
