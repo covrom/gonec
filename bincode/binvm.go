@@ -2,8 +2,6 @@
 package bincode
 
 import (
-	"fmt"
-
 	envir "github.com/covrom/gonec/env"
 )
 
@@ -34,13 +32,22 @@ func RunSingleStmt(stmt BinStmt, env *envir.Env) (interface{}, error) {
 	if env.CheckInterrupt() {
 		return nil, InterruptError
 	}
+	// подготавливаем состояние машины: регистры значений, управляющие регистры
+	regs := make([]interface{}, 20)
+	lenregs := len(regs)
 
 	switch s := stmt.(type) {
 	case *BinLOAD:
-		//
-		fmt.Println(s)
+		if s.Reg < lenregs {
+			regs[s.Reg] = s.Val
+		} else {
+			for i := lenregs; i <= s.Reg; i++ {
+				regs = append(regs, nil)
+			}
+			lenregs = len(regs)
+			regs[s.Reg] = s.Val
+		}
 
 	}
 	return nil, NewStringError(stmt, "Неизвестная инструкция")
-
 }
