@@ -254,7 +254,7 @@ func Import(env *vm.Env) *vm.Env {
 	env.DefineS("закрыть", func(e interface{}) {
 		reflect.ValueOf(e).Close()
 	})
-	env.DefineS("обработатьгорутины", runtime.Goshed)
+	env.DefineS("обработатьгорутины", runtime.Gosched)
 
 	env.DefineTypeS("целоечисло", int64(0))
 	env.DefineTypeS("число", float64(0.0))
