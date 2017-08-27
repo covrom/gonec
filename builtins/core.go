@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"runtime"
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/parser"
@@ -253,6 +254,7 @@ func Import(env *vm.Env) *vm.Env {
 	env.DefineS("закрыть", func(e interface{}) {
 		reflect.ValueOf(e).Close()
 	})
+	env.DefineS("обработатьгорутины", runtime.Goshed)
 
 	env.DefineTypeS("целоечисло", int64(0))
 	env.DefineTypeS("число", float64(0.0))
