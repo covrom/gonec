@@ -647,21 +647,20 @@ func EnableErrorVerbose() {
 }
 
 // ParserSrc provides way to parse the code from source.
-func ParseSrc(src string) ([]ast.Stmt, error) {
+func ParseSrc(src string) ([]ast.Stmt, bincode.BinCode, error) {
 	scanner := &Scanner{
 		src: []rune(src),
 	}
 	prs, err := Parse(scanner)
 	if err != nil {
-		return prs, err
+		return prs, nil, err
 	}
 	// оптимизируем дерево AST
 	// свертка констант и нативные значения
 	prs = constFolding(prs)
-	// fmt.Printf("%#v\n", prs[0].(*ast.LetsStmt).Rhss[0].(*ast.SliceExpr))
+	// компиляция в бинарный код
 	lid := 0
 	bin := bincode.BinaryCode(prs, 0, &lid)
-	fmt.Println(bin)
 
-	return prs, err
+	return prs, bin, err
 }

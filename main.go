@@ -146,7 +146,7 @@ func main() {
 
 		parser.EnableErrorVerbose()
 
-		stmts, err := parser.ParseSrc(code)
+		stmts, _, err := parser.ParseSrc(code)
 
 		if interactive {
 			if e, ok := err.(*parser.Error); ok {
@@ -337,8 +337,10 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 
 	//замер производительности
 	tstart := time.Now()
-	stmts, err := parser.ParseSrc(sb)
+	stmts, bins, err := parser.ParseSrc(sb)
 	tsParse := time.Since(tstart)
+
+	ls2 := fmt.Sprintf("--Скомпилирован код-- \n%s\n", bins.String())
 
 	if err != nil {
 		return err
@@ -366,7 +368,7 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 		env.Printf("Время исполнения: %v\n", tsRun)
 	}
 
-	log.Printf("%s--Результат выполнения кода--\n%s\n", ls, rb.String())
+	log.Printf("%s%s--Результат выполнения кода--\n%s\n", ls, ls2, rb.String())
 
 	_, err = w.Write(rb.Bytes())
 
