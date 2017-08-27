@@ -72,14 +72,23 @@ func ToFunc(f Func) reflect.Value {
 // Регистры виртуальной машины
 
 type VMRegs struct {
-	Reg []interface{} // регистры значений
+	Reg    []interface{} // регистры значений
+	Labels map[int]int   // [label]=index в BinCode
 }
 
 const initlenregs = 20
 
-func NewVMRegs() *VMRegs {
+func NewVMRegs(stmts BinCode) *VMRegs {
+	//собираем мапу переходов
+	lbls := make(map[int]int)
+	for i, stmt := range stmts {
+		if s, ok := stmt.(*BinLABEL); ok {
+			lbls[s.Label] = i
+		}
+	}
 	return &VMRegs{
-		Reg: make([]interface{}, initlenregs),
+		Reg:    make([]interface{}, initlenregs),
+		Labels: lbls,
 	}
 }
 
