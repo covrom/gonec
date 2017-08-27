@@ -294,7 +294,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						&BinSETIDX{
 							Reg:    reg,
 							Index:  i,
-							ValReg: reg + 1,
+							RegVal: reg + 1,
 						}, ee)
 				}
 			}
@@ -555,19 +555,40 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 	case *ast.MemberExpr:
 		bins = append(bins, addBinExpr(ee.Expr, reg+1, lid)...)
 		bins = appendBin(bins,
-		&BinSETMEMBER{
-			Reg: reg+1,
-			Id:  ee.Name,
-			RegVal: reg,
-		}, e)
+			&BinSETMEMBER{
+				Reg:    reg + 1,
+				Id:     ee.Name,
+				RegVal: reg,
+			}, e)
 
 	case *ast.ItemExpr:
+		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
+		bins = append(bins, addBinExpr(ee.Index, reg+2, lid)...)
+		bins = appendBin(bins,
+			&BinSETITEM{
+				Reg:      reg + 1,
+				RegIndex: reg + 2,
+				RegVal:   reg,
+			}, e)
 
 	case *ast.SliceExpr:
+		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
+		bins = append(bins, addBinExpr(ee.Begin, reg+2, lid)...)
+		bins = append(bins, addBinExpr(ee.End, reg+3, lid)...)
+		bins = appendBin(bins,
+			&BinSETSLICE{
+				Reg:      reg + 1,
+				RegBegin: reg + 2,
+				RegEnd:   reg + 3,
+				RegVal:   reg,
+			}, e)
 
 	default:
 		// ошибка
-
+		bins = appendBin(bins,
+			&BinERROR{
+				Error: "Неверная операция",
+			}, e)
 	}
 	return
 }
@@ -635,7 +656,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				&BinSETIDX{
 					Reg:    reg,
 					Index:  i,
-					ValReg: reg + 1,
+					RegVal: reg + 1,
 				}, ee)
 		}
 	case *ast.MapExpr:
@@ -652,7 +673,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				&BinSETKEY{
 					Reg:    reg,
 					Key:    k,
-					ValReg: reg + 1,
+					RegVal: reg + 1,
 				}, ee)
 		}
 	case *ast.IdentExpr:
@@ -784,7 +805,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					&BinSETIDX{
 						Reg:    reg + regoff,
 						Index:  i,
-						ValReg: reg + 1,
+						RegVal: reg + 1,
 					}, ee)
 			}
 		}

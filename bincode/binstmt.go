@@ -158,11 +158,11 @@ type BinSETIDX struct {
 
 	Reg    int
 	Index  int
-	ValReg int
+	RegVal int
 }
 
 func (v BinSETIDX) String() string {
-	return fmt.Sprintf("SETIDX r%d[%d], r%d", v.Reg, v.Index, v.ValReg)
+	return fmt.Sprintf("SETIDX r%d[%d], r%d", v.Reg, v.Index, v.RegVal)
 }
 
 type BinMAKEMAP struct {
@@ -181,11 +181,11 @@ type BinSETKEY struct {
 
 	Reg    int
 	Key    string
-	ValReg int
+	RegVal int
 }
 
 func (v BinSETKEY) String() string {
-	return fmt.Sprintf("SETKEY r%d[%q], r%d", v.Reg, v.Key, v.ValReg)
+	return fmt.Sprintf("SETKEY r%d[%q], r%d", v.Reg, v.Key, v.RegVal)
 }
 
 type BinGET struct {
@@ -231,6 +231,31 @@ type BinSETNAME struct {
 
 func (v BinSETNAME) String() string {
 	return fmt.Sprintf("SETNAME r%d", v.Reg)
+}
+
+type BinSETITEM struct {
+	BinStmtImpl
+
+	Reg    int
+	RegIndex  int
+	RegVal int
+}
+
+func (v BinSETITEM) String() string {
+	return fmt.Sprintf("SETITEM r%d[r%d], r%d", v.Reg, v.RegIndex, v.RegVal)
+}
+
+type BinSETSLICE struct {
+	BinStmtImpl
+
+	Reg    int
+	RegBegin  int
+	RegEnd  int
+	RegVal int
+}
+
+func (v BinSETSLICE) String() string {
+	return fmt.Sprintf("SETSLICE r%d[r%d:r%d], r%d", v.Reg, v.RegBegin, v.RegEnd, v.RegVal)
 }
 
 type BinUNARY struct {
