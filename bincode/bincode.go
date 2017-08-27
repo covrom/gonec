@@ -852,8 +852,6 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				Reg: reg,
 			}, e)
 
-	case *ast.LetExpr:
-		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
 	case *ast.TypeCast:
 		bins = append(bins, addBinExpr(e.CastExpr, reg, lid)...)
 		if e.TypeExpr == nil {
@@ -991,7 +989,50 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		}
 
 	case *ast.AssocExpr:
-		// TODO: тут будет присвоение
+		switch e.Operator {
+		case "++":
+			if alhs, ok := e.Lhs.(*ast.IdentExpr); ok {
+				bins = appendBin(bins,
+					&BinGET{
+						Reg:    reg,
+						Id:     alhs.Id,
+						Dotted: strings.Contains(alhs.Lit, "."),
+					}, alhs)
+				bins = appendBin(bins,
+					&BinINC{
+						Reg: reg,
+					}, alhs)
+				bins = appendBin(bins,
+					&BinSET{
+						Reg: reg,
+						Id:  alhs.Id,
+					}, alhs)
+			}
+		case "--":
+			if alhs, ok := e.Lhs.(*ast.IdentExpr); ok {
+				bins = appendBin(bins,
+					&BinGET{
+						Reg:    reg,
+						Id:     alhs.Id,
+						Dotted: strings.Contains(alhs.Lit, "."),
+					}, alhs)
+				bins = appendBin(bins,
+					&BinDEC{
+						Reg: reg,
+					}, alhs)
+				bins = appendBin(bins,
+					&BinSET{
+						Reg: reg,
+						Id:  alhs.Id,
+					}, alhs)
+			}
+		default:
+			bins = append(bins, addBinExpr(&ast.BinOpExpr{Lhs: e.Lhs, Operator: e.Operator[0:1], Rhs: e.Rhs}, reg, lid)...)
+			bins = append(bins, addBinLetExpr(e.Lhs, reg, lid)...)
+		}
+
+	case *ast.LetExpr:
+		// пока не используется (не распознается парсером), планируется добавить предопределенные значения для функций
 
 	}
 

@@ -658,3 +658,23 @@ type BinGOSHED struct {
 func (v BinGOSHED) String() string {
 	return fmt.Sprintf("GOSHED")
 }
+
+type BinINC struct {
+	BinStmtImpl
+
+	Reg int
+}
+
+func (v BinINC) String() string {
+	return fmt.Sprintf("INC r%d", v.Reg)
+}
+
+type BinDEC struct {
+	BinStmtImpl
+
+	Reg int
+}
+
+func (v BinDEC) String() string {
+	return fmt.Sprintf("DEC r%d", v.Reg)
+}
