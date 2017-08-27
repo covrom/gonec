@@ -1,6 +1,7 @@
 package bincode
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/covrom/gonec/ast"
@@ -922,9 +923,72 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				RegCap: reg + 1,
 			}, e)
 	case *ast.ChanExpr:
-		// TODO: тут все зависит от операндов слева и справа, канал там, или переменная, будут условные переходы и присвоение
-		// возвращает в reg+1 булево значение - прочитано/записано, или нет
 		// есть тип CHANSEND / RECV
+
+		// определяем значение справа
+		bins = append(bins, addBinExpr(e.Rhs, reg+1, lid)...)
+		if e.Lhs == nil {
+			// слева нет значения - это временное чтение из канала без сохранения значения в переменной
+			bins = appendBin(bins,
+				&BinCHANRECV{
+					Reg:    reg + 1,
+					RegVal: reg,
+				}, e)
+		} else {
+			// значение слева
+			bins = append(bins, addBinExpr(e.Lhs, reg+2, lid)...)
+			// слева канал - пишем в него правое
+			bins = appendBin(bins,
+				&BinISKIND{
+					Reg:  reg + 2,
+					Kind: reflect.Chan,
+				}, e)
+			*lid++
+			li := *lid
+			bins = appendBin(bins,
+				&BinJFALSE{
+					Reg:    reg + 2,
+					JumpTo: li,
+				}, e)
+
+			bins = appendBin(bins,
+				&BinCHANSEND{
+					Reg:    reg + 2,
+					RegVal: reg + 1,
+				}, e)
+
+			bins = appendBin(bins,
+				&BinLOAD{
+					Reg: reg,
+					Val: true,
+				}, e)
+
+			*lid++
+			li2 := *lid
+
+			bins = appendBin(bins,
+				&BinJMP{
+					JumpTo: li2,
+				}, e)
+
+			// иначе справа канал, а слева переменная (установим, если прочитали из канала)
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: li,
+				}, e)
+			bins = appendBin(bins,
+				&BinCHANRECV{
+					Reg:    reg + 1,
+					RegVal: reg,
+				}, e)
+
+			bins = append(bins, addBinLetExpr(e.Lhs, reg, lid)...)
+
+			bins = appendBin(bins,
+				&BinLABEL{
+					Label: li2,
+				}, e)
+		}
 
 	case *ast.AssocExpr:
 		// TODO: тут будет присвоение

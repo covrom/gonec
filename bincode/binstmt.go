@@ -2,6 +2,7 @@ package bincode
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/covrom/gonec/ast"
 )
@@ -434,23 +435,35 @@ func (v BinMAKEARR) String() string {
 
 type BinCHANRECV struct {
 	BinStmtImpl
-
-	Reg int // сюда же помещается результат
+	// с ожиданием
+	Reg    int // канал
+	RegVal int // сюда помещается результат
 }
 
 func (v BinCHANRECV) String() string {
-	return fmt.Sprintf("<-CHAN r%d, r%d", v.Reg, v.Reg)
+	return fmt.Sprintf("<-CHAN r%d, r%d", v.RegVal, v.Reg)
 }
 
 type BinCHANSEND struct {
 	BinStmtImpl
-
+	// с ожиданием
 	Reg    int // канал
-	ValReg int
+	RegVal int // значение
 }
 
 func (v BinCHANSEND) String() string {
-	return fmt.Sprintf("CHAN<- r%d, r%d", v.Reg, v.ValReg)
+	return fmt.Sprintf("CHAN<- r%d, r%d", v.Reg, v.RegVal)
+}
+
+type BinISKIND struct {
+	BinStmtImpl
+
+	Reg  int          // значение для проверки, сюда же возвращается bool
+	Kind reflect.Kind // категория типа значения в reg
+}
+
+func (v BinISKIND) String() string {
+	return fmt.Sprintf("ISKIND r%d, %s", v.Reg, v.Kind)
 }
 
 type BinTRY struct {
