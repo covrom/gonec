@@ -20,6 +20,7 @@ var (
 	ContinueError  = errors.New("Неверное применение оператора Продолжить")
 	ReturnError    = errors.New("Неверное применение оператора Возврат")
 	InterruptError = errors.New("Выполнение прервано")
+	// JumpError      = errors.New("Переход на метку")
 )
 
 // NewStringError makes error interface with message.
