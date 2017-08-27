@@ -68,3 +68,28 @@ func (f Func) String() string {
 func ToFunc(f Func) reflect.Value {
 	return reflect.ValueOf(f)
 }
+
+// Регистры виртуальной машины
+
+type VMRegs struct {
+	Reg []interface{} // регистры значений
+}
+
+const initlenregs = 20
+
+func NewVMRegs() *VMRegs {
+	return &VMRegs{
+		Reg: make([]interface{}, initlenregs),
+	}
+}
+
+func (v *VMRegs) Set(reg int, val interface{}) {
+	if reg < len(v.Reg) {
+		v.Reg[reg] = val
+	} else {
+		for reg >= len(v.Reg) {
+			v.Reg = append(v.Reg, make([]interface{}, initlenregs)...)
+		}
+		v.Reg[reg] = val
+	}
+}
