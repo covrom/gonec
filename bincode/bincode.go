@@ -595,6 +595,11 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 
 func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 	if expr == nil {
+		bins = appendBin(bins,
+			&BinLOAD{
+				Reg: reg,
+				Val: nil,
+			}, expr)
 		return
 	}
 	switch e := expr.(type) {
