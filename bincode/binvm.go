@@ -2,6 +2,7 @@
 package bincode
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 
@@ -247,6 +248,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			retval = regs.Reg[0] // из основного регистра
 			return retval, ReturnError
 		case *BinTHROW:
+			catcherr = NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
+			break
 
 		case *BinMODULE:
 
