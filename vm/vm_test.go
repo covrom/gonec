@@ -6,11 +6,12 @@ import (
 	"testing"
 	"time"
 
+	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 )
 
 func testInterrupt() {
-	env := NewEnv()
+	env := envir.NewEnv()
 
 	var sleepFunc = func(spec string) {
 		if d, err := time.ParseDuration(spec); err != nil {
@@ -29,7 +30,7 @@ sleep("2s")
 # The next line will not be executed.
 println("<this should not be printed>")
 `
-	stmts, err := parser.ParseSrc(script)
+	stmts, _, err := parser.ParseSrc(script)
 	if err != nil {
 		log.Fatal()
 	}
