@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	gonec_core "github.com/covrom/gonec/builtins"
+	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
 )
 
 func TestRun(t *testing.T) {
-	env := vm.NewEnv()
+	env := envir.NewEnv()
 	gonec_core.LoadAllBuiltins(env)
 
 	script := `
@@ -19,7 +20,7 @@ func TestRun(t *testing.T) {
 	Сообщить(а.ВСтроку())
 	`
 	parser.EnableErrorVerbose()
-	stmts, err := parser.ParseSrc(script)
+	stmts, _, err := parser.ParseSrc(script)
 	if err != nil {
 		log.Fatal()
 	}
