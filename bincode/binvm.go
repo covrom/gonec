@@ -123,9 +123,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		case *BinSETMEMBER:
 
 			// TODO: обработка паники - передача ошибки в catch блок
-
-			v := reflect.ValueOf(regs.Reg[s.Reg])
-			rv := reflect.ValueOf(regs.Reg[s.RegVal])
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			rv := refregs.Index(s.RegVal)
 			// if v.Kind() == reflect.Interface {
 			// 	v = v.Elem()
 			// }
