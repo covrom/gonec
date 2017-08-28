@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"runtime"
 
+	"github.com/covrom/gonec/ast"
 	envir "github.com/covrom/gonec/env"
 )
 
@@ -121,7 +122,54 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinSETMEMBER:
 
+			// TODO: обработка паники - передача ошибки в catch блок
+
+			v := reflect.ValueOf(regs.Reg[s.Reg])
+			rv := reflect.ValueOf(regs.Reg[s.RegVal])
+			// if v.Kind() == reflect.Interface {
+			// 	v = v.Elem()
+			// }
+			// if v.Kind() == reflect.Slice {
+			// 	v = v.Index(0)
+			// }
+
+			// if !v.IsValid() {
+			// 	return NilValue, NewStringError(expr, "Поле недоступно")
+			// }
+
+			// if v.Kind() == reflect.Ptr {
+			// 	v = v.Elem()
+			// }
+			switch v.Kind() {
+			case reflect.Struct:
+				v, err := ast.FieldByNameCI(v, s.Id)
+				if err != nil {
+					catcherr = NewError(stmt, err)
+					break
+				}
+				if !v.CanSet() {
+					catcherr = NewStringError(stmt, "Невозможно установить значение")
+					break
+				}
+				v.Set(rv)
+			case reflect.Map:
+				v.SetMapIndex(reflect.ValueOf(ast.UniqueNames.Get(s.Id)), rv)
+			default:
+				if !v.CanSet() {
+					catcherr = NewStringError(stmt, "Невозможно установить значение")
+					break
+				}
+				v.Set(rv)
+			}
+
 		case *BinSETNAME:
+			v, ok := regs.Reg[s.Reg].(string)
+			if !ok {
+				catcherr = NewStringError(stmt, "Имя типа должно быть строкой")
+				break
+			}
+			eType := ast.UniqueNames.Set(v)
+			regs.Set(s.Reg, eType)
 
 		case *BinSETITEM:
 
