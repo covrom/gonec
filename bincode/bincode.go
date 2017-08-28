@@ -696,7 +696,6 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			&BinGET{
 				Reg:    reg,
 				Id:     e.Id,
-				Dotted: strings.Contains(e.Lit, "."),
 			}, e)
 	case *ast.UnaryExpr:
 		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
@@ -1039,7 +1038,6 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					&BinGET{
 						Reg:    reg,
 						Id:     alhs.Id,
-						Dotted: strings.Contains(alhs.Lit, "."),
 					}, alhs)
 				bins = appendBin(bins,
 					&BinINC{
@@ -1057,7 +1055,6 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					&BinGET{
 						Reg:    reg,
 						Id:     alhs.Id,
-						Dotted: strings.Contains(alhs.Lit, "."),
 					}, alhs)
 				bins = appendBin(bins,
 					&BinDEC{

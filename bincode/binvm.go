@@ -35,25 +35,32 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		stmt := stmts[idx]
 		switch s := stmt.(type) {
+
 		case *BinJMP:
 			idx = regs.Labels[s.JumpTo]
 			continue
+
 		case *BinJFALSE:
 			if r, ok := regs.Reg[s.Reg].(bool); ok && !r {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
+
 		case *BinJTRUE:
 			if r, ok := regs.Reg[s.Reg].(bool); ok && r {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
+
 		case *BinLABEL:
 			// пропускаем
+
 		case *BinLOAD:
 			regs.Set(s.Reg, s.Val)
+
 		case *BinMV:
 			regs.Set(s.RegTo, regs.Reg[s.RegFrom])
+
 		case *BinEQUAL:
 			// сначала простое сравнение
 			if regs.Reg[s.Reg1] == regs.Reg[s.Reg2] {
@@ -62,6 +69,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				// более глубокое сравнение через рефлексию
 				regs.Set(s.Reg, reflect.DeepEqual(regs.Reg[s.Reg1], regs.Reg[s.Reg2]))
 			}
+
 		case *BinCASTNUM:
 			// ошибки обрабатываем в попытке
 			var str string
@@ -80,16 +88,36 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, v)
 
 		case *BinMAKESLICE:
+			regs.Set(s.Reg, make(VMSlice, s.Len, s.Cap))
 
 		case *BinSETIDX:
-
+			if v, ok := regs.Reg[s.Reg].(VMSlice); ok {
+				v[s.Index] = regs.Reg[s.RegVal]
+			} else {
+				catcherr = NewStringError(stmt, "Невозможно изменить значение по индексу")
+				break
+			}
 		case *BinMAKEMAP:
+			regs.Set(s.Reg, make(VMStringMap, s.Len))
 
 		case *BinSETKEY:
+			if v, ok := regs.Reg[s.Reg].(VMStringMap); ok {
+				v[s.Key] = regs.Reg[s.RegVal]
+			} else {
+				catcherr = NewStringError(stmt, "Невозможно изменить значение по ключу")
+				break
+			}
 
 		case *BinGET:
+			v, err := env.Get(s.Id)
+			if err != nil {
+				catcherr = NewStringError(stmt, "Невозможно получить значение")
+				break
+			}
+			regs.Reg[s.Reg] = v.Interface()
 
 		case *BinSET:
+			env.Define(s.Id, regs.Reg[s.Reg])
 
 		case *BinSETMEMBER:
 

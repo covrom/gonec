@@ -193,7 +193,6 @@ type BinGET struct {
 
 	Reg    int
 	Id     int
-	Dotted bool // содержит точку "."
 }
 
 func (v BinGET) String() string {

@@ -137,6 +137,10 @@ func (v *VMRegs) PopTry() (reg int, label int) {
 	return
 }
 
+type VMSlice []interface{}
+
+type VMStringMap map[string]interface{}
+
 func InvokeNumber(lit string) (interface{}, error) {
 	if strings.Contains(lit, ".") || strings.Contains(lit, "e") || strings.Contains(lit, "E") {
 		v, err := strconv.ParseFloat(lit, 64)
