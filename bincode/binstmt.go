@@ -248,10 +248,11 @@ func (v BinSETITEM) String() string {
 type BinSETSLICE struct {
 	BinStmtImpl
 
-	Reg      int
-	RegBegin int
-	RegEnd   int
-	RegVal   int
+	Reg        int
+	RegBegin   int
+	RegEnd     int
+	RegVal     int
+	RegNeedLet int
 }
 
 func (v BinSETSLICE) String() string {

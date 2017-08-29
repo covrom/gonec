@@ -597,16 +597,31 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, ee)
 
 	case *ast.SliceExpr:
+		*lid++
+		lend := *lid
 		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
 		bins = append(bins, addBinExpr(ee.Begin, reg+2, lid)...)
 		bins = append(bins, addBinExpr(ee.End, reg+3, lid)...)
 		bins = appendBin(bins,
 			&BinSETSLICE{
-				Reg:      reg + 1,
-				RegBegin: reg + 2,
-				RegEnd:   reg + 3,
-				RegVal:   reg,
+				Reg:        reg + 1,
+				RegBegin:   reg + 2,
+				RegEnd:     reg + 3,
+				RegVal:     reg,
+				RegNeedLet: reg + 4,
 			}, e)
+		bins = appendBin(bins,
+			&BinJFALSE{
+				Reg:    reg + 4,
+				JumpTo: lend,
+			}, ee)
+
+		bins = append(bins, addBinLetExpr(ee.Value, reg+1, lid)...)
+
+		bins = appendBin(bins,
+			&BinLABEL{
+				Label: lend,
+			}, ee)
 
 	default:
 		// ошибка

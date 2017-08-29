@@ -161,3 +161,102 @@ func InvokeNumber(lit string) (interface{}, error) {
 	}
 	return i, nil
 }
+
+func ToString(v interface{}) string {
+	if s, ok := v.(string); ok {
+		return s
+	}
+	if v == nil {
+		return "Неопределено"
+	}
+	if b, ok := v.(bool); ok {
+		if b {
+			return "Истина"
+		} else {
+			return "Ложь"
+		}
+	}
+	return fmt.Sprint(v)
+}
+
+func ToBool(v interface{}) bool {
+
+	switch v.(type) {
+	case float32, float64:
+		return v.(float64) != 0.0
+	case int, int32, int64:
+		return v.(int64) != 0
+	case bool:
+		return v.(bool)
+	case string:
+		vlow := strings.ToLower(v.(string))
+		if vlow == "true" || vlow == "истина" {
+			return true
+		}
+		if ToInt64(v) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func ToFloat64(v interface{}) float64 {
+	switch v.(type) {
+	case float32, float64:
+		return v.(float64)
+	case int, int32, int64:
+		return float64(v.(int64))
+	}
+	return 0.0
+}
+
+func ToInt64(v interface{}) int64 {
+	switch v.(type) {
+	case float32, float64:
+		return int64(v.(float64))
+	case int, int32, int64:
+		return v.(int64)
+	case string:
+		s := v.(string)
+		var i int64
+		var err error
+		if strings.HasPrefix(s, "0x") {
+			i, err = strconv.ParseInt(s, 16, 64)
+		} else {
+			i, err = strconv.ParseInt(s, 10, 64)
+		}
+		if err == nil {
+			return i
+		}
+	}
+	return 0
+}
+
+func IsNum(v interface{}) bool {
+	switch v.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64:
+		return true
+	}
+	return false
+}
+
+func Equal(lhsV, rhsV interface{}) bool {
+	if lhsV==rhsV {
+		return true
+	}
+	// if lhsV.Kind() == reflect.Interface || lhsV.Kind() == reflect.Ptr {
+	// 	lhsV = lhsV.Elem()
+	// }
+	// if rhsV.Kind() == reflect.Interface || rhsV.Kind() == reflect.Ptr {
+	// 	rhsV = rhsV.Elem()
+	// }
+	// if !lhsV.IsValid() || !rhsV.IsValid() {
+	// 	return true
+	// }
+	if IsNum(lhsV) && IsNum(rhsV) {
+		if reflect.TypeOf(rhsV).ConvertibleTo(reflect.TypeOf(lhsV)) {
+			rhsV = reflect.ValueOf(rhsV).Convert(reflect.TypeOf(lhsV)).Interface()
+		}
+	}
+	return reflect.DeepEqual(lhsV, rhsV)
+}

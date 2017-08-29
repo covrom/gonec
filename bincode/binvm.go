@@ -64,13 +64,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegTo, regs.Reg[s.RegFrom])
 
 		case *BinEQUAL:
-			// сначала простое сравнение
-			if regs.Reg[s.Reg1] == regs.Reg[s.Reg2] {
-				regs.Set(s.Reg, true)
-			} else {
-				// более глубокое сравнение через рефлексию
-				regs.Set(s.Reg, reflect.DeepEqual(regs.Reg[s.Reg1], regs.Reg[s.Reg2]))
-			}
+
+			regs.Set(s.Reg, Equal(regs.Reg[s.Reg1], regs.Reg[s.Reg2]))
 
 		case *BinCASTNUM:
 			// ошибки обрабатываем в попытке
@@ -243,8 +238,79 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 
 		case *BinSETSLICE:
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			rb := refregs.Index(s.RegBegin)
+			re := refregs.Index(s.RegEnd)
+			rv := refregs.Index(s.RegVal)
+			regs.Set(s.RegNeedLet, false)
+
+			switch v.Kind() {
+			case reflect.Array, reflect.Slice:
+				vlen := v.Len()
+				ii, ij, err := ast.LeftRightBounds(rb, re, vlen)
+				if err != nil {
+					catcherr = NewError(stmt, err)
+					break
+				}
+				if ij < ii {
+					catcherr = NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
+					break
+				}
+				vv := v.Slice(ii, ij)
+				if vv.Len() != rv.Len() {
+					catcherr = NewStringError(stmt, "Размер массива должен быть равен ширине диапазона")
+					break
+				}
+				reflect.Copy(vv, rv)
+			case reflect.String:
+				r, ii, ij, err := ast.StringToRuneSliceAt(v, rb, re)
+				if err != nil {
+					catcherr = NewError(stmt, err)
+					break
+				}
+
+				rvs := []rune(rv.String())
+				if len(rvs) != len(r[ii:ij]) {
+					catcherr = NewStringError(stmt, "Длина строки должна быть равна длине диапазона")
+					break
+				}
+
+				// заменяем руны
+				copy(r[ii:ij], rvs)
+
+				regs.Set(s.Reg, string(r))
+				regs.Set(s.RegNeedLet, true)
+
+			default:
+				catcherr = NewStringError(stmt, "Неверная операция")
+				break
+			}
 
 		case *BinUNARY:
+			switch s.Op {
+			case '-':
+				if x, ok := regs.Reg[s.Reg].(float64); ok {
+					regs.Set(s.Reg, -x)
+				} else if x, ok := regs.Reg[s.Reg].(int64); ok {
+					regs.Set(s.Reg, -x)
+				} else {
+					catcherr = NewStringError(stmt, "Операция применима только к числам")
+					break
+				}
+			case '^':
+				if x, ok := regs.Reg[s.Reg].(int64); ok {
+					regs.Set(s.Reg, ^x)
+				} else {
+					catcherr = NewStringError(stmt, "Операция применима только к целым числам")
+					break
+				}
+			case '!':
+				regs.Set(s.Reg, !ToBool(regs.Reg[s.Reg]))
+			default:
+				catcherr = NewStringError(stmt, "Неизвестный оператор")
+				break
+			}
 
 		case *BinADDR:
 
