@@ -191,8 +191,8 @@ func (v BinSETKEY) String() string {
 type BinGET struct {
 	BinStmtImpl
 
-	Reg    int
-	Id     int
+	Reg int
+	Id  int
 }
 
 func (v BinGET) String() string {
@@ -235,9 +235,10 @@ func (v BinSETNAME) String() string {
 type BinSETITEM struct {
 	BinStmtImpl
 
-	Reg      int
-	RegIndex int
-	RegVal   int
+	Reg        int
+	RegIndex   int
+	RegVal     int
+	RegNeedLet int
 }
 
 func (v BinSETITEM) String() string {

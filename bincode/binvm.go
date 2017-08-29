@@ -173,6 +173,74 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, eType)
 
 		case *BinSETITEM:
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			i := refregs.Index(s.RegIndex)
+			rv := refregs.Index(s.RegVal)
+			regs.Set(s.RegNeedLet, false)
+
+			switch v.Kind() {
+
+			case reflect.Array, reflect.Slice:
+				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					break
+				}
+				ii := int(i.Int())
+				if ii < 0 {
+					ii += v.Len()
+				}
+				if ii < 0 || ii >= v.Len() {
+					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					break
+				}
+
+				// для элементов массивов и слайсов это работает, а для строк - нет
+				vv := v.Index(ii)
+				if !vv.CanSet() {
+					catcherr = NewStringError(stmt, "Невозможно установить значение")
+					break
+				}
+				vv.Set(rv)
+
+			case reflect.String:
+				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					break
+				}
+				rvs := []rune(rv.String())
+				if len(rvs) != 1 {
+					catcherr = NewStringError(stmt, "Длина присваиваемой строки должна быть ровно один символ")
+					break
+				}
+				r := []rune(v.String())
+				vlen := len(r)
+				ii := int(i.Int())
+				if ii < 0 {
+					ii += vlen
+				}
+				if ii < 0 || ii >= vlen {
+					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					break
+				}
+				// заменяем руну
+				r[ii] = rvs[0]
+
+				// для строк здесь неадресуемое значение, поэтому, переприсваиваем
+				regs.Set(s.Reg, string(r))
+				regs.Set(s.RegNeedLet, true)
+
+			case reflect.Map:
+				if i.Kind() != reflect.String {
+					catcherr = NewStringError(stmt, "Ключ должен быть строкой")
+					break
+				}
+				v.SetMapIndex(i, rv)
+
+			default:
+				catcherr = NewStringError(stmt, "Неверная операция")
+				break
+			}
 
 		case *BinSETSLICE:
 

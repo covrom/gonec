@@ -572,14 +572,29 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 
 	case *ast.ItemExpr:
+		*lid++
+		lend := *lid
 		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
 		bins = append(bins, addBinExpr(ee.Index, reg+2, lid)...)
 		bins = appendBin(bins,
 			&BinSETITEM{
-				Reg:      reg + 1,
-				RegIndex: reg + 2,
-				RegVal:   reg,
+				Reg:        reg + 1,
+				RegIndex:   reg + 2,
+				RegVal:     reg,
+				RegNeedLet: reg + 3,
 			}, e)
+		bins = appendBin(bins,
+			&BinJFALSE{
+				Reg:    reg + 3,
+				JumpTo: lend,
+			}, ee)
+
+		bins = append(bins, addBinLetExpr(ee.Value, reg+1, lid)...)
+
+		bins = appendBin(bins,
+			&BinLABEL{
+				Label: lend,
+			}, ee)
 
 	case *ast.SliceExpr:
 		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
@@ -694,8 +709,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 	case *ast.IdentExpr:
 		bins = appendBin(bins,
 			&BinGET{
-				Reg:    reg,
-				Id:     e.Id,
+				Reg: reg,
+				Id:  e.Id,
 			}, e)
 	case *ast.UnaryExpr:
 		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
@@ -1036,8 +1051,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			if alhs, ok := e.Lhs.(*ast.IdentExpr); ok {
 				bins = appendBin(bins,
 					&BinGET{
-						Reg:    reg,
-						Id:     alhs.Id,
+						Reg: reg,
+						Id:  alhs.Id,
 					}, alhs)
 				bins = appendBin(bins,
 					&BinINC{
@@ -1053,8 +1068,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			if alhs, ok := e.Lhs.(*ast.IdentExpr); ok {
 				bins = appendBin(bins,
 					&BinGET{
-						Reg:    reg,
-						Id:     alhs.Id,
+						Reg: reg,
+						Id:  alhs.Id,
 					}, alhs)
 				bins = appendBin(bins,
 					&BinDEC{
