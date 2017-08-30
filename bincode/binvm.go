@@ -340,33 +340,10 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				regs.Set(s.Reg, m.Addr().Interface())
 				break
 			}
-			m, _ := ast.MethodByNameCI(v, s.Name)
-			// ошибку не обрабатываем, т.к. ищем поле
-			if !m.IsValid() {
-				if v.Kind() == reflect.Ptr {
-					v = v.Elem()
-				}
-				if v.Kind() == reflect.Struct {
-					var err error
-					m, err = ast.FieldByNameCI(v, s.Name)
-					if err != nil {
-						catcherr = NewStringError(stmt, "Метод или поле не найдено: "+ast.UniqueNames.Get(s.Name))
-						break
-					}
-					if !m.IsValid() {
-						catcherr = NewStringError(stmt, "Поле или метод не найдены")
-						break
-					}
-				} else if v.Kind() == reflect.Map {
-					m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(s.Name)))
-					if !m.IsValid() {
-						catcherr = NewStringError(stmt, "Значение по ключу не найдено")
-						break
-					}
-				} else {
-					catcherr = NewStringError(stmt, "У значения нет полей")
-					break
-				}
+			m, err := GetMember(v, s.Name, s)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
 			}
 			if !m.CanAddr() {
 				catcherr = NewStringError(stmt, "Невозможно получить адрес значения")
@@ -374,13 +351,67 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 			regs.Set(s.Reg, m.Addr().Interface())
 
-		case *BinUNREF:
+		case *BinUNREFID:
+			v, err := env.Get(s.Name)
+			if err != nil {
+				catcherr = NewStringError(stmt, "Невозможно получить значение")
+				break
+			}
+			if v.Kind() != reflect.Ptr {
+				catcherr = NewStringError(stmt, "Отсутствует ссылка на значение")
+				break
+			}
+			regs.Set(s.Reg, v.Elem().Interface())
+
+		case *BinUNREFMBR:
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			if vme, ok := v.Interface().(*envir.Env); ok {
+				m, err := vme.Get(s.Name)
+				if !m.IsValid() || err != nil {
+					catcherr = NewStringError(stmt, "Значение не найдено")
+					break
+				}
+				if m.Kind() != reflect.Ptr {
+					catcherr = NewStringError(stmt, "Отсутствует ссылка на значение")
+					break
+				}
+				regs.Set(s.Reg, m.Elem().Interface())
+				break
+			}
+			m, err := GetMember(v, s.Name, s)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
+			if m.Kind() != reflect.Ptr {
+				catcherr = NewStringError(stmt, "Отсутствует ссылка на значение")
+				break
+			}
+			regs.Set(s.Reg, m.Elem().Interface())
+
+		case *BinGETMEMBER:
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			if vme, ok := v.Interface().(*envir.Env); ok {
+				m, err := vme.Get(s.Name)
+				if !m.IsValid() || err != nil {
+					catcherr = NewStringError(stmt, "Значение не найдено")
+					break
+				}
+				regs.Set(s.Reg, m.Interface())
+				break
+			}
+			m, err := GetMember(v, s.Name, s)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
+			regs.Set(s.Reg, m.Interface())
 
 		case *BinOPER:
 
 		case *BinCALL:
-
-		case *BinGETMEMBER:
 
 		case *BinGETIDX:
 

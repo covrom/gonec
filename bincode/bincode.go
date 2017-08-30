@@ -756,11 +756,26 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				}, e)
 		}
 	case *ast.DerefExpr:
-		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
-		bins = appendBin(bins,
-			&BinUNREF{
-				Reg: reg,
-			}, e)
+		switch ee := e.Expr.(type) {
+		case *ast.IdentExpr:
+			bins = appendBin(bins,
+				&BinUNREFID{
+					Reg:  reg,
+					Name: ee.Id,
+				}, e)
+		case *ast.MemberExpr:
+			bins = append(bins, addBinExpr(ee.Expr, reg, lid)...)
+			bins = appendBin(bins,
+				&BinUNREFMBR{
+					Reg:  reg,
+					Name: ee.Name,
+				}, e)
+		default:
+			bins = appendBin(bins,
+				&BinERROR{
+					Error: "Неверная операция над значением",
+				}, e)
+		}
 	case *ast.ParenExpr:
 		bins = append(bins, addBinExpr(e.SubExpr, reg, lid)...)
 	case *ast.BinOpExpr:

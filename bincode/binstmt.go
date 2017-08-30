@@ -292,14 +292,26 @@ func (v BinADDRMBR) String() string {
 	return fmt.Sprintf("ADDRMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
 }
 
-type BinUNREF struct {
+type BinUNREFID struct {
 	BinStmtImpl
 
-	Reg int
+	Reg  int
+	Name int
 }
 
-func (v BinUNREF) String() string {
-	return fmt.Sprintf("UNREF r%d", v.Reg)
+func (v BinUNREFID) String() string {
+	return fmt.Sprintf("UNREFID r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
+}
+
+type BinUNREFMBR struct {
+	BinStmtImpl
+
+	Reg  int
+	Name int
+}
+
+func (v BinUNREFMBR) String() string {
+	return fmt.Sprintf("UNREFMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
 }
 
 type BinLABEL struct {
