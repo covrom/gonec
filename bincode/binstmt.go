@@ -270,14 +270,26 @@ func (v BinUNARY) String() string {
 	return fmt.Sprintf("UNARY %sr%d", string(v.Op), v.Reg)
 }
 
-type BinADDR struct {
+type BinADDRID struct {
 	BinStmtImpl
 
-	Reg int
+	Reg  int
+	Name int
 }
 
-func (v BinADDR) String() string {
-	return fmt.Sprintf("ADDR r%d", v.Reg)
+func (v BinADDRID) String() string {
+	return fmt.Sprintf("ADDRID r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
+}
+
+type BinADDRMBR struct {
+	BinStmtImpl
+
+	Reg  int
+	Name int
+}
+
+func (v BinADDRMBR) String() string {
+	return fmt.Sprintf("ADDRMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
 }
 
 type BinUNREF struct {
