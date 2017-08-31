@@ -1,4 +1,4 @@
-// Package core implements core interface for anko script.
+// Package core implements core interface for gonec script.
 package core
 
 import (

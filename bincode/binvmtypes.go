@@ -129,10 +129,9 @@ func (e *Error) Error() string {
 
 type CatchFunc func() string
 
-// Func is function interface to reflect functions internaly.
 // Функции такого типа создаются на языке Гонец,
 // их можно использовать в стандартной библиотеке, проверив на этот тип
-type Func func(args ...reflect.Value) (reflect.Value, error)
+type Func func(args ...interface{}) (interface{}, error)
 
 func (f Func) String() string {
 	return fmt.Sprintf("[Функция: %p]", f)

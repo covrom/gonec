@@ -926,8 +926,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				RegEnd:   reg + 2,
 			}, e)
 	case *ast.FuncExpr:
-		*lid++
-		lend := *lid
+		// *lid++
+		// lend := *lid
 		bins = appendBin(bins,
 			&BinFUNC{
 				Reg:      reg,
@@ -935,18 +935,18 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				Code:     BinaryCode(e.Stmts, 0, lid),
 				Args:     e.Args,
 				VarArg:   e.VarArg,
-				ReturnTo: lend,
+				// ReturnTo: lend,
 			}, e)
 		// КонецФункции
-		bins = appendBin(bins,
-			&BinLABEL{
-				Label: lend,
-			}, e)
-		// возвращаем значения в регистре reg, установленные функцией
-		bins = appendBin(bins,
-			&BinRET{
-				Reg: reg,
-			}, e)
+		// bins = appendBin(bins,
+		// 	&BinLABEL{
+		// 		Label: lend,
+		// 	}, e)
+		// // возвращаем значения в регистре reg, установленные функцией
+		// bins = appendBin(bins,
+		// 	&BinRET{
+		// 		Reg: reg,
+		// 	}, e)
 
 	case *ast.TypeCast:
 		bins = append(bins, addBinExpr(e.CastExpr, reg, lid)...)

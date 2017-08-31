@@ -371,7 +371,7 @@ type BinFUNC struct {
 	Code     BinCode
 	Args     []int // идентификаторы параметров
 	VarArg   bool
-	ReturnTo int //метка инструкции возврата из функции
+	// ReturnTo int //метка инструкции возврата из функции
 }
 
 func (v BinFUNC) String() string {

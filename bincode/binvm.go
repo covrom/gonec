@@ -676,6 +676,38 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegRets, ret)
 
 		case *BinFUNC:
+			f := func(expr *BinFUNC, env *envir.Env) Func {
+				return func(args ...interface{}) (interface{}, error) {
+					if !expr.VarArg {
+						if len(args) != len(expr.Args) {
+							return nil, NewStringError(expr, "Неверное количество аргументов")
+						}
+					}
+					var newenv *envir.Env
+					if expr.Name == 0 {
+						// наследуем от окружения текущей функции
+						newenv = env.NewSubEnv()
+					} else {
+						// наследуем от модуля или глобального окружения
+						newenv = env.NewEnv()
+					}
+
+					if expr.VarArg {
+						newenv.Define(expr.Args[0], args)
+					} else {
+						for i, arg := range expr.Args {
+							newenv.Define(arg, args[i])
+						}
+					}
+					rr, err := Run(expr.Code, newenv)
+					if err == ReturnError {
+						err = nil
+					}
+					return rr, err
+				}
+			}(s, env)
+			env.Define(s.Name, f)
+			regs.Set(s.Reg, f)
 
 		case *BinCASTTYPE:
 
@@ -735,6 +767,13 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			break
 
 		case *BinMODULE:
+			// модуль регистрируется в глобальном контексте
+			newenv := env.NewModule(ast.UniqueNames.Get(s.Name))
+			_, err := Run(s.Code, newenv) // инициируем модуль
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
 
 		case *BinERROR:
 			// необрабатываемая в попытке ошибка

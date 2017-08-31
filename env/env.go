@@ -35,25 +35,54 @@ type Env struct {
 func NewEnv() *Env {
 	b := false
 
-	return &Env{
+	m := &Env{
 		env:       make(map[int]reflect.Value),
 		typ:       make(map[int]reflect.Type),
 		parent:    nil,
 		interrupt: &b,
 		stdout:    os.Stdout,
 	}
+	// !!!не забывать вызывать gonec_core.LoadAllBuiltins(m)!!!
+	return m
 }
 
-// NewEnv creates new child scope.
+// NewEnv создает новое окружение под глобальным контекстом переданного в e
 func (e *Env) NewEnv() *Env {
+	for ee := e; ee != nil; ee = ee.parent {
+		if ee.parent == nil {
+			return &Env{
+				env:       make(map[int]reflect.Value),
+				typ:       make(map[int]reflect.Type),
+				parent:    ee,
+				interrupt: e.interrupt,
+				stdout:    e.stdout,
+			}
+
+		}
+	}
+	panic("Не найден глобальный контекст!")
+}
+
+// NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
+func (e *Env) NewSubEnv() *Env {
 	return &Env{
 		env:       make(map[int]reflect.Value),
 		typ:       make(map[int]reflect.Type),
 		parent:    e,
-		name:      e.name,
 		interrupt: e.interrupt,
 		stdout:    e.stdout,
 	}
+}
+
+// NewModule creates new module scope as global.
+func (e *Env) NewModule(n string) *Env {
+	//ni := strings.ToLower(n)
+	m := e.NewEnv()
+	m.name = n
+	
+	// на модуль можно ссылаться через переменную породившего глобального контекста
+	e.DefineGlobal(ast.UniqueNames.Set(n), m)
+	return m
 }
 
 // func NewPackage(n string, w io.Writer) *Env {
@@ -95,20 +124,6 @@ func (e *Env) Destroy() {
 	}
 	e.parent = nil
 	e.env = nil
-}
-
-// NewModule creates new module scope as global.
-func (e *Env) NewModule(n string) *Env {
-	//ni := strings.ToLower(n)
-	m := &Env{
-		env:    make(map[int]reflect.Value),
-		typ:    make(map[int]reflect.Type),
-		parent: e,
-		name:   n, //ni,
-		stdout: e.stdout,
-	}
-	e.Define(ast.UniqueNames.Set(n), m)
-	return m
 }
 
 // SetName sets a name of the scope. This means that the scope is module.

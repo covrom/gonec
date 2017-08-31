@@ -264,8 +264,8 @@ func RunSingleStmt(stmt ast.Stmt, env *envir.Env) (reflect.Value, error) {
 		// }
 		return NilValue, NewError(stmt, err)
 	case *ast.LoopStmt:
-		newenv := env.NewEnv()
-		defer newenv.Destroy()
+		newenv := env //.NewEnv()
+		// defer newenv.Destroy()
 		for {
 			if stmt.Expr != nil {
 				ev, ee := invokeExpr(stmt.Expr, newenv)
@@ -485,13 +485,11 @@ func RunSingleStmt(stmt ast.Stmt, env *envir.Env) (reflect.Value, error) {
 		}
 		return rv, NewStringError(stmt, fmt.Sprint(rv.Interface()))
 	case *ast.ModuleStmt:
-		newenv := env.NewEnv()
-		//newenv.SetName(stmt.Name)
+		newenv := env.NewModule(ast.UniqueNames.Get(stmt.Name))
 		rv, err := Run(stmt.Stmts, newenv)
 		if err != nil {
 			return rv, NewError(stmt, err)
 		}
-		env.DefineGlobal(stmt.Name, reflect.ValueOf(newenv))
 		return rv, nil
 	case *ast.SwitchStmt:
 		rv, err := invokeExpr(stmt.Expr, env)
