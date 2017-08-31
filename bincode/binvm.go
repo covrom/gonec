@@ -2,7 +2,9 @@
 package bincode
 
 import (
+	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 
@@ -500,6 +502,178 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegL, r)
 
 		case *BinCALL:
+			// получаем функцию
+			var f, vargs reflect.Value
+			var err error
+			if s.Name == 0 {
+				// в регистре - функция
+				f = reflect.ValueOf(regs.Reg).Index(s.RegArgs)
+				// в следующем - массив аргументов
+				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs + 1)
+			} else {
+				// функция берется из переменной или по имени в окружении
+				f, err = env.Get(s.Name)
+				if err != nil {
+					catcherr = NewError(stmt, err)
+					break
+				}
+				// в регистре - массив аргументов
+				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs)
+			}
+			// это не функция - тогда ошибка
+			if f.Kind() != reflect.Func {
+				catcherr = NewStringError(stmt, "Не является функцией")
+				break
+			}
+			ftype := f.Type()
+			// isReflect = это функция на языке Гонец, а не встоенная в стандартную библиотеку
+			_, isReflect := f.Interface().(Func)
+
+			// готовим аргументы для вызываемой функции
+			args := make([]reflect.Value, s.NumArgs)
+
+			for i := 0; i < s.NumArgs; i++ {
+				// очередной аргумент
+				arg := vargs.Index(i)
+				// конвертируем параметр в целевой тип
+				if i < ftype.NumIn() {
+					// это функция с постоянным числом аргументов
+					if !ftype.IsVariadic() {
+						// целевой тип аргумента
+						it := ftype.In(i)
+						// if arg.Kind().String() == "unsafe.Pointer" {
+						// 	arg = reflect.New(it).Elem()
+						// }
+						if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
+							// типы не равны - пытаемся конвертировать
+							arg = arg.Convert(it)
+						} else if arg.Kind() == reflect.Func {
+							if _, isFunc := arg.Interface().(Func); isFunc {
+								// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
+								rfunc := arg
+								arg = reflect.MakeFunc(it, func(args []reflect.Value) []reflect.Value {
+									// for i := range args {
+									// 	args[i] = reflect.ValueOf(args[i])
+									// }
+									if s.Go {
+										go func() {
+											rfunc.Call(args)
+										}()
+										return []reflect.Value{}
+									}
+									// var rets []reflect.Value
+									// for _, v := range rfunc.Call(args)[:it.NumOut()] {
+									// 	rets = append(rets, v.Interface().(reflect.Value))
+									// }
+									// return rets
+									return rfunc.Call(args)[:it.NumOut()]
+								})
+							}
+						} else if !arg.IsValid() {
+							arg = reflect.Zero(it)
+						}
+					}
+				}
+				if !arg.IsValid() {
+					arg = envir.NilValue
+				}
+				// if !isReflect {
+				// 	// для функций на языке Го
+				if s.VarArg && i == s.NumArgs-1 {
+					for j := 0; j < arg.Len(); j++ {
+						args = append(args, arg.Index(j))
+					}
+				} else {
+					args = append(args, arg)
+				}
+				// } else {
+				// 	// для функций на языке Гонец
+				// 	// if arg.Kind() == reflect.Interface {
+				// 	// 	arg = arg.Elem()
+				// 	// }
+				// 	if s.VarArg && i == s.NumArgs-1 {
+				// 		for j := 0; j < arg.Len(); j++ {
+				// 			args = append(args, arg.Index(j))
+				// 		}
+				// 	} else {
+				// 		args = append(args, reflect.ValueOf(arg))
+				// 	}
+				// }
+
+			}
+
+			// вызываем функцию
+
+			fnc := func() (ret interface{}, err error) {
+				defer func() {
+					// если не было прерывания Interrupt()
+					if os.Getenv("GONEC_DEBUG") == "" {
+						// обрабатываем панику, которая могла возникнуть в вызванной функции
+						if ex := recover(); ex != nil {
+							if e, ok := ex.(error); ok {
+								err = e
+							} else {
+								err = errors.New(fmt.Sprint(ex))
+							}
+						}
+					}
+				}()
+				// if f.Kind() == reflect.Interface {
+				// 	f = f.Elem()
+				// }
+				rets := f.Call(args)
+
+				if isReflect {
+					// возврат из функций на языке Гонец содержит массив возвращенных значений в [0]
+					// и возникшую ошибку в [1]
+					ev := rets[1].Interface()
+					if ev != nil {
+						err = ev.(error)
+					}
+					return rets[0].Interface(), err // массив возвращаемых значений
+				} else {
+
+					// возврат из функций на языке Го
+
+					// for i, expr := range e.SubExprs {
+					// 	if ae, ok := expr.(*ast.AddrExpr); ok {
+					// 		if id, ok := ae.Expr.(*ast.IdentExpr); ok {
+					// 			invokeLetExpr(id, args[i].Elem().Elem(), env)
+					// 		}
+					// 	}
+					// }
+
+					if f.Type().NumOut() == 1 {
+						return rets[0].Interface(), nil // одно значение
+					} else {
+						var result []interface{}
+						for _, r := range rets {
+							result = append(result, r.Interface())
+						}
+						return result, nil // массив возвращаемых значений
+					}
+				}
+			}
+
+			// если ее надо вызвать в горутине - вызываем
+			if s.Go {
+				go fnc()
+				regs.Set(s.RegRets, nil)
+				break
+			}
+
+			// не в горутине
+			ret, err := fnc()
+
+			// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
+			// и аналогично проверить значения в переданных указателях
+
+			if err != nil {
+				// ошибку передаем в блок обработки исключений
+				catcherr = NewError(stmt, err)
+				break
+			}
+			regs.Set(s.RegRets, ret)
 
 		case *BinFUNC:
 

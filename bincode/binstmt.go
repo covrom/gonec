@@ -310,12 +310,12 @@ type BinCALL struct {
 	Name int // либо вызов по имени из ast.UniqueNames, если Name != 0
 	// либо вызов обработчика (Name==0), напр. для анонимной функции
 	// (выражение типа func, или ссылка или интерфейс с ним, находится в reg, а параметры начиная с reg+1)
-	NumArgs int // число аргументов, которое надо взять на входе из регистров (<=7) или массива (Reg)
-	RegArgs int // первый регистр из числа регистров с параметрами (параметров<=7) или регистр с массивом аругментов (>7)
+	NumArgs int // число аргументов, которое надо взять на входе из массива (Reg)
+	RegArgs int // регистр с массивом аругментов
+	RegRets int // массив с возвращаемыми из функции значениями
 
-	// в последнем регистре (из серии, если <=7, или в RegArgs, если >7) передан
+	// в последнем регистре (в RegArgs) может быть передан
 	// массив аргументов переменной длины, и это приемлемо для вызываемой функции (оператор "...")
-	// здесь надо быть аккуратным при числе аргументов >7
 	// таким массивом будет только последний аргумент
 	VarArg bool
 
@@ -324,9 +324,9 @@ type BinCALL struct {
 
 func (v BinCALL) String() string {
 	if v.Name == 0 {
-		return fmt.Sprintf("CALL ANON r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go)
+		return fmt.Sprintf("CALL ANON r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 	}
-	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v", ast.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go)
+	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", ast.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 }
 
 type BinGETMEMBER struct {
