@@ -703,6 +703,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 					if err == ReturnError {
 						err = nil
 					}
+					// TODO: проверить при единичном и множественном возврате
 					return rr, err
 				}
 			}(s, env)
