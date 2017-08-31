@@ -760,7 +760,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		case *BinCONTINUE:
 
 		case *BinRET:
-			retval = regs.Reg[0] // из основного регистра
+			retval = regs.Reg[s.Reg]
 			return retval, ReturnError
 		case *BinTHROW:
 			catcherr = NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
