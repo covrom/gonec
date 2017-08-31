@@ -928,8 +928,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		bins = appendBin(bins,
 			&BinGETSUBSLICE{
 				Reg:      reg,
-				BeginReg: reg + 1,
-				EndReg:   reg + 2,
+				RegBegin: reg + 1,
+				RegEnd:   reg + 2,
 			}, e)
 	case *ast.FuncExpr:
 		*lid++

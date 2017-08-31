@@ -409,13 +409,87 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 			regs.Set(s.Reg, m.Interface())
 
+		case *BinGETIDX:
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			i := refregs.Index(s.RegIndex)
+
+			switch v.Kind() {
+
+			case reflect.Array, reflect.Slice:
+				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					break
+				}
+				ii := int(i.Int())
+				if ii < 0 {
+					ii += v.Len()
+				}
+				if ii < 0 || ii >= v.Len() {
+					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					break
+				}
+
+				regs.Set(s.Reg, v.Index(ii).Interface())
+
+			case reflect.String:
+				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					break
+				}
+				r := []rune(v.String())
+				vlen := len(r)
+				ii := int(i.Int())
+				if ii < 0 {
+					ii += vlen
+				}
+				if ii < 0 || ii >= vlen {
+					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					break
+				}
+				regs.Set(s.Reg, string(r[ii]))
+
+			case reflect.Map:
+				if i.Kind() != reflect.String {
+					catcherr = NewStringError(stmt, "Ключ должен быть строкой")
+					break
+				}
+				regs.Set(s.Reg, v.MapIndex(i))
+
+			default:
+				catcherr = NewStringError(stmt, "Неверная операция")
+				break
+			}
+
+		case *BinGETSUBSLICE:
+			refregs := reflect.ValueOf(regs.Reg)
+			v := refregs.Index(s.Reg)
+			rb := refregs.Index(s.RegBegin)
+			re := refregs.Index(s.RegEnd)
+
+			switch v.Kind() {
+			case reflect.Array, reflect.Slice:
+				rv, err := ast.SliceAt(v, rb, re, envir.NilValue)
+				if err != nil {
+					catcherr = NewError(stmt, err)
+					break
+				}
+				regs.Set(s.Reg, rv.Interface())
+			case reflect.String:
+				rv, err := ast.StringAt(v, rb, re, envir.NilValue)
+				if err != nil {
+					catcherr = NewError(stmt, err)
+					break
+				}
+				regs.Set(s.Reg, rv.Interface())
+			default:
+				catcherr = NewStringError(stmt, "Неверная операция")
+				break
+			}
+
 		case *BinOPER:
 
 		case *BinCALL:
-
-		case *BinGETIDX:
-
-		case *BinGETSUBSLICE:
 
 		case *BinFUNC:
 

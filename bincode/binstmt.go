@@ -419,12 +419,12 @@ type BinGETSUBSLICE struct {
 	BinStmtImpl
 
 	Reg      int
-	BeginReg int
-	EndReg   int
+	RegBegin int
+	RegEnd   int
 }
 
 func (v BinGETSUBSLICE) String() string {
-	return fmt.Sprintf("SLICE r%d[r%d : r%d]", v.Reg, v.BeginReg, v.EndReg)
+	return fmt.Sprintf("SLICE r%d[r%d : r%d]", v.Reg, v.RegBegin, v.RegEnd)
 }
 
 type BinFUNC struct {
