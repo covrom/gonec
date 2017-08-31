@@ -135,7 +135,7 @@ stmt :
 		$$ = &ast.ThrowStmt{Expr: $2}
 		$$.SetPosition($1.Position())
 	}
-	| MODULE IDENT '{' compstmt '}'
+	| MODULE IDENT term compstmt
 	{
 		$$ = &ast.ModuleStmt{Name: ast.UniqueNames.Set($2.Lit), Stmts: $4}
 		$$.SetPosition($1.Position())
