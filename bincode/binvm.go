@@ -488,6 +488,16 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 
 		case *BinOPER:
+			refregs := reflect.ValueOf(regs.Reg)
+			lhsV := refregs.Index(s.RegL)
+			rhsV := refregs.Index(s.RegR)
+
+			r, err := EvalBinOp(s.Op, lhsV, rhsV)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
+			regs.Set(s.RegL, r)
 
 		case *BinCALL:
 

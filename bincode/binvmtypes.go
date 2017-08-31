@@ -3,6 +3,7 @@ package bincode
 import (
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
@@ -10,6 +11,70 @@ import (
 	"github.com/covrom/gonec/ast"
 	envir "github.com/covrom/gonec/env"
 )
+
+const (
+	_    = iota
+	ADD  // +
+	SUB  // -
+	MUL  // *
+	QUO  // /
+	REM  // %
+	EQL  // ==
+	NEQ  // !=
+	GTR  // >
+	GEQ  // >=
+	LSS  // <
+	LEQ  // <=
+	OR   // |
+	LOR  // ||
+	AND  // &
+	LAND // &&
+	POW  //**
+	SHL  // <<
+	SHR  // >>
+)
+
+var OperMap = map[string]int{
+	"+":  ADD,  // +
+	"-":  SUB,  // -
+	"*":  MUL,  // *
+	"/":  QUO,  // /
+	"%":  REM,  // %
+	"==": EQL,  // ==
+	"!=": NEQ,  // !=
+	">":  GTR,  // >
+	">=": GEQ,  // >=
+	"<":  LSS,  // <
+	"<=": LEQ,  // <=
+	"|":  OR,   // |
+	"||": LOR,  // ||
+	"&":  AND,  // &
+	"&&": LAND, // &&
+	"**": POW,  //**
+	"<<": SHL,  // <<
+	">>": SHR,  // >>
+}
+
+var OperMapR = map[int]string{
+	ADD:  "+",  // +
+	SUB:  "-",  // -
+	MUL:  "*",  // *
+	QUO:  "/",  // /
+	REM:  "%",  // %
+	EQL:  "==", // ==
+	NEQ:  "!=", // !=
+	GTR:  ">",  // >
+	GEQ:  ">=", // >=
+	LSS:  "<",  // <
+	LEQ:  "<=", // <=
+	OR:   "|",  // |
+	LOR:  "||", // ||
+	AND:  "&",  // &
+	LAND: "&&", // &&
+	POW:  "**", //**
+	SHL:  "<<", // <<
+	SHR:  ">>", // >>
+}
 
 // Error provides a convenient interface for handling runtime error.
 // It can be Error interface with type cast which can call Pos().
@@ -286,4 +351,82 @@ func GetMember(v reflect.Value, name int, stmt ast.Pos) (reflect.Value, error) {
 		}
 	}
 	return m, nil
+}
+
+func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
+	switch op {
+
+	// TODO: математика множеств и графов
+
+	case ADD:
+		if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
+			return ToString(lhsV) + ToString(rhsV), nil
+		}
+		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() != reflect.Array && rhsV.Kind() != reflect.Slice) {
+			return reflect.Append(lhsV, rhsV).Interface(), nil
+		}
+		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() == reflect.Array || rhsV.Kind() == reflect.Slice) {
+			return reflect.AppendSlice(lhsV, rhsV).Interface(), nil
+		}
+		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
+			return ToFloat64(lhsV) + ToFloat64(rhsV), nil
+		}
+		return ToInt64(lhsV) + ToInt64(rhsV), nil
+	case SUB:
+		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
+			return ToFloat64(lhsV) - ToFloat64(rhsV), nil
+		}
+		return ToInt64(lhsV) - ToInt64(rhsV), nil
+	case MUL:
+		if lhsV.Kind() == reflect.String && (rhsV.Kind() == reflect.Int || rhsV.Kind() == reflect.Int32 || rhsV.Kind() == reflect.Int64) {
+			return strings.Repeat(ToString(lhsV), int(ToInt64(rhsV))), nil
+		}
+		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
+			return ToFloat64(lhsV) * ToFloat64(rhsV), nil
+		}
+		return ToInt64(lhsV) * ToInt64(rhsV), nil
+	case QUO:
+		return ToFloat64(lhsV) / ToFloat64(rhsV), nil
+	case REM:
+		return ToInt64(lhsV) % ToInt64(rhsV), nil
+	case EQL:
+		return Equal(lhsV, rhsV), nil
+	case NEQ:
+		return Equal(lhsV, rhsV) == false, nil
+	case GTR:
+		return ToFloat64(lhsV) > ToFloat64(rhsV), nil
+	case GEQ:
+		return ToFloat64(lhsV) >= ToFloat64(rhsV), nil
+	case LSS:
+		return ToFloat64(lhsV) < ToFloat64(rhsV), nil
+	case LEQ:
+		return ToFloat64(lhsV) <= ToFloat64(rhsV), nil
+	case OR:
+		return ToInt64(lhsV) | ToInt64(rhsV), nil
+	case LOR:
+		if x := ToBool(lhsV); x {
+			return x, nil
+		} else {
+			return ToBool(rhsV), nil
+		}
+	case AND:
+		return ToInt64(lhsV) & ToInt64(rhsV), nil
+	case LAND:
+		if x := ToBool(lhsV); x {
+			return ToBool(rhsV), nil
+		} else {
+			return x, nil
+		}
+	case POW:
+		if lhsV.Kind() == reflect.Float64 {
+			return math.Pow(ToFloat64(lhsV), ToFloat64(rhsV)), nil
+		}
+		return int64(math.Pow(ToFloat64(lhsV), ToFloat64(rhsV))), nil
+	case SHR:
+		return ToInt64(lhsV) >> uint64(ToInt64(rhsV)), nil
+	case SHL:
+		return ToInt64(lhsV) << uint64(ToInt64(rhsV)), nil
+	default:
+		return nil, fmt.Errorf("Неизвестный оператор")
+	}
 }
