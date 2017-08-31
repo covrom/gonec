@@ -43,13 +43,13 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			continue
 
 		case *BinJFALSE:
-			if r, ok := regs.Reg[s.Reg].(bool); ok && !r {
+			if ok := ToBool(regs.Reg[s.Reg]); !ok {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
 
 		case *BinJTRUE:
-			if r, ok := regs.Reg[s.Reg].(bool); ok && r {
+			if ok := ToBool(regs.Reg[s.Reg]); ok {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
