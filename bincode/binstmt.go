@@ -653,9 +653,10 @@ func (v BinERROR) String() string {
 type BinTRYRECV struct {
 	BinStmtImpl
 
-	Reg    int // на входе канал, на выходе тоже
-	RegVal int // получаемое значение
-	RegOk  int // успешное чтение, или не было чтения, или в Reg не канал
+	Reg       int // на входе канал, на выходе тоже
+	RegVal    int // получаемое значение
+	RegOk     int // успешное чтение, или не было чтения, или в Reg не канал
+	RegClosed int // в этот регистр помещается true если канал закрыт
 }
 
 func (v BinTRYRECV) String() string {
@@ -668,6 +669,7 @@ type BinTRYSEND struct {
 	Reg    int // на входе канал, на выходе тоже
 	RegVal int // регистр со значением для отправки
 	RegOk  int // успешно передано в канал, или не было передачи, или в Reg не канал
+	// RegClosed int // в этот регистр помещается true если канал закрыт
 }
 
 func (v BinTRYSEND) String() string {

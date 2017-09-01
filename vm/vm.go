@@ -548,7 +548,6 @@ func RunSingleStmt(stmt ast.Stmt, env *envir.Env) (reflect.Value, error) {
 				if err != nil {
 					return NilValue, NewError(case_stmt.Expr, err)
 				}
-
 				if e.Lhs == nil {
 					if rhs.Kind() == reflect.Chan {
 						// есть только правая часть - это чтение из канала без сохранения в переменной слева

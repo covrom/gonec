@@ -410,10 +410,12 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					// слева нет значения - это временное чтение из канала без сохранения значения в переменной
 					bins = appendBin(bins,
 						&BinTRYRECV{
-							Reg:    reg,
-							RegVal: reg + 1,
-							RegOk:  reg + 2,
+							Reg:       reg,
+							RegVal:    reg + 1,
+							RegOk:     reg + 2,
+							RegClosed: reg + 3,
 						}, e.Rhs)
+					// если канал закрыт или не получено значение - идем в следующую ветку
 					bins = appendBin(bins,
 						&BinJFALSE{
 							Reg:    reg + 2,
@@ -422,36 +424,76 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				} else {
 					// значение слева
 					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid)...)
+
+					// проверяем: слева канал?
+					bins = appendBin(bins,
+						&BinMV{
+							RegFrom: reg + 1,
+							RegTo:   reg + 3,
+						}, e)
+					bins = appendBin(bins,
+						&BinISKIND{
+							Reg:  reg + 3,
+							Kind: reflect.Chan,
+						}, e)
+
+					*lid++
+					li3 := *lid
+
+					bins = appendBin(bins,
+						&BinJFALSE{
+							Reg:    reg + 3,
+							JumpTo: li3,
+						}, e)
+
 					// слева канал - пишем в него правое
+
 					bins = appendBin(bins,
 						&BinTRYSEND{
 							Reg:    reg + 1,
 							RegVal: reg,
 							RegOk:  reg + 2,
+							// RegClosed: reg + 3,
 						}, e.Lhs)
 
 					*lid++
 					li2 := *lid
 
+					// если отправлено значение - выполняем код блока
 					bins = appendBin(bins,
 						&BinJTRUE{
 							Reg:    reg + 2,
 							JumpTo: li2,
 						}, s)
+					// если не отправлено значение - идем в следующую ветку
+					// если канал закрыт - будет паника
+					bins = appendBin(bins,
+						&BinJMP{
+							JumpTo: li,
+						}, s)
 
 					// иначе справа канал, а слева переменная (установим, если прочитали из канала)
 					bins = appendBin(bins,
+						&BinLABEL{
+							Label: li3,
+						}, s)
+
+					bins = appendBin(bins,
 						&BinTRYRECV{
-							Reg:    reg,
-							RegVal: reg + 1,
-							RegOk:  reg + 2,
+							Reg:       reg,
+							RegVal:    reg + 1,
+							RegOk:     reg + 2,
+							RegClosed: reg + 3,
 						}, e.Rhs)
+
+					// если канал закрыт или не получено значение - идем в следующую ветку
 					bins = appendBin(bins,
 						&BinJFALSE{
 							Reg:    reg + 2,
 							JumpTo: li,
 						}, s)
 
+					// устанавливаем переменную прочитанным значением
 					bins = append(bins, addBinLetExpr(e.Lhs, reg+1, lid)...)
 
 					bins = appendBin(bins,

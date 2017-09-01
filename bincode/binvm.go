@@ -789,7 +789,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				break
 			}
 			v, _ := ch.Recv()
-			regs.Set(s.RegVal, v)
+			regs.Set(s.RegVal, v.Interface())
 
 		case *BinCHANSEND:
 			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
@@ -882,7 +882,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 					catcherr = NewStringError(stmt, "Канал был закрыт")
 					break
 				}
-				regs.Set(s.RegVal, iv)
+				regs.Set(s.RegVal, iv.Interface())
 			default:
 				catcherr = NewStringError(stmt, "Не является коллекцией или каналом")
 				break
@@ -980,7 +980,30 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinTRYRECV:
 
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			if ch.Kind() != reflect.Chan {
+				catcherr = NewStringError(stmt, "Не является каналом")
+				break
+			}
+			v, ok := ch.TryRecv()
+			if !v.IsValid() {
+				regs.Set(s.RegVal, nil)
+				regs.Set(s.RegOk, ok)
+				regs.Set(s.RegClosed, true)
+			} else {
+				regs.Set(s.RegVal, v.Interface())
+				regs.Set(s.RegOk, ok)
+				regs.Set(s.RegClosed, false)
+			}
+
 		case *BinTRYSEND:
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			if ch.Kind() != reflect.Chan {
+				catcherr = NewStringError(stmt, "Не является каналом")
+				break
+			}
+			ok := ch.TrySend(reflect.ValueOf(regs.Reg).Index(s.RegVal))
+			regs.Set(s.RegOk, ok)
 
 		case *BinGOSHED:
 			runtime.Gosched()
