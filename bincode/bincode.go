@@ -126,9 +126,9 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// инициализируем итератор, параметры цикла и цикл в стеке циклов
 			bins = appendBin(bins,
 				&BinFOREACH{
-					Reg:        reg,
-					RegIter:    regiter,
-					BreakLabel: lend,
+					Reg:           reg,
+					RegIter:       regiter,
+					BreakLabel:    lend,
 					ContinueLabel: li,
 				}, s)
 			// очередная итерация
@@ -181,17 +181,18 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 			*lid++
 			lend := *lid
+			*lid++
+			li := *lid
 
 			// инициализируем итератор, параметры цикла и цикл в стеке циклов
 			bins = appendBin(bins,
 				&BinFORNUM{
-					Reg:        reg,
-					RegFrom:    regfrom,
-					RegTo:      regto,
-					BreakLabel: lend,
+					Reg:           reg,
+					RegFrom:       regfrom,
+					RegTo:         regto,
+					BreakLabel:    lend,
+					ContinueLabel: li,
 				}, s)
-			*lid++
-			li := *lid
 			// очередная итерация
 			// сюда же переходим по Продолжить
 			bins = appendBin(bins,
@@ -200,8 +201,10 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 			bins = appendBin(bins,
 				&BinNEXTNUM{
-					Reg:    reg,
-					JumpTo: lend, // сюда же переходим по Прервать
+					Reg:     reg,
+					RegFrom: regfrom,
+					RegTo:   regto,
+					JumpTo:  lend, // сюда же переходим по Прервать
 				}, s)
 			// устанавливаем переменную-итератор
 			bins = appendBin(bins,
@@ -226,7 +229,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// снимаем со стека наличие цикла для Прервать и Продолжить
 			bins = appendBin(bins,
 				&BinPOPFOR{
-					Reg: reg,
+					ContinueLabel: li,
 				}, s)
 
 		case *ast.LoopStmt:
@@ -238,6 +241,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinWHILE{
 					Reg:        reg,
 					BreakLabel: lend,
+					
 				}, s)
 			// очередная итерация
 			// сюда же переходим по Продолжить
@@ -268,7 +272,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// снимаем со стека наличие цикла для Прервать и Продолжить
 			bins = appendBin(bins,
 				&BinPOPFOR{
-					Reg: reg,
+					ContinueLabel: li,
 				}, s)
 
 		case *ast.BreakStmt:

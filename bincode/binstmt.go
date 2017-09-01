@@ -557,10 +557,11 @@ func (v BinPOPFOR) String() string {
 type BinFORNUM struct {
 	BinStmtImpl
 
-	Reg        int // регистр для итерационного значения
-	RegFrom    int // регистр с начальным значением
-	RegTo      int // регистр с конечным значением
-	BreakLabel int
+	Reg           int // регистр для итерационного значения
+	RegFrom       int // регистр с начальным значением
+	RegTo         int // регистр с конечным значением
+	BreakLabel    int
+	ContinueLabel int
 }
 
 func (v BinFORNUM) String() string {
@@ -570,8 +571,10 @@ func (v BinFORNUM) String() string {
 type BinNEXTNUM struct {
 	BinStmtImpl
 
-	Reg    int // следующее значение итератора
-	JumpTo int // переход в случае, если значение после увеличения стало больше, чем ранее определенное в RegTo
+	Reg     int // следующее значение итератора
+	RegFrom int // регистр с начальным значением
+	RegTo   int // регистр с конечным значением
+	JumpTo  int // переход в случае, если значение после увеличения стало больше, чем ранее определенное в RegTo
 	// туда же переходим по Прервать
 }
 

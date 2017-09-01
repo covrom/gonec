@@ -896,7 +896,44 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinFORNUM:
 
+			if !IsNum(regs.Reg[s.RegFrom]) {
+				catcherr = NewStringError(stmt, "Начальное значение должно быть целым числом")
+				break
+			}
+			if !IsNum(regs.Reg[s.RegTo]) {
+				catcherr = NewStringError(stmt, "Конечное значение должно быть целым числом")
+				break
+			}
+
+			regs.Set(s.Reg, nil)
+			regs.PushBreak(s.BreakLabel)
+			regs.PushContinue(s.ContinueLabel)
+
 		case *BinNEXTNUM:
+			afrom := ToInt64(regs.Reg[s.RegFrom])
+			ato := ToInt64(regs.Reg[s.RegTo])
+			fviadd := int64(1)
+			if afrom > ato {
+				fviadd = int64(-1) // если конечное значение меньше первого, идем в обратном порядке
+			}
+			vv := regs.Reg[s.Reg]
+			var iter int64
+			if vv == nil {
+				iter = afrom
+			} else {
+				iter = ToInt64(vv)
+				iter += fviadd
+			}
+			inrange := iter <= ato
+			if afrom > ato {
+				inrange = iter >= ato
+			}
+			if inrange {
+				regs.Set(s.Reg, iter)
+			} else {
+				idx = regs.Labels[s.JumpTo]
+				continue
+			}
 
 		case *BinWHILE:
 
