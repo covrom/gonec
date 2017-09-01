@@ -340,14 +340,18 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 
 	sb := string(b)
 
-	ls := fmt.Sprintf("--Выполняется код-- %s\n%s\n", env.GetSid(), sb)
+	if *testingMode {
+		log.Printf("--Выполняется код-- %s\n%s\n", env.GetSid(), sb)
+	}
 
 	//замер производительности
 	tstart := time.Now()
 	stmts, bins, err := parser.ParseSrc(sb)
 	tsParse := time.Since(tstart)
 
-	ls2 := fmt.Sprintf("--Скомпилирован код-- \n%s\n", bins.String())
+	if *testingMode {
+		log.Printf("--Скомпилирован код-- \n%s\n", bins.String())
+	}
 
 	if err != nil {
 		return err
@@ -377,7 +381,7 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 	if *testingMode {
 		env.Printf("Время компиляции: %v\n", tsParse)
 		env.Printf("Время исполнения: %v\n", tsRun)
-		log.Printf("%s%s--Результат выполнения кода--\n%s\n", ls, ls2, rb.String())
+		log.Printf("--Результат выполнения кода--\n%s\n", rb.String())
 	}
 
 	_, err = w.Write(rb.Bytes())

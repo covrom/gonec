@@ -509,7 +509,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				// в регистре - функция
 				f = reflect.ValueOf(regs.Reg).Index(s.RegArgs)
 				// в следующем - массив аргументов
-				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs + 1)
+				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs + 1).Elem()
 			} else {
 				// функция берется из переменной или по имени в окружении
 				f, err = env.Get(s.Name)
@@ -518,7 +518,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 					break
 				}
 				// в регистре - массив аргументов
-				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs)
+				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs).Elem()
 			}
 			// это не функция - тогда ошибка
 			if f.Kind() != reflect.Func {
@@ -530,7 +530,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			_, isReflect := f.Interface().(Func)
 
 			// готовим аргументы для вызываемой функции
-			args := make([]reflect.Value, s.NumArgs)
+			args := make([]reflect.Value, 0, s.NumArgs)
+			// log.Printf("args-7 %v %T\n", args, args)
 
 			for i := 0; i < s.NumArgs; i++ {
 				// очередной аргумент
@@ -547,6 +548,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 						if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
 							// типы не равны - пытаемся конвертировать
 							arg = arg.Convert(it)
+							// log.Printf("arg-1 %#v\n", arg)
+
 						} else if arg.Kind() == reflect.Func {
 							if _, isFunc := arg.Interface().(Func); isFunc {
 								// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
@@ -571,23 +574,30 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 									// return rets
 									return rfunc.Call(args)[:it.NumOut()]
 								})
+								// log.Printf("arg-2 %#v\n", arg)
 							}
 						} else if !arg.IsValid() {
 							arg = reflect.Zero(it)
+							// log.Printf("arg-3 %#v\n", arg)
 						}
 					}
 				}
 				if !arg.IsValid() {
 					arg = envir.NilValue
+					// log.Printf("arg-4 %#v\n", arg)
 				}
+				// log.Printf("arg-5 %#v\n", arg)
 				// if !isReflect {
 				// 	// для функций на языке Го
 				if s.VarArg && i == s.NumArgs-1 {
+					// log.Println("arg-6")
 					for j := 0; j < arg.Len(); j++ {
 						args = append(args, arg.Index(j))
 					}
 				} else {
+					// log.Printf("arg-7 %#v %T\n", arg, arg)
 					args = append(args, arg)
+					// log.Printf("args-7 %v %T\n", args, args)
 				}
 				// } else {
 				// 	// для функций на языке Гонец
@@ -604,6 +614,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				// }
 
 			}
+			// log.Printf("%v\n", args)
 
 			// вызываем функцию
 
