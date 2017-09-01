@@ -737,20 +737,92 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, v.Interface())
 
 		case *BinMAKE:
+			eType, ok := regs.Reg[s.Reg].(int)
+			if !ok {
+				catcherr = NewStringError(stmt, "Неизвестный тип")
+				break
+			}
+			rt, err := env.Type(eType)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
+			var v reflect.Value
+			if rt.Kind() == reflect.Map {
+				v = reflect.MakeMap(reflect.MapOf(rt.Key(), rt.Elem())).Convert(rt)
+			} else if rt.Kind() == reflect.Struct {
+				// структуру создаем всегда ссылочной
+				// иначе не работает присвоение полей через рефлексию
+				v = reflect.New(rt)
+			} else {
+				v = reflect.Zero(rt)
+			}
+			regs.Set(s.Reg, v.Interface())
 
 		case *BinMAKECHAN:
+			size, ok := regs.Reg[s.Reg].(int)
+			if !ok {
+				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
+				break
+			}
+			v := make(chan interface{}, size)
+			regs.Set(s.Reg, v)
 
 		case *BinMAKEARR:
+			alen, ok := regs.Reg[s.Reg].(int)
+			if !ok {
+				catcherr = NewStringError(stmt, "Длина должна быть целым числом")
+				break
+			}
+			acap, ok := regs.Reg[s.RegCap].(int)
+			if !ok {
+				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
+				break
+			}
+			v := make([]interface{}, alen, acap)
+			regs.Set(s.Reg, v)
 
 		case *BinCHANRECV:
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			if ch.Kind() != reflect.Chan {
+				catcherr = NewStringError(stmt, "Не является каналом")
+				break
+			}
+			v, _ := ch.Recv()
+			regs.Set(s.RegVal, v)
 
 		case *BinCHANSEND:
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			if ch.Kind() != reflect.Chan {
+				catcherr = NewStringError(stmt, "Не является каналом")
+				break
+			}
+			v := regs.Reg[s.RegVal]
+			ch.Send(reflect.ValueOf(v))
 
 		case *BinISKIND:
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			regs.Set(s.Reg, v.Kind() == s.Kind)
 
 		case *BinINC:
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			var x interface{}
+			if v.Kind() == reflect.Float64 {
+				x = ToFloat64(v) + 1.0
+			} else {
+				x = ToInt64(v) + 1
+			}
+			regs.Set(s.Reg, x)
 
 		case *BinDEC:
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			var x interface{}
+			if v.Kind() == reflect.Float64 {
+				x = ToFloat64(v) - 1.0
+			} else {
+				x = ToInt64(v) - 1
+			}
+			regs.Set(s.Reg, x)
 
 		case *BinTRY:
 			regs.PushTry(s.Reg, s.JumpTo)
@@ -763,12 +835,15 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
+
 		case *BinPOPTRY:
 			// если catch блок отработал, то стек уже очищен, иначе снимаем со стека (ошибок не было)
 			if regs.TopTryLabel() == s.CatchLabel {
 				regs.PopTry()
 			}
+
 		case *BinFOREACH:
+			
 
 		case *BinNEXT:
 

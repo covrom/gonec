@@ -930,11 +930,11 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		// lend := *lid
 		bins = appendBin(bins,
 			&BinFUNC{
-				Reg:      reg,
-				Name:     e.Name,
-				Code:     BinaryCode(e.Stmts, 0, lid),
-				Args:     e.Args,
-				VarArg:   e.VarArg,
+				Reg:    reg,
+				Name:   e.Name,
+				Code:   BinaryCode(e.Stmts, 0, lid),
+				Args:   e.Args,
+				VarArg: e.VarArg,
 				// ReturnTo: lend,
 			}, e)
 		// КонецФункции
@@ -1017,7 +1017,6 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				RegCap: reg + 1,
 			}, e)
 	case *ast.ChanExpr:
-		// есть тип CHANSEND / RECV
 
 		// определяем значение справа
 		bins = append(bins, addBinExpr(e.Rhs, reg+1, lid)...)
@@ -1031,17 +1030,22 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		} else {
 			// значение слева
 			bins = append(bins, addBinExpr(e.Lhs, reg+2, lid)...)
+			bins = appendBin(bins,
+				&BinMV{
+					RegFrom: reg + 2,
+					RegTo:   reg + 3,
+				}, e)
 			// слева канал - пишем в него правое
 			bins = appendBin(bins,
 				&BinISKIND{
-					Reg:  reg + 2,
+					Reg:  reg + 3,
 					Kind: reflect.Chan,
 				}, e)
 			*lid++
 			li := *lid
 			bins = appendBin(bins,
 				&BinJFALSE{
-					Reg:    reg + 2,
+					Reg:    reg + 3,
 					JumpTo: li,
 				}, e)
 
