@@ -19,6 +19,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/covrom/gonec/bincode"
+
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
@@ -30,13 +32,14 @@ import (
 	gonec_core "github.com/covrom/gonec/builtins"
 )
 
-const version = "1.8b"
+const version = "2.0a"
 const APIPath = "/gonec"
 
 var (
 	fs          = flag.NewFlagSet(os.Args[0], 1)
 	line        = fs.String("e", "", "Исполнение одной строчки кода")
 	testingMode = fs.Bool("t", false, "Режим вывода отладочной информации")
+	stackvm     = fs.Bool("stack", false, "Старая стековая виртуальная машина версии 1.8b")
 	v           = fs.Bool("v", false, "Версия программы")
 	w           = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
 	port        = fs.String("p", "", "Номер порта вэб-сервера")
@@ -146,7 +149,7 @@ func main() {
 
 		parser.EnableErrorVerbose()
 
-		stmts, _, err := parser.ParseSrc(code)
+		stmts, bins, err := parser.ParseSrc(code)
 
 		if interactive {
 			if e, ok := err.(*parser.Error); ok {
@@ -176,7 +179,11 @@ func main() {
 
 		if err == nil {
 			// v, err = vm.Run(stmts, env)
-			_, err = vm.Run(stmts, env)
+			if *stackvm {
+				_, err = vm.Run(stmts, env)
+			} else {
+				_, err = bincode.Run(bins, env)
+			}
 		}
 		if err != nil {
 			colortext(ct.Red, false, func() {
@@ -350,7 +357,11 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 	env.SetStdOut(&rb)
 
 	tstart = time.Now()
-	_, err = vm.Run(stmts, env)
+	if *stackvm {
+		_, err = vm.Run(stmts, env)
+	} else {
+		_, err = bincode.Run(bins, env)
+	}
 	tsRun := time.Since(tstart)
 
 	if err != nil {
@@ -366,9 +377,8 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 	if *testingMode {
 		env.Printf("Время компиляции: %v\n", tsParse)
 		env.Printf("Время исполнения: %v\n", tsRun)
+		log.Printf("%s%s--Результат выполнения кода--\n%s\n", ls, ls2, rb.String())
 	}
-
-	log.Printf("%s%s--Результат выполнения кода--\n%s\n", ls, ls2, rb.String())
 
 	_, err = w.Write(rb.Bytes())
 

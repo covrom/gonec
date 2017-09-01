@@ -266,6 +266,7 @@ func Import(env *envir.Env) *envir.Env {
 
 	//////////////////
 	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})
+	env.DefineS("__дамп__", env.Dump)
 	/////////////////////
 
 	return env

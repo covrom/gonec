@@ -365,7 +365,7 @@ func (e *Env) Dump() {
 		e.RLock()
 	}
 	for k, v := range e.env {
-		e.Printf("%d %s = %#v\n", k, ast.UniqueNames.Get(k), v)
+		e.Printf("%d %s = %#v %T\n", k, ast.UniqueNames.Get(k), v, v)
 	}
 	if e.goRunned {
 		e.RUnlock()
