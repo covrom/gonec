@@ -519,9 +519,10 @@ func (v BinPOPTRY) String() string {
 type BinFOREACH struct {
 	BinStmtImpl
 
-	Reg        int // регистр для итерационного выбора из него значений
-	RegIter    int // в этот регистр будет записываться итератор
-	BreakLabel int
+	Reg           int // регистр для итерационного выбора из него значений
+	RegIter       int // в этот регистр будет записываться итератор
+	BreakLabel    int
+	ContinueLabel int
 }
 
 func (v BinFOREACH) String() string {
@@ -546,11 +547,11 @@ func (v BinNEXT) String() string {
 type BinPOPFOR struct {
 	BinStmtImpl
 
-	Reg int // снимаем со стека циклов конструкцию с этим регистром
+	ContinueLabel int // снимаем со стека циклов конструкцию с этой меткой
 }
 
 func (v BinPOPFOR) String() string {
-	return fmt.Sprintf("POPFOR r%d", v.Reg)
+	return fmt.Sprintf("POPFOR L%d", v.ContinueLabel)
 }
 
 type BinFORNUM struct {

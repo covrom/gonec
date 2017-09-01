@@ -843,11 +843,56 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 
 		case *BinFOREACH:
-			
+			val := reflect.ValueOf(regs.Reg).Index(s.Reg)
+
+			switch val.Kind() {
+			case reflect.Array, reflect.Slice:
+				regs.Set(s.RegIter, int(-1))
+			case reflect.Chan:
+				regs.Set(s.RegIter, nil)
+			default:
+				catcherr = NewStringError(stmt, "Не является коллекцией или каналом")
+				break
+			}
+			if catcherr != nil {
+				break
+			}
+
+			regs.PushBreak(s.BreakLabel)
+			regs.PushContinue(s.ContinueLabel)
 
 		case *BinNEXT:
+			val := reflect.ValueOf(regs.Reg).Index(s.Reg)
+
+			switch val.Kind() {
+			case reflect.Array, reflect.Slice:
+				iter := regs.Reg[s.RegIter].(int)
+				iter++
+				if iter < val.Len() {
+					regs.Set(s.RegIter, iter)
+					iv := val.Index(iter)
+					regs.Set(s.RegVal, iv)
+				} else {
+					idx = regs.Labels[s.JumpTo]
+					continue
+				}
+			case reflect.Chan:
+				iv, ok := val.Recv()
+				if !ok {
+					catcherr = NewStringError(stmt, "Канал был закрыт")
+					break
+				}
+				regs.Set(s.RegVal, iv)
+			default:
+				catcherr = NewStringError(stmt, "Не является коллекцией или каналом")
+				break
+			}
 
 		case *BinPOPFOR:
+			if regs.TopContinue() == s.ContinueLabel {
+				regs.PopContinue()
+				regs.PopBreak()
+			}
 
 		case *BinFORNUM:
 

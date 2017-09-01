@@ -117,6 +117,8 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 			*lid++
 			lend := *lid
+			*lid++
+			li := *lid
 
 			regiter := reg + 1
 			regval := reg + 2
@@ -127,9 +129,8 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Reg:        reg,
 					RegIter:    regiter,
 					BreakLabel: lend,
+					ContinueLabel: li,
 				}, s)
-			*lid++
-			li := *lid
 			// очередная итерация
 			// сюда же переходим по Продолжить
 			bins = appendBin(bins,
@@ -166,7 +167,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// снимаем со стека наличие цикла для Прервать и Продолжить
 			bins = appendBin(bins,
 				&BinPOPFOR{
-					Reg: reg,
+					ContinueLabel: li,
 				}, s)
 
 		case *ast.NumForStmt:
