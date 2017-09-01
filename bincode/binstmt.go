@@ -1,7 +1,6 @@
 package bincode
 
 import (
-	"bytes"
 	"encoding/gob"
 	"fmt"
 	"io"
@@ -33,7 +32,7 @@ func (v BinCode) String() string {
 	return s
 }
 
-func WriteBinCode(w io.Writer, v BinCode){
+func WriteBinCode(w io.Writer, v BinCode) {
 	enc := gob.NewEncoder(w)
 	err := enc.Encode(v)
 	if err != nil {
