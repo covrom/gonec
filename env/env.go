@@ -29,9 +29,11 @@ type Env struct {
 	interrupt *bool
 	stdout    io.Writer
 	sid       string
+	goRunned  bool
 }
 
 // NewEnv creates new global scope.
+// !!!не забывать вызывать gonec_core.LoadAllBuiltins(m)!!!
 func NewEnv() *Env {
 	b := false
 
@@ -41,8 +43,8 @@ func NewEnv() *Env {
 		parent:    nil,
 		interrupt: &b,
 		stdout:    os.Stdout,
+		goRunned:  false,
 	}
-	// !!!не забывать вызывать gonec_core.LoadAllBuiltins(m)!!!
 	return m
 }
 
@@ -56,6 +58,7 @@ func (e *Env) NewEnv() *Env {
 				parent:    ee,
 				interrupt: e.interrupt,
 				stdout:    e.stdout,
+				goRunned:  false,
 			}
 
 		}
@@ -71,6 +74,7 @@ func (e *Env) NewSubEnv() *Env {
 		parent:    e,
 		interrupt: e.interrupt,
 		stdout:    e.stdout,
+		goRunned:  false,
 	}
 }
 
@@ -79,7 +83,7 @@ func (e *Env) NewModule(n string) *Env {
 	//ni := strings.ToLower(n)
 	m := e.NewEnv()
 	m.name = n
-	
+
 	// на модуль можно ссылаться через переменную породившего глобального контекста
 	e.DefineGlobal(ast.UniqueNames.Set(n), m)
 	return m
@@ -106,13 +110,16 @@ func (e *Env) NewPackage(n string) *Env {
 		name:      strings.ToLower(n),
 		interrupt: e.interrupt,
 		stdout:    e.stdout,
+		goRunned:  false,
 	}
 }
 
 // Destroy deletes current scope.
 func (e *Env) Destroy() {
-	e.Lock()
-	defer e.Unlock()
+	if e.goRunned {
+		e.Lock()
+		defer e.Unlock()
+	}
 
 	if e.parent == nil {
 		return
@@ -126,17 +133,31 @@ func (e *Env) Destroy() {
 	e.env = nil
 }
 
+func (e *Env) SetGoRunned(t bool) {
+	for ee := e; ee != nil; ee = ee.parent {
+		ee.Lock()
+		ee.goRunned = t
+		ee.Unlock()
+	}
+}
+
 // SetName sets a name of the scope. This means that the scope is module.
 func (e *Env) SetName(n string) {
-	e.Lock()
+	if e.goRunned {
+		e.Lock()
+	}
 	e.name = strings.ToLower(n)
-	e.Unlock()
+	if e.goRunned {
+		e.Unlock()
+	}
 }
 
 // GetName returns module name.
 func (e *Env) GetName() string {
-	e.RLock()
-	defer e.RUnlock()
+	if e.goRunned {
+		e.RLock()
+		defer e.RUnlock()
+	}
 
 	return e.name
 }
@@ -146,8 +167,10 @@ func (e *Env) GetName() string {
 func (e *Env) Addr(k int) (reflect.Value, error) {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		ee.RLock()
-		defer ee.RUnlock()
+		if ee.goRunned {
+			ee.RLock()
+			defer ee.RUnlock()
+		}
 		if v, ok := ee.env[k]; ok {
 			return v.Addr(), nil
 		}
@@ -159,8 +182,10 @@ func (e *Env) Addr(k int) (reflect.Value, error) {
 func (e *Env) TypeName(t reflect.Type) int {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		ee.RLock()
-		defer ee.RUnlock()
+		if ee.goRunned {
+			ee.RLock()
+			defer ee.RUnlock()
+		}
 		for k, v := range ee.typ {
 			if v == t {
 				return k
@@ -175,8 +200,10 @@ func (e *Env) TypeName(t reflect.Type) int {
 func (e *Env) Type(k int) (reflect.Type, error) {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		ee.RLock()
-		defer ee.RUnlock()
+		if ee.goRunned {
+			ee.RLock()
+			defer ee.RUnlock()
+		}
 		if v, ok := ee.typ[k]; ok {
 			return v, nil
 		}
@@ -189,8 +216,10 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 func (e *Env) Get(k int) (reflect.Value, error) {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		ee.RLock()
-		defer ee.RUnlock()
+		if ee.goRunned {
+			ee.RLock()
+			defer ee.RUnlock()
+		}
 		if v, ok := ee.env[k]; ok {
 			return v, nil
 		}
@@ -208,8 +237,10 @@ func (e *Env) Set(k int, v interface{}) error {
 	}
 
 	for ee := e; ee != nil; ee = ee.parent {
-		ee.Lock()
-		defer ee.Unlock()
+		if ee.goRunned {
+			ee.Lock()
+			defer ee.Unlock()
+		}
 		if _, ok := ee.env[k]; ok {
 			ee.env[k] = val
 			return nil
@@ -236,8 +267,10 @@ func (e *Env) DefineType(k int, t interface{}) error {
 			if !ok {
 				typ = reflect.TypeOf(t)
 			}
-			ee.Lock()
-			defer ee.Unlock()
+			if ee.goRunned {
+				ee.Lock()
+				defer ee.Unlock()
+			}
 			ee.typ[k] = typ
 			// пишем в кэш индексы полей и методов для структур
 			// для работы со структурами нам нужен конкретный тип
@@ -301,9 +334,13 @@ func (e *Env) Define(k int, v interface{}) error {
 		val = reflect.ValueOf(v)
 	}
 
-	e.Lock()
+	if e.goRunned {
+		e.Lock()
+	}
 	e.env[k] = val
-	e.Unlock()
+	if e.goRunned {
+		e.Unlock()
+	}
 
 	return nil
 }
@@ -314,19 +351,25 @@ func (e *Env) DefineS(k string, v interface{}) error {
 
 // String return the name of current scope.
 func (e *Env) String() string {
-	e.RLock()
-	defer e.RUnlock()
+	if e.goRunned {
+		e.RLock()
+		defer e.RUnlock()
+	}
 
 	return e.name
 }
 
 // Dump show symbol values in the scope.
 func (e *Env) Dump() {
-	e.RLock()
+	if e.goRunned {
+		e.RLock()
+	}
 	for k, v := range e.env {
 		e.Printf("%d %s = %#v\n", k, ast.UniqueNames.Get(k), v)
 	}
-	e.RUnlock()
+	if e.goRunned {
+		e.RUnlock()
+	}
 }
 
 // Execute parses and runs source in current scope.
@@ -402,8 +445,10 @@ func (e *Env) Interrupt() {
 }
 
 func (e *Env) CheckInterrupt() bool {
-	e.Lock()
-	defer e.Unlock()
+	if e.goRunned {
+		e.Lock()
+		defer e.Unlock()
+	}
 	if *(e.interrupt) {
 		*(e.interrupt) = false
 		return true

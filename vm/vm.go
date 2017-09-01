@@ -1295,6 +1295,9 @@ func invokeExpr(expr ast.Expr, env *envir.Env) (reflect.Value, error) {
 					} else if arg.Kind() == reflect.Func {
 						if _, isFunc := arg.Interface().(Func); isFunc {
 							rfunc := arg
+							if e.Go {
+								env.SetGoRunned(true)
+							}
 							arg = reflect.MakeFunc(it, func(args []reflect.Value) []reflect.Value {
 								for i := range args {
 									args[i] = reflect.ValueOf(args[i])
@@ -1386,6 +1389,7 @@ func invokeExpr(expr ast.Expr, env *envir.Env) (reflect.Value, error) {
 			}
 		}
 		if e.Go {
+			env.SetGoRunned(true)
 			go fnc()
 			return NilValue, nil
 		}

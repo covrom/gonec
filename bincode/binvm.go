@@ -551,6 +551,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 							if _, isFunc := arg.Interface().(Func); isFunc {
 								// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
 								rfunc := arg
+								if s.Go {
+									env.SetGoRunned(true)
+								}
 								arg = reflect.MakeFunc(it, func(args []reflect.Value) []reflect.Value {
 									// for i := range args {
 									// 	args[i] = reflect.ValueOf(args[i])
@@ -657,6 +660,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			// если ее надо вызвать в горутине - вызываем
 			if s.Go {
+				env.SetGoRunned(true)
 				go fnc()
 				regs.Set(s.RegRets, nil)
 				break
@@ -703,7 +707,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 					if err == ReturnError {
 						err = nil
 					}
-					// TODO: проверить при единичном и множественном возврате
+					// TODO: проверить при единичном и множественном возврате, при "..." аргументах
 					return rr, err
 				}
 			}(s, env)
@@ -711,6 +715,26 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, f)
 
 		case *BinCASTTYPE:
+			// приведение типов, включая приведение типов в массиве как новый типизированный массив
+			eType, ok := regs.Reg[s.TypeReg].(int)
+			if !ok {
+				catcherr = NewStringError(stmt, "Неизвестный тип")
+				break
+			}
+			nt, err := env.Type(eType)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
+			rv := reflect.ValueOf(regs.Reg).Index(s.Reg)
+
+			v, err := ast.TypeCastConvert(rv, nt, false, envir.NilValue)
+			if err != nil {
+				catcherr = NewError(stmt, err)
+				break
+			}
+
+			regs.Set(s.Reg, v.Interface())
 
 		case *BinMAKE:
 
