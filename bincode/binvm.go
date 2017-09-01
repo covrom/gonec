@@ -939,13 +939,10 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.PushBreak(s.BreakLabel)
 			regs.PushContinue(s.ContinueLabel)
 
-		case *BinBREAK:
-
-		case *BinCONTINUE:
-
 		case *BinRET:
 			retval = regs.Reg[s.Reg]
 			return retval, ReturnError
+
 		case *BinTHROW:
 			catcherr = NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
 			break
@@ -962,15 +959,36 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		case *BinERROR:
 			// необрабатываемая в попытке ошибка
 			return retval, NewStringError(s, s.Error)
+
+		case *BinBREAK:
+			label := regs.PopBreak()
+			if label != -1 {
+				regs.PopContinue()
+				idx = regs.Labels[label]
+				continue
+			}
+			return nil, BreakError
+
+		case *BinCONTINUE:
+			label := regs.PopContinue()
+			if label != -1 {
+				regs.PopBreak()
+				idx = regs.Labels[label]
+				continue
+			}
+			return nil, ContinueError
+
 		case *BinTRYRECV:
 
 		case *BinTRYSEND:
 
 		case *BinGOSHED:
 			runtime.Gosched()
+
 		default:
 			return nil, NewStringError(stmt, "Неизвестная инструкция")
 		}
+
 		if catcherr != nil {
 			catcherr = nil
 			nerr := NewError(stmt, catcherr)
@@ -988,6 +1006,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				continue
 			}
 		}
+
 		idx++
 	}
 	return retval, nil
