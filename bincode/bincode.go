@@ -239,9 +239,8 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			li := *lid
 			bins = appendBin(bins,
 				&BinWHILE{
-					Reg:        reg,
-					BreakLabel: lend,
-					
+					BreakLabel:    lend,
+					ContinueLabel: li,
 				}, s)
 			// очередная итерация
 			// сюда же переходим по Продолжить

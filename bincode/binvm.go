@@ -936,6 +936,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 
 		case *BinWHILE:
+			regs.PushBreak(s.BreakLabel)
+			regs.PushContinue(s.ContinueLabel)
 
 		case *BinBREAK:
 

@@ -585,12 +585,12 @@ func (v BinNEXTNUM) String() string {
 type BinWHILE struct {
 	BinStmtImpl
 
-	Reg        int // регистр для условия
-	BreakLabel int
+	BreakLabel    int
+	ContinueLabel int
 }
 
 func (v BinWHILE) String() string {
-	return fmt.Sprintf("WHILE r%d, BREAK TO L%d", v.Reg, v.BreakLabel)
+	return fmt.Sprintf("WHILE BREAK TO L%d", v.BreakLabel)
 }
 
 type BinBREAK struct {
