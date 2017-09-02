@@ -122,22 +122,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			// TODO: обработка паники - передача ошибки в catch блок
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
+			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			rv := refregs.Index(s.RegVal).Elem()
-			// if v.Kind() == reflect.Interface {
-			// 	v = v.Elem()
-			// }
-			// if v.Kind() == reflect.Slice {
-			// 	v = v.Index(0)
-			// }
 
-			// if !v.IsValid() {
-			// 	return NilValue, NewStringError(expr, "Поле недоступно")
-			// }
-
-			// if v.Kind() == reflect.Ptr {
-			// 	v = v.Elem()
-			// }
 			switch v.Kind() {
 			case reflect.Struct:
 				v, err := ast.FieldByNameCI(v, s.Id)

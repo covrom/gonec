@@ -4,10 +4,10 @@ import (
 	"log"
 	"testing"
 
+	"github.com/covrom/gonec/bincode"
 	gonec_core "github.com/covrom/gonec/builtins"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
-	"github.com/covrom/gonec/vm"
 )
 
 func TestRun(t *testing.T) {
@@ -20,13 +20,13 @@ func TestRun(t *testing.T) {
 	Сообщить(а.ВСтроку())
 	`
 	parser.EnableErrorVerbose()
-	stmts, _, err := parser.ParseSrc(script)
+	_, stmts, err := parser.ParseSrc(script)
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 
-	_, err = vm.Run(stmts, env)
+	_, err = bincode.Run(stmts, env)
 	if err != nil {
-		log.Fatal()
+		log.Fatal(err)
 	}
 }

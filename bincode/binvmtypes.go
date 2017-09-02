@@ -359,16 +359,7 @@ func Equal(lhsV, rhsV interface{}) bool {
 	if lhsV == rhsV {
 		return true
 	}
-	// if lhsV.Kind() == reflect.Interface || lhsV.Kind() == reflect.Ptr {
-	// 	log.Println("interface or ptr")
-	// 	// lhsV = lhsV.Elem()
-	// }
-	// if rhsV.Kind() == reflect.Interface || rhsV.Kind() == reflect.Ptr {
-	// 	rhsV = rhsV.Elem()
-	// }
-	// if !lhsV.IsValid() || !rhsV.IsValid() {
-	// 	return true
-	// }
+
 	if IsNum(lhsV) && IsNum(rhsV) {
 		if reflect.TypeOf(rhsV).ConvertibleTo(reflect.TypeOf(lhsV)) {
 			rhsV = reflect.ValueOf(rhsV).Convert(reflect.TypeOf(lhsV)).Interface()
