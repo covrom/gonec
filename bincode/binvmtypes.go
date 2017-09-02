@@ -3,7 +3,6 @@ package bincode
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"reflect"
 	"strconv"
