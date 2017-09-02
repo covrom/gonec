@@ -124,7 +124,7 @@ func NewError(pos ast.Pos, err error) error {
 
 // Error returns the error message.
 func (e *Error) Error() string {
-	return e.Message
+	return fmt.Sprintf("[%d:%d] %s", e.Pos.Line, e.Pos.Column, e.Message)
 }
 
 type CatchFunc func() string
