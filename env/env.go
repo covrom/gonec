@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 
@@ -364,8 +365,13 @@ func (e *Env) Dump() {
 	if e.goRunned {
 		e.RLock()
 	}
-	for k, v := range e.env {
-		e.Printf("%d %s = %#v %T\n", k, ast.UniqueNames.Get(k), v, v)
+	var keys []int
+	for k := range e.env {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	for _, k := range keys {
+		e.Printf("%d %s = %#v %T\n", k, ast.UniqueNames.Get(k), e.env[k], e.env[k].Interface())
 	}
 	if e.goRunned {
 		e.RUnlock()

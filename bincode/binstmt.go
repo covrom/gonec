@@ -448,7 +448,7 @@ type BinMAKEARR struct {
 }
 
 func (v BinMAKEARR) String() string {
-	return fmt.Sprintf("MAKESLICE r%d, LEN r%d, CAP r%d", v.Reg, v.Reg, v.RegCap)
+	return fmt.Sprintf("MAKEARR r%d, LEN r%d, CAP r%d", v.Reg, v.Reg, v.RegCap)
 }
 
 type BinCHANRECV struct {

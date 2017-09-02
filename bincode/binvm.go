@@ -786,17 +786,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, v)
 
 		case *BinMAKEARR:
-			alen, ok := regs.Reg[s.Reg].(int)
-			if !ok {
-				catcherr = NewStringError(stmt, "Длина должна быть целым числом")
-				break
-			}
-			acap, ok := regs.Reg[s.RegCap].(int)
-			if !ok {
-				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
-				break
-			}
-			v := make([]interface{}, alen, acap)
+			alen := int(ToInt64(regs.Reg[s.Reg]))
+			acap := int(ToInt64(regs.Reg[s.RegCap]))
+			v := make(VMSlice, alen, acap)
 			regs.Set(s.Reg, v)
 
 		case *BinCHANRECV:
@@ -1030,8 +1022,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		}
 
 		if catcherr != nil {
-			catcherr = nil
 			nerr := NewError(stmt, catcherr)
+			catcherr = nil
 			// учитываем стек обработки ошибок
 			if regs.TopTryLabel() == -1 {
 				return nil, nerr
