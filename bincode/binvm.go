@@ -122,8 +122,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			// TODO: обработка паники - передача ошибки в catch блок
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
-			rv := refregs.Index(s.RegVal)
+			v := refregs.Index(s.Reg).Elem()
+			rv := refregs.Index(s.RegVal).Elem()
 			// if v.Kind() == reflect.Interface {
 			// 	v = v.Elem()
 			// }
@@ -171,9 +171,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinSETITEM:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
-			i := refregs.Index(s.RegIndex)
-			rv := refregs.Index(s.RegVal)
+			v := refregs.Index(s.Reg).Elem()
+			i := refregs.Index(s.RegIndex).Elem()
+			rv := refregs.Index(s.RegVal).Elem()
 			regs.Set(s.RegNeedLet, false)
 
 			switch v.Kind() {
@@ -241,10 +241,10 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinSETSLICE:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
-			rb := refregs.Index(s.RegBegin)
-			re := refregs.Index(s.RegEnd)
-			rv := refregs.Index(s.RegVal)
+			v := refregs.Index(s.Reg).Elem()
+			rb := refregs.Index(s.RegBegin).Elem()
+			re := refregs.Index(s.RegEnd).Elem()
+			rv := refregs.Index(s.RegVal).Elem()
 			regs.Set(s.RegNeedLet, false)
 
 			switch v.Kind() {
@@ -328,7 +328,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinADDRMBR:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
+			v := refregs.Index(s.Reg).Elem()
 			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
@@ -367,7 +367,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinUNREFMBR:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
+			v := refregs.Index(s.Reg).Elem()
 			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
@@ -394,7 +394,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGETMEMBER:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
+			v := refregs.Index(s.Reg).Elem()
 			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
@@ -413,8 +413,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGETIDX:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
-			i := refregs.Index(s.RegIndex)
+			v := refregs.Index(s.Reg).Elem()
+			i := refregs.Index(s.RegIndex).Elem()
 
 			switch v.Kind() {
 
@@ -465,9 +465,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGETSUBSLICE:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg)
-			rb := refregs.Index(s.RegBegin)
-			re := refregs.Index(s.RegEnd)
+			v := refregs.Index(s.Reg).Elem()
+			rb := refregs.Index(s.RegBegin).Elem()
+			re := refregs.Index(s.RegEnd).Elem()
 
 			switch v.Kind() {
 			case reflect.Array, reflect.Slice:
@@ -491,10 +491,16 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinOPER:
 			refregs := reflect.ValueOf(regs.Reg)
-			lhsV := refregs.Index(s.RegL)
-			rhsV := refregs.Index(s.RegR)
+			lhsV := refregs.Index(s.RegL).Elem()
+			rhsV := refregs.Index(s.RegR).Elem()
+
+			// log.Println("lhsV", lhsV)
+			// log.Println("rhsV", rhsV)
 
 			r, err := EvalBinOp(s.Op, lhsV, rhsV)
+
+			// log.Println("r", r)
+
 			if err != nil {
 				catcherr = NewError(stmt, err)
 				break
@@ -507,7 +513,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			var err error
 			if s.Name == 0 {
 				// в регистре - функция
-				f = reflect.ValueOf(regs.Reg).Index(s.RegArgs)
+				f = reflect.ValueOf(regs.Reg).Index(s.RegArgs).Elem()
 				// в следующем - массив аргументов
 				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs + 1).Elem()
 			} else {
@@ -737,7 +743,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				catcherr = NewError(stmt, err)
 				break
 			}
-			rv := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			rv := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 
 			v, err := ast.TypeCastConvert(rv, nt, false, envir.NilValue)
 			if err != nil {
@@ -794,7 +800,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, v)
 
 		case *BinCHANRECV:
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
 				catcherr = NewStringError(stmt, "Не является каналом")
 				break
@@ -803,7 +809,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegVal, v.Interface())
 
 		case *BinCHANSEND:
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
 				catcherr = NewStringError(stmt, "Не является каналом")
 				break
@@ -812,11 +818,11 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			ch.Send(reflect.ValueOf(v))
 
 		case *BinISKIND:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			regs.Set(s.Reg, v.Kind() == s.Kind)
 
 		case *BinINC:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
 			if v.Kind() == reflect.Float64 {
 				x = ToFloat64(v) + 1.0
@@ -826,7 +832,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, x)
 
 		case *BinDEC:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
 			if v.Kind() == reflect.Float64 {
 				x = ToFloat64(v) - 1.0
@@ -854,7 +860,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 
 		case *BinFOREACH:
-			val := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			val := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 
 			switch val.Kind() {
 			case reflect.Array, reflect.Slice:
@@ -873,7 +879,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.PushContinue(s.ContinueLabel)
 
 		case *BinNEXT:
-			val := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			val := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 
 			switch val.Kind() {
 			case reflect.Array, reflect.Slice:
@@ -991,7 +997,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinTRYRECV:
 
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
 				catcherr = NewStringError(stmt, "Не является каналом")
 				break
@@ -1008,12 +1014,12 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 
 		case *BinTRYSEND:
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg)
+			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
 				catcherr = NewStringError(stmt, "Не является каналом")
 				break
 			}
-			ok := ch.TrySend(reflect.ValueOf(regs.Reg).Index(s.RegVal))
+			ok := ch.TrySend(reflect.ValueOf(regs.Reg).Index(s.RegVal).Elem())
 			regs.Set(s.RegOk, ok)
 
 		case *BinGOSHED:

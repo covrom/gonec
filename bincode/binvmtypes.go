@@ -3,6 +3,7 @@ package bincode
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"reflect"
 	"strconv"
@@ -403,6 +404,8 @@ func GetMember(v reflect.Value, name int, stmt ast.Pos) (reflect.Value, error) {
 }
 
 func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
+	// log.Println(OperMapR[op])
+
 	switch op {
 
 	// TODO: математика множеств и графов
