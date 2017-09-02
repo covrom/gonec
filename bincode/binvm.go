@@ -825,9 +825,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
 			if v.Kind() == reflect.Float64 {
-				x = ToFloat64(v) + 1.0
+				x = ToFloat64(v.Interface()) + 1.0
 			} else {
-				x = ToInt64(v) + 1
+				x = ToInt64(v.Interface()) + 1
 			}
 			regs.Set(s.Reg, x)
 
@@ -835,9 +835,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
 			if v.Kind() == reflect.Float64 {
-				x = ToFloat64(v) - 1.0
+				x = ToFloat64(v.Interface()) - 1.0
 			} else {
-				x = ToInt64(v) - 1
+				x = ToInt64(v.Interface()) - 1
 			}
 			regs.Set(s.Reg, x)
 

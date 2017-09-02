@@ -360,7 +360,8 @@ func Equal(lhsV, rhsV interface{}) bool {
 		return true
 	}
 	// if lhsV.Kind() == reflect.Interface || lhsV.Kind() == reflect.Ptr {
-	// 	lhsV = lhsV.Elem()
+	// 	log.Println("interface or ptr")
+	// 	// lhsV = lhsV.Elem()
 	// }
 	// if rhsV.Kind() == reflect.Interface || rhsV.Kind() == reflect.Ptr {
 	// 	rhsV = rhsV.Elem()
@@ -411,7 +412,7 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 
 	case ADD:
 		if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
-			return ToString(lhsV) + ToString(rhsV), nil
+			return ToString(lhsV.Interface()) + ToString(rhsV.Interface()), nil
 		}
 		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() != reflect.Array && rhsV.Kind() != reflect.Slice) {
 			return reflect.Append(lhsV, rhsV).Interface(), nil
@@ -420,63 +421,63 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 			return reflect.AppendSlice(lhsV, rhsV).Interface(), nil
 		}
 		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV) + ToFloat64(rhsV), nil
+			return ToFloat64(lhsV.Interface()) + ToFloat64(rhsV.Interface()), nil
 		}
-		return ToInt64(lhsV) + ToInt64(rhsV), nil
+		return ToInt64(lhsV.Interface()) + ToInt64(rhsV.Interface()), nil
 	case SUB:
 		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV) - ToFloat64(rhsV), nil
+			return ToFloat64(lhsV.Interface()) - ToFloat64(rhsV.Interface()), nil
 		}
-		return ToInt64(lhsV) - ToInt64(rhsV), nil
+		return ToInt64(lhsV.Interface()) - ToInt64(rhsV.Interface()), nil
 	case MUL:
 		if lhsV.Kind() == reflect.String && (rhsV.Kind() == reflect.Int || rhsV.Kind() == reflect.Int32 || rhsV.Kind() == reflect.Int64) {
-			return strings.Repeat(ToString(lhsV), int(ToInt64(rhsV))), nil
+			return strings.Repeat(ToString(lhsV.Interface()), int(ToInt64(rhsV.Interface()))), nil
 		}
 		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV) * ToFloat64(rhsV), nil
+			return ToFloat64(lhsV.Interface()) * ToFloat64(rhsV.Interface()), nil
 		}
-		return ToInt64(lhsV) * ToInt64(rhsV), nil
+		return ToInt64(lhsV.Interface()) * ToInt64(rhsV.Interface()), nil
 	case QUO:
-		return ToFloat64(lhsV) / ToFloat64(rhsV), nil
+		return ToFloat64(lhsV.Interface()) / ToFloat64(rhsV.Interface()), nil
 	case REM:
-		return ToInt64(lhsV) % ToInt64(rhsV), nil
+		return ToInt64(lhsV.Interface()) % ToInt64(rhsV.Interface()), nil
 	case EQL:
-		return Equal(lhsV, rhsV), nil
+		return Equal(lhsV.Interface(), rhsV.Interface()), nil
 	case NEQ:
-		return Equal(lhsV, rhsV) == false, nil
+		return Equal(lhsV.Interface(), rhsV.Interface()) == false, nil
 	case GTR:
-		return ToFloat64(lhsV) > ToFloat64(rhsV), nil
+		return ToFloat64(lhsV.Interface()) > ToFloat64(rhsV.Interface()), nil
 	case GEQ:
-		return ToFloat64(lhsV) >= ToFloat64(rhsV), nil
+		return ToFloat64(lhsV.Interface()) >= ToFloat64(rhsV.Interface()), nil
 	case LSS:
-		return ToFloat64(lhsV) < ToFloat64(rhsV), nil
+		return ToFloat64(lhsV.Interface()) < ToFloat64(rhsV.Interface()), nil
 	case LEQ:
-		return ToFloat64(lhsV) <= ToFloat64(rhsV), nil
+		return ToFloat64(lhsV.Interface()) <= ToFloat64(rhsV.Interface()), nil
 	case OR:
-		return ToInt64(lhsV) | ToInt64(rhsV), nil
+		return ToInt64(lhsV.Interface()) | ToInt64(rhsV.Interface()), nil
 	case LOR:
-		if x := ToBool(lhsV); x {
+		if x := ToBool(lhsV.Interface()); x {
 			return x, nil
 		} else {
-			return ToBool(rhsV), nil
+			return ToBool(rhsV.Interface()), nil
 		}
 	case AND:
-		return ToInt64(lhsV) & ToInt64(rhsV), nil
+		return ToInt64(lhsV.Interface()) & ToInt64(rhsV.Interface()), nil
 	case LAND:
-		if x := ToBool(lhsV); x {
-			return ToBool(rhsV), nil
+		if x := ToBool(lhsV.Interface()); x {
+			return ToBool(rhsV.Interface()), nil
 		} else {
 			return x, nil
 		}
 	case POW:
 		if lhsV.Kind() == reflect.Float64 {
-			return math.Pow(ToFloat64(lhsV), ToFloat64(rhsV)), nil
+			return math.Pow(ToFloat64(lhsV.Interface()), ToFloat64(rhsV.Interface())), nil
 		}
-		return int64(math.Pow(ToFloat64(lhsV), ToFloat64(rhsV))), nil
+		return int64(math.Pow(ToFloat64(lhsV.Interface()), ToFloat64(rhsV.Interface()))), nil
 	case SHR:
-		return ToInt64(lhsV) >> uint64(ToInt64(rhsV)), nil
+		return ToInt64(lhsV.Interface()) >> uint64(ToInt64(rhsV.Interface())), nil
 	case SHL:
-		return ToInt64(lhsV) << uint64(ToInt64(rhsV)), nil
+		return ToInt64(lhsV.Interface()) << uint64(ToInt64(rhsV.Interface())), nil
 	default:
 		return nil, fmt.Errorf("Неизвестный оператор")
 	}
