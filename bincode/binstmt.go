@@ -484,6 +484,17 @@ func (v BinISKIND) String() string {
 	return fmt.Sprintf("ISKIND r%d, %s", v.Reg, v.Kind)
 }
 
+type BinISSLICE struct {
+	BinStmtImpl
+
+	Reg     int // значение для проверки
+	RegBool int //сюда возвращается bool
+}
+
+func (v BinISSLICE) String() string {
+	return fmt.Sprintf("ISSLICE r%d, r%d", v.RegBool, v.Reg)
+}
+
 type BinTRY struct {
 	BinStmtImpl
 

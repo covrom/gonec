@@ -807,6 +807,10 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			regs.Set(s.Reg, v.Kind() == s.Kind)
 
+		case *BinISSLICE:
+			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
+			regs.Set(s.RegBool, v.Kind() == reflect.Array || v.Kind() == reflect.Slice)
+
 		case *BinINC:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
