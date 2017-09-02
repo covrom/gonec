@@ -326,11 +326,16 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.ModuleStmt:
-			bins = appendBin(bins,
-				&BinMODULE{
-					Name: s.Name,
-					Code: BinaryCode(s.Stmts, 0, lid),
-				}, s)
+			if s.Name == ast.UniqueNames.Set("_") {
+				// добавляем все операторы в текущий контекст
+				bins = append(bins, BinaryCode(s.Stmts, reg, lid)...)
+			} else {
+				bins = appendBin(bins,
+					&BinMODULE{
+						Name: s.Name,
+						Code: BinaryCode(s.Stmts, 0, lid),
+					}, s)
+			}
 		case *ast.SwitchStmt:
 			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
 			// сравниваем с каждым case

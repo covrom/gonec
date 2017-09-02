@@ -648,6 +648,10 @@ func EnableErrorVerbose() {
 
 // ParserSrc provides way to parse the code from source.
 func ParseSrc(src string) ([]ast.Stmt, bincode.BinCode, error) {
+	// По умолчанию добавляем глобальный модуль "_" в начало, чтобы код без заголовка "модуль" мог успешно исполниться
+	// Если будет объявлен модуль в коде, он скроет данное объявление
+	src = "Модуль _\n"+src
+
 	scanner := &Scanner{
 		src: []rune(src),
 	}

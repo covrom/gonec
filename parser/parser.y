@@ -8,6 +8,8 @@ import (
 %}
 
 %type<compstmt> compstmt
+%type<modules> modules
+%type<module> module
 %type<stmts> stmts
 %type<stmt> stmt
 %type<stmt_if> stmt_if
@@ -26,6 +28,8 @@ import (
 
 %union{
 	compstmt               []ast.Stmt
+	modules                []ast.Stmt
+	module                 ast.Stmt
 	stmt_if                ast.Stmt
 	stmt_default           ast.Stmt
 	stmt_elsif             ast.Stmt
@@ -63,36 +67,58 @@ import (
 
 %%
 
+modules :
+	{
+		$$ = nil
+		if l, ok := yylex.(*Lexer); ok {
+			l.stmts = $$
+		}
+	}
+	| module
+	{
+		$$ = []ast.Stmt{$1}
+		if l, ok := yylex.(*Lexer); ok {
+			l.stmts = $$
+		}
+	}
+	| modules module
+	{
+		if $2 != nil {
+			$$ = append($1, $2)
+			if l, ok := yylex.(*Lexer); ok {
+				l.stmts = $$
+			}
+		}
+	}
+
+module :
+	MODULE IDENT terms compstmt
+	{
+		$$ = &ast.ModuleStmt{Name: ast.UniqueNames.Set($2.Lit), Stmts: $4}
+		$$.SetPosition($1.Position())
+	}
+
 compstmt : opt_terms
 	{
 		$$ = nil
 	}
 	| stmts opt_terms
 	{
-		$$ = $1
+		$$ = $1 
 	}
 
 stmts :
 	{
 		$$ = nil
-		if l, ok := yylex.(*Lexer); ok {
-			l.stmts = $$
-		}
 	}
 	| opt_terms stmt
 	{
 		$$ = []ast.Stmt{$2}
-		if l, ok := yylex.(*Lexer); ok {
-			l.stmts = $$
-		}
 	}
 	| stmts terms stmt
 	{
 		if $3 != nil {
 			$$ = append($1, $3)
-			if l, ok := yylex.(*Lexer); ok {
-				l.stmts = $$
-			}
 		}
 	}
 
@@ -133,11 +159,6 @@ stmt :
 	| THROW expr
 	{
 		$$ = &ast.ThrowStmt{Expr: $2}
-		$$.SetPosition($1.Position())
-	}
-	| MODULE IDENT term compstmt
-	{
-		$$ = &ast.ModuleStmt{Name: ast.UniqueNames.Set($2.Lit), Stmts: $4}
 		$$.SetPosition($1.Position())
 	}
 	| stmt_if

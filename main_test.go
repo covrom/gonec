@@ -15,9 +15,8 @@ func TestRun(t *testing.T) {
 	gonec_core.LoadAllBuiltins(env)
 
 	script := `
-	а = Новый("__ФункциональнаяСтруктураТест__",{"ПолеЦелоеЧисло":5,"ПолеСтрока":"srtg"})
-	а.ПолеСтрока = "edrgwerg"
-	Сообщить(а.ВСтроку())
+	Модуль ААА
+	а = 1
 	`
 	parser.EnableErrorVerbose()
 	_, stmts, err := parser.ParseSrc(script)
