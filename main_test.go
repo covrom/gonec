@@ -17,6 +17,16 @@ func TestRun(t *testing.T) {
 	script := `
 	Модуль ААА
 	а = 1
+	
+	Модуль _
+	Функция ТрехкратныйВозврат()
+    	абв, xyz = 0, 0
+    	Возврат 10.5, абв, xyz
+	КонецФункции
+
+	п1, п2, п3 = ТрехкратныйВозврат()
+	сообщить(п1,п2,п3)
+	
 	`
 	parser.EnableErrorVerbose()
 	_, stmts, err := parser.ParseSrc(script)
