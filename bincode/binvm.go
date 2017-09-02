@@ -113,7 +113,11 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				catcherr = NewStringError(stmt, "Невозможно получить значение")
 				break
 			}
-			regs.Set(s.Reg, v.Interface())
+			if !v.IsValid() {
+				regs.Set(s.Reg, nil)
+			} else {
+				regs.Set(s.Reg, v.Interface())
+			}
 
 		case *BinSET:
 			env.Define(s.Id, regs.Reg[s.Reg])
@@ -528,16 +532,19 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			for i := 0; i < s.NumArgs; i++ {
 				// очередной аргумент
-				arg := vargs.Index(i)
+				arg := vargs.Index(i).Elem()
+				// if arg.Kind() == reflect.Interface || arg.Kind() == reflect.Ptr {
+				// 		arg = arg.Elem()
+				// }
 				// конвертируем параметр в целевой тип
 				if i < ftype.NumIn() {
 					// это функция с постоянным числом аргументов
 					if !ftype.IsVariadic() {
 						// целевой тип аргумента
 						it := ftype.In(i)
-						// if arg.Kind().String() == "unsafe.Pointer" {
-						// 	arg = reflect.New(it).Elem()
-						// }
+						if arg.Kind().String() == "unsafe.Pointer" {
+							arg = reflect.New(it).Elem()
+						}
 						if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
 							// типы не равны - пытаемся конвертировать
 							arg = arg.Convert(it)

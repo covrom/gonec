@@ -396,6 +396,15 @@ func GetMember(v reflect.Value, name int, stmt ast.Pos) (reflect.Value, error) {
 
 func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 	// log.Println(OperMapR[op])
+	if !lhsV.IsValid() || !rhsV.IsValid() {
+		if !rhsV.IsValid() && !rhsV.IsValid() {
+			// в обоих значениях nil
+			return true, nil
+		} else {
+			// одно из значений nil, а второе нет
+			return false, nil
+		}
+	}
 
 	switch op {
 
