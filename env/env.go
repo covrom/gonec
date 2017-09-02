@@ -79,14 +79,21 @@ func (e *Env) NewSubEnv() *Env {
 	}
 }
 
-// NewModule creates new module scope as global.
+// Находим или создаем новый модуль в глобальном скоупе
 func (e *Env) NewModule(n string) *Env {
 	//ni := strings.ToLower(n)
+	id := ast.UniqueNames.Set(n)
+	if v, err := e.Get(id); err == nil {
+		if vv, ok := v.Interface().(*Env); ok {
+			return vv
+		}
+	}
+
 	m := e.NewEnv()
 	m.name = n
 
 	// на модуль можно ссылаться через переменную породившего глобального контекста
-	e.DefineGlobal(ast.UniqueNames.Set(n), m)
+	e.DefineGlobal(id, m)
 	return m
 }
 
