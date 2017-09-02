@@ -344,7 +344,7 @@ type BinCALL struct {
 
 func (v BinCALL) String() string {
 	if v.Name == 0 {
-		return fmt.Sprintf("CALL ANON r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go, v.RegRets)
+		return fmt.Sprintf("CALL REG r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 	}
 	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", ast.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 }
