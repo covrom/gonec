@@ -95,7 +95,7 @@
 ```
 LOAD r0, 0
 LOAD r1, 1000000
-MAKESLICE r0, LEN r0, CAP r1
+MAKEARR r0, LEN r0, CAP r1
 SET "а", r0
 LOAD r1, 1
 LOAD r2, 1000000
@@ -117,7 +117,7 @@ OP r3, "+", r4
 SET "а", r3
 JMP L2
 L1:
-POPFOR r0
+POPFOR L2
 LOAD r0, 0
 SET "к", r0
 GET r0, "а"
@@ -131,9 +131,11 @@ OP r3, "+", r4
 SET "к", r3
 JMP L4
 L3:
-POPFOR r0
-GET r0, "к"
-CALL "сообщить", ARGS r0, ARGS_COUNT 1, VARARG false, GO false
+POPFOR L4
+MAKESLICE r0, LEN 1, CAP 1
+GET r1, "к"
+SETIDX r0[0], r1
+CALL "сообщить", ARGS r0, ARGS_COUNT 1, VARARG false, GO false, RETURN r0
 LOAD r0, "__функциональнаяструктуратест__"
 SETNAME r0
 MAKE r0 AS TYPE r0
@@ -147,14 +149,22 @@ GETMEMBER r1, "ПолеСтрока"
 LOAD r2, <nil>
 LOAD r3, 2
 SETSLICE r1[r2:r3], r0
-GET r0, "а"
-GETMEMBER r0, "ВСтроку"
-CALL ANON r0, ARGS r1, ARGS_COUNT 0, VARARG false, GO false
+JFALSE r4, L5
+GET r2, "а"
+SETMEMBER r2."ПолеСтрока", r1
+L5:
+MAKESLICE r0, LEN 2, CAP 2
+GET r1, "а"
+GETMEMBER r1, "ВСтроку"
+MAKESLICE r2, LEN 0, CAP 0
+CALL ANON r1, ARGS r2, ARGS_COUNT 0, VARARG false, GO false, RETURN r1
+SETIDX r0[0], r1
 GET r1, "а"
 GETMEMBER r1, "ПолеСтрока"
 LOAD r2, ":ok"
 OP r1, "+", r2
-CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false
+SETIDX r0[1], r1
+CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false, RETURN r0
 ```
 
 ## Какой статус разработки интерпретатора?
