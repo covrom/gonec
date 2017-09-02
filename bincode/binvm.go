@@ -815,7 +815,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				break
 			}
 			v := regs.Reg[s.RegVal]
-			ch.Send(reflect.ValueOf(v))
+			ch.Send(reflect.ValueOf(v).Elem())
 
 		case *BinISKIND:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
