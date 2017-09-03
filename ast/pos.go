@@ -14,15 +14,15 @@ type Pos interface {
 
 // PosImpl provies commonly implementations for Pos.
 type PosImpl struct {
-	pos Position
+	Pos Position
 }
 
 // Position return the position of the expression or statement.
 func (x *PosImpl) Position() Position {
-	return x.pos
+	return x.Pos
 }
 
 // SetPosition is a function to specify position of the expression or statement.
 func (x *PosImpl) SetPosition(pos Position) {
-	x.pos = pos
+	x.Pos = pos
 }

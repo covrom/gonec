@@ -13,45 +13,45 @@ import (
 
 // уникальные названия переменных, индекс используется в AST-дереве
 type EnvNames struct {
-	sync.RWMutex
-	names   map[string]int
-	handles map[int]string
-	handlow map[int]string
-	iter    int
+	mu      sync.RWMutex
+	Names   map[string]int
+	Handles map[int]string
+	Handlow map[int]string
+	Iter    int
 }
 
 func NewEnvNames() *EnvNames {
 	en := EnvNames{
-		names:   make(map[string]int, 200),
-		handles: make(map[int]string, 200),
-		handlow: make(map[int]string, 200),
-		iter:    1,
+		Names:   make(map[string]int, 200),
+		Handles: make(map[int]string, 200),
+		Handlow: make(map[int]string, 200),
+		Iter:    1,
 	}
 	return &en
 }
 
 func (en *EnvNames) Set(n string) int {
 	ns := strings.ToLower(n)
-	en.RLock()
-	if i, ok := en.names[ns]; ok {
-		en.RUnlock()
+	en.mu.RLock()
+	if i, ok := en.Names[ns]; ok {
+		en.mu.RUnlock()
 		return i
 	}
-	en.RUnlock()
-	en.Lock()
-	i := en.iter
-	en.names[ns] = i
-	en.handles[i] = n
-	en.handlow[i] = ns
-	en.iter++
-	en.Unlock()
+	en.mu.RUnlock()
+	en.mu.Lock()
+	i := en.Iter
+	en.Names[ns] = i
+	en.Handles[i] = n
+	en.Handlow[i] = ns
+	en.Iter++
+	en.mu.Unlock()
 	return i
 }
 
 func (en *EnvNames) Get(i int) string {
-	en.RLock()
-	defer en.RUnlock()
-	if s, ok := en.handles[i]; ok {
+	en.mu.RLock()
+	defer en.mu.RUnlock()
+	if s, ok := en.Handles[i]; ok {
 		return s
 	} else {
 		panic(fmt.Sprintf("Не найден идентификатор переменной id=%d", i))
@@ -59,9 +59,9 @@ func (en *EnvNames) Get(i int) string {
 }
 
 func (en *EnvNames) GetLowerCase(i int) string {
-	en.RLock()
-	defer en.RUnlock()
-	if s, ok := en.handlow[i]; ok {
+	en.mu.RLock()
+	defer en.mu.RUnlock()
+	if s, ok := en.Handlow[i]; ok {
 		return s
 	} else {
 		panic(fmt.Sprintf("Не найден идентификатор переменной id=%d", i))

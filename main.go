@@ -21,6 +21,7 @@ import (
 
 	"github.com/covrom/gonec/bincode"
 
+	"github.com/covrom/gonec/ast"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
@@ -36,8 +37,9 @@ const version = "2.0a"
 const APIPath = "/gonec"
 
 var (
-	fs          = flag.NewFlagSet(os.Args[0], 1)
+	fs          = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	line        = fs.String("e", "", "Исполнение одной строчки кода")
+	compile     = fs.Bool("c", false, "Компиляция в файл .gnx")
 	testingMode = fs.Bool("t", false, "Режим вывода отладочной информации")
 	stackvm     = fs.Bool("stack", false, "Старая стековая виртуальная машина версии 1.8b")
 	v           = fs.Bool("v", false, "Версия программы")
@@ -79,7 +81,7 @@ func main() {
 		source    string
 	)
 
-	interactive := fs.NArg() == 0 && *line == ""
+	interactive := fs.NArg() == 0 && *line == "" && !*compile
 	fsArgs = fs.Args()
 
 	penv := os.Getenv("PORT")
@@ -149,42 +151,113 @@ func main() {
 
 		parser.EnableErrorVerbose()
 
-		stmts, bins, err := parser.ParseSrc(code)
+		var (
+			bins           bincode.BinCode
+			stmts          []ast.Stmt
+			err            error
+			tstart         time.Time
+			tsParse, tsRun time.Duration
+		)
 
-		if interactive {
-			if e, ok := err.(*parser.Error); ok {
-				es := e.Error()
-				if strings.HasPrefix(es, "syntax error: unexpected") {
-					if strings.HasPrefix(es, "syntax error: unexpected $end,") {
-						following = true
-						continue
-					}
-				} else {
-					if e.Pos.Column == len(b) && !e.Fatal {
-						println(e.Error())
-						following = true
-						continue
-					}
-					if e.Error() == "unexpected EOF" {
-						following = true
-						continue
+		tstart = time.Now()
+
+		isGNX := strings.HasSuffix(strings.ToLower(source), ".gnx")
+		// если это скомпилированный файл, то сразу его выполняем
+		if isGNX {
+			bbuf := bytes.NewBuffer(b)
+			stmts = nil
+			bins, err = bincode.ReadBinCode(bbuf)
+			tsParse = time.Since(tstart)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if *testingMode {
+				log.Printf("--Выполняется скомпилированный код-- \n%s\n", bins.String())
+			}
+		} else {
+			if *testingMode {
+				log.Printf("--Выполняется код--\n%s\n", code)
+			}
+			//замер производительности
+			stmts, bins, err = parser.ParseSrc(code)
+			tsParse = time.Since(tstart)
+
+			if *testingMode {
+				log.Printf("--Скомпилирован код-- \n%s\n", bins.String())
+			}
+
+			if interactive {
+				if e, ok := err.(*parser.Error); ok {
+					es := e.Error()
+					if strings.HasPrefix(es, "syntax error: unexpected") {
+						if strings.HasPrefix(es, "syntax error: unexpected $end,") {
+							following = true
+							continue
+						}
+					} else {
+						if e.Pos.Column == len(b) && !e.Fatal {
+							println(e.Error())
+							following = true
+							continue
+						}
+						if e.Error() == "unexpected EOF" {
+							following = true
+							continue
+						}
 					}
 				}
 			}
 		}
 
+		if *compile {
+			srcname := fs.Arg(0)
+			if srcname != "" && !isGNX {
+				compilename := srcname + ".gnx"
+				fo, err := os.Create(compilename)
+				if err != nil {
+					log.Fatal(err)
+				}
+				defer func() {
+					if err := fo.Close(); err != nil {
+						log.Fatal(err)
+					}
+				}()
+				if err := bincode.WriteBinCode(fo, bins); err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				log.Fatal("Не указано имя файла с исходным кодом на языке Гонец")
+			}
+			break
+		}
+
 		following = false
 		code = ""
+
+		//замер производительности
+		tstart = time.Now()
+		if *testingMode {
+			log.Println("--Результат выполнения кода--")
+		}
+
 		// v := vm.NilValue
 
 		if err == nil {
 			// v, err = vm.Run(stmts, env)
-			if *stackvm {
+			if *stackvm && stmts != nil {
 				_, err = vm.Run(stmts, env)
 			} else {
 				_, err = bincode.Run(bins, env)
 			}
 		}
+
+		tsRun = time.Since(tstart)
+
+		if *testingMode {
+			env.Printf("Время компиляции: %v\n", tsParse)
+			env.Printf("Время исполнения: %v\n", tsRun)
+		}
+
 		if err != nil {
 			colortext(ct.Red, false, func() {
 				if e, ok := err.(*vm.Error); ok {

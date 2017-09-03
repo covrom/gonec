@@ -1,11 +1,12 @@
 package bincode
 
 import (
+	"compress/gzip"
 	"encoding/gob"
 	"fmt"
 	"io"
-	"log"
 	"reflect"
+	"time"
 
 	"github.com/covrom/gonec/ast"
 )
@@ -32,21 +33,113 @@ func (v BinCode) String() string {
 	return s
 }
 
-func WriteBinCode(w io.Writer, v BinCode) {
-	enc := gob.NewEncoder(w)
-	err := enc.Encode(v)
-	if err != nil {
-		log.Fatal("encode error:", err)
+func WriteBinCode(w io.Writer, v BinCode) error {
+	zw := gzip.NewWriter(w)
+	zw.Name = "Gonec binary code"
+	zw.Comment = "Created with https://covrom.github.io/gonec/ by Roman TSovanyan rs@tsov.pro"
+	zw.ModTime = time.Now()
+
+	enc := gob.NewEncoder(zw)
+
+	// так же сохраняем уникальные имена
+	if err := enc.Encode(*ast.UniqueNames); err != nil {
+		return err
 	}
+
+	if err := enc.Encode(v); err != nil {
+		return err
+	}
+
+	if err := zw.Close(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func ReadBinCode(r io.Reader) (res *BinCode) {
-	dec := gob.NewDecoder(r)
-	err := dec.Decode(res)
+func ReadBinCode(r io.Reader) (res BinCode, err error) {
+	zr, err := gzip.NewReader(r)
 	if err != nil {
-		log.Fatal("encode error:", err)
+		return nil, err
 	}
-	return
+
+	dec := gob.NewDecoder(zr)
+
+	if err := dec.Decode(ast.UniqueNames); err != nil {
+		return nil, err
+	}
+
+	if err := dec.Decode(&res); err != nil {
+		return nil, err
+	}
+
+	if err := zr.Close(); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func init() {
+	gob.Register(&ast.EnvNames{})
+
+	gob.Register(&BinLOAD{})
+	gob.Register(&BinMV{})
+	gob.Register(&BinEQUAL{})
+	gob.Register(&BinCASTNUM{})
+	gob.Register(&BinMAKESLICE{})
+	gob.Register(&BinSETIDX{})
+	gob.Register(&BinMAKEMAP{})
+	gob.Register(&BinSETKEY{})
+	gob.Register(&BinGET{})
+	gob.Register(&BinSET{})
+	gob.Register(&BinSETMEMBER{})
+	gob.Register(&BinSETNAME{})
+	gob.Register(&BinSETITEM{})
+	gob.Register(&BinSETSLICE{})
+	gob.Register(&BinUNARY{})
+	gob.Register(&BinADDRID{})
+	gob.Register(&BinADDRMBR{})
+	gob.Register(&BinUNREFID{})
+	gob.Register(&BinUNREFMBR{})
+	gob.Register(&BinLABEL{})
+	gob.Register(&BinJMP{})
+	gob.Register(&BinJTRUE{})
+	gob.Register(&BinJFALSE{})
+	gob.Register(&BinOPER{})
+	gob.Register(&BinCALL{})
+	gob.Register(&BinGETMEMBER{})
+	gob.Register(&BinGETIDX{})
+	gob.Register(&BinGETSUBSLICE{})
+	gob.Register(&BinFUNC{})
+	gob.Register(&BinCASTTYPE{})
+	gob.Register(&BinMAKE{})
+	gob.Register(&BinMAKECHAN{})
+	gob.Register(&BinMAKEARR{})
+	gob.Register(&BinCHANRECV{})
+	gob.Register(&BinCHANSEND{})
+	gob.Register(&BinISKIND{})
+	gob.Register(&BinISSLICE{})
+	gob.Register(&BinTRY{})
+	gob.Register(&BinCATCH{})
+	gob.Register(&BinPOPTRY{})
+	gob.Register(&BinFOREACH{})
+	gob.Register(&BinNEXT{})
+	gob.Register(&BinPOPFOR{})
+	gob.Register(&BinFORNUM{})
+	gob.Register(&BinNEXTNUM{})
+	gob.Register(&BinWHILE{})
+	gob.Register(&BinBREAK{})
+	gob.Register(&BinCONTINUE{})
+	gob.Register(&BinRET{})
+	gob.Register(&BinTHROW{})
+	gob.Register(&BinMODULE{})
+	gob.Register(&BinERROR{})
+	gob.Register(&BinTRYRECV{})
+	gob.Register(&BinTRYSEND{})
+	gob.Register(&BinGOSHED{})
+	gob.Register(&BinINC{})
+	gob.Register(&BinDEC{})
+
 }
 
 //////////////////////
