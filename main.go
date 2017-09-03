@@ -212,6 +212,9 @@ func main() {
 		if *compile {
 			srcname := fs.Arg(0)
 			if srcname != "" && !isGNX {
+				if strings.HasSuffix(strings.ToLower(srcname), ".gnc") {
+					srcname = srcname[:len(srcname)-4]
+				}
 				compilename := srcname + ".gnx"
 				fo, err := os.Create(compilename)
 				if err != nil {
