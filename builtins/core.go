@@ -16,7 +16,6 @@ import (
 	"github.com/covrom/gonec/bincode"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
-	"github.com/covrom/gonec/vm"
 
 	gonec_encoding_json "github.com/covrom/gonec/builtins/encoding/json"
 	gonec_errors "github.com/covrom/gonec/builtins/errors"
@@ -232,15 +231,15 @@ func Import(env *envir.Env) *envir.Env {
 			if err != nil {
 				panic(err)
 			}
+			// env.Dump()
 			rv, err := bincode.Run(bins, env)
+			// env.Dump()
 			if err != nil {
 				panic(err)
 			}
 			return rv
 		} else {
-			scanner := new(parser.Scanner)
-			scanner.Init(string(body))
-			stmts, err := parser.Parse(scanner)
+			_, bins, err := parser.ParseSrc(string(body))
 			if err != nil {
 				if pe, ok := err.(*parser.Error); ok {
 					pe.Filename = s
@@ -248,13 +247,13 @@ func Import(env *envir.Env) *envir.Env {
 				}
 				panic(err)
 			}
-			rv, err := vm.Run(stmts, env)
+			// env.Dump()
+			rv, err := bincode.Run(bins, env)
+			// env.Dump()
 			if err != nil {
 				panic(err)
 			}
-			if rv.IsValid() && rv.CanInterface() {
-				return rv.Interface()
-			}
+			return rv
 		}
 		return nil
 	})

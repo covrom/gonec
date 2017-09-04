@@ -71,36 +71,46 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 	if err := dec.Decode(gnxNames); err != nil {
 		return nil, err
 	}
+	if err := dec.Decode(&res); err != nil {
+		return nil, err
+	}
+	if err := zr.Close(); err != nil {
+		return nil, err
+	}
 
 	// переносим загруженные имена в текущий контекст
 	// и заменяем идентификаторы в загружаемом коде в случае конфликта
 	swapIdents := make(map[int]int)
+
+	// log.Println(gnxNames)
+
 	for i, v := range gnxNames.Handlow {
+
+		// log.Printf("Проверяем %d, %q", i, v)
+
 		if vv, ok := ast.UniqueNames.GetLowerCaseOk(i); ok {
 			// под тем же идентификатором находится другая строка, без учета регистра
 			if v != vv {
 				// новый id
 				ii := ast.UniqueNames.Set(gnxNames.Handles[i])
 				swapIdents[i] = ii
+
+				// log.Printf("Заменяем %d на %d для загружаемого %q, уже есть %q\n", i, ii, v, vv)
+
 			}
 		} else {
 			// такого идентификатора еще нет - устанавливаем значение на него
 			// последующие идентификаторы ast.UniqueNames будут идти после него
+
+			// log.Printf("Устанавливаем %d для загружаемого %q\n", i, gnxNames.Handles[i])
+
 			ast.UniqueNames.SetToId(gnxNames.Handles[i], i)
 		}
-	}
-
-	if err := dec.Decode(&res); err != nil {
-		return nil, err
 	}
 
 	// заменяем идентификаторы, если при слиянии были конфликты
 	for _, v := range res {
 		v.SwapId(swapIdents)
-	}
-
-	if err := zr.Close(); err != nil {
-		return nil, err
 	}
 
 	return res, nil
@@ -181,7 +191,7 @@ type BinLOAD struct {
 	IsId bool
 }
 
-func (v BinLOAD) SwapId(m map[int]int) {
+func (v *BinLOAD) SwapId(m map[int]int) {
 	if v.IsId {
 		if newid, ok := m[v.Val.(int)]; ok {
 			v.Val = newid
@@ -282,9 +292,10 @@ type BinGET struct {
 	Id  int
 }
 
-func (v BinGET) SwapId(m map[int]int) {
+func (v *BinGET) SwapId(m map[int]int) {
 	if newid, ok := m[v.Id]; ok {
 		v.Id = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
 func (v BinGET) String() string {
@@ -298,9 +309,10 @@ type BinSET struct {
 	Reg int // регистр со значением
 }
 
-func (v BinSET) SwapId(m map[int]int) {
+func (v *BinSET) SwapId(m map[int]int) {
 	if newid, ok := m[v.Id]; ok {
 		v.Id = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
 func (v BinSET) String() string {
@@ -315,9 +327,10 @@ type BinSETMEMBER struct {
 	RegVal int // регистр со значением
 }
 
-func (v BinSETMEMBER) SwapId(m map[int]int) {
+func (v *BinSETMEMBER) SwapId(m map[int]int) {
 	if newid, ok := m[v.Id]; ok {
 		v.Id = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
 func (v BinSETMEMBER) String() string {
@@ -379,7 +392,7 @@ type BinADDRID struct {
 	Name int
 }
 
-func (v BinADDRID) SwapId(m map[int]int) {
+func (v *BinADDRID) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
 	}
@@ -395,7 +408,7 @@ type BinADDRMBR struct {
 	Name int
 }
 
-func (v BinADDRMBR) SwapId(m map[int]int) {
+func (v *BinADDRMBR) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
 	}
@@ -411,7 +424,7 @@ type BinUNREFID struct {
 	Name int
 }
 
-func (v BinUNREFID) SwapId(m map[int]int) {
+func (v *BinUNREFID) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
 	}
@@ -427,7 +440,7 @@ type BinUNREFMBR struct {
 	Name int
 }
 
-func (v BinUNREFMBR) SwapId(m map[int]int) {
+func (v *BinUNREFMBR) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
 	}
@@ -508,12 +521,13 @@ type BinCALL struct {
 	Go bool // признак необходимости запуска в новой горутине
 }
 
-func (v BinCALL) SwapId(m map[int]int) {
+func (v *BinCALL) SwapId(m map[int]int) {
 	if v.Name == 0 {
 		return
 	}
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
 func (v BinCALL) String() string {
@@ -530,9 +544,10 @@ type BinGETMEMBER struct {
 	Name int
 }
 
-func (v BinGETMEMBER) SwapId(m map[int]int) {
+func (v *BinGETMEMBER) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
 func (v BinGETMEMBER) String() string {
@@ -573,13 +588,15 @@ type BinFUNC struct {
 	// ReturnTo int //метка инструкции возврата из функции
 }
 
-func (v BinFUNC) SwapId(m map[int]int) {
+func (v *BinFUNC) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok && v.Name != 0 {
 		v.Name = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 	for i := range v.Args {
 		if newid, ok := m[v.Args[i]]; ok && v.Args[i] != 0 {
 			v.Args[i] = newid
+			// log.Printf("Замена в аргументах %#v %v\n",v, v)
 		}
 	}
 }
@@ -836,9 +853,10 @@ type BinMODULE struct {
 	Code BinCode
 }
 
-func (v BinMODULE) SwapId(m map[int]int) {
+func (v *BinMODULE) SwapId(m map[int]int) {
 	if newid, ok := m[v.Name]; ok {
 		v.Name = newid
+		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
 func (v BinMODULE) String() string {
