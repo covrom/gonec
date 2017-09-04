@@ -298,9 +298,9 @@ func ToBool(v interface{}) bool {
 
 	switch v.(type) {
 	case float32, float64:
-		return v.(float64) != 0.0
+		return ToFloat64(v) != 0.0
 	case int, int32, int64:
-		return v.(int64) != 0
+		return ToInt64(v) != 0
 	case bool:
 		return v.(bool)
 	case string:
@@ -316,29 +316,68 @@ func ToBool(v interface{}) bool {
 }
 
 func ToFloat64(v interface{}) float64 {
-	switch v.(type) {
-	case float32, float64:
-		return v.(float64)
-	case int, int32, int64:
-		return float64(v.(int64))
+	switch x := v.(type) {
+	case float32:
+		return float64(x)
+	case float64:
+		return x
+	case int:
+		return float64(x)
+	case int8:
+		return float64(x)
+	case int16:
+		return float64(x)
+	case int32:
+		return float64(x)
+	case int64:
+		return float64(x)
+	case uint:
+		return float64(x)
+	case uint8:
+		return float64(x)
+	case uint16:
+		return float64(x)
+	case uint32:
+		return float64(x)
+	case uint64:
+		return float64(x)
 	}
 	return 0.0
 }
 
 func ToInt64(v interface{}) int64 {
-	switch v.(type) {
-	case float32, float64:
-		return int64(v.(float64))
-	case int, int32, int64:
-		return v.(int64)
+	switch x := v.(type) {
+	case float32:
+		return int64(x)
+	case float64:
+		return int64(x)
+	case int:
+		return int64(x)
+	case int8:
+		return int64(x)
+	case int16:
+		return int64(x)
+	case int32:
+		return int64(x)
+	case int64:
+		return x
+	case uint:
+		return int64(x)
+	case uint8:
+		return int64(x)
+	case uint16:
+		return int64(x)
+	case uint32:
+		return int64(x)
+	case uint64:
+		return int64(x)
 	case string:
-		s := v.(string)
 		var i int64
 		var err error
-		if strings.HasPrefix(s, "0x") {
-			i, err = strconv.ParseInt(s, 16, 64)
+		if strings.HasPrefix(x, "0x") {
+			i, err = strconv.ParseInt(x, 16, 64)
 		} else {
-			i, err = strconv.ParseInt(s, 10, 64)
+			i, err = strconv.ParseInt(x, 10, 64)
 		}
 		if err == nil {
 			return i
