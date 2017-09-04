@@ -2,6 +2,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/bincode"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/covrom/gonec/vm"
@@ -223,22 +225,36 @@ func Import(env *envir.Env) *envir.Env {
 		if err != nil {
 			panic(err)
 		}
-		scanner := new(parser.Scanner)
-		scanner.Init(string(body))
-		stmts, err := parser.Parse(scanner)
-		if err != nil {
-			if pe, ok := err.(*parser.Error); ok {
-				pe.Filename = s
-				panic(pe)
+		isGNX := strings.HasSuffix(strings.ToLower(s), ".gnx")
+		if isGNX {
+			bbuf := bytes.NewBuffer(body)
+			bins, err := bincode.ReadBinCode(bbuf)
+			if err != nil {
+				panic(err)
 			}
-			panic(err)
-		}
-		rv, err := vm.Run(stmts, env)
-		if err != nil {
-			panic(err)
-		}
-		if rv.IsValid() && rv.CanInterface() {
-			return rv.Interface()
+			rv, err := bincode.Run(bins, env)
+			if err != nil {
+				panic(err)
+			}
+			return rv
+		} else {
+			scanner := new(parser.Scanner)
+			scanner.Init(string(body))
+			stmts, err := parser.Parse(scanner)
+			if err != nil {
+				if pe, ok := err.(*parser.Error); ok {
+					pe.Filename = s
+					panic(pe)
+				}
+				panic(err)
+			}
+			rv, err := vm.Run(stmts, env)
+			if err != nil {
+				panic(err)
+			}
+			if rv.IsValid() && rv.CanInterface() {
+				return rv.Interface()
+			}
 		}
 		return nil
 	})
