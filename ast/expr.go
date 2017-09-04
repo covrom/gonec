@@ -68,6 +68,25 @@ func (en *EnvNames) GetLowerCase(i int) string {
 	}
 }
 
+func (en *EnvNames) GetLowerCaseOk(i int) (s string, ok bool) {
+	en.mu.RLock()
+	defer en.mu.RUnlock()
+	s, ok = en.Handlow[i]
+	return
+}
+
+func (en *EnvNames) SetToId(n string, i int) {
+	ns := strings.ToLower(n)
+	en.mu.Lock()
+	en.Names[ns] = i
+	en.Handles[i] = n
+	en.Handlow[i] = ns
+	if en.Iter <= i {
+		en.Iter = i + 1 // гарантированно следующий
+	}
+	en.mu.Unlock()
+}
+
 // все переменные
 var UniqueNames = NewEnvNames()
 

@@ -14,6 +14,7 @@ import (
 type BinStmt interface {
 	ast.Pos
 	binstmt()
+	SwapId(map[int]int)
 }
 
 type BinStmtImpl struct {
@@ -21,7 +22,8 @@ type BinStmtImpl struct {
 	fmt.Stringer
 }
 
-func (x *BinStmtImpl) binstmt() {}
+func (x *BinStmtImpl) binstmt()           {}
+func (x *BinStmtImpl) SwapId(map[int]int) {}
 
 type BinCode []BinStmt
 
@@ -64,12 +66,37 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 
 	dec := gob.NewDecoder(zr)
 
-	if err := dec.Decode(ast.UniqueNames); err != nil {
+	var gnxNames = ast.NewEnvNames()
+
+	if err := dec.Decode(gnxNames); err != nil {
 		return nil, err
+	}
+
+	// переносим загруженные имена в текущий контекст
+	// и заменяем идентификаторы в загружаемом коде в случае конфликта
+	swapIdents := make(map[int]int)
+	for i, v := range gnxNames.Handlow {
+		if vv, ok := ast.UniqueNames.GetLowerCaseOk(i); ok {
+			// под тем же идентификатором находится другая строка, без учета регистра
+			if v != vv {
+				// новый id
+				ii := ast.UniqueNames.Set(gnxNames.Handles[i])
+				swapIdents[i] = ii
+			}
+		} else {
+			// такого идентификатора еще нет - устанавливаем значение на него
+			// последующие идентификаторы ast.UniqueNames будут идти после него
+			ast.UniqueNames.SetToId(gnxNames.Handles[i], i)
+		}
 	}
 
 	if err := dec.Decode(&res); err != nil {
 		return nil, err
+	}
+
+	// заменяем идентификаторы, если при слиянии были конфликты
+	for _, v := range res {
+		v.SwapId(swapIdents)
 	}
 
 	if err := zr.Close(); err != nil {
@@ -149,11 +176,22 @@ func init() {
 type BinLOAD struct {
 	BinStmtImpl
 
-	Reg int
-	Val interface{}
+	Reg  int
+	Val  interface{}
+	IsId bool
 }
 
+func (v BinLOAD) SwapId(m map[int]int) {
+	if v.IsId {
+		if newid, ok := m[v.Val.(int)]; ok {
+			v.Val = newid
+		}
+	}
+}
 func (v BinLOAD) String() string {
+	if v.IsId {
+		return fmt.Sprintf("LOAD r%d, %#v", v.Reg, ast.UniqueNames.Get(v.Val.(int)))
+	}
 	return fmt.Sprintf("LOAD r%d, %#v", v.Reg, v.Val)
 }
 
@@ -244,6 +282,11 @@ type BinGET struct {
 	Id  int
 }
 
+func (v BinGET) SwapId(m map[int]int) {
+	if newid, ok := m[v.Id]; ok {
+		v.Id = newid
+	}
+}
 func (v BinGET) String() string {
 	return fmt.Sprintf("GET r%d, %q", v.Reg, ast.UniqueNames.Get(v.Id))
 }
@@ -255,6 +298,11 @@ type BinSET struct {
 	Reg int // регистр со значением
 }
 
+func (v BinSET) SwapId(m map[int]int) {
+	if newid, ok := m[v.Id]; ok {
+		v.Id = newid
+	}
+}
 func (v BinSET) String() string {
 	return fmt.Sprintf("SET %q, r%d", ast.UniqueNames.Get(v.Id), v.Reg)
 }
@@ -267,6 +315,11 @@ type BinSETMEMBER struct {
 	RegVal int // регистр со значением
 }
 
+func (v BinSETMEMBER) SwapId(m map[int]int) {
+	if newid, ok := m[v.Id]; ok {
+		v.Id = newid
+	}
+}
 func (v BinSETMEMBER) String() string {
 	return fmt.Sprintf("SETMEMBER r%d.%q, r%d", v.Reg, ast.UniqueNames.Get(v.Id), v.RegVal)
 }
@@ -326,6 +379,11 @@ type BinADDRID struct {
 	Name int
 }
 
+func (v BinADDRID) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinADDRID) String() string {
 	return fmt.Sprintf("ADDRID r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
 }
@@ -337,6 +395,11 @@ type BinADDRMBR struct {
 	Name int
 }
 
+func (v BinADDRMBR) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinADDRMBR) String() string {
 	return fmt.Sprintf("ADDRMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
 }
@@ -348,6 +411,11 @@ type BinUNREFID struct {
 	Name int
 }
 
+func (v BinUNREFID) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinUNREFID) String() string {
 	return fmt.Sprintf("UNREFID r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
 }
@@ -359,6 +427,11 @@ type BinUNREFMBR struct {
 	Name int
 }
 
+func (v BinUNREFMBR) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinUNREFMBR) String() string {
 	return fmt.Sprintf("UNREFMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
 }
@@ -435,6 +508,14 @@ type BinCALL struct {
 	Go bool // признак необходимости запуска в новой горутине
 }
 
+func (v BinCALL) SwapId(m map[int]int) {
+	if v.Name == 0 {
+		return
+	}
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinCALL) String() string {
 	if v.Name == 0 {
 		return fmt.Sprintf("CALL REG r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go, v.RegRets)
@@ -449,6 +530,11 @@ type BinGETMEMBER struct {
 	Name int
 }
 
+func (v BinGETMEMBER) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinGETMEMBER) String() string {
 	return fmt.Sprintf("GETMEMBER r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
 }
@@ -487,6 +573,16 @@ type BinFUNC struct {
 	// ReturnTo int //метка инструкции возврата из функции
 }
 
+func (v BinFUNC) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok && v.Name != 0 {
+		v.Name = newid
+	}
+	for i := range v.Args {
+		if newid, ok := m[v.Args[i]]; ok && v.Args[i] != 0 {
+			v.Args[i] = newid
+		}
+	}
+}
 func (v BinFUNC) String() string {
 	s := ""
 	for _, a := range v.Args {
@@ -740,6 +836,11 @@ type BinMODULE struct {
 	Code BinCode
 }
 
+func (v BinMODULE) SwapId(m map[int]int) {
+	if newid, ok := m[v.Name]; ok {
+		v.Name = newid
+	}
+}
 func (v BinMODULE) String() string {
 	return fmt.Sprintf("MODULE %s\n{\n%v}\n", ast.UniqueNames.Get(v.Name), v.Code)
 }

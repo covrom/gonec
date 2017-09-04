@@ -1064,8 +1064,9 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		if e.TypeExpr == nil {
 			bins = appendBin(bins,
 				&BinLOAD{
-					Reg: reg + 1,
-					Val: e.Type,
+					Reg:  reg + 1,
+					Val:  e.Type,
+					IsId: true,
 				}, e)
 		} else {
 			bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid)...)
@@ -1083,8 +1084,9 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		if e.TypeExpr == nil {
 			bins = appendBin(bins,
 				&BinLOAD{
-					Reg: reg,
-					Val: e.Type,
+					Reg:  reg,
+					Val:  e.Type,
+					IsId: true,
 				}, e)
 		} else {
 			bins = append(bins, addBinExpr(e.TypeExpr, reg, lid)...)
