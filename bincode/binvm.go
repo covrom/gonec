@@ -771,7 +771,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, v.Interface())
 
 		case *BinMAKECHAN:
-			size, ok := regs.Reg[s.Reg].(int)
+			size, ok := regs.Reg[s.Reg].(int64)
 			if !ok {
 				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
 				break
@@ -873,11 +873,11 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			switch val.Kind() {
 			case reflect.Array, reflect.Slice:
-				iter := regs.Reg[s.RegIter].(int)
+				iter := ToInt64(regs.Reg[s.RegIter])
 				iter++
-				if iter < val.Len() {
+				if iter < int64(val.Len()) {
 					regs.Set(s.RegIter, iter)
-					iv := val.Index(iter)
+					iv := val.Index(int(iter))
 					regs.Set(s.RegVal, iv)
 				} else {
 					idx = regs.Labels[s.JumpTo]
