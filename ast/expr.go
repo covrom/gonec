@@ -749,8 +749,13 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		// числа конвертируются стандартно
-		if rv.Type().ConvertibleTo(nt) {
-			return rv.Convert(nt), nil
+		switch nt.Kind() {
+		case reflect.Bool:
+			return reflect.ValueOf(ToBool(rv)), nil
+		default:
+			if rv.Type().ConvertibleTo(nt) {
+				return rv.Convert(nt), nil
+			}
 		}
 	case reflect.Struct:
 		if t, ok := rv.Interface().(time.Time); ok {
