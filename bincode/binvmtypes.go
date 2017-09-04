@@ -3,13 +3,9 @@ package bincode
 import (
 	"errors"
 	"fmt"
-	"math"
 	"reflect"
-	"strconv"
-	"strings"
 
 	"github.com/covrom/gonec/ast"
-	envir "github.com/covrom/gonec/env"
 )
 
 const (
@@ -141,6 +137,28 @@ func ToFunc(f Func) reflect.Value {
 	return reflect.ValueOf(f)
 }
 
+// тип NULL
+
+type Nullable interface {
+	null()
+	String()
+}
+
+type NullType struct {
+	Nullable
+}
+
+func (x *NullType) null()          {}
+func (x *NullType) String() string { return "NULL" }
+
+var NullVar = NullType{}
+
+// коллекции вирт. машины
+
+type VMSlice []interface{}
+
+type VMStringMap map[string]interface{}
+
 // Регистры виртуальной машины
 
 type VMRegs struct {
@@ -252,272 +270,3 @@ func (v *VMRegs) PopContinue() (label int) {
 	return
 }
 
-type VMSlice []interface{}
-
-type VMStringMap map[string]interface{}
-
-func InvokeNumber(lit string) (interface{}, error) {
-	if strings.Contains(lit, ".") || strings.Contains(lit, "e") || strings.Contains(lit, "E") {
-		v, err := strconv.ParseFloat(lit, 64)
-		if err != nil {
-			return v, err
-		}
-		return v, nil
-	}
-	var i int64
-	var err error
-	if strings.HasPrefix(lit, "0x") {
-		i, err = strconv.ParseInt(lit[2:], 16, 64)
-	} else {
-		i, err = strconv.ParseInt(lit, 10, 64)
-	}
-	if err != nil {
-		return i, err
-	}
-	return i, nil
-}
-
-func ToString(v interface{}) string {
-	if s, ok := v.(string); ok {
-		return s
-	}
-	if v == nil {
-		return "Неопределено"
-	}
-	if b, ok := v.(bool); ok {
-		if b {
-			return "Истина"
-		} else {
-			return "Ложь"
-		}
-	}
-	return fmt.Sprint(v)
-}
-
-func ToBool(v interface{}) bool {
-
-	switch v.(type) {
-	case float32, float64:
-		return ToFloat64(v) != 0.0
-	case int, int32, int64:
-		return ToInt64(v) != 0
-	case bool:
-		return v.(bool)
-	case string:
-		vlow := strings.ToLower(v.(string))
-		if vlow == "true" || vlow == "истина" {
-			return true
-		}
-		if ToInt64(v) != 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func ToFloat64(v interface{}) float64 {
-	switch x := v.(type) {
-	case float32:
-		return float64(x)
-	case float64:
-		return x
-	case int:
-		return float64(x)
-	case int8:
-		return float64(x)
-	case int16:
-		return float64(x)
-	case int32:
-		return float64(x)
-	case int64:
-		return float64(x)
-	case uint:
-		return float64(x)
-	case uint8:
-		return float64(x)
-	case uint16:
-		return float64(x)
-	case uint32:
-		return float64(x)
-	case uint64:
-		return float64(x)
-	}
-	return 0.0
-}
-
-func ToInt64(v interface{}) int64 {
-	switch x := v.(type) {
-	case float32:
-		return int64(x)
-	case float64:
-		return int64(x)
-	case int:
-		return int64(x)
-	case int8:
-		return int64(x)
-	case int16:
-		return int64(x)
-	case int32:
-		return int64(x)
-	case int64:
-		return x
-	case uint:
-		return int64(x)
-	case uint8:
-		return int64(x)
-	case uint16:
-		return int64(x)
-	case uint32:
-		return int64(x)
-	case uint64:
-		return int64(x)
-	case string:
-		var i int64
-		var err error
-		if strings.HasPrefix(x, "0x") {
-			i, err = strconv.ParseInt(x, 16, 64)
-		} else {
-			i, err = strconv.ParseInt(x, 10, 64)
-		}
-		if err == nil {
-			return i
-		}
-	}
-	return 0
-}
-
-func IsNum(v interface{}) bool {
-	switch v.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, float32, float64:
-		return true
-	}
-	return false
-}
-
-func Equal(lhsV, rhsV interface{}) bool {
-	if lhsV == rhsV {
-		return true
-	}
-
-	if IsNum(lhsV) && IsNum(rhsV) {
-		if reflect.TypeOf(rhsV).ConvertibleTo(reflect.TypeOf(lhsV)) {
-			rhsV = reflect.ValueOf(rhsV).Convert(reflect.TypeOf(lhsV)).Interface()
-		}
-	}
-	return reflect.DeepEqual(lhsV, rhsV)
-}
-
-func GetMember(v reflect.Value, name int, stmt ast.Pos) (reflect.Value, error) {
-
-	m, _ := ast.MethodByNameCI(v, name)
-	// ошибку не обрабатываем, т.к. ищем поле
-	if !m.IsValid() {
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-		if v.Kind() == reflect.Struct {
-			var err error
-			m, err = ast.FieldByNameCI(v, name)
-			if err != nil || !m.IsValid() {
-				return envir.NilValue, NewStringError(stmt, "Метод или поле не найдено: "+ast.UniqueNames.Get(name))
-			}
-		} else if v.Kind() == reflect.Map {
-			m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(name)))
-			if !m.IsValid() {
-				return envir.NilValue, NewStringError(stmt, "Значение по ключу не найдено")
-			}
-		} else {
-			return envir.NilValue, NewStringError(stmt, "У значения нет полей")
-		}
-	}
-	return m, nil
-}
-
-func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
-	// log.Println(OperMapR[op])
-	if !lhsV.IsValid() || !rhsV.IsValid() {
-		if !rhsV.IsValid() && !rhsV.IsValid() {
-			// в обоих значениях nil
-			return true, nil
-		} else {
-			// одно из значений nil, а второе нет
-			return false, nil
-		}
-	}
-
-	switch op {
-
-	// TODO: математика множеств и графов
-
-	case ADD:
-		if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
-			return ToString(lhsV.Interface()) + ToString(rhsV.Interface()), nil
-		}
-		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() != reflect.Array && rhsV.Kind() != reflect.Slice) {
-			return reflect.Append(lhsV, rhsV).Interface(), nil
-		}
-		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() == reflect.Array || rhsV.Kind() == reflect.Slice) {
-			return reflect.AppendSlice(lhsV, rhsV).Interface(), nil
-		}
-		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV.Interface()) + ToFloat64(rhsV.Interface()), nil
-		}
-		return ToInt64(lhsV.Interface()) + ToInt64(rhsV.Interface()), nil
-	case SUB:
-		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV.Interface()) - ToFloat64(rhsV.Interface()), nil
-		}
-		return ToInt64(lhsV.Interface()) - ToInt64(rhsV.Interface()), nil
-	case MUL:
-		if lhsV.Kind() == reflect.String && (rhsV.Kind() == reflect.Int || rhsV.Kind() == reflect.Int32 || rhsV.Kind() == reflect.Int64) {
-			return strings.Repeat(ToString(lhsV.Interface()), int(ToInt64(rhsV.Interface()))), nil
-		}
-		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV.Interface()) * ToFloat64(rhsV.Interface()), nil
-		}
-		return ToInt64(lhsV.Interface()) * ToInt64(rhsV.Interface()), nil
-	case QUO:
-		return ToFloat64(lhsV.Interface()) / ToFloat64(rhsV.Interface()), nil
-	case REM:
-		return ToInt64(lhsV.Interface()) % ToInt64(rhsV.Interface()), nil
-	case EQL:
-		return Equal(lhsV.Interface(), rhsV.Interface()), nil
-	case NEQ:
-		return Equal(lhsV.Interface(), rhsV.Interface()) == false, nil
-	case GTR:
-		return ToFloat64(lhsV.Interface()) > ToFloat64(rhsV.Interface()), nil
-	case GEQ:
-		return ToFloat64(lhsV.Interface()) >= ToFloat64(rhsV.Interface()), nil
-	case LSS:
-		return ToFloat64(lhsV.Interface()) < ToFloat64(rhsV.Interface()), nil
-	case LEQ:
-		return ToFloat64(lhsV.Interface()) <= ToFloat64(rhsV.Interface()), nil
-	case OR:
-		return ToInt64(lhsV.Interface()) | ToInt64(rhsV.Interface()), nil
-	case LOR:
-		if x := ToBool(lhsV.Interface()); x {
-			return x, nil
-		} else {
-			return ToBool(rhsV.Interface()), nil
-		}
-	case AND:
-		return ToInt64(lhsV.Interface()) & ToInt64(rhsV.Interface()), nil
-	case LAND:
-		if x := ToBool(lhsV.Interface()); x {
-			return ToBool(rhsV.Interface()), nil
-		} else {
-			return x, nil
-		}
-	case POW:
-		if lhsV.Kind() == reflect.Float64 {
-			return math.Pow(ToFloat64(lhsV.Interface()), ToFloat64(rhsV.Interface())), nil
-		}
-		return int64(math.Pow(ToFloat64(lhsV.Interface()), ToFloat64(rhsV.Interface()))), nil
-	case SHR:
-		return ToInt64(lhsV.Interface()) >> uint64(ToInt64(rhsV.Interface())), nil
-	case SHL:
-		return ToInt64(lhsV.Interface()) << uint64(ToInt64(rhsV.Interface())), nil
-	default:
-		return nil, fmt.Errorf("Неизвестный оператор")
-	}
-}

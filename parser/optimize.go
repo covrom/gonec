@@ -1,10 +1,17 @@
 package parser
 
 import (
+	"fmt"
+	"math"
 	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/bincode"
 )
+
+// TODO: переделать на универсальную рефлексию перебора полей структур
 
 func constFolding(inast []ast.Stmt) []ast.Stmt {
 	for i, st := range inast {
@@ -74,7 +81,7 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		r1 := exprAsValue(e.Lhs)
 		r2 := exprAsValue(e.Rhs)
 		if r1.IsValid() && r2.IsValid() {
-			r, err := ast.EvalBinOp(e.Operator, r1, r2, none)
+			r, err := EvalBinOp(e.Operator, r1, r2, none)
 			if err == nil && r.IsValid() {
 				// log.Println("Set native value!")
 				return &ast.NativeExpr{Value: r}
@@ -89,7 +96,7 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		e.Expr = simplifyExprFolding(e.Expr)
 		v := exprAsValue(e.Expr)
 		if v.IsValid() {
-			r, err := ast.EvalUnOp(e.Operator, v, none)
+			r, err := EvalUnOp(e.Operator, v, none)
 			if err == nil && r.IsValid() {
 				return &ast.NativeExpr{Value: r}
 			}
@@ -112,7 +119,7 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		r2 := exprAsValue(e.Rhs)
 
 		if v.IsValid() && r1.IsValid() && r2.IsValid() && v.Kind() == reflect.Bool {
-			if ast.ToBool(v) {
+			if ToBool(v) {
 				return &ast.NativeExpr{Value: r1}
 			} else {
 				return &ast.NativeExpr{Value: r2}
@@ -237,9 +244,9 @@ func exprAsValue(expr ast.Expr) (r reflect.Value) {
 	case *ast.NativeExpr:
 		r = e.Value
 	case *ast.ConstExpr:
-		r = ast.InvokeConst(e.Value, none)
+		r = InvokeConst(e.Value, none)
 	case *ast.NumberExpr:
-		r, err = ast.InvokeNumber(e.Lit, none)
+		r, err = InvokeNumber(e.Lit, none)
 		if err != nil {
 			// ошибки пропускаем
 			return none
@@ -248,4 +255,258 @@ func exprAsValue(expr ast.Expr) (r reflect.Value) {
 		r = reflect.ValueOf(e.Lit)
 	}
 	return
+}
+
+func InvokeConst(v string, defval reflect.Value) reflect.Value {
+	switch strings.ToLower(v) {
+	case "истина":
+		return reflect.ValueOf(true)
+	case "ложь":
+		return reflect.ValueOf(false)
+	case "null":
+		return reflect.ValueOf(bincode.NullVar)
+	}
+	return defval
+}
+
+func InvokeNumber(lit string, defval reflect.Value) (reflect.Value, error) {
+	if strings.Contains(lit, ".") || strings.Contains(lit, "e") {
+		v, err := strconv.ParseFloat(lit, 64)
+		if err != nil {
+			return defval, err
+		}
+		return reflect.ValueOf(float64(v)), nil
+	}
+	var i int64
+	var err error
+	if strings.HasPrefix(lit, "0x") {
+		i, err = strconv.ParseInt(lit[2:], 16, 64)
+	} else {
+		i, err = strconv.ParseInt(lit, 10, 64)
+	}
+	if err != nil {
+		return defval, err
+	}
+	return reflect.ValueOf(i), nil
+}
+
+func EvalUnOp(op string, v, defval reflect.Value) (reflect.Value, error) {
+	switch op {
+	case "-":
+		if v.Kind() == reflect.Float64 {
+			return reflect.ValueOf(-v.Float()), nil
+		}
+		return reflect.ValueOf(-v.Int()), nil
+	case "^":
+		return reflect.ValueOf(^ToInt64(v)), nil
+	case "!":
+		return reflect.ValueOf(!ToBool(v)), nil
+	default:
+		return defval, fmt.Errorf("Неизвестный оператор")
+	}
+}
+
+func ToBool(v reflect.Value) bool {
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+
+	switch v.Kind() {
+	case reflect.Float32, reflect.Float64:
+		return v.Float() != 0.0
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		return v.Int() != 0
+	case reflect.Bool:
+		return v.Bool()
+	case reflect.String:
+		vlow := strings.ToLower(v.String())
+		if vlow == "true" || vlow == "истина" {
+			return true
+		}
+		if ToInt64(v) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func ToInt64(v reflect.Value) int64 {
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+	switch v.Kind() {
+	case reflect.Float32, reflect.Float64:
+		return int64(v.Float())
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		return v.Int()
+	case reflect.String:
+		s := v.String()
+		var i int64
+		var err error
+		if strings.HasPrefix(s, "0x") {
+			i, err = strconv.ParseInt(s, 16, 64)
+		} else {
+			i, err = strconv.ParseInt(s, 10, 64)
+		}
+		if err == nil {
+			return int64(i)
+		}
+	}
+	return 0
+}
+
+func ToString(v reflect.Value) string {
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+	if v.Kind() == reflect.String {
+		return v.String()
+	}
+	if !v.IsValid() {
+		return "Неопределено"
+	}
+	if v.Kind() == reflect.Bool {
+		if v.Bool() {
+			return "Истина"
+		} else {
+			return "Ложь"
+		}
+	}
+	return fmt.Sprint(v.Interface())
+}
+
+func ToFloat64(v reflect.Value) float64 {
+	if v.Kind() == reflect.Interface {
+		v = v.Elem()
+	}
+	switch v.Kind() {
+	case reflect.Float32, reflect.Float64:
+		return v.Float()
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		return float64(v.Int())
+	}
+	return 0.0
+}
+
+func IsNil(v reflect.Value) bool {
+	if !v.IsValid() || v.Kind().String() == "unsafe.Pointer" {
+		return true
+	}
+	if (v.Kind() == reflect.Interface || v.Kind() == reflect.Ptr) && v.IsNil() {
+		return true
+	}
+	return false
+}
+
+func IsNum(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr, reflect.Float32, reflect.Float64:
+		return true
+	}
+	return false
+}
+
+// equal returns true when lhsV and rhsV is same value.
+func Equal(lhsV, rhsV reflect.Value) bool {
+	lhsIsNil, rhsIsNil := IsNil(lhsV), IsNil(rhsV)
+	if lhsIsNil && rhsIsNil {
+		return true
+	}
+	if (!lhsIsNil && rhsIsNil) || (lhsIsNil && !rhsIsNil) {
+		return false
+	}
+	if lhsV.Kind() == reflect.Interface || lhsV.Kind() == reflect.Ptr {
+		lhsV = lhsV.Elem()
+	}
+	if rhsV.Kind() == reflect.Interface || rhsV.Kind() == reflect.Ptr {
+		rhsV = rhsV.Elem()
+	}
+	if !lhsV.IsValid() || !rhsV.IsValid() {
+		return true
+	}
+	if IsNum(lhsV) && IsNum(rhsV) {
+		if rhsV.Type().ConvertibleTo(lhsV.Type()) {
+			rhsV = rhsV.Convert(lhsV.Type())
+		}
+	}
+	if lhsV.CanInterface() && rhsV.CanInterface() {
+		return reflect.DeepEqual(lhsV.Interface(), rhsV.Interface())
+	}
+	return reflect.DeepEqual(lhsV, rhsV)
+}
+
+func EvalBinOp(op string, lhsV, rhsV, defval reflect.Value) (reflect.Value, error) {
+	switch op {
+
+	// TODO: расширить возможные варианты
+
+	case "+":
+		if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
+			return reflect.ValueOf(ToString(lhsV) + ToString(rhsV)), nil
+		}
+		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() != reflect.Array && rhsV.Kind() != reflect.Slice) {
+			return reflect.Append(lhsV, rhsV), nil
+		}
+		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() == reflect.Array || rhsV.Kind() == reflect.Slice) {
+			return reflect.AppendSlice(lhsV, rhsV), nil
+		}
+		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
+			return reflect.ValueOf(ToFloat64(lhsV) + ToFloat64(rhsV)), nil
+		}
+		return reflect.ValueOf(ToInt64(lhsV) + ToInt64(rhsV)), nil
+	case "-":
+		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
+			return reflect.ValueOf(ToFloat64(lhsV) - ToFloat64(rhsV)), nil
+		}
+		return reflect.ValueOf(ToInt64(lhsV) - ToInt64(rhsV)), nil
+	case "*":
+		if lhsV.Kind() == reflect.String && (rhsV.Kind() == reflect.Int || rhsV.Kind() == reflect.Int32 || rhsV.Kind() == reflect.Int64) {
+			return reflect.ValueOf(strings.Repeat(ToString(lhsV), int(ToInt64(rhsV)))), nil
+		}
+		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
+			return reflect.ValueOf(ToFloat64(lhsV) * ToFloat64(rhsV)), nil
+		}
+		return reflect.ValueOf(ToInt64(lhsV) * ToInt64(rhsV)), nil
+	case "/":
+		return reflect.ValueOf(ToFloat64(lhsV) / ToFloat64(rhsV)), nil
+	case "%":
+		return reflect.ValueOf(ToInt64(lhsV) % ToInt64(rhsV)), nil
+	case "==":
+		return reflect.ValueOf(Equal(lhsV, rhsV)), nil
+	case "!=":
+		return reflect.ValueOf(Equal(lhsV, rhsV) == false), nil
+	case ">":
+		return reflect.ValueOf(ToFloat64(lhsV) > ToFloat64(rhsV)), nil
+	case ">=":
+		return reflect.ValueOf(ToFloat64(lhsV) >= ToFloat64(rhsV)), nil
+	case "<":
+		return reflect.ValueOf(ToFloat64(lhsV) < ToFloat64(rhsV)), nil
+	case "<=":
+		return reflect.ValueOf(ToFloat64(lhsV) <= ToFloat64(rhsV)), nil
+	case "|":
+		return reflect.ValueOf(ToInt64(lhsV) | ToInt64(rhsV)), nil
+	case "||":
+		if ToBool(lhsV) {
+			return lhsV, nil
+		}
+		return rhsV, nil
+	case "&":
+		return reflect.ValueOf(ToInt64(lhsV) & ToInt64(rhsV)), nil
+	case "&&":
+		if ToBool(lhsV) {
+			return rhsV, nil
+		}
+		return lhsV, nil
+	case "**":
+		if lhsV.Kind() == reflect.Float64 {
+			return reflect.ValueOf(math.Pow(ToFloat64(lhsV), ToFloat64(rhsV))), nil
+		}
+		return reflect.ValueOf(int64(math.Pow(ToFloat64(lhsV), ToFloat64(rhsV)))), nil
+	case ">>":
+		return reflect.ValueOf(ToInt64(lhsV) >> uint64(ToInt64(rhsV))), nil
+	case "<<":
+		return reflect.ValueOf(ToInt64(lhsV) << uint64(ToInt64(rhsV))), nil
+	default:
+		return defval, fmt.Errorf("Неизвестный оператор")
+	}
 }

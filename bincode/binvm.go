@@ -241,7 +241,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			switch v.Kind() {
 			case reflect.Array, reflect.Slice:
 				vlen := v.Len()
-				ii, ij, err := ast.LeftRightBounds(rb, re, vlen)
+				ii, ij, err := LeftRightBounds(rb, re, vlen)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
@@ -257,7 +257,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				}
 				reflect.Copy(vv, rv)
 			case reflect.String:
-				r, ii, ij, err := ast.StringToRuneSliceAt(v, rb, re)
+				r, ii, ij, err := StringToRuneSliceAt(v, rb, re)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
@@ -462,14 +462,14 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			switch v.Kind() {
 			case reflect.Array, reflect.Slice:
-				rv, err := ast.SliceAt(v, rb, re, envir.NilValue)
+				rv, err := SliceAt(v, rb, re, envir.NilValue)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
 				}
 				regs.Set(s.Reg, rv.Interface())
 			case reflect.String:
-				rv, err := ast.StringAt(v, rb, re, envir.NilValue)
+				rv, err := StringAt(v, rb, re, envir.NilValue)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
@@ -739,7 +739,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 			rv := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 
-			v, err := ast.TypeCastConvert(rv, nt, false, envir.NilValue)
+			v, err := TypeCastConvert(rv, nt, false, envir.NilValue)
 			if err != nil {
 				catcherr = NewError(stmt, err)
 				break

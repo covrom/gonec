@@ -21,10 +21,8 @@ import (
 
 	"github.com/covrom/gonec/bincode"
 
-	"github.com/covrom/gonec/ast"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
-	"github.com/covrom/gonec/vm"
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
 
@@ -41,10 +39,10 @@ var (
 	line        = fs.String("e", "", "Исполнение одной строчки кода")
 	compile     = fs.Bool("c", false, "Компиляция в файл .gnx")
 	testingMode = fs.Bool("t", false, "Режим вывода отладочной информации")
-	stackvm     = fs.Bool("stack", false, "Старая стековая виртуальная машина версии 1.8b")
-	v           = fs.Bool("v", false, "Версия программы")
-	w           = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
-	port        = fs.String("p", "", "Номер порта вэб-сервера")
+	// stackvm     = fs.Bool("stack", false, "Старая стековая виртуальная машина версии 1.8b")
+	v    = fs.Bool("v", false, "Версия программы")
+	w    = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
+	port = fs.String("p", "", "Номер порта вэб-сервера")
 
 	istty = isatty.IsTerminal(os.Stdout.Fd())
 
@@ -152,8 +150,8 @@ func main() {
 		parser.EnableErrorVerbose()
 
 		var (
-			bins           bincode.BinCode
-			stmts          []ast.Stmt
+			bins bincode.BinCode
+			// stmts          []ast.Stmt
 			err            error
 			tstart         time.Time
 			tsParse, tsRun time.Duration
@@ -165,7 +163,7 @@ func main() {
 		// если это скомпилированный файл, то сразу его выполняем
 		if isGNX {
 			bbuf := bytes.NewBuffer(b)
-			stmts = nil
+			// stmts = nil
 			bins, err = bincode.ReadBinCode(bbuf)
 			tsParse = time.Since(tstart)
 			if err != nil {
@@ -179,7 +177,7 @@ func main() {
 				log.Printf("--Выполняется код--\n%s\n", code)
 			}
 			//замер производительности
-			stmts, bins, err = parser.ParseSrc(code)
+			_, bins, err = parser.ParseSrc(code)
 			tsParse = time.Since(tstart)
 
 			if *testingMode {
@@ -247,11 +245,11 @@ func main() {
 
 		if err == nil {
 			// v, err = vm.Run(stmts, env)
-			if *stackvm && stmts != nil {
-				_, err = vm.Run(stmts, env)
-			} else {
-				_, err = bincode.Run(bins, env)
-			}
+			// if *stackvm && stmts != nil {
+			// 	_, err = vm.Run(stmts, env)
+			// } else {
+			_, err = bincode.Run(bins, env)
+			// }
 		}
 
 		tsRun = time.Since(tstart)
@@ -263,7 +261,7 @@ func main() {
 
 		if err != nil {
 			colortext(ct.Red, false, func() {
-				if e, ok := err.(*vm.Error); ok {
+				if e, ok := err.(*bincode.Error); ok {
 					fmt.Fprintf(os.Stderr, "%s:%d:%d %s\n", source, e.Pos.Line, e.Pos.Column, err)
 				} else if e, ok := err.(*parser.Error); ok {
 					if e.Filename != "" {
@@ -422,7 +420,7 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 
 	//замер производительности
 	tstart := time.Now()
-	stmts, bins, err := parser.ParseSrc(sb)
+	_, bins, err := parser.ParseSrc(sb)
 	tsParse := time.Since(tstart)
 
 	if *testingMode {
@@ -437,15 +435,15 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 	env.SetStdOut(&rb)
 
 	tstart = time.Now()
-	if *stackvm {
-		_, err = vm.Run(stmts, env)
-	} else {
-		_, err = bincode.Run(bins, env)
-	}
+	// if *stackvm {
+	// 	_, err = vm.Run(stmts, env)
+	// } else {
+	_, err = bincode.Run(bins, env)
+	// }
 	tsRun := time.Since(tstart)
 
 	if err != nil {
-		if e, ok := err.(*vm.Error); ok {
+		if e, ok := err.(*bincode.Error); ok {
 			env.Printf("Ошибка исполнения:%d:%d %s\n", e.Pos.Line, e.Pos.Column, err)
 		} else if e, ok := err.(*parser.Error); ok {
 			env.Printf("Ошибка в коде:%d:%d %s\n", e.Pos.Line, e.Pos.Column, err)
