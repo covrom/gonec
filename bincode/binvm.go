@@ -809,15 +809,14 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				catcherr = NewError(stmt, err)
 				break
 			}
-			rv := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-
-			v, err := TypeCastConvert(rv, nt, false, envir.NilValue)
+			rv := regs.Reg[s.Reg]
+			v, err := TypeCastConvert(rv, nt, false)
 			if err != nil {
 				catcherr = NewError(stmt, err)
 				break
 			}
 
-			regs.Set(s.Reg, v.Interface())
+			regs.Set(s.Reg, v)
 
 		case *BinMAKE:
 			eType, ok := regs.Reg[s.Reg].(int)

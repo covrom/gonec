@@ -379,23 +379,27 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 
 // TODO: переделать с учетом здесь новых функций ToInt, ToBool и т.п., убрать рефлексию
 
-func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, defval reflect.Value) (reflect.Value, error) {
+func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (interface{}, error) {
+	rv := reflect.ValueOf(v)
 	rvkind := rv.Kind()
+
 	if skipCollections && (rvkind == reflect.Array || rvkind == reflect.Slice ||
 		rvkind == reflect.Map || rvkind == reflect.Struct || rvkind == reflect.Chan) {
-		return rv, nil
+		return v, nil
 	}
 	if rvkind == reflect.Interface || rvkind == reflect.Ptr {
 		rv = rv.Elem()
 		rvkind = rv.Kind()
+		v = rv.Interface()
 	}
 	// учитываем случай двойной вложенности указателя или интерфейса в указателе
 	if rvkind == reflect.Interface || rvkind == reflect.Ptr {
 		rv = rv.Elem()
 		rvkind = rv.Kind()
+		v = rv.Interface()
 	}
 	if rvkind == nt.Kind() {
-		return rv, nil
+		return v, nil
 	}
 
 	switch rvkind {
@@ -403,41 +407,41 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 		switch nt.Kind() {
 		case reflect.String:
 			// сериализуем в json
-			b, err := json.Marshal(rv.Interface())
+			b, err := json.Marshal(v)
 			if err != nil {
-				return rv, err
+				return nil, err
 			}
-			return reflect.ValueOf(string(b)), nil
+			return string(b), nil
 		default:
 			// преобразуем в такой же слайс, но с типизированными значениями, и копируем их с новым типом
 			rs := reflect.MakeSlice(reflect.SliceOf(nt), rv.Len(), rv.Cap())
 			for i := 0; i < rv.Len(); i++ {
-				iv := rv.Index(i)
+				iv := rv.Index(i).Interface()
 				// конверсия вложенных массивов и структур не производится
-				rsi, err := TypeCastConvert(iv, nt, true, defval)
+				rsi, err := TypeCastConvert(iv, nt, true)
 				if err != nil {
-					return rv, err
+					return nil, err
 				}
 				sv := rs.Index(i)
 				if sv.CanSet() {
-					sv.Set(rsi)
+					sv.Set(reflect.ValueOf(rsi).Elem())
 				}
 				//rs = reflect.Append(rs, rsi)
 			}
-			return rs, nil
+			return rs.Interface(), nil
 		}
 	case reflect.Chan:
 		// возвращаем новый канал с типизированными значениями и прежним размером буфера
-		return reflect.MakeChan(reflect.ChanOf(reflect.BothDir, nt), rv.Cap()), nil
+		return reflect.MakeChan(reflect.ChanOf(reflect.BothDir, nt), rv.Cap()).Interface(), nil
 	case reflect.Map:
 		switch nt.Kind() {
 		case reflect.String:
 			// сериализуем в json
-			b, err := json.Marshal(rv.Interface())
+			b, err := json.Marshal(v)
 			if err != nil {
-				return rv, err
+				return nil, err
 			}
-			return reflect.ValueOf(string(b)), nil
+			return string(b), nil
 		case reflect.Struct:
 			// для приведения в структурные типы - можно использовать мапу для заполнения полей
 			rs := reflect.New(nt) // указатель на новую структуру
@@ -451,95 +455,102 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 					}
 					fv := rs.Elem().FieldByName(f.Name)
 					if setv.IsValid() && fv.IsValid() && fv.CanSet() {
-						if fv.Kind() != setv.Kind() && setv.Type().ConvertibleTo(fv.Type()) {
-							setv = setv.Convert(fv.Type())
+						if fv.Kind() != setv.Kind() {
+							if setv.Type().ConvertibleTo(fv.Type()) {
+								setv = setv.Convert(fv.Type())
+							} else {
+								return nil, fmt.Errorf("Поле структуры имеет другой тип")
+							}
 						}
 						fv.Set(setv)
 					}
 				}
 			}
-			return rs, nil
+			return rs.Interface(), nil
 		}
 	case reflect.String:
 		switch nt.Kind() {
 		case reflect.Float64:
 			if rv.Type().ConvertibleTo(nt) {
-				return rv.Convert(nt), nil
+				return rv.Convert(nt).Interface(), nil
 			}
-			f, err := strconv.ParseFloat(ToString(rv), 64)
+			f, err := strconv.ParseFloat(ToString(v), 64)
 			if err == nil {
-				return reflect.ValueOf(f), nil
+				return f, nil
 			}
 		case reflect.Array, reflect.Slice:
 			//парсим json из строки и пытаемся получить массив
 			var rm []interface{}
-			if err := json.Unmarshal([]byte(ToString(rv)), &rm); err != nil {
-				return rv, err
+			if err := json.Unmarshal([]byte(ToString(v)), &rm); err != nil {
+				return nil, err
 			}
-			return reflect.ValueOf(rm), nil
+			return rm, nil
 		case reflect.Map:
 			//парсим json из строки и пытаемся получить мапу
 			var rm map[string]interface{}
-			if err := json.Unmarshal([]byte(ToString(rv)), rm); err != nil {
-				return rv, err
+			if err := json.Unmarshal([]byte(ToString(v)), rm); err != nil {
+				return nil, err
 			}
-			return reflect.ValueOf(rm), nil
+			return rm, nil
 		case reflect.Struct:
 			//парсим json из строки и пытаемся получить указатель на структуру
 			rm := reflect.New(nt).Interface()
-			if err := json.Unmarshal([]byte(ToString(rv)), rm); err != nil {
-				return rv, err
+			if err := json.Unmarshal([]byte(ToString(v)), rm); err != nil {
+				return nil, err
 			}
-			return reflect.ValueOf(rm), nil
+			return rm, nil
 		case reflect.Int64:
 			if rv.Type().ConvertibleTo(nt) {
-				return rv.Convert(nt), nil
+				return rv.Convert(nt).Interface(), nil
 			}
-			i, err := strconv.ParseInt(ToString(rv), 10, 64)
+			i, err := strconv.ParseInt(ToString(v), 10, 64)
 			if err == nil {
-				return reflect.ValueOf(i), nil
+				return i, nil
 			}
-			f, err := strconv.ParseFloat(ToString(rv), 64)
+			f, err := strconv.ParseFloat(ToString(v), 64)
 			if err == nil {
-				return reflect.ValueOf(int64(f)), nil
+				return int64(f), nil
 			}
 		case reflect.Bool:
-			s := strings.ToLower(ToString(rv))
-			if s == "истина" {
-				return reflect.ValueOf(true), nil
+			s := strings.ToLower(ToString(v))
+			if s == "истина" || s == "true" {
+				return true, nil
+			}
+			if s == "ложь" || s == "false" {
+				return false, nil
 			}
 			if rv.Type().ConvertibleTo(reflect.TypeOf(1.0)) && rv.Convert(reflect.TypeOf(1.0)).Float() > 0.0 {
-				return reflect.ValueOf(true), nil
+				return true, nil
 			}
 			b, err := strconv.ParseBool(s)
 			if err == nil {
-				return reflect.ValueOf(b), nil
+				return b, nil
 			}
-			return reflect.ValueOf(false), nil
+			return false, nil
 		default:
 			if rv.Type().ConvertibleTo(nt) {
-				return rv.Convert(nt), nil
+				return rv.Convert(nt).Interface(), nil
 			}
 		}
 	case reflect.Bool:
 		switch nt.Kind() {
 		case reflect.String:
-			if ToBool(rv) {
-				return reflect.ValueOf("Истина"), nil
+			if ToBool(v) {
+				return "true", nil // для совместимости с другими платформами
 			} else {
-				return reflect.ValueOf("Ложь"), nil
+				return "false", nil // для совместимости с другими платформами
 			}
 		case reflect.Int64:
-			if ToBool(rv) {
-				return reflect.ValueOf(int64(1)), nil
+			if ToBool(v) {
+				return int64(1), nil
 			} else {
-				return reflect.ValueOf(int64(0)), nil
+				return int64(0), nil
 			}
 		case reflect.Float64:
-			if ToBool(rv) {
-				return reflect.ValueOf(float64(1.0)), nil
+			if ToBool(v) {
+				return float64(1.0), nil
 			} else {
-				return reflect.ValueOf(float64(0.0)), nil
+				return float64(0.0), nil
 			}
 		}
 	case reflect.Float32, reflect.Float64,
@@ -548,22 +559,22 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 		// числа конвертируются стандартно
 		switch nt.Kind() {
 		case reflect.Bool:
-			return reflect.ValueOf(ToBool(rv)), nil
+			return ToBool(v), nil
 		default:
 			if rv.Type().ConvertibleTo(nt) {
-				return rv.Convert(nt), nil
+				return rv.Convert(nt).Interface(), nil
 			}
 		}
 	case reflect.Struct:
-		if t, ok := rv.Interface().(time.Time); ok {
+		if t, ok := v.(time.Time); ok {
 			// это дата/время - конвертируем в секунды (целые или с плавающей запятой) или в формат RFC3339
 			switch nt.Kind() {
 			case reflect.String:
-				return reflect.ValueOf(t.Format(time.RFC3339)), nil
+				return t.Format(time.RFC3339), nil
 			case reflect.Int64:
-				return reflect.ValueOf(t.Unix()), nil
+				return t.Unix(), nil // до секунд
 			case reflect.Float64:
-				return reflect.ValueOf(float64(t.UnixNano()) / 1e9), nil
+				return float64(t.UnixNano()) / 1e9, nil // после запятой - наносекунды
 			}
 		} else {
 			switch nt.Kind() {
@@ -578,17 +589,17 @@ func TypeCastConvert(rv reflect.Value, nt reflect.Type, skipCollections bool, de
 						rs[f.Name] = fv.Interface()
 					}
 				}
-				return reflect.ValueOf(rs), nil
+				return rs, nil
 			case reflect.String:
 				// сериализуем структуру в json
-				b, err := json.Marshal(rv.Interface())
+				b, err := json.Marshal(v)
 				if err != nil {
-					return rv, err
+					return nil, err
 				}
-				return reflect.ValueOf(string(b)), nil
+				return string(b), nil
 
 			}
 		}
 	}
-	return defval, fmt.Errorf("Приведение типа недопустимо")
+	return nil, fmt.Errorf("Приведение типа недопустимо")
 }
