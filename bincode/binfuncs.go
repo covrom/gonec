@@ -35,17 +35,17 @@ func InvokeNumber(lit string) (interface{}, error) {
 }
 
 func ToString(v interface{}) string {
-	if s, ok := v.(string); ok {
-		return s
-	}
 	if v == nil {
 		return "Неопределено"
 	}
+	if s, ok := v.(string); ok {
+		return s
+	}
 	if b, ok := v.(bool); ok {
 		if b {
-			return "Истина"
+			return "true" // для совместимости с другими платформами
 		} else {
-			return "Ложь"
+			return "false" // для совместимости с другими платформами
 		}
 	}
 	return fmt.Sprint(v)

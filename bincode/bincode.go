@@ -790,10 +790,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			b.Val = false
 		case "null":
 			b.Val = ast.NullVar
-
 		default:
 			b.Val = nil
-
 		}
 		bins = appendBin(bins, &b, e)
 	case *ast.ArrayExpr:

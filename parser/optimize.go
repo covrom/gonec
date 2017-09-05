@@ -366,9 +366,9 @@ func ToString(v reflect.Value) string {
 	}
 	if v.Kind() == reflect.Bool {
 		if v.Bool() {
-			return "Истина"
+			return "true" // для совместимости
 		} else {
-			return "Ложь"
+			return "false" // для совместимости
 		}
 	}
 	return fmt.Sprint(v.Interface())
