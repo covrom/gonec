@@ -27,8 +27,6 @@ import (
 	"github.com/mattn/go-isatty"
 
 	_ "net/http/pprof"
-
-	gonec_core "github.com/covrom/gonec/builtins"
 )
 
 const version = "2.0a"
@@ -120,7 +118,6 @@ func main() {
 
 	env := envir.NewEnv()
 	env.DefineS("аргументызапуска", fsArgs)
-	gonec_core.LoadAllBuiltins(env)
 
 	for {
 		if interactive {
@@ -177,7 +174,7 @@ func main() {
 				log.Printf("--Выполняется код--\n%s\n", code)
 			}
 			//замер производительности
-			_, bins, err = parser.ParseSrc(code)
+			_, bins, err = bincode.ParseSrc(code)
 			tsParse = time.Since(tstart)
 
 			if *testingMode {
@@ -345,7 +342,6 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 			//создаем новое окружение
 			env = envir.NewEnv()
 			env.DefineS("аргументызапуска", fsArgs)
-			gonec_core.LoadAllBuiltins(env)
 
 			lockSessions.Lock()
 			sessions[sid] = env
@@ -420,7 +416,7 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 
 	//замер производительности
 	tstart := time.Now()
-	_, bins, err := parser.ParseSrc(sb)
+	_, bins, err := bincode.ParseSrc(sb)
 	tsParse := time.Since(tstart)
 
 	if *testingMode {

@@ -137,22 +137,6 @@ func ToFunc(f Func) reflect.Value {
 	return reflect.ValueOf(f)
 }
 
-// тип NULL
-
-type Nullable interface {
-	null()
-	String()
-}
-
-type NullType struct {
-	Nullable
-}
-
-func (x *NullType) null()          {}
-func (x *NullType) String() string { return "NULL" }
-
-var NullVar = NullType{}
-
 // коллекции вирт. машины
 
 type VMSlice []interface{}
@@ -269,4 +253,3 @@ func (v *VMRegs) PopContinue() (label int) {
 	v.ForBreaks = v.ForContinues[0 : l-1]
 	return
 }
-

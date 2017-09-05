@@ -2,9 +2,7 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"runtime"
@@ -13,9 +11,7 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/ast"
-	"github.com/covrom/gonec/bincode"
 	envir "github.com/covrom/gonec/env"
-	"github.com/covrom/gonec/parser"
 
 	gonec_encoding_json "github.com/covrom/gonec/builtins/encoding/json"
 	gonec_errors "github.com/covrom/gonec/builtins/errors"
@@ -217,45 +213,6 @@ func Import(env *envir.Env) *envir.Env {
 	env.DefineS("присвоенозначение", func(s string) bool {
 		_, err := env.Get(ast.UniqueNames.Set(s))
 		return err == nil
-	})
-
-	env.DefineS("загрузитьивыполнить", func(s string) interface{} {
-		body, err := ioutil.ReadFile(s)
-		if err != nil {
-			panic(err)
-		}
-		isGNX := strings.HasSuffix(strings.ToLower(s), ".gnx")
-		if isGNX {
-			bbuf := bytes.NewBuffer(body)
-			bins, err := bincode.ReadBinCode(bbuf)
-			if err != nil {
-				panic(err)
-			}
-			// env.Dump()
-			rv, err := bincode.Run(bins, env)
-			// env.Dump()
-			if err != nil {
-				panic(err)
-			}
-			return rv
-		} else {
-			_, bins, err := parser.ParseSrc(string(body))
-			if err != nil {
-				if pe, ok := err.(*parser.Error); ok {
-					pe.Filename = s
-					panic(pe)
-				}
-				panic(err)
-			}
-			// env.Dump()
-			rv, err := bincode.Run(bins, env)
-			// env.Dump()
-			if err != nil {
-				panic(err)
-			}
-			return rv
-		}
-		return nil
 	})
 
 	env.DefineS("паника", func(e interface{}) {

@@ -222,3 +222,19 @@ type NativeExpr struct {
 	ExprImpl
 	Value reflect.Value
 }
+
+// тип NULL
+
+type Nullable interface {
+	null()
+	String()
+}
+
+type NullType struct {
+	Nullable
+}
+
+func (x *NullType) null()          {}
+func (x *NullType) String() string { return "NULL" }
+
+var NullVar = NullType{}

@@ -789,7 +789,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		case "ложь":
 			b.Val = false
 		case "null":
-			b.Val = NullVar
+			b.Val = ast.NullVar
 
 		default:
 			b.Val = nil

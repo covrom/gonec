@@ -30,7 +30,7 @@ func TestRun(t *testing.T) {
 	
 	`
 	parser.EnableErrorVerbose()
-	_, stmts, err := parser.ParseSrc(script)
+	_, stmts, err := bincode.ParseSrc(script)
 	if err != nil {
 		log.Fatal(err)
 	}

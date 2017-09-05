@@ -1,4 +1,4 @@
-package parser
+package bincode
 
 import (
 	"testing"

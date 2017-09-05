@@ -385,15 +385,6 @@ func (e *Env) Dump() {
 	}
 }
 
-// Execute parses and runs source in current scope.
-// func (e *Env) Execute(src string) (reflect.Value, error) {
-// 	stmts, err := parser.ParseSrc(src)
-// 	if err != nil {
-// 		return NilValue, err
-// 	}
-// 	return Run(stmts, e)
-// }
-
 func (e *Env) Println(a ...interface{}) (n int, err error) {
 	// e.RLock()
 	// defer e.RUnlock()

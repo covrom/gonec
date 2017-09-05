@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/ast"
-	"github.com/covrom/gonec/bincode"
 )
 
 const (
@@ -55,12 +54,12 @@ var opName = map[string]int{
 	"из":                IN,
 	"иначе":             ELSE,
 	// "создать":           NEW,
-	"истина":            TRUE,
-	"ложь":              FALSE,
-	"неопределено":      NIL,
-	"модуль":            MODULE,
-	"попытка":           TRY,
-	"исключение":        CATCH,
+	"истина":       TRUE,
+	"ложь":         FALSE,
+	"неопределено": NIL,
+	"модуль":       MODULE,
+	"попытка":      TRY,
+	"исключение":   CATCH,
 	// "окончательно":      FINALLY,
 	"выбор":  SWITCH,
 	"когда":  CASE,
@@ -98,7 +97,7 @@ var opCanEqual = map[int]bool{
 	THROW:  true,
 	IF:     true,
 	// FOR:      true,
-	IN:       true,
+	IN: true,
 	// NEW:      true,
 	TRUE:     true,
 	FALSE:    true,
@@ -644,27 +643,4 @@ func Parse(s *Scanner) ([]ast.Stmt, error) {
 
 func EnableErrorVerbose() {
 	yyErrorVerbose = true
-}
-
-// ParserSrc provides way to parse the code from source.
-func ParseSrc(src string) ([]ast.Stmt, bincode.BinCode, error) {
-	// По умолчанию добавляем глобальный модуль "_" в начало, чтобы код без заголовка "модуль" мог успешно исполниться
-	// Если будет объявлен модуль в коде, он скроет данное объявление
-	src = "Модуль _\n"+src
-
-	scanner := &Scanner{
-		src: []rune(src),
-	}
-	prs, err := Parse(scanner)
-	if err != nil {
-		return prs, nil, err
-	}
-	// оптимизируем дерево AST
-	// свертка констант и нативные значения
-	prs = constFolding(prs)
-	// компиляция в бинарный код
-	lid := 0
-	bin := bincode.BinaryCode(prs, 0, &lid)
-
-	return prs, bin, err
 }

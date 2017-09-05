@@ -8,12 +8,11 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/ast"
-	"github.com/covrom/gonec/bincode"
 )
 
 // TODO: переделать на универсальную рефлексию перебора полей структур
 
-func constFolding(inast []ast.Stmt) []ast.Stmt {
+func ConstFolding(inast []ast.Stmt) []ast.Stmt {
 	for i, st := range inast {
 		switch s := st.(type) {
 		case *ast.ExprStmt:
@@ -31,22 +30,22 @@ func constFolding(inast []ast.Stmt) []ast.Stmt {
 			}
 		case *ast.IfStmt:
 			inast[i].(*ast.IfStmt).If = simplifyExprFolding(s.If)
-			inast[i].(*ast.IfStmt).Then = constFolding(s.Then)
-			inast[i].(*ast.IfStmt).Else = constFolding(s.Else)
-			inast[i].(*ast.IfStmt).ElseIf = constFolding(s.ElseIf)
+			inast[i].(*ast.IfStmt).Then = ConstFolding(s.Then)
+			inast[i].(*ast.IfStmt).Else = ConstFolding(s.Else)
+			inast[i].(*ast.IfStmt).ElseIf = ConstFolding(s.ElseIf)
 		case *ast.TryStmt:
-			inast[i].(*ast.TryStmt).Try = constFolding(s.Try)
-			inast[i].(*ast.TryStmt).Catch = constFolding(s.Catch)
+			inast[i].(*ast.TryStmt).Try = ConstFolding(s.Try)
+			inast[i].(*ast.TryStmt).Catch = ConstFolding(s.Catch)
 		case *ast.LoopStmt:
 			inast[i].(*ast.LoopStmt).Expr = simplifyExprFolding(s.Expr)
-			inast[i].(*ast.LoopStmt).Stmts = constFolding(s.Stmts)
+			inast[i].(*ast.LoopStmt).Stmts = ConstFolding(s.Stmts)
 		case *ast.ForStmt:
 			inast[i].(*ast.ForStmt).Value = simplifyExprFolding(s.Value)
-			inast[i].(*ast.ForStmt).Stmts = constFolding(s.Stmts)
+			inast[i].(*ast.ForStmt).Stmts = ConstFolding(s.Stmts)
 		case *ast.NumForStmt:
 			inast[i].(*ast.NumForStmt).Expr1 = simplifyExprFolding(s.Expr1)
 			inast[i].(*ast.NumForStmt).Expr2 = simplifyExprFolding(s.Expr2)
-			inast[i].(*ast.NumForStmt).Stmts = constFolding(s.Stmts)
+			inast[i].(*ast.NumForStmt).Stmts = ConstFolding(s.Stmts)
 		case *ast.ReturnStmt:
 			for i2, e2 := range s.Exprs {
 				inast[i].(*ast.ReturnStmt).Exprs[i2] = simplifyExprFolding(e2)
@@ -54,17 +53,17 @@ func constFolding(inast []ast.Stmt) []ast.Stmt {
 		case *ast.ThrowStmt:
 			inast[i].(*ast.ThrowStmt).Expr = simplifyExprFolding(s.Expr)
 		case *ast.ModuleStmt:
-			inast[i].(*ast.ModuleStmt).Stmts = constFolding(s.Stmts)
+			inast[i].(*ast.ModuleStmt).Stmts = ConstFolding(s.Stmts)
 		case *ast.SwitchStmt:
 			inast[i].(*ast.SwitchStmt).Expr = simplifyExprFolding(s.Expr)
-			inast[i].(*ast.SwitchStmt).Cases = constFolding(s.Cases)
+			inast[i].(*ast.SwitchStmt).Cases = ConstFolding(s.Cases)
 		case *ast.SelectStmt:
-			inast[i].(*ast.SelectStmt).Cases = constFolding(s.Cases)
+			inast[i].(*ast.SelectStmt).Cases = ConstFolding(s.Cases)
 		case *ast.CaseStmt:
 			inast[i].(*ast.CaseStmt).Expr = simplifyExprFolding(s.Expr)
-			inast[i].(*ast.CaseStmt).Stmts = constFolding(s.Stmts)
+			inast[i].(*ast.CaseStmt).Stmts = ConstFolding(s.Stmts)
 		case *ast.DefaultStmt:
-			inast[i].(*ast.DefaultStmt).Stmts = constFolding(s.Stmts)
+			inast[i].(*ast.DefaultStmt).Stmts = ConstFolding(s.Stmts)
 		}
 	}
 	return inast
@@ -224,7 +223,7 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		e.End = simplifyExprFolding(e.End)
 		return e
 	case *ast.FuncExpr:
-		e.Stmts = constFolding(e.Stmts)
+		e.Stmts = ConstFolding(e.Stmts)
 		return e
 	default:
 		// одиночные значения - преобразовываем в нативные
@@ -264,7 +263,7 @@ func InvokeConst(v string, defval reflect.Value) reflect.Value {
 	case "ложь":
 		return reflect.ValueOf(false)
 	case "null":
-		return reflect.ValueOf(bincode.NullVar)
+		return reflect.ValueOf(ast.NullVar)
 	}
 	return defval
 }
