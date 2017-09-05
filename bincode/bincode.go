@@ -19,12 +19,12 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
 		switch s := st.(type) {
 		case *ast.ExprStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
 		case *ast.IfStmt:
 			*lid++
 			lend := *lid
 			// Если
-			bins = append(bins, addBinExpr(s.If, reg, lid)...)
+			bins = append(bins, addBinExpr(s.If, reg, lid, true)...)
 			*lid++
 			lf := *lid
 			bins = appendBin(bins,
@@ -46,7 +46,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 			for _, elif := range s.ElseIf {
 				stmtif := elif.(*ast.IfStmt)
-				bins = append(bins, addBinExpr(stmtif.If, reg, lid)...)
+				bins = append(bins, addBinExpr(stmtif.If, reg, lid, true)...)
 				// если ложь, то перейдем на следующее условие
 				*lid++
 				li := *lid
@@ -113,7 +113,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 		case *ast.ForStmt:
 			// для каждого
-			bins = append(bins, addBinExpr(s.Value, reg, lid)...)
+			bins = append(bins, addBinExpr(s.Value, reg, lid, true)...)
 
 			*lid++
 			lend := *lid
@@ -176,8 +176,8 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			regto := reg + 2
 			regsub := reg + 3
 
-			bins = append(bins, addBinExpr(s.Expr1, regfrom, lid)...)
-			bins = append(bins, addBinExpr(s.Expr2, regto, lid)...)
+			bins = append(bins, addBinExpr(s.Expr1, regfrom, lid, true)...)
+			bins = append(bins, addBinExpr(s.Expr2, regto, lid, true)...)
 
 			*lid++
 			lend := *lid
@@ -248,7 +248,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: li,
 				}, s)
-			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
 			bins = appendBin(bins,
 				&BinJFALSE{
 					Reg:    reg,
@@ -292,7 +292,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			}
 			if len(s.Exprs) == 1 {
 				// одиночное значение в reg
-				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid)...)
+				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, true)...)
 			} else {
 				// создание слайса в reg
 				bins = appendBin(bins,
@@ -303,7 +303,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					}, s)
 
 				for i, ee := range s.Exprs {
-					bins = append(bins, addBinExpr(ee, reg+1, lid)...)
+					bins = append(bins, addBinExpr(ee, reg+1, lid, true)...)
 					bins = appendBin(bins,
 						&BinSETIDX{
 							Reg:    reg,
@@ -319,7 +319,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.ThrowStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
 			bins = appendBin(bins,
 				&BinTHROW{
 					Reg: reg,
@@ -337,7 +337,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					}, s)
 			}
 		case *ast.SwitchStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
 			// сравниваем с каждым case
 			*lid++
 			lend := *lid
@@ -350,7 +350,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				*lid++
 				li := *lid
 				case_stmt := ss.(*ast.CaseStmt)
-				bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid)...)
+				bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid, true)...)
 				bins = appendBin(bins,
 					&BinEQUAL{
 						Reg:  reg + 2,
@@ -410,7 +410,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					continue
 				}
 				// определяем значение справа
-				bins = append(bins, addBinExpr(e.Rhs, reg, lid)...)
+				bins = append(bins, addBinExpr(e.Rhs, reg, lid, true)...)
 				if e.Lhs == nil {
 					// слева нет значения - это временное чтение из канала без сохранения значения в переменной
 					bins = appendBin(bins,
@@ -428,7 +428,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						}, s)
 				} else {
 					// значение слева
-					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid)...)
+					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid, true)...)
 
 					// проверяем: слева канал?
 					bins = appendBin(bins,
@@ -544,7 +544,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// и если там массив, то по очереди элементы, начиная с 0-го
 			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 			if len(s.Rhss) == 1 && len(s.Lhss) > 1 {
-				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid)...)
+				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid, true)...)
 				// проверяем на массив
 				*lid++
 				lend := *lid
@@ -608,7 +608,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					// сначала все вычисляем в разные регистры, затем все присваиваем
 					// так обеспечиваем взаимный обмен
 					for i := range s.Lhss {
-						bins = append(bins, addBinExpr(s.Rhss[i], reg+i, lid)...)
+						bins = append(bins, addBinExpr(s.Rhss[i], reg+i, lid, true)...)
 					}
 					for i, e := range s.Lhss {
 						bins = append(bins, addBinLetExpr(e, reg+i, lid)...)
@@ -626,7 +626,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// если справа одно выражение - присваиваем его всем левым
 			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 			if len(s.Exprs) == 1 {
-				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid)...)
+				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, true)...)
 				for _, e := range s.Names {
 					bins = appendBin(bins,
 						&BinSET{
@@ -637,7 +637,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			} else {
 				if len(s.Exprs) == len(s.Names) {
 					for i, e := range s.Exprs {
-						bins = append(bins, addBinExpr(e, reg, lid)...)
+						bins = append(bins, addBinExpr(e, reg, lid, true)...)
 						bins = appendBin(bins,
 							&BinSET{
 								Reg: reg,
@@ -674,7 +674,7 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 
 	case *ast.MemberExpr:
-		bins = append(bins, addBinExpr(ee.Expr, reg+1, lid)...)
+		bins = append(bins, addBinExpr(ee.Expr, reg+1, lid, false)...)
 		bins = appendBin(bins,
 			&BinSETMEMBER{
 				Reg:    reg + 1,
@@ -685,8 +685,8 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 	case *ast.ItemExpr:
 		*lid++
 		lend := *lid
-		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
-		bins = append(bins, addBinExpr(ee.Index, reg+2, lid)...)
+		bins = append(bins, addBinExpr(ee.Value, reg+1, lid, false)...)
+		bins = append(bins, addBinExpr(ee.Index, reg+2, lid, false)...)
 		bins = appendBin(bins,
 			&BinSETITEM{
 				Reg:        reg + 1,
@@ -710,9 +710,9 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 	case *ast.SliceExpr:
 		*lid++
 		lend := *lid
-		bins = append(bins, addBinExpr(ee.Value, reg+1, lid)...)
-		bins = append(bins, addBinExpr(ee.Begin, reg+2, lid)...)
-		bins = append(bins, addBinExpr(ee.End, reg+3, lid)...)
+		bins = append(bins, addBinExpr(ee.Value, reg+1, lid, false)...)
+		bins = append(bins, addBinExpr(ee.Begin, reg+2, lid, false)...)
+		bins = append(bins, addBinExpr(ee.End, reg+3, lid, false)...)
 		bins = appendBin(bins,
 			&BinSETSLICE{
 				Reg:        reg + 1,
@@ -744,7 +744,8 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 	return
 }
 
-func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
+func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
+	//inStmt=true - признак запуска выражения как опреатора в блоке кода, иначе это подвыражение
 	if expr == nil {
 		bins = appendBin(bins,
 			&BinLOAD{
@@ -805,7 +806,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 
 		for i, ee := range e.Exprs {
 			// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-			bins = append(bins, addBinExpr(ee, reg+1, lid)...)
+			bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
 			bins = appendBin(bins,
 				&BinSETIDX{
 					Reg:    reg,
@@ -822,7 +823,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 
 		for k, ee := range e.MapExpr {
-			bins = append(bins, addBinExpr(ee, reg+1, lid)...)
+			bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
 			bins = appendBin(bins,
 				&BinSETKEY{
 					Reg:    reg,
@@ -837,7 +838,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				Id:  e.Id,
 			}, e)
 	case *ast.UnaryExpr:
-		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
 		bins = appendBin(bins,
 			&BinUNARY{
 				Reg: reg,
@@ -852,7 +853,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					Name: ee.Id,
 				}, e)
 		case *ast.MemberExpr:
-			bins = append(bins, addBinExpr(ee.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(ee.Expr, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinADDRMBR{
 					Reg:  reg,
@@ -873,7 +874,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					Name: ee.Id,
 				}, e)
 		case *ast.MemberExpr:
-			bins = append(bins, addBinExpr(ee.Expr, reg, lid)...)
+			bins = append(bins, addBinExpr(ee.Expr, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinUNREFMBR{
 					Reg:  reg,
@@ -886,11 +887,22 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				}, e)
 		}
 	case *ast.ParenExpr:
-		bins = append(bins, addBinExpr(e.SubExpr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.SubExpr, reg, lid, false)...)
 	case *ast.BinOpExpr:
 		oper := OperMap[e.Operator]
+		// если это равенство в контексте исполнения блока кода, то это присваивание, а не вычисление выражения
+		if inStmt && oper == EQL {
+			bins = append(bins, BinaryCode([]ast.Stmt{
+				&ast.LetsStmt{
+					Lhss:     []ast.Expr{e.Lhs},
+					Operator: "=",
+					Rhss:     []ast.Expr{e.Rhs},
+				},
+			}, reg, lid)...)
+			return
+		}
 		// сначала вычисляем левую часть
-		bins = append(bins, addBinExpr(e.Lhs, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Lhs, reg, lid, false)...)
 		switch oper {
 		case LOR:
 			*lid++
@@ -901,7 +913,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					Reg:    reg,
 					JumpTo: lab,
 				}, e)
-			bins = append(bins, addBinExpr(e.Rhs, reg, lid)...)
+			bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinLABEL{
 					Label: lab,
@@ -915,13 +927,13 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					Reg:    reg,
 					JumpTo: lab,
 				}, e)
-			bins = append(bins, addBinExpr(e.Rhs, reg, lid)...)
+			bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinLABEL{
 					Label: lab,
 				}, e)
 		default:
-			bins = append(bins, addBinExpr(e.Rhs, reg+1, lid)...)
+			bins = append(bins, addBinExpr(e.Rhs, reg+1, lid, false)...)
 			bins = appendBin(bins,
 				&BinOPER{
 					RegL: reg, // сюда же помещается результат
@@ -930,7 +942,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				}, e)
 		}
 	case *ast.TernaryOpExpr:
-		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
 		*lid++
 		lab := *lid
 		bins = appendBin(bins,
@@ -939,7 +951,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				JumpTo: lab,
 			}, e)
 		// если истина - берем левое выражение
-		bins = append(bins, addBinExpr(e.Lhs, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Lhs, reg, lid, false)...)
 		// прыгаем в конец
 		*lid++
 		lend := *lid
@@ -953,7 +965,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			&BinLABEL{
 				Label: lab,
 			}, e)
-		bins = append(bins, addBinExpr(e.Rhs, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
 		bins = appendBin(bins,
 			&BinLABEL{
 				Label: lend,
@@ -976,7 +988,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 
 		for i, ee := range e.SubExprs {
 			// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-			bins = append(bins, addBinExpr(ee, reg+1+regoff, lid)...)
+			bins = append(bins, addBinExpr(ee, reg+1+regoff, lid, false)...)
 			bins = appendBin(bins,
 				&BinSETIDX{
 					Reg:    reg + regoff,
@@ -997,18 +1009,18 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 
 	case *ast.AnonCallExpr:
 		// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
-		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
 		// далее аргументы, как при вызове обычной функции
 		bins = append(bins, addBinExpr(&ast.CallExpr{
 			Name:     0,
 			SubExprs: e.SubExprs,
 			VarArg:   e.VarArg,
 			Go:       e.Go,
-		}, reg, lid)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
+		}, reg, lid, false)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
 
 	case *ast.MemberExpr:
 		// здесь идет только вычисление значения свойства
-		bins = append(bins, addBinExpr(e.Expr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
 		bins = appendBin(bins,
 			&BinGETMEMBER{
 				Name: e.Name,
@@ -1016,8 +1028,8 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 	case *ast.ItemExpr:
 		// только вычисление значения по индексу
-		bins = append(bins, addBinExpr(e.Value, reg, lid)...)
-		bins = append(bins, addBinExpr(e.Index, reg+1, lid)...)
+		bins = append(bins, addBinExpr(e.Value, reg, lid, false)...)
+		bins = append(bins, addBinExpr(e.Index, reg+1, lid, false)...)
 		bins = appendBin(bins,
 			&BinGETIDX{
 				Reg:      reg,
@@ -1025,9 +1037,9 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 			}, e)
 	case *ast.SliceExpr:
 		// только вычисление субслайса
-		bins = append(bins, addBinExpr(e.Value, reg, lid)...)
-		bins = append(bins, addBinExpr(e.Begin, reg+1, lid)...)
-		bins = append(bins, addBinExpr(e.End, reg+2, lid)...)
+		bins = append(bins, addBinExpr(e.Value, reg, lid, false)...)
+		bins = append(bins, addBinExpr(e.Begin, reg+1, lid, false)...)
+		bins = append(bins, addBinExpr(e.End, reg+2, lid, false)...)
 		bins = appendBin(bins,
 			&BinGETSUBSLICE{
 				Reg:      reg,
@@ -1058,7 +1070,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 		// 	}, e)
 
 	case *ast.TypeCast:
-		bins = append(bins, addBinExpr(e.CastExpr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.CastExpr, reg, lid, false)...)
 		if e.TypeExpr == nil {
 			bins = appendBin(bins,
 				&BinLOAD{
@@ -1067,7 +1079,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					IsId: true,
 				}, e)
 		} else {
-			bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid)...)
+			bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid, false)...)
 			bins = appendBin(bins,
 				&BinSETNAME{
 					Reg: reg + 1,
@@ -1087,7 +1099,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					IsId: true,
 				}, e)
 		} else {
-			bins = append(bins, addBinExpr(e.TypeExpr, reg, lid)...)
+			bins = append(bins, addBinExpr(e.TypeExpr, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinSETNAME{
 					Reg: reg,
@@ -1105,14 +1117,14 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					Val: int(0),
 				}, e)
 		} else {
-			bins = append(bins, addBinExpr(e.SizeExpr, reg, lid)...)
+			bins = append(bins, addBinExpr(e.SizeExpr, reg, lid, false)...)
 		}
 		bins = appendBin(bins,
 			&BinMAKECHAN{
 				Reg: reg,
 			}, e)
 	case *ast.MakeArrayExpr:
-		bins = append(bins, addBinExpr(e.LenExpr, reg, lid)...)
+		bins = append(bins, addBinExpr(e.LenExpr, reg, lid, false)...)
 		if e.CapExpr == nil {
 			bins = appendBin(bins,
 				&BinMV{
@@ -1120,7 +1132,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					RegTo:   reg + 1,
 				}, e)
 		} else {
-			bins = append(bins, addBinExpr(e.CapExpr, reg+1, lid)...)
+			bins = append(bins, addBinExpr(e.CapExpr, reg+1, lid, false)...)
 		}
 		bins = appendBin(bins,
 			&BinMAKEARR{
@@ -1130,7 +1142,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 	case *ast.ChanExpr:
 
 		// определяем значение справа
-		bins = append(bins, addBinExpr(e.Rhs, reg+1, lid)...)
+		bins = append(bins, addBinExpr(e.Rhs, reg+1, lid, false)...)
 		if e.Lhs == nil {
 			// слева нет значения - это временное чтение из канала без сохранения значения в переменной
 			bins = appendBin(bins,
@@ -1140,7 +1152,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 				}, e)
 		} else {
 			// значение слева
-			bins = append(bins, addBinExpr(e.Lhs, reg+2, lid)...)
+			bins = append(bins, addBinExpr(e.Lhs, reg+2, lid, false)...)
 			bins = appendBin(bins,
 				&BinMV{
 					RegFrom: reg + 2,
@@ -1236,7 +1248,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int) (bins BinCode) {
 					}, alhs)
 			}
 		default:
-			bins = append(bins, addBinExpr(&ast.BinOpExpr{Lhs: e.Lhs, Operator: e.Operator[0:1], Rhs: e.Rhs}, reg, lid)...)
+			bins = append(bins, addBinExpr(&ast.BinOpExpr{Lhs: e.Lhs, Operator: e.Operator[0:1], Rhs: e.Rhs}, reg, lid, false)...)
 			bins = append(bins, addBinLetExpr(e.Lhs, reg, lid)...)
 		}
 

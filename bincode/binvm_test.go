@@ -1,6 +1,7 @@
 package bincode
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -19,7 +20,7 @@ func TestParseSrc(t *testing.T) {
 				src: `
 				а = Неопределено
 				сообщить(а=123)
-				а="узцкещпоцз"[1:]
+				//а="узцкещпоцз"[1:]
 					`,
 			},
 			wantErr: false,
@@ -27,7 +28,8 @@ func TestParseSrc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := ParseSrc(tt.args.src)
+			_, bins, err := ParseSrc(tt.args.src)
+			fmt.Println(bins)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseSrc() error = %v, wantErr %v", err, tt.wantErr)
 				return

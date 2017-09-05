@@ -203,14 +203,14 @@ retry:
 				lit = "=="
 			default:
 				s.back()
-				if s.canequal {
+				// if s.canequal {
 					tok = EQEQ
 					lit = "=="
-				} else {
-					tok = int(ch)
-					lit = string(ch)
-					s.canequal = true
-				}
+				// } else {
+				// 	tok = int(ch)
+				// 	lit = string(ch)
+				// 	s.canequal = true
+				// }
 			}
 		case '+':
 			s.next()
