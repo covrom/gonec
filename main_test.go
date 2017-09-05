@@ -5,14 +5,12 @@ import (
 	"testing"
 
 	"github.com/covrom/gonec/bincode"
-	gonec_core "github.com/covrom/gonec/builtins"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 )
 
 func TestRun(t *testing.T) {
 	env := envir.NewEnv()
-	gonec_core.LoadAllBuiltins(env)
 
 	script := `
 	Модуль ААА
