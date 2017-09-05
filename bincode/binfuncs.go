@@ -377,8 +377,6 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 	}
 }
 
-// TODO: переделать с учетом здесь новых функций ToInt, ToBool и т.п., убрать рефлексию
-
 func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (interface{}, error) {
 	rv := reflect.ValueOf(v)
 	rvkind := rv.Kind()
