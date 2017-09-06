@@ -1171,7 +1171,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 			bins = appendBin(bins,
 				&BinLOAD{
 					Reg: reg,
-					Val: int(0),
+					Val: int64(0),
 				}, e)
 		} else {
 			bins = append(bins, addBinExpr(e.SizeExpr, reg, lid, false)...)
