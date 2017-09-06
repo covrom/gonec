@@ -84,9 +84,9 @@ type ParenExpr struct {
 // BinOpExpr provide binary operator expression.
 type BinOpExpr struct {
 	ExprImpl
-	Lhs      Expr
+	Lhss      []Expr
 	Operator string
-	Rhs      Expr
+	Rhss      []Expr
 }
 
 type TernaryOpExpr struct {

@@ -74,16 +74,24 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 	switch e := expr.(type) {
 	case *ast.BinOpExpr:
 		// упрощаем подвыражения
-		e.Lhs = simplifyExprFolding(e.Lhs)
-		e.Rhs = simplifyExprFolding(e.Rhs)
-
-		r1 := exprAsValue(e.Lhs)
-		r2 := exprAsValue(e.Rhs)
-		if r1.IsValid() && r2.IsValid() {
-			r, err := EvalBinOp(e.Operator, r1, r2, none)
-			if err == nil && r.IsValid() {
-				// log.Println("Set native value!")
-				return &ast.NativeExpr{Value: r}
+		for i2, e2 := range e.Lhss {
+			e.Lhss[i2] = simplifyExprFolding(e2)
+		}
+		for i2, e2 := range e.Rhss {
+			e.Rhss[i2] = simplifyExprFolding(e2)
+		}
+		// e.Lhs = simplifyExprFolding(e.Lhs)
+		// e.Rhs = simplifyExprFolding(e.Rhs)
+		// если с обеих сторон по одному выражению, и они вычисляемые, то вычисляем результат операции
+		if len(e.Lhss) == 1 && len(e.Rhss) == 1 {
+			r1 := exprAsValue(e.Lhss[0])
+			r2 := exprAsValue(e.Rhss[0])
+			if r1.IsValid() && r2.IsValid() {
+				r, err := EvalBinOp(e.Operator, r1, r2, none)
+				if err == nil && r.IsValid() {
+					// log.Println("Set native value!")
+					return &ast.NativeExpr{Value: r}
+				}
 			}
 		}
 		return e

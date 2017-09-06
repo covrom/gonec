@@ -944,15 +944,22 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 		if inStmt && oper == EQL {
 			bins = append(bins, BinaryCode([]ast.Stmt{
 				&ast.LetsStmt{
-					Lhss:     []ast.Expr{e.Lhs},
+					Lhss:     e.Lhss,
 					Operator: "=",
-					Rhss:     []ast.Expr{e.Rhs},
+					Rhss:     e.Rhss,
 				},
 			}, reg, lid)...)
 			return
 		}
+		if len(e.Lhss) != 1 || len(e.Rhss) != 1 {
+			bins = appendBin(bins,
+				&BinERROR{
+					Error: "С каждой стороны операции может быть только одно выражение",
+				}, e)
+			return
+		}
 		// сначала вычисляем левую часть
-		bins = append(bins, addBinExpr(e.Lhs, reg, lid, false)...)
+		bins = append(bins, addBinExpr(e.Lhss[0], reg, lid, false)...)
 		switch oper {
 		case LOR:
 			*lid++
@@ -963,7 +970,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 					Reg:    reg,
 					JumpTo: lab,
 				}, e)
-			bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
+			bins = append(bins, addBinExpr(e.Rhss[0], reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinLABEL{
 					Label: lab,
@@ -977,13 +984,13 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 					Reg:    reg,
 					JumpTo: lab,
 				}, e)
-			bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
+			bins = append(bins, addBinExpr(e.Rhss[0], reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinLABEL{
 					Label: lab,
 				}, e)
 		default:
-			bins = append(bins, addBinExpr(e.Rhs, reg+1, lid, false)...)
+			bins = append(bins, addBinExpr(e.Rhss[0], reg+1, lid, false)...)
 			bins = appendBin(bins,
 				&BinOPER{
 					RegL: reg, // сюда же помещается результат
@@ -1298,7 +1305,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 					}, alhs)
 			}
 		default:
-			bins = append(bins, addBinExpr(&ast.BinOpExpr{Lhs: e.Lhs, Operator: e.Operator[0:1], Rhs: e.Rhs}, reg, lid, false)...)
+			bins = append(bins, addBinExpr(&ast.BinOpExpr{Lhss: []ast.Expr{e.Lhs}, Operator: e.Operator[0:1], Rhss: []ast.Expr{e.Rhs}}, reg, lid, false)...)
 			bins = append(bins, addBinLetExpr(e.Lhs, reg, lid)...)
 		}
 

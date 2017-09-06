@@ -176,7 +176,8 @@ func init() {
 	gob.Register(&BinGOSHED{})
 	gob.Register(&BinINC{})
 	gob.Register(&BinDEC{})
-
+	gob.Register(&BinFREE{})
+	
 }
 
 //////////////////////
