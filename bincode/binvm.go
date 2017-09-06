@@ -534,19 +534,19 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 			switch v.Kind() {
 			case reflect.Array, reflect.Slice:
-				rv, err := SliceAt(v, rb, re, envir.NilValue)
+				rv, err := SliceAt(v, rb, re)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
 				}
-				regs.Set(s.Reg, rv.Interface())
+				regs.Set(s.Reg, rv)
 			case reflect.String:
-				rv, err := StringAt(v, rb, re, envir.NilValue)
+				rv, err := StringAt(v, rb, re)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
 				}
-				regs.Set(s.Reg, rv.Interface())
+				regs.Set(s.Reg, rv)
 			default:
 				catcherr = NewStringError(stmt, "Неверная операция")
 				break

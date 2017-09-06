@@ -244,20 +244,20 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
 	return
 }
 
-func SliceAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
+func SliceAt(v, rb, re reflect.Value) (interface{}, error) {
 
 	vlen := v.Len()
 
 	ii, ij, err := LeftRightBounds(rb, re, vlen)
 	if err != nil {
-		return defval, err
+		return nil, err
 	}
 
 	if ij < ii {
-		return defval, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
+		return nil, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
 	}
 
-	return v.Slice(ii, ij), nil
+	return v.Slice(ii, ij).Interface(), nil
 }
 
 func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, err error) {
@@ -278,14 +278,14 @@ func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, 
 	return r, ii, ij, nil
 }
 
-func StringAt(v, rb, re, defval reflect.Value) (reflect.Value, error) {
+func StringAt(v, rb, re reflect.Value) (interface{}, error) {
 
 	r, ii, ij, err := StringToRuneSliceAt(v, rb, re)
 	if err != nil {
-		return defval, err
+		return nil, err
 	}
 
-	return reflect.ValueOf(string(r[ii:ij])), nil
+	return string(r[ii:ij]), nil
 }
 
 func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
