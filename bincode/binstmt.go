@@ -926,3 +926,13 @@ type BinDEC struct {
 func (v BinDEC) String() string {
 	return fmt.Sprintf("DEC r%d", v.Reg)
 }
+
+type BinFREE struct {
+	BinStmtImpl
+
+	Reg int
+}
+
+func (v BinFREE) String() string {
+	return fmt.Sprintf("FREE FROM r%d", v.Reg)
+}

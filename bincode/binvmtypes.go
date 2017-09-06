@@ -186,6 +186,14 @@ func (v *VMRegs) Set(reg int, val interface{}) {
 	}
 }
 
+func (v *VMRegs) FreeFromReg(reg int) {
+	// освобождаем память, начиная с reg, для сборщика мусора
+	// v.Reg = v.Reg[:reg]
+	for i := reg; i < len(v.Reg); i++ {
+		v.Reg[i] = nil
+	}
+}
+
 func (v *VMRegs) PushTry(reg, label int) {
 	v.TryRegErr = append(v.TryRegErr, reg)
 	v.TryLabel = append(v.TryLabel, label)

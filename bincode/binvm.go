@@ -1085,6 +1085,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGOSHED:
 			runtime.Gosched()
+			
+		case *BinFREE:
+			regs.FreeFromReg(s.Reg)
 
 		default:
 			return nil, NewStringError(stmt, "Неизвестная инструкция")

@@ -74,6 +74,12 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: lend,
 				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
+				}, s)
+
 		case *ast.TryStmt:
 			*lid++
 			lend := *lid
@@ -109,6 +115,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			bins = appendBin(bins,
 				&BinPOPTRY{
 					CatchLabel: li,
+				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
 				}, s)
 
 		case *ast.ForStmt:
@@ -168,6 +179,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			bins = appendBin(bins,
 				&BinPOPFOR{
 					ContinueLabel: li,
+				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
 				}, s)
 
 		case *ast.NumForStmt:
@@ -231,6 +247,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinPOPFOR{
 					ContinueLabel: li,
 				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
+				}, s)
 
 		case *ast.LoopStmt:
 			*lid++
@@ -273,6 +294,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinPOPFOR{
 					ContinueLabel: li,
 				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
+				}, s)
 
 		case *ast.BreakStmt:
 			bins = appendBin(bins,
@@ -313,6 +339,10 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}
 			}
 			// в reg имеем значение или структуру возврата
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
+				}, s)
 			bins = appendBin(bins,
 				&BinRET{
 					Reg: reg,
@@ -380,6 +410,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			bins = appendBin(bins,
 				&BinLABEL{
 					Label: lend,
+				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
 				}, s)
 
 		case *ast.SelectStmt:
@@ -538,6 +573,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: lend,
 				}, s)
+			// освобождаем память
+			bins = appendBin(bins,
+				&BinFREE{
+					Reg: reg + 1,
+				}, s)
 
 		case *ast.LetsStmt:
 			// если справа одно выражение - присваиваем его всем левым
@@ -621,6 +661,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						}, s)
 				}
 			}
+			// освобождаем память
+			// bins = appendBin(bins,
+			// 	&BinFREE{
+			// 		Reg: reg + 1,
+			// 	}, s)
 
 		case *ast.VarStmt:
 			// если справа одно выражение - присваиваем его всем левым
@@ -652,6 +697,11 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						}, s)
 				}
 			}
+			// освобождаем память
+			// bins = appendBin(bins,
+			// 	&BinFREE{
+			// 		Reg: reg + 1,
+			// 	}, s)
 
 		}
 	}
