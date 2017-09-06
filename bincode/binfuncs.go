@@ -422,7 +422,7 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 				}
 				sv := rs.Index(i)
 				if sv.CanSet() {
-					sv.Set(reflect.ValueOf(rsi).Elem())
+					sv.Set(reflect.ValueOf(rsi))
 				}
 				//rs = reflect.Append(rs, rsi)
 			}
