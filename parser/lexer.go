@@ -45,7 +45,7 @@ type Scanner struct {
 var opName = map[string]int{
 	"функция":           FUNC,
 	"возврат":           RETURN,
-	"перем":             VAR,
+	// "перем":             VAR,
 	"вызватьисключение": THROW,
 	"если":              IF,
 	"для":               FOR,

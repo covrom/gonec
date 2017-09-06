@@ -51,7 +51,7 @@ import (
 	opt_terms              ast.Token
 }
 
-%token<tok> IDENT NUMBER STRING ARRAY VARARG FUNC RETURN VAR THROW IF ELSE FOR IN EQEQ NEQ GE LE OROR ANDAND TRUE FALSE NIL MODULE TRY CATCH FINALLY PLUSEQ MINUSEQ MULEQ DIVEQ ANDEQ OREQ BREAK CONTINUE PLUSPLUS MINUSMINUS POW SHIFTLEFT SHIFTRIGHT SWITCH CASE DEFAULT GO CHAN MAKE OPCHAN ARRAYLIT NULL EACH TO ELSIF WHILE TERNARY TYPECAST
+%token<tok> IDENT NUMBER STRING ARRAY VARARG FUNC RETURN THROW IF ELSE FOR IN EQEQ NEQ GE LE OROR ANDAND TRUE FALSE NIL MODULE TRY CATCH FINALLY PLUSEQ MINUSEQ MULEQ DIVEQ ANDEQ OREQ BREAK CONTINUE PLUSPLUS MINUSMINUS POW SHIFTLEFT SHIFTRIGHT SWITCH CASE DEFAULT GO CHAN MAKE OPCHAN ARRAYLIT NULL EACH TO ELSIF WHILE TERNARY TYPECAST
 
 %right '='
 %right '?' ':'
@@ -123,22 +123,7 @@ stmts :
 	}
 
 stmt :
-	VAR expr_idents '=' expr_many
-	{
-		$$ = &ast.VarStmt{Names: $2, Exprs: $4}
-		$$.SetPosition($1.Position())
-	}
-	VAR expr_idents EQEQ expr_many
-	{
-		$$ = &ast.VarStmt{Names: $2, Exprs: $4}
-		$$.SetPosition($1.Position())
-	}
-	| VAR expr_idents
-	{
-		$$ = &ast.VarStmt{Names: $2, Exprs: nil}
-		$$.SetPosition($1.Position())
-	}
-	| expr '=' expr
+	expr '=' expr
 	{
 		$$ = &ast.LetsStmt{Lhss: []ast.Expr{$1}, Operator: "=", Rhss: []ast.Expr{$3}}
 	}
