@@ -31,6 +31,8 @@ type Env struct {
 	stdout    io.Writer
 	sid       string
 	goRunned  bool
+	lastid    int
+	lastval   reflect.Value
 }
 
 // NewEnv creates new global scope.
@@ -45,6 +47,7 @@ func NewEnv() *Env {
 		interrupt: &b,
 		stdout:    os.Stdout,
 		goRunned:  false,
+		lastid:    -1,
 	}
 	return m
 }
@@ -60,6 +63,7 @@ func (e *Env) NewEnv() *Env {
 				interrupt: e.interrupt,
 				stdout:    e.stdout,
 				goRunned:  false,
+				lastid:    -1,
 			}
 
 		}
@@ -76,6 +80,7 @@ func (e *Env) NewSubEnv() *Env {
 		interrupt: e.interrupt,
 		stdout:    e.stdout,
 		goRunned:  false,
+		lastid:    -1,
 	}
 }
 
@@ -119,6 +124,7 @@ func (e *Env) NewPackage(n string) *Env {
 		interrupt: e.interrupt,
 		stdout:    e.stdout,
 		goRunned:  false,
+		lastid:    -1,
 	}
 }
 
@@ -228,6 +234,10 @@ func (e *Env) Get(k int) (reflect.Value, error) {
 			ee.RLock()
 			defer ee.RUnlock()
 		}
+		if e.lastid == k {
+			// это именно здесь, т.к. нужно учесть блокировку
+			return e.lastval, nil
+		}
 		if v, ok := ee.env[k]; ok {
 			return v, nil
 		}
@@ -251,6 +261,8 @@ func (e *Env) Set(k int, v interface{}) error {
 		}
 		if _, ok := ee.env[k]; ok {
 			ee.env[k] = val
+			e.lastid = k
+			e.lastval = val
 			return nil
 		}
 	}
@@ -346,6 +358,9 @@ func (e *Env) Define(k int, v interface{}) error {
 		e.Lock()
 	}
 	e.env[k] = val
+	e.lastid = k
+	e.lastval = val
+
 	if e.goRunned {
 		e.Unlock()
 	}

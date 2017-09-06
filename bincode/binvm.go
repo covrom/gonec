@@ -94,8 +94,11 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 	goschedidx := 0
 
-	var catcherr error
-	var idx int
+	var (
+		catcherr error
+		idx int
+	)
+	
 	for idx < len(stmts) {
 		goschedidx++
 		if goschedidx == 1000 {
