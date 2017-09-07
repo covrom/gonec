@@ -207,6 +207,9 @@ func Import(env *envir.Env) *envir.Env {
 	})
 
 	env.DefineS("типзнч", func(v interface{}) string {
+		if v == nil {
+			return "Неопределено"
+		}
 		return ast.UniqueNames.Get(env.TypeName(reflect.TypeOf(v)))
 	})
 
