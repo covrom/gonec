@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"reflect"
 	"runtime"
 	"strings"
@@ -22,7 +21,21 @@ func Interrupt(env *envir.Env) {
 }
 
 // ParserSrc provides way to parse the code from source.
-func ParseSrc(src string) ([]ast.Stmt, BinCode, error) {
+func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
+	defer func() {
+		// если это не паника из кода языка
+		// if os.Getenv("GONEC_DEBUG") == "" {
+		// обрабатываем панику, которая могла возникнуть в вызванной функции
+		if ex := recover(); ex != nil {
+			if e, ok := ex.(error); ok {
+				err = e
+			} else {
+				err = errors.New(fmt.Sprint(ex))
+			}
+		}
+		// }
+	}()
+
 	// По умолчанию добавляем глобальный модуль "_" в начало, чтобы код без заголовка "модуль" мог успешно исполниться
 	// Если будет объявлен модуль в коде, он скроет данное объявление
 	src = "Модуль _\n" + src
@@ -30,7 +43,7 @@ func ParseSrc(src string) ([]ast.Stmt, BinCode, error) {
 	scanner := &parser.Scanner{}
 	scanner.Init(src)
 
-	prs, err := parser.Parse(scanner)
+	prs, err = parser.Parse(scanner)
 	if err != nil {
 		return prs, nil, err
 	}
@@ -39,7 +52,7 @@ func ParseSrc(src string) ([]ast.Stmt, BinCode, error) {
 	prs = parser.ConstFolding(prs)
 	// компиляция в бинарный код
 	lid := 0
-	bin := BinaryCode(prs, 0, &lid)
+	bin = BinaryCode(prs, 0, &lid)
 
 	return prs, bin, err
 }
@@ -96,9 +109,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 	var (
 		catcherr error
-		idx int
+		idx      int
 	)
-	
+
 	for idx < len(stmts) {
 		goschedidx++
 		if goschedidx == 1000 {
@@ -696,16 +709,16 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			fnc := func() (ret interface{}, err error) {
 				defer func() {
 					// если не было прерывания Interrupt()
-					if os.Getenv("GONEC_DEBUG") == "" {
-						// обрабатываем панику, которая могла возникнуть в вызванной функции
-						if ex := recover(); ex != nil {
-							if e, ok := ex.(error); ok {
-								err = e
-							} else {
-								err = errors.New(fmt.Sprint(ex))
-							}
+					// if os.Getenv("GONEC_DEBUG") == "" {
+					// обрабатываем панику, которая могла возникнуть в вызванной функции
+					if ex := recover(); ex != nil {
+						if e, ok := ex.(error); ok {
+							err = e
+						} else {
+							err = errors.New(fmt.Sprint(ex))
 						}
 					}
+					// }
 				}()
 				// if f.Kind() == reflect.Interface {
 				// 	f = f.Elem()
@@ -1088,7 +1101,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGOSHED:
 			runtime.Gosched()
-			
+
 		case *BinFREE:
 			regs.FreeFromReg(s.Reg)
 

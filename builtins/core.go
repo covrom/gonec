@@ -219,7 +219,7 @@ func Import(env *envir.Env) *envir.Env {
 	})
 
 	env.DefineS("паника", func(e interface{}) {
-		os.Setenv("GONEC_DEBUG", "1")
+		// os.Setenv("GONEC_DEBUG", "1")
 		panic(e)
 	})
 
