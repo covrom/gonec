@@ -788,7 +788,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 			&BinLOAD{
 				Reg: reg,
 				Val: nil,
-			}, &ast.NativeExpr{Value: env.NilValue})
+			}, &ast.NativeExpr{Value: env.NilValue}) // т.к. expr == nil, то у него нет Pos
 		return
 	}
 	switch e := expr.(type) {
