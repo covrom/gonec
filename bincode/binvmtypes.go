@@ -124,6 +124,11 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("[%d:%d] %s", e.Pos.Line-1, e.Pos.Column, e.Message)
 }
 
+func (e *Error) String() string {
+	// учитываем вставку модуля _ по умолчанию - вычитаем 1 из номера строки
+	return e.Message
+}
+
 type CatchFunc func() string
 
 // Функции такого типа создаются на языке Гонец,

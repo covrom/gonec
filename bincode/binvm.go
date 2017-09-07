@@ -58,6 +58,20 @@ func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
 }
 
 func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
+	defer func() {
+		// если это не паника из кода языка
+		// if os.Getenv("GONEC_DEBUG") == "" {
+		// обрабатываем панику, которая могла возникнуть в вызванной функции
+		if ex := recover(); ex != nil {
+			if e, ok := ex.(error); ok {
+				reterr = e
+			} else {
+				reterr = errors.New(fmt.Sprint(ex))
+			}
+		}
+		// }
+	}()
+
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 	regs := NewVMRegs(stmts)
 
