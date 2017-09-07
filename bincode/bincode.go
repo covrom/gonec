@@ -438,11 +438,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				case_stmt := ss.(*ast.CaseStmt)
 				e, ok := case_stmt.Expr.(*ast.ChanExpr)
 				if !ok {
-					bins = appendBin(bins,
-						&BinERROR{
-							Error: "При выборе вариантов из каналов допустимы только выражения с каналами",
-						}, case_stmt)
-					continue
+					panic(NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
 				}
 				// определяем значение справа
 				bins = append(bins, addBinExpr(e.Rhs, reg, lid, true)...)
@@ -655,10 +651,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					}
 				} else {
 					// ошибка
-					bins = appendBin(bins,
-						&BinERROR{
-							Error: "Количество переменных и значений должно совпадать или значение должно быть одно",
-						}, s)
+					panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
 				}
 			}
 			// освобождаем память
@@ -691,10 +684,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					}
 				} else {
 					// ошибка
-					bins = appendBin(bins,
-						&BinERROR{
-							Error: "Количество переменных и значений должно совпадать или значение должно быть одно",
-						}, s)
+					panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
 				}
 			}
 			// освобождаем память
@@ -786,10 +776,7 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 
 	default:
 		// ошибка
-		bins = appendBin(bins,
-			&BinERROR{
-				Error: "Неверная операция",
-			}, e)
+		panic(NewStringError(e, "Неверная операция"))
 	}
 	return
 }
@@ -910,10 +897,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 					Name: ee.Name,
 				}, e)
 		default:
-			bins = appendBin(bins,
-				&BinERROR{
-					Error: "Неверная операция над значением",
-				}, e)
+			panic(NewStringError(e, "Неверная операция над значением"))
 		}
 	case *ast.DerefExpr:
 		switch ee := e.Expr.(type) {
@@ -931,10 +915,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 					Name: ee.Name,
 				}, e)
 		default:
-			bins = appendBin(bins,
-				&BinERROR{
-					Error: "Неверная операция над значением",
-				}, e)
+			panic(NewStringError(e, "Неверная операция над значением"))
 		}
 	case *ast.ParenExpr:
 		bins = append(bins, addBinExpr(e.SubExpr, reg, lid, false)...)
@@ -952,11 +933,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 			return
 		}
 		if len(e.Lhss) != 1 || len(e.Rhss) != 1 {
-			bins = appendBin(bins,
-				&BinERROR{
-					Error: "С каждой стороны операции может быть только одно выражение",
-				}, e)
-			return
+			panic(NewStringError(e, "С каждой стороны операции может быть только одно выражение"))
 		}
 		// сначала вычисляем левую часть
 		bins = append(bins, addBinExpr(e.Lhss[0], reg, lid, false)...)
