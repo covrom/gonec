@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/builtins"
 )
 
 // TODO: переделать на универсальную рефлексию перебора полей структур
@@ -148,7 +149,7 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		if waserrors {
 			return e
 		} else {
-			return &ast.NativeExpr{Value: reflect.ValueOf(a)}
+			return &ast.NativeExpr{Value: reflect.ValueOf(core.VMSlice(a))}
 		}
 	case *ast.MapExpr:
 		waserrors := false
@@ -166,7 +167,7 @@ func simplifyExprFolding(expr ast.Expr) ast.Expr {
 		if waserrors {
 			return e
 		} else {
-			return &ast.NativeExpr{Value: reflect.ValueOf(m)}
+			return &ast.NativeExpr{Value: reflect.ValueOf(core.VMStringMap(m))}
 		}
 	case *ast.CallExpr:
 		for i := range e.SubExprs {

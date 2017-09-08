@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/builtins"
 	envir "github.com/covrom/gonec/env"
 )
 
@@ -299,79 +300,113 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 			return false, nil
 		}
 	}
+	lk := lhsV.Kind()
+	rk := rhsV.Kind()
+	lvi := lhsV.Interface()
+	rvi := rhsV.Interface()
 
 	switch op {
 
 	// TODO: математика множеств и графов
 
 	case ADD:
-		if lhsV.Kind() == reflect.String || rhsV.Kind() == reflect.String {
-			return ToString(lhsV.Interface()) + ToString(rhsV.Interface()), nil
+		if lk == reflect.String || rk == reflect.String {
+			return ToString(lvi) + ToString(rvi), nil
 		}
-		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() != reflect.Array && rhsV.Kind() != reflect.Slice) {
+		if (lk == reflect.Array || lk == reflect.Slice) && (rk != reflect.Array && rk != reflect.Slice) {
 			return reflect.Append(lhsV, rhsV).Interface(), nil
 		}
-		if (lhsV.Kind() == reflect.Array || lhsV.Kind() == reflect.Slice) && (rhsV.Kind() == reflect.Array || rhsV.Kind() == reflect.Slice) {
+		if (lk == reflect.Array || lk == reflect.Slice) && (rk == reflect.Array || rk == reflect.Slice) {
 			return reflect.AppendSlice(lhsV, rhsV).Interface(), nil
 		}
-		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV.Interface()) + ToFloat64(rhsV.Interface()), nil
+		if lk == reflect.Float64 || rk == reflect.Float64 {
+			return ToFloat64(lvi) + ToFloat64(rvi), nil
 		}
-		return ToInt64(lhsV.Interface()) + ToInt64(rhsV.Interface()), nil
+		if lk == reflect.Struct && rk == reflect.Int64 {
+			// проверяем на дату + число
+			if lhsV.Type().AssignableTo(core.ReflectVMTime) {
+				if rhsV.Type().AssignableTo(reflect.TypeOf(time.Duration(0))) {
+					// это Duration
+					return time.Time(lvi.(core.VMTime)).Add(time.Duration(rhsV.Int())), nil
+				} else {
+					// это было число в секундах
+					return time.Time(lvi.(core.VMTime)).Add(time.Duration(1e9 * rhsV.Int())), nil
+				}
+			}
+		}
+		return ToInt64(lvi) + ToInt64(rvi), nil
 	case SUB:
-		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV.Interface()) - ToFloat64(rhsV.Interface()), nil
+		if lk == reflect.Float64 || rk == reflect.Float64 {
+			return ToFloat64(lvi) - ToFloat64(rvi), nil
 		}
-		return ToInt64(lhsV.Interface()) - ToInt64(rhsV.Interface()), nil
+		if lk == reflect.Struct && rk == reflect.Int64 {
+			// проверяем на дату + число
+			if lhsV.Type().AssignableTo(core.ReflectVMTime) {
+				if rhsV.Type().AssignableTo(reflect.TypeOf(time.Duration(0))) {
+					// это Duration
+					return time.Time(lvi.(core.VMTime)).Add(time.Duration(-rhsV.Int())), nil
+				} else {
+					// это было число в секундах
+					return time.Time(lvi.(core.VMTime)).Add(time.Duration(-1e9 * rhsV.Int())), nil
+				}
+			}
+		}
+		if lk == reflect.Struct && rk == reflect.Struct {
+			// проверяем на дата - дата
+			if lhsV.Type().AssignableTo(core.ReflectVMTime) && rhsV.Type().AssignableTo(core.ReflectVMTime) {
+				return time.Time(lvi.(core.VMTime)).Sub(time.Time(rvi.(core.VMTime))), nil
+			}
+		}
+		return ToInt64(lvi) - ToInt64(rvi), nil
 	case MUL:
-		if lhsV.Kind() == reflect.String && (rhsV.Kind() == reflect.Int || rhsV.Kind() == reflect.Int32 || rhsV.Kind() == reflect.Int64) {
-			return strings.Repeat(ToString(lhsV.Interface()), int(ToInt64(rhsV.Interface()))), nil
+		if lk == reflect.String && (rk == reflect.Int || rk == reflect.Int32 || rk == reflect.Int64) {
+			return strings.Repeat(ToString(lvi), int(ToInt64(rvi))), nil
 		}
-		if lhsV.Kind() == reflect.Float64 || rhsV.Kind() == reflect.Float64 {
-			return ToFloat64(lhsV.Interface()) * ToFloat64(rhsV.Interface()), nil
+		if lk == reflect.Float64 || rk == reflect.Float64 {
+			return ToFloat64(lvi) * ToFloat64(rvi), nil
 		}
-		return ToInt64(lhsV.Interface()) * ToInt64(rhsV.Interface()), nil
+		return ToInt64(lvi) * ToInt64(rvi), nil
 	case QUO:
-		return ToFloat64(lhsV.Interface()) / ToFloat64(rhsV.Interface()), nil
+		return ToFloat64(lvi) / ToFloat64(rvi), nil
 	case REM:
-		return ToInt64(lhsV.Interface()) % ToInt64(rhsV.Interface()), nil
+		return ToInt64(lvi) % ToInt64(rvi), nil
 	case EQL:
-		return Equal(lhsV.Interface(), rhsV.Interface()), nil
+		return Equal(lvi, rvi), nil
 	case NEQ:
-		return Equal(lhsV.Interface(), rhsV.Interface()) == false, nil
+		return Equal(lvi, rvi) == false, nil
 	case GTR:
-		return ToFloat64(lhsV.Interface()) > ToFloat64(rhsV.Interface()), nil
+		return ToFloat64(lvi) > ToFloat64(rvi), nil
 	case GEQ:
-		return ToFloat64(lhsV.Interface()) >= ToFloat64(rhsV.Interface()), nil
+		return ToFloat64(lvi) >= ToFloat64(rvi), nil
 	case LSS:
-		return ToFloat64(lhsV.Interface()) < ToFloat64(rhsV.Interface()), nil
+		return ToFloat64(lvi) < ToFloat64(rvi), nil
 	case LEQ:
-		return ToFloat64(lhsV.Interface()) <= ToFloat64(rhsV.Interface()), nil
+		return ToFloat64(lvi) <= ToFloat64(rvi), nil
 	case OR:
-		return ToInt64(lhsV.Interface()) | ToInt64(rhsV.Interface()), nil
+		return ToInt64(lvi) | ToInt64(rvi), nil
 	case LOR:
-		if x := ToBool(lhsV.Interface()); x {
+		if x := ToBool(lvi); x {
 			return x, nil
 		} else {
-			return ToBool(rhsV.Interface()), nil
+			return ToBool(rvi), nil
 		}
 	case AND:
-		return ToInt64(lhsV.Interface()) & ToInt64(rhsV.Interface()), nil
+		return ToInt64(lvi) & ToInt64(rvi), nil
 	case LAND:
-		if x := ToBool(lhsV.Interface()); x {
-			return ToBool(rhsV.Interface()), nil
+		if x := ToBool(lvi); x {
+			return ToBool(rvi), nil
 		} else {
 			return x, nil
 		}
 	case POW:
-		if lhsV.Kind() == reflect.Float64 {
-			return math.Pow(ToFloat64(lhsV.Interface()), ToFloat64(rhsV.Interface())), nil
+		if lk == reflect.Float64 {
+			return math.Pow(ToFloat64(lvi), ToFloat64(rvi)), nil
 		}
-		return int64(math.Pow(ToFloat64(lhsV.Interface()), ToFloat64(rhsV.Interface()))), nil
+		return int64(math.Pow(ToFloat64(lvi), ToFloat64(rvi))), nil
 	case SHR:
-		return ToInt64(lhsV.Interface()) >> uint64(ToInt64(rhsV.Interface())), nil
+		return ToInt64(lvi) >> uint64(ToInt64(rvi)), nil
 	case SHL:
-		return ToInt64(lhsV.Interface()) << uint64(ToInt64(rhsV.Interface())), nil
+		return ToInt64(lvi) << uint64(ToInt64(rvi)), nil
 	default:
 		return nil, fmt.Errorf("Неизвестный оператор")
 	}
@@ -467,6 +502,14 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 			return rs.Interface(), nil
 		}
 	case reflect.String:
+		if nt.AssignableTo(core.ReflectVMTime) {
+			tt, err := time.Parse(time.RFC3339, rv.String())
+			if err == nil {
+				return core.VMTime(tt), nil
+			} else {
+				panic(err)
+			}
+		}
 		switch nt.Kind() {
 		case reflect.Float64:
 			if rv.Type().ConvertibleTo(nt) {
@@ -482,14 +525,14 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 			if err := json.Unmarshal([]byte(ToString(v)), &rm); err != nil {
 				return nil, err
 			}
-			return rm, nil
+			return core.VMSlice(rm), nil
 		case reflect.Map:
 			//парсим json из строки и пытаемся получить мапу
 			var rm map[string]interface{}
 			if err := json.Unmarshal([]byte(ToString(v)), rm); err != nil {
 				return nil, err
 			}
-			return rm, nil
+			return core.VMStringMap(rm), nil
 		case reflect.Struct:
 			//парсим json из строки и пытаемся получить указатель на структуру
 			rm := reflect.New(nt).Interface()
@@ -554,6 +597,19 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 	case reflect.Float32, reflect.Float64,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		// приведение к дате
+		if nt.AssignableTo(core.ReflectVMTime) {
+			switch rvkind {
+			case reflect.Float32, reflect.Float64:
+				rti := int64(rv.Float())
+				rtins := int64((rv.Float() - float64(rti)) * 1e9)
+				return core.VMTime(time.Unix(rti, rtins)), nil
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+				reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				rti := rv.Int()
+				return core.VMTime(time.Unix(rti, 0)), nil
+			}
+		}
 		// числа конвертируются стандартно
 		switch nt.Kind() {
 		case reflect.Bool:
@@ -564,7 +620,18 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 			}
 		}
 	case reflect.Struct:
-		if t, ok := v.(time.Time); ok {
+		t, ok := v.(time.Time)
+		if !ok {
+			var t2 core.VMTime
+			t2, ok = v.(core.VMTime)
+			if ok {
+				t = time.Time(t2)
+			}
+		}
+		if ok {
+			if nt.AssignableTo(core.ReflectVMTime) {
+				return core.VMTime(t), nil
+			}
 			// это дата/время - конвертируем в секунды (целые или с плавающей запятой) или в формат RFC3339
 			switch nt.Kind() {
 			case reflect.String:
@@ -587,7 +654,7 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 						rs[f.Name] = fv.Interface()
 					}
 				}
-				return rs, nil
+				return core.VMStringMap(rs), nil
 			case reflect.String:
 				// сериализуем структуру в json
 				b, err := json.Marshal(v)

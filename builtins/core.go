@@ -152,26 +152,12 @@ func Import(env *envir.Env) *envir.Env {
 		return arr
 	})
 
-	env.DefineS("дата", func(v interface{}) time.Time {
-		rv := reflect.ValueOf(v)
-		switch rv.Kind() {
-		case reflect.String:
-			tt, err := time.Parse(time.RFC3339, v.(string))
-			if err == nil {
-				return tt
-			} else {
-				panic(err)
-			}
-		case reflect.Float32, reflect.Float64:
-			rti := int64(rv.Float())
-			rtins := int64((rv.Float() - float64(rti)) * 1e9)
-			return time.Unix(rti, rtins)
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			rti := rv.Int()
-			return time.Unix(rti, 0)
-		}
-		panic("Дата может быть представлена только строкой в формате RFC3339")
+	env.DefineS("текущаядата", func() VMTime {
+		return VMTime(time.Now())
+	})
+
+	env.DefineS("прошловременис", func(t VMTime) time.Duration {
+		return time.Since(time.Time(t))
 	})
 
 	env.DefineS("нрег", func(v interface{}) string {
@@ -235,8 +221,9 @@ func Import(env *envir.Env) *envir.Env {
 	env.DefineTypeS("число", float64(0.0))
 	env.DefineTypeS("булево", true)
 	env.DefineTypeS("строка", "")
-	env.DefineTypeS("массив", []interface{}{})
-	env.DefineTypeS("структура", map[string]interface{}{})
+	env.DefineTypeS("массив", VMSlice{})
+	env.DefineTypeS("структура", VMStringMap{})
+	env.DefineTypeS("дата", VMTime{})
 
 	//////////////////
 	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})

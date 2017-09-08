@@ -189,20 +189,20 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.Reg, v)
 
 		case *BinMAKESLICE:
-			regs.Set(s.Reg, make(VMSlice, s.Len, s.Cap))
+			regs.Set(s.Reg, make(gonec_core.VMSlice, s.Len, s.Cap))
 
 		case *BinSETIDX:
-			if v, ok := regs.Reg[s.Reg].(VMSlice); ok {
+			if v, ok := regs.Reg[s.Reg].(gonec_core.VMSlice); ok {
 				v[s.Index] = regs.Reg[s.RegVal]
 			} else {
 				catcherr = NewStringError(stmt, "Невозможно изменить значение по индексу")
 				break
 			}
 		case *BinMAKEMAP:
-			regs.Set(s.Reg, make(VMStringMap, s.Len))
+			regs.Set(s.Reg, make(gonec_core.VMStringMap, s.Len))
 
 		case *BinSETKEY:
-			if v, ok := regs.Reg[s.Reg].(VMStringMap); ok {
+			if v, ok := regs.Reg[s.Reg].(gonec_core.VMStringMap); ok {
 				v[s.Key] = regs.Reg[s.RegVal]
 			} else {
 				catcherr = NewStringError(stmt, "Невозможно изменить значение по ключу")
@@ -766,7 +766,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 						for _, r := range rets {
 							result = append(result, r.Interface())
 						}
-						return result, nil // массив возвращаемых значений
+						return gonec_core.VMSlice(result), nil // массив возвращаемых значений
 					}
 				}
 			}
@@ -883,7 +883,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		case *BinMAKEARR:
 			alen := int(ToInt64(regs.Reg[s.Reg]))
 			acap := int(ToInt64(regs.Reg[s.RegCap]))
-			v := make(VMSlice, alen, acap)
+			v := make(gonec_core.VMSlice, alen, acap)
 			regs.Set(s.Reg, v)
 
 		case *BinCHANRECV:
