@@ -62,10 +62,6 @@ func (t VMTime) String() string {
 }
 
 func (t VMTime) Format(layout string) string {
-	return t.Формат(layout)
-}
-
-func (t VMTime) Формат(layout string) string {
 	const bufSize = 64
 	var b []byte
 	max := len(layout) + 10
@@ -77,6 +73,69 @@ func (t VMTime) Формат(layout string) string {
 	}
 	b = time.Time(t).AppendFormat(b, layout)
 	return string(b)
+}
+
+func (t VMTime) Год() int64 {
+	return int64(time.Time(t).Year())
+}	
+
+func (t VMTime) Месяц() int64 {
+	return int64(time.Time(t).Month())
+}	
+
+func (t VMTime) День() int64 {
+	return int64(time.Time(t).Day())
+}	
+
+func (t VMTime) ДеньГода() int64 {
+	return int64(time.Time(t).YearDay())
+}	
+
+func (t VMTime) Формат(fmtstr string) string {
+	
+	// var days = [...]string{
+	// 	"понедельник",
+	// 	"вторник",
+	// 	"среда",
+	// 	"четверг",
+	// 	"пятница",
+	// 	"суббота",
+	// 	"воскресенье",
+	// }
+
+	// var months1 = [...]string{
+	// 	"январь",
+	// 	"февраль",
+	// 	"март",
+	// 	"апрель",
+	// 	"май",
+	// 	"июнь",
+	// 	"июль",
+	// 	"август",
+	// 	"сентябрь",
+	// 	"октябрь",
+	// 	"ноябрь",
+	// 	"декабрь",
+	// }
+
+	// var months2 = [...]string{
+	// 	"января",
+	// 	"февраля",
+	// 	"марта",
+	// 	"апреля",
+	// 	"мая",
+	// 	"июня",
+	// 	"июля",
+	// 	"августа",
+	// 	"сентября",
+	// 	"октября",
+	// 	"ноября",
+	// 	"декабря",
+	// }
+	
+	// TODO:
+
+	return ""
 }
 
 func (t VMTime) Вычесть(t2 VMTime) time.Duration {
