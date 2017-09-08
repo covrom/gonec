@@ -11,6 +11,10 @@ type VMSlice []interface{}
 
 type VMStringMap map[string]interface{}
 
+///////////////////////////////////////
+//Дата и время/////////////////////////
+///////////////////////////////////////
+
 type VMTime time.Time
 
 var ReflectVMTime = reflect.TypeOf(VMTime{})
@@ -77,22 +81,96 @@ func (t VMTime) Format(layout string) string {
 
 func (t VMTime) Год() int64 {
 	return int64(time.Time(t).Year())
-}	
+}
 
 func (t VMTime) Месяц() int64 {
 	return int64(time.Time(t).Month())
-}	
+}
 
 func (t VMTime) День() int64 {
 	return int64(time.Time(t).Day())
-}	
+}
+
+func (t VMTime) Weekday() int64 {
+	//0=воскресенье, 1=понедельник ...
+	return int64(time.Time(t).Weekday())
+}
+
+func (t VMTime) Неделя() (w int64, y_aligned int64) {
+	// по ISO 8601
+	// 1-53, выровнены по годам,
+	// т.е. конец декабря (три дня) попадает в следующий год,
+	// или первые три дня января попадают в предыдущий год
+	yy, ww := time.Time(t).ISOWeek()
+	return int64(ww), int64(yy)
+}
+
+func (t VMTime) ДеньНедели() int64 {
+	//1=понедельник, 7=воскресенье ...
+	wd := int64(time.Time(t).Weekday())
+	if wd == 0 {
+		return 7
+	}
+	return wd
+}
+
+func (t VMTime) Квартал() int64 {
+	//1-4
+	return t.Месяц()/4 + 1
+}
 
 func (t VMTime) ДеньГода() int64 {
+	//1-366
 	return int64(time.Time(t).YearDay())
-}	
+}
+
+func (t VMTime) Час() int64 {
+	return int64(time.Time(t).Hour())
+}
+
+func (t VMTime) Минута() int64 {
+	return int64(time.Time(t).Minute())
+}
+
+func (t VMTime) Секунда() int64 {
+	return int64(time.Time(t).Second())
+}
+
+func (t VMTime) Наносекунда() int64 {
+	return int64(time.Time(t).Nanosecond())
+}
+
+func (t VMTime) UnixNano() int64 {
+	return time.Time(t).UnixNano()
+}
+
+func (t VMTime) Unix() int64 {
+	return time.Time(t).Unix()
+}
 
 func (t VMTime) Формат(fmtstr string) string {
-	
+	// д (d) - день месяца (цифрами) без лидирующего нуля;
+	// дд (dd) - день месяца (цифрами) с лидирующим нулем;
+	// ддд (ddd) - краткое название дня недели *);
+	// дддд (dddd) - полное название дня недели *);
+	// М (M) - номер месяца (цифрами) без лидирующего нуля;
+	// ММ (MM) - номер месяца (цифрами) с лидирующим нулем;
+	// МММ (MMM) - краткое название месяца *);
+	// ММММ (MMMM) - полное название месяца *);
+	// к (q) - номер квартала в году;
+	// г (y) - номер года без века и лидирующего нуля;
+	// гг (yy) - номер года без века с лидирующим нулем;
+	// гггг (yyyy) - номер года с веком;
+	// ч (h) - час в 12 часовом варианте без лидирующих нулей;
+	// чч (hh) - час в 12 часовом варианте с лидирующим нулем;
+	// Ч (H) - час в 24 часовом варианте без лидирующих нулей;
+	// ЧЧ (HH) - час в 24 часовом варианте с лидирующим нулем;
+	// м (m) - минута без лидирующего нуля;
+	// мм (mm) - минута с лидирующим нулем;
+	// с (s) - секунда без лидирующего нуля;
+	// сс (ss) - секунда с лидирующим нулем;
+	// вв (tt) - отображение половины дня AM/PM (действительно только для языков конфигурирования, поддерживающих 12 часовой вариант представления времени).
+
 	// var days = [...]string{
 	// 	"понедельник",
 	// 	"вторник",
@@ -132,12 +210,16 @@ func (t VMTime) Формат(fmtstr string) string {
 	// 	"ноября",
 	// 	"декабря",
 	// }
-	
+
 	// TODO:
 
 	return ""
 }
 
-func (t VMTime) Вычесть(t2 VMTime) time.Duration {
+func (t VMTime) ВычестьДату(t2 VMTime) time.Duration {
 	return time.Time(t).Sub(time.Time(t2))
+}
+
+func (t VMTime) ДобавитьКДате(dy, dm, dd int) VMTime {
+	return VMTime(time.Time(t).AddDate(dy, dm, dd))
 }
