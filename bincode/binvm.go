@@ -264,8 +264,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinSETITEM:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			i := refregs.Index(s.RegIndex).Elem()
+			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
+			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
 			rv := refregs.Index(s.RegVal).Elem()
 			regs.Set(s.RegNeedLet, false)
 
@@ -334,9 +334,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinSETSLICE:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			rb := refregs.Index(s.RegBegin).Elem()
-			re := refregs.Index(s.RegEnd).Elem()
+			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
+			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
+			re := reflect.Indirect(refregs.Index(s.RegEnd).Elem())
 			rv := refregs.Index(s.RegVal).Elem()
 			regs.Set(s.RegNeedLet, false)
 
@@ -506,8 +506,8 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGETIDX:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			i := refregs.Index(s.RegIndex).Elem()
+			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
+			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
 
 			switch v.Kind() {
 
@@ -558,9 +558,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinGETSUBSLICE:
 			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			rb := refregs.Index(s.RegBegin).Elem()
-			re := refregs.Index(s.RegEnd).Elem()
+			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
+			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
+			re := reflect.Indirect(refregs.Index(s.RegEnd).Elem())
 
 			switch v.Kind() {
 			case reflect.Array, reflect.Slice:

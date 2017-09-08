@@ -119,9 +119,9 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 
 func init() {
 	gob.Register(&ast.EnvNames{})
-	gob.Register(&core.VMTime{})
-	gob.Register(&core.VMSlice{})
-	gob.Register(&core.VMStringMap{})
+	gob.Register(core.VMTime{})
+	gob.Register(core.VMSlice{})
+	gob.Register(core.VMStringMap{})
 
 	gob.Register(&BinLOAD{})
 	gob.Register(&BinMV{})
