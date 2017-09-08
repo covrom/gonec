@@ -136,6 +136,14 @@ func (t VMTime) Секунда() int64 {
 	return int64(time.Time(t).Second())
 }
 
+func (t VMTime) Миллисекунда() int64 {
+	return int64(time.Time(t).Nanosecond()) / 1e6
+}
+
+func (t VMTime) Микросекунда() int64 {
+	return int64(time.Time(t).Nanosecond()) / 1e3
+}
+
 func (t VMTime) Наносекунда() int64 {
 	return int64(time.Time(t).Nanosecond())
 }
@@ -169,7 +177,7 @@ func (t VMTime) Формат(fmtstr string) string {
 	// мм (mm) - минута с лидирующим нулем;
 	// с (s) - секунда без лидирующего нуля;
 	// сс (ss) - секунда с лидирующим нулем;
-	// вв (tt) - отображение половины дня AM/PM (действительно только для языков конфигурирования, поддерживающих 12 часовой вариант представления времени).
+	// млс - миллисекунда с лидирующим нулем
 
 	// var days = [...]string{
 	// 	"понедельник",
@@ -210,6 +218,9 @@ func (t VMTime) Формат(fmtstr string) string {
 	// 	"ноября",
 	// 	"декабря",
 	// }
+
+	// hour, min, sec := time.Time(t).Clock()
+	// y, m, d := time.Time(t).Date()
 
 	// TODO:
 
