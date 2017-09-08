@@ -43,8 +43,8 @@ type Scanner struct {
 
 // opName is correction of operation names.
 var opName = map[string]int{
-	"функция":           FUNC,
-	"возврат":           RETURN,
+	"функция": FUNC,
+	"возврат": RETURN,
 	// "перем":             VAR,
 	"вызватьисключение": THROW,
 	"если":              IF,
@@ -90,6 +90,7 @@ var opName = map[string]int{
 	"целоечисло": TYPECAST,
 	"массив":     TYPECAST,
 	"структура":  TYPECAST,
+	"дата":       TYPECAST,
 }
 
 var opCanEqual = map[int]bool{
@@ -204,8 +205,8 @@ retry:
 			default:
 				s.back()
 				// if s.canequal {
-					tok = EQEQ
-					lit = "=="
+				tok = EQEQ
+				lit = "=="
 				// } else {
 				// 	tok = int(ch)
 				// 	lit = string(ch)

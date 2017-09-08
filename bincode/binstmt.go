@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/builtins"
 )
 
 type BinStmt interface {
@@ -118,6 +119,9 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 
 func init() {
 	gob.Register(&ast.EnvNames{})
+	gob.Register(&core.VMTime{})
+	gob.Register(&core.VMSlice{})
+	gob.Register(&core.VMStringMap{})
 
 	gob.Register(&BinLOAD{})
 	gob.Register(&BinMV{})
@@ -177,7 +181,7 @@ func init() {
 	gob.Register(&BinINC{})
 	gob.Register(&BinDEC{})
 	gob.Register(&BinFREE{})
-	
+
 }
 
 //////////////////////

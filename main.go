@@ -440,9 +440,9 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 
 	if err != nil {
 		if e, ok := err.(*bincode.Error); ok {
-			env.Printf("Ошибка исполнения:%d:%d %s\n", e.Pos.Line, e.Pos.Column, err)
+			env.Printf("Ошибка исполнения: %s\n", e.Pos.Line, e.Pos.Column, err)
 		} else if e, ok := err.(*parser.Error); ok {
-			env.Printf("Ошибка в коде:%d:%d %s\n", e.Pos.Line, e.Pos.Column, err)
+			env.Printf("Ошибка в коде: %s\n", e.Pos.Line, e.Pos.Column, err)
 		} else {
 			env.Println(err)
 		}
