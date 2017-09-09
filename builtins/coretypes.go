@@ -160,7 +160,7 @@ func (t VMTime) Unix() int64 {
 }
 
 func (t VMTime) Формат(fmtstr string) string {
-	
+
 	// д (d) - день месяца (цифрами) без лидирующего нуля;
 	// дд (dd) - день месяца (цифрами) с лидирующим нулем;
 	// ддд (ddd) - краткое название дня недели *);
@@ -405,4 +405,41 @@ func (t VMTime) ВычестьДату(t2 VMTime) time.Duration {
 
 func (t VMTime) ДобавитьКДате(dy, dm, dd int) VMTime {
 	return VMTime(time.Time(t).AddDate(dy, dm, dd))
+}
+
+func (t VMTime) Раньше(d VMTime) bool {
+	return time.Time(t).Before(time.Time(d))
+}
+
+func (t VMTime) Позже(d VMTime) bool {
+	return time.Time(t).After(time.Time(d))
+}
+
+func (t VMTime) Равно(d VMTime) bool {
+	// для разных локаций тоже работает, в отличие от =
+	return time.Time(t).Equal(time.Time(d))
+}
+
+func (t VMTime) Пустая() bool {
+	return time.Time(t).IsZero()
+}
+
+func (t VMTime) Местное() VMTime {
+	return VMTime(time.Time(t).Local())
+}
+
+func (t VMTime) UTC() VMTime {
+	return VMTime(time.Time(t).UTC())
+}
+
+func (t VMTime) Локация() string {
+	return time.Time(t).Location().String()
+}
+
+func (t VMTime) ВЛокации(name string) VMTime {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		panic(err)
+	}
+	return VMTime(time.Time(t).In(loc))
 }
