@@ -173,6 +173,10 @@ func (t VMTime) Unix() int64 {
 	return time.Time(t).Unix()
 }
 
+func (t VMTime) GolangTime() time.Time {
+	return time.Time(t)
+}
+
 func (t VMTime) Формат(fmtstr string) string {
 
 	// д (d) - день месяца (цифрами) без лидирующего нуля;
