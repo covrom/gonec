@@ -24,7 +24,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			*lid++
 			lend := *lid
 			// Если
-			bins = append(bins, addBinExpr(s.If, reg, lid, true)...)
+			bins = append(bins, addBinExpr(s.If, reg, lid, false)...)
 			*lid++
 			lf := *lid
 			bins = appendBin(bins,
@@ -46,7 +46,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 			for _, elif := range s.ElseIf {
 				stmtif := elif.(*ast.IfStmt)
-				bins = append(bins, addBinExpr(stmtif.If, reg, lid, true)...)
+				bins = append(bins, addBinExpr(stmtif.If, reg, lid, false)...)
 				// если ложь, то перейдем на следующее условие
 				*lid++
 				li := *lid
@@ -124,7 +124,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 		case *ast.ForStmt:
 			// для каждого
-			bins = append(bins, addBinExpr(s.Value, reg, lid, true)...)
+			bins = append(bins, addBinExpr(s.Value, reg, lid, false)...)
 
 			*lid++
 			lend := *lid
@@ -192,8 +192,8 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			regto := reg + 2
 			regsub := reg + 3
 
-			bins = append(bins, addBinExpr(s.Expr1, regfrom, lid, true)...)
-			bins = append(bins, addBinExpr(s.Expr2, regto, lid, true)...)
+			bins = append(bins, addBinExpr(s.Expr1, regfrom, lid, false)...)
+			bins = append(bins, addBinExpr(s.Expr2, regto, lid, false)...)
 
 			*lid++
 			lend := *lid
@@ -269,7 +269,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				&BinLABEL{
 					Label: li,
 				}, s)
-			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinJFALSE{
 					Reg:    reg,
@@ -318,7 +318,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			}
 			if len(s.Exprs) == 1 {
 				// одиночное значение в reg
-				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, true)...)
+				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, false)...)
 			} else {
 				// создание слайса в reg
 				bins = appendBin(bins,
@@ -329,7 +329,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					}, s)
 
 				for i, ee := range s.Exprs {
-					bins = append(bins, addBinExpr(ee, reg+1, lid, true)...)
+					bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
 					bins = appendBin(bins,
 						&BinSETIDX{
 							Reg:    reg,
@@ -349,7 +349,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				}, s)
 
 		case *ast.ThrowStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
+			bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
 			bins = appendBin(bins,
 				&BinTHROW{
 					Reg: reg,
@@ -380,7 +380,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 				*lid++
 				li := *lid
 				case_stmt := ss.(*ast.CaseStmt)
-				bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid, true)...)
+				bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid, false)...)
 				bins = appendBin(bins,
 					&BinEQUAL{
 						Reg:  reg + 2,
@@ -441,7 +441,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					panic(NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
 				}
 				// определяем значение справа
-				bins = append(bins, addBinExpr(e.Rhs, reg, lid, true)...)
+				bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
 				if e.Lhs == nil {
 					// слева нет значения - это временное чтение из канала без сохранения значения в переменной
 					bins = appendBin(bins,
@@ -459,7 +459,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						}, s)
 				} else {
 					// значение слева
-					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid, true)...)
+					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid, false)...)
 
 					// проверяем: слева канал?
 					bins = appendBin(bins,
@@ -580,7 +580,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// и если там массив, то по очереди элементы, начиная с 0-го
 			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 			if len(s.Rhss) == 1 && len(s.Lhss) > 1 {
-				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid, true)...)
+				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid, false)...)
 				// проверяем на массив
 				*lid++
 				lend := *lid
@@ -644,7 +644,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					// сначала все вычисляем в разные регистры, затем все присваиваем
 					// так обеспечиваем взаимный обмен
 					for i := range s.Lhss {
-						bins = append(bins, addBinExpr(s.Rhss[i], reg+i, lid, true)...)
+						bins = append(bins, addBinExpr(s.Rhss[i], reg+i, lid, false)...)
 					}
 					for i, e := range s.Lhss {
 						bins = append(bins, addBinLetExpr(e, reg+i, lid)...)
@@ -664,7 +664,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			// если справа одно выражение - присваиваем его всем левым
 			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 			if len(s.Exprs) == 1 {
-				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, true)...)
+				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, false)...)
 				for _, e := range s.Names {
 					bins = appendBin(bins,
 						&BinSET{
@@ -675,7 +675,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			} else {
 				if len(s.Exprs) == len(s.Names) {
 					for i, e := range s.Exprs {
-						bins = append(bins, addBinExpr(e, reg, lid, true)...)
+						bins = append(bins, addBinExpr(e, reg, lid, false)...)
 						bins = appendBin(bins,
 							&BinSET{
 								Reg: reg,
