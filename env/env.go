@@ -23,16 +23,17 @@ var (
 // If stack goes to blocked-scope, it will make new Env.
 type Env struct {
 	sync.RWMutex
-	name      string
-	env       map[int]reflect.Value
-	typ       map[int]reflect.Type
-	parent    *Env
-	interrupt *bool
-	stdout    io.Writer
-	sid       string
-	goRunned  bool
-	lastid    int
-	lastval   reflect.Value
+	name         string
+	env          map[int]reflect.Value
+	typ          map[int]reflect.Type
+	parent       *Env
+	interrupt    *bool
+	stdout       io.Writer
+	sid          string
+	goRunned     bool
+	lastid       int
+	lastval      reflect.Value
+	builtsLoaded bool
 }
 
 // NewEnv creates new global scope.
@@ -41,13 +42,14 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:       make(map[int]reflect.Value),
-		typ:       make(map[int]reflect.Type),
-		parent:    nil,
-		interrupt: &b,
-		stdout:    os.Stdout,
-		goRunned:  false,
-		lastid:    -1,
+		env:          make(map[int]reflect.Value),
+		typ:          make(map[int]reflect.Type),
+		parent:       nil,
+		interrupt:    &b,
+		stdout:       os.Stdout,
+		goRunned:     false,
+		lastid:       -1,
+		builtsLoaded: false,
 	}
 	return m
 }
@@ -57,13 +59,14 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:       make(map[int]reflect.Value),
-				typ:       make(map[int]reflect.Type),
-				parent:    ee,
-				interrupt: e.interrupt,
-				stdout:    e.stdout,
-				goRunned:  false,
-				lastid:    -1,
+				env:          make(map[int]reflect.Value),
+				typ:          make(map[int]reflect.Type),
+				parent:       ee,
+				interrupt:    e.interrupt,
+				stdout:       e.stdout,
+				goRunned:     false,
+				lastid:       -1,
+				builtsLoaded: ee.builtsLoaded,
 			}
 
 		}
@@ -74,13 +77,14 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:       make(map[int]reflect.Value),
-		typ:       make(map[int]reflect.Type),
-		parent:    e,
-		interrupt: e.interrupt,
-		stdout:    e.stdout,
-		goRunned:  false,
-		lastid:    -1,
+		env:          make(map[int]reflect.Value),
+		typ:          make(map[int]reflect.Type),
+		parent:       e,
+		interrupt:    e.interrupt,
+		stdout:       e.stdout,
+		goRunned:     false,
+		lastid:       -1,
+		builtsLoaded: e.builtsLoaded,
 	}
 }
 
@@ -117,14 +121,15 @@ func (e *Env) NewModule(n string) *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:       make(map[int]reflect.Value),
-		typ:       make(map[int]reflect.Type),
-		parent:    e,
-		name:      strings.ToLower(n),
-		interrupt: e.interrupt,
-		stdout:    e.stdout,
-		goRunned:  false,
-		lastid:    -1,
+		env:          make(map[int]reflect.Value),
+		typ:          make(map[int]reflect.Type),
+		parent:       e,
+		name:         strings.ToLower(n),
+		interrupt:    e.interrupt,
+		stdout:       e.stdout,
+		goRunned:     false,
+		lastid:       -1,
+		builtsLoaded: e.builtsLoaded,
 	}
 }
 
@@ -153,6 +158,29 @@ func (e *Env) SetGoRunned(t bool) {
 		ee.goRunned = t
 		ee.Unlock()
 	}
+}
+
+func (e *Env) SetBuiltsIsLoaded() {
+	if e.goRunned {
+		e.Lock()
+	}
+	e.builtsLoaded = true
+	if e.goRunned {
+		e.Unlock()
+	}
+}
+
+func (e *Env) IsBuiltsLoaded() bool {
+	for ee := e; ee != nil; ee = ee.parent {
+		if ee.goRunned {
+			ee.RLock()
+			defer ee.RUnlock()
+		}
+		if ee.builtsLoaded {
+			return true
+		}
+	}
+	return false
 }
 
 // SetName sets a name of the scope. This means that the scope is module.

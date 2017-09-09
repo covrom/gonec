@@ -75,49 +75,51 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 	regs := NewVMRegs(stmts)
 
-	// стандартная библиотека
+	// стандартная библиотека - загружаем, если она еще не была загружена в это или в родительское окружение
 
-	// эту функцию определяем тут, чтобы исключить циклические зависимости пакетов
-	env.DefineS("загрузитьивыполнить", func(s string) interface{} {
-		body, err := ioutil.ReadFile(s)
-		if err != nil {
-			panic(err)
-		}
-		isGNX := strings.HasSuffix(strings.ToLower(s), ".gnx")
-		if isGNX {
-			bbuf := bytes.NewBuffer(body)
-			bins, err := ReadBinCode(bbuf)
+	if !env.IsBuiltsLoaded() {
+		// эту функцию определяем тут, чтобы исключить циклические зависимости пакетов
+		env.DefineS("загрузитьивыполнить", func(s string) interface{} {
+			body, err := ioutil.ReadFile(s)
 			if err != nil {
 				panic(err)
 			}
-			// env.Dump()
-			rv, err := Run(bins, env)
-			// env.Dump()
-			if err != nil {
-				panic(err)
-			}
-			return rv
-		} else {
-			_, bins, err := ParseSrc(string(body))
-			if err != nil {
-				if pe, ok := err.(*parser.Error); ok {
-					pe.Filename = s
-					panic(pe)
+			isGNX := strings.HasSuffix(strings.ToLower(s), ".gnx")
+			if isGNX {
+				bbuf := bytes.NewBuffer(body)
+				bins, err := ReadBinCode(bbuf)
+				if err != nil {
+					panic(err)
 				}
-				panic(err)
+				// env.Dump()
+				rv, err := Run(bins, env)
+				// env.Dump()
+				if err != nil {
+					panic(err)
+				}
+				return rv
+			} else {
+				_, bins, err := ParseSrc(string(body))
+				if err != nil {
+					if pe, ok := err.(*parser.Error); ok {
+						pe.Filename = s
+						panic(pe)
+					}
+					panic(err)
+				}
+				// env.Dump()
+				rv, err := Run(bins, env)
+				// env.Dump()
+				if err != nil {
+					panic(err)
+				}
+				return rv
 			}
-			// env.Dump()
-			rv, err := Run(bins, env)
-			// env.Dump()
-			if err != nil {
-				panic(err)
-			}
-			return rv
-		}
-		return nil
-	})
+			return nil
+		})
 
-	gonec_core.LoadAllBuiltins(env)
+		gonec_core.LoadAllBuiltins(env)
+	}
 
 	goschedidx := 0
 

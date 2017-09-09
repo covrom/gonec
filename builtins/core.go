@@ -74,6 +74,8 @@ func LoadAllBuiltins(env *envir.Env) {
 		panic(fmt.Sprintf("Пакет '%s' не найден", s))
 	})
 
+	// успешно загружен глобальный контекст
+	env.SetBuiltsIsLoaded()
 }
 
 /////////////////
