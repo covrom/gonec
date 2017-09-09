@@ -2,6 +2,8 @@ package core
 
 import (
 	"reflect"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -66,6 +68,7 @@ func (t VMTime) String() string {
 }
 
 func (t VMTime) Format(layout string) string {
+	// формат в стиле Го
 	const bufSize = 64
 	var b []byte
 	max := len(layout) + 10
@@ -157,83 +160,243 @@ func (t VMTime) Unix() int64 {
 }
 
 func (t VMTime) Формат(fmtstr string) string {
+	
 	// д (d) - день месяца (цифрами) без лидирующего нуля;
 	// дд (dd) - день месяца (цифрами) с лидирующим нулем;
 	// ддд (ddd) - краткое название дня недели *);
 	// дддд (dddd) - полное название дня недели *);
+
 	// М (M) - номер месяца (цифрами) без лидирующего нуля;
 	// ММ (MM) - номер месяца (цифрами) с лидирующим нулем;
 	// МММ (MMM) - краткое название месяца *);
 	// ММММ (MMMM) - полное название месяца *);
-	// к (q) - номер квартала в году;
+
+	// К (Q) - номер квартала в году;
 	// г (y) - номер года без века и лидирующего нуля;
 	// гг (yy) - номер года без века с лидирующим нулем;
 	// гггг (yyyy) - номер года с веком;
-	// ч (h) - час в 12 часовом варианте без лидирующих нулей;
-	// чч (hh) - час в 12 часовом варианте с лидирующим нулем;
-	// Ч (H) - час в 24 часовом варианте без лидирующих нулей;
-	// ЧЧ (HH) - час в 24 часовом варианте с лидирующим нулем;
+
+	// ч (h) - час в 24 часовом варианте без лидирующих нулей;
+	// чч (hh) - час в 24 часовом варианте с лидирующим нулем;
+
 	// м (m) - минута без лидирующего нуля;
 	// мм (mm) - минута с лидирующим нулем;
+
 	// с (s) - секунда без лидирующего нуля;
 	// сс (ss) - секунда с лидирующим нулем;
-	// млс - миллисекунда с лидирующим нулем
+	// ссс (sss) - миллисекунда с лидирующим нулем
 
-	// var days = [...]string{
-	// 	"понедельник",
-	// 	"вторник",
-	// 	"среда",
-	// 	"четверг",
-	// 	"пятница",
-	// 	"суббота",
-	// 	"воскресенье",
-	// }
-	// var dayssm = [...]string{
-	// 	"пн",
-	// 	"вт",
-	// 	"ср",
-	// 	"чт",
-	// 	"пт",
-	// 	"сб",
-	// 	"вс",
-	// }
+	days := [...]string{
+		"", //0-го не бывает
+		"понедельник",
+		"вторник",
+		"среда",
+		"четверг",
+		"пятница",
+		"суббота",
+		"воскресенье",
+	}
 
-	// var months1 = [...]string{
-	// 	"январь",
-	// 	"февраль",
-	// 	"март",
-	// 	"апрель",
-	// 	"май",
-	// 	"июнь",
-	// 	"июль",
-	// 	"август",
-	// 	"сентябрь",
-	// 	"октябрь",
-	// 	"ноябрь",
-	// 	"декабрь",
-	// }
+	months1 := [...]string{
+		"", //0-го не бывает
+		"январь",
+		"февраль",
+		"март",
+		"апрель",
+		"май",
+		"июнь",
+		"июль",
+		"август",
+		"сентябрь",
+		"октябрь",
+		"ноябрь",
+		"декабрь",
+	}
 
-	// var months2 = [...]string{
-	// 	"января",
-	// 	"февраля",
-	// 	"марта",
-	// 	"апреля",
-	// 	"мая",
-	// 	"июня",
-	// 	"июля",
-	// 	"августа",
-	// 	"сентября",
-	// 	"октября",
-	// 	"ноября",
-	// 	"декабря",
-	// }
+	months2 := [...]string{
+		"", //0-го не бывает
+		"января",
+		"февраля",
+		"марта",
+		"апреля",
+		"мая",
+		"июня",
+		"июля",
+		"августа",
+		"сентября",
+		"октября",
+		"ноября",
+		"декабря",
+	}
 
-	// hour, min, sec := time.Time(t).Clock()
-	// y, m, d := time.Time(t).Date()
+	dayssm := [...]string{
+		"пн",
+		"вт",
+		"ср",
+		"чт",
+		"пт",
+		"сб",
+		"вс",
+	}
 
-	// TODO:
+	src := []rune(fmtstr)
+	res := make([]rune, 0, len(src)*2)
+	wasday := false
+	hour, min, sec := time.Time(t).Clock()
+	y, m, d := time.Time(t).Date()
 
-	return ""
+	i := 0
+	for i < len(src) {
+		var s []rune
+
+		if i+4 <= len(src) {
+			s = src[i : i+4]
+			switch string(s) {
+			case "дддд", "dddd":
+				res = append(res, []rune(days[t.ДеньНедели()])...)
+				i += 4
+				continue
+			case "ММММ", "MMMM":
+				if wasday {
+					res = append(res, []rune(months2[t.Месяц()])...)
+				} else {
+					res = append(res, []rune(months1[t.Месяц()])...)
+				}
+				i += 4
+				continue
+			case "гггг", "yyyy":
+				res = append(res, []rune(strconv.FormatInt(t.Год(), 10))...)
+				i += 4
+				continue
+
+			}
+		}
+
+		if i+3 <= len(src) {
+			s = src[i : i+3]
+			switch string(s) {
+			case "ддд", "ddd":
+				res = append(res, []rune(dayssm[t.ДеньНедели()])...)
+				i += 3
+				continue
+			case "МММ", "MMM":
+				if wasday {
+					res = append(res, []rune(months2[t.Месяц()])[:3]...)
+				} else {
+					res = append(res, []rune(months1[t.Месяц()])[:3]...)
+				}
+				i += 3
+				continue
+			case "ссс", "sss":
+				sm := strconv.FormatInt(t.Миллисекунда(), 10)
+				if len(sm) < 3 {
+					sm = strings.Repeat("0", 3-len(sm)) + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 3
+				continue
+			}
+		}
+
+		if i+2 <= len(src) {
+			s = src[i : i+2]
+			switch string(s) {
+			case "дд", "dd":
+				sm := strconv.Itoa(d)
+				if len(sm) < 2 {
+					sm = "0" + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 2
+				wasday = true
+				continue
+			case "ММ", "MM":
+				sm := strconv.Itoa(int(m))
+				if len(sm) < 2 {
+					sm = "0" + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 2
+				continue
+			case "гг", "yy":
+				sm := strconv.Itoa(int(y % 100))
+				if len(sm) < 2 {
+					sm = "0" + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 2
+				continue
+			case "чч", "hh":
+				sm := strconv.Itoa(int(hour))
+				if len(sm) < 2 {
+					sm = "0" + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 2
+				continue
+			case "мм", "mm":
+				sm := strconv.Itoa(int(min))
+				if len(sm) < 2 {
+					sm = "0" + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 2
+				continue
+			case "сс", "ss":
+				sm := strconv.Itoa(int(sec))
+				if len(sm) < 2 {
+					sm = "0" + sm
+				}
+				res = append(res, []rune(sm)...)
+				i += 2
+				continue
+			}
+		}
+
+		c := src[i]
+		switch c {
+		case 'д', 'd':
+			sm := strconv.Itoa(d)
+			res = append(res, []rune(sm)...)
+			i++
+			wasday = true
+			continue
+		case 'М', 'M':
+			sm := strconv.Itoa(int(m))
+			res = append(res, []rune(sm)...)
+			i++
+			continue
+		case 'г', 'y':
+			sm := strconv.Itoa(int(y % 100))
+			res = append(res, []rune(sm)...)
+			i++
+			continue
+		case 'ч', 'h':
+			sm := strconv.Itoa(int(hour))
+			res = append(res, []rune(sm)...)
+			i++
+			continue
+		case 'м', 'm':
+			sm := strconv.Itoa(int(min))
+			res = append(res, []rune(sm)...)
+			i++
+			continue
+		case 'с', 's':
+			sm := strconv.Itoa(int(sec))
+			res = append(res, []rune(sm)...)
+			i++
+			continue
+		case 'К', 'Q':
+			sm := strconv.FormatInt(t.Квартал(), 10)
+			res = append(res, []rune(sm)...)
+			i++
+			continue
+		}
+		res = append(res, c)
+		i++
+	}
+
+	return string(res)
 }
 
 func (t VMTime) ВычестьДату(t2 VMTime) time.Duration {
