@@ -21,6 +21,20 @@ type VMTime time.Time
 
 var ReflectVMTime = reflect.TypeOf(VMTime{})
 
+func (t VMTime) MarshalBinary() ([]byte, error) {
+	return time.Time(t).MarshalBinary()
+}
+
+func (t *VMTime) UnmarshalBinary(data []byte) error {
+	tt := time.Time(*t)
+	err := (&tt).UnmarshalBinary(data)
+	if err != nil {
+		return err
+	}
+	*t = VMTime(tt)
+	return nil
+}
+
 func (t VMTime) GobEncode() ([]byte, error) {
 	return time.Time(t).GobEncode()
 }
