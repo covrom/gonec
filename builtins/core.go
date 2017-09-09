@@ -33,7 +33,6 @@ import (
 	gonec_runtime "github.com/covrom/gonec/builtins/runtime"
 	gonec_sort "github.com/covrom/gonec/builtins/sort"
 	gonec_strings "github.com/covrom/gonec/builtins/strings"
-	gonec_time "github.com/covrom/gonec/builtins/time"
 
 	gonec_colortext "github.com/covrom/gonec/builtins/github.com/daviddengcn/go-colortext"
 )
@@ -43,28 +42,27 @@ func LoadAllBuiltins(env *envir.Env) {
 	Import(env)
 
 	pkgs := map[string]func(env *envir.Env) *envir.Env{
-		"encoding/json": gonec_encoding_json.Import,
-		"errors":        gonec_errors.Import,
-		"flag":          gonec_flag.Import,
-		"fmt":           gonec_fmt.Import,
-		"io":            gonec_io.Import,
-		"io/ioutil":     gonec_io_ioutil.Import,
-		"math":          gonec_math.Import,
-		"math/big":      gonec_math_big.Import,
-		"math/rand":     gonec_math_rand.Import,
-		"net":           gonec_net.Import,
-		"net/http":      gonec_net_http.Import,
-		"net/url":       gonec_net_url.Import,
-		"os":            gonec_os.Import,
-		"os/exec":       gonec_os_exec.Import,
-		"os/signal":     gonec_os_signal.Import,
-		"path":          gonec_path.Import,
-		"path/filepath": gonec_path_filepath.Import,
-		"regexp":        gonec_regexp.Import,
-		"runtime":       gonec_runtime.Import,
-		"sort":          gonec_sort.Import,
-		"strings":       gonec_strings.Import,
-		"time":          gonec_time.Import,
+		"encoding/json":                       gonec_encoding_json.Import,
+		"errors":                              gonec_errors.Import,
+		"flag":                                gonec_flag.Import,
+		"fmt":                                 gonec_fmt.Import,
+		"io":                                  gonec_io.Import,
+		"io/ioutil":                           gonec_io_ioutil.Import,
+		"math":                                gonec_math.Import,
+		"math/big":                            gonec_math_big.Import,
+		"math/rand":                           gonec_math_rand.Import,
+		"net":                                 gonec_net.Import,
+		"net/http":                            gonec_net_http.Import,
+		"net/url":                             gonec_net_url.Import,
+		"os":                                  gonec_os.Import,
+		"os/exec":                             gonec_os_exec.Import,
+		"os/signal":                           gonec_os_signal.Import,
+		"path":                                gonec_path.Import,
+		"path/filepath":                       gonec_path_filepath.Import,
+		"regexp":                              gonec_regexp.Import,
+		"runtime":                             gonec_runtime.Import,
+		"sort":                                gonec_sort.Import,
+		"strings":                             gonec_strings.Import,
 		"github.com/daviddengcn/go-colortext": gonec_colortext.Import,
 	}
 
@@ -158,6 +156,25 @@ func Import(env *envir.Env) *envir.Env {
 
 	env.DefineS("прошловременис", func(t VMTime) time.Duration {
 		return time.Since(time.Time(t))
+	})
+
+	env.DefineS("пауза", time.Sleep)
+
+	env.DefineS("выполнитьспустя", time.AfterFunc)
+
+	env.DefineS("длительностьнаносекунды", time.Nanosecond)
+	env.DefineS("длительностьмикросекунды", time.Microsecond)
+	env.DefineS("длительностьмиллисекунды", time.Millisecond)
+	env.DefineS("длительностьсекунды", time.Second)
+	env.DefineS("длительностьминуты", time.Minute)
+	env.DefineS("длительностьчаса", time.Hour)
+	env.DefineS("длительностьдня", time.Duration(time.Hour*24))
+	env.DefineS("длительность", func(s string) time.Duration {
+		d, err := time.ParseDuration(s)
+		if err != nil {
+			panic(err)
+		}
+		return d
 	})
 
 	env.DefineS("нрег", func(v interface{}) string {

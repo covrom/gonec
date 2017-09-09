@@ -413,11 +413,15 @@ func (t VMTime) Формат(fmtstr string) string {
 	return string(res)
 }
 
-func (t VMTime) ВычестьДату(t2 VMTime) time.Duration {
+func (t VMTime) Вычесть(t2 VMTime) time.Duration {
 	return time.Time(t).Sub(time.Time(t2))
 }
 
-func (t VMTime) ДобавитьКДате(dy, dm, dd int) VMTime {
+func (t VMTime) Добавить(d time.Duration) VMTime {
+	return VMTime(time.Time(t).Add(d))
+}
+
+func (t VMTime) ДобавитьПериод(dy, dm, dd int) VMTime {
 	return VMTime(time.Time(t).AddDate(dy, dm, dd))
 }
 
