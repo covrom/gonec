@@ -603,36 +603,59 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegL, r)
 
 		case *BinCALL:
-			// получаем функцию
-			var f, vargs reflect.Value
 			var err error
+
+			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
+			var fgnc, argssl interface{}
 			if s.Name == 0 {
-				// в регистре - функция
-				f = reflect.ValueOf(regs.Reg).Index(s.RegArgs).Elem()
-				// в следующем - массив аргументов
-				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs + 1).Elem()
+				fgnc = regs.Reg[s.RegArgs]
+				argssl = regs.Reg[s.RegArgs+1]
 			} else {
-				// функция берется из переменной или по имени в окружении
-				f, err = env.Get(s.Name)
+				var fgncv reflect.Value
+				fgncv, err = env.Get(s.Name)
 				if err != nil {
 					catcherr = NewError(stmt, err)
 					break
 				}
-				// в регистре - массив аргументов
-				vargs = reflect.ValueOf(regs.Reg).Index(s.RegArgs).Elem()
+				fgnc = fgncv.Interface()
+				argssl = regs.Reg[s.RegArgs]
 			}
+			if fnc, ok := fgnc.(gonec_core.VMFunc); ok {
+				// если ее надо вызвать в горутине - вызываем
+				if s.Go {
+					env.SetGoRunned(true)
+					go fnc(argssl.(gonec_core.VMSlice)...)
+					regs.Set(s.RegRets, nil)
+					break
+				}
+
+				// не в горутине
+				ret, err := fnc(argssl.(gonec_core.VMSlice)...)
+
+				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
+				// и аналогично проверить значения в переданных указателях
+
+				if err != nil {
+					// ошибку передаем в блок обработки исключений
+					catcherr = NewError(stmt, err)
+					break
+				}
+				regs.Set(s.RegRets, ret)
+				break
+			}
+
+			// получаем функцию на языке Го
+			f := reflect.ValueOf(fgnc)
+			vargs := reflect.ValueOf(argssl)
 			// это не функция - тогда ошибка
 			if f.Kind() != reflect.Func {
 				catcherr = NewStringError(stmt, "Не является функцией")
 				break
 			}
 			ftype := f.Type()
-			// isReflect = это функция на языке Гонец, а не встоенная в стандартную библиотеку
-			_, isReflect := f.Interface().(gonec_core.VMFunc)
 
 			// готовим аргументы для вызываемой функции
 			args := make([]reflect.Value, 0, s.NumArgs)
-			// log.Printf("args-7 %v %T\n", args, args)
 
 			for i := 0; i < s.NumArgs; i++ {
 				// очередной аргумент
@@ -652,7 +675,6 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 						if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
 							// типы не равны - пытаемся конвертировать
 							arg = arg.Convert(it)
-							// log.Printf("arg-1 %#v\n", arg)
 
 						} else if arg.Kind() == reflect.Func {
 							if _, isFunc := arg.Interface().(gonec_core.VMFunc); isFunc {
@@ -678,47 +700,23 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 									// return rets
 									return rfunc.Call(args)[:it.NumOut()]
 								})
-								// log.Printf("arg-2 %#v\n", arg)
 							}
 						} else if !arg.IsValid() {
 							arg = reflect.Zero(it)
-							// log.Printf("arg-3 %#v\n", arg)
 						}
 					}
 				}
 				if !arg.IsValid() {
 					arg = envir.NilValue
-					// log.Printf("arg-4 %#v\n", arg)
 				}
-				// log.Printf("arg-5 %#v\n", arg)
-				// if !isReflect {
-				// 	// для функций на языке Го
 				if s.VarArg && i == s.NumArgs-1 {
-					// log.Println("arg-6")
 					for j := 0; j < arg.Len(); j++ {
 						args = append(args, arg.Index(j))
 					}
 				} else {
-					// log.Printf("arg-7 %#v %T\n", arg, arg)
 					args = append(args, arg)
-					// log.Printf("args-7 %v %T\n", args, args)
 				}
-				// } else {
-				// 	// для функций на языке Гонец
-				// 	// if arg.Kind() == reflect.Interface {
-				// 	// 	arg = arg.Elem()
-				// 	// }
-				// 	if s.VarArg && i == s.NumArgs-1 {
-				// 		for j := 0; j < arg.Len(); j++ {
-				// 			args = append(args, arg.Index(j))
-				// 		}
-				// 	} else {
-				// 		args = append(args, reflect.ValueOf(arg))
-				// 	}
-				// }
-
 			}
-			// log.Printf("%v\n", args)
 
 			// вызываем функцию
 
@@ -741,35 +739,16 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				// }
 				rets := f.Call(args)
 
-				if isReflect {
-					// возврат из функций на языке Гонец содержит массив возвращенных значений в [0]
-					// и возникшую ошибку в [1]
-					ev := rets[1].Interface()
-					if ev != nil {
-						err = ev.(error)
-					}
-					return rets[0].Interface(), err // массив возвращаемых значений
+				// возврат из функций на языке Го
+
+				if f.Type().NumOut() == 1 {
+					return rets[0].Interface(), nil // одно значение
 				} else {
-
-					// возврат из функций на языке Го
-
-					// for i, expr := range e.SubExprs {
-					// 	if ae, ok := expr.(*ast.AddrExpr); ok {
-					// 		if id, ok := ae.Expr.(*ast.IdentExpr); ok {
-					// 			invokeLetExpr(id, args[i].Elem().Elem(), env)
-					// 		}
-					// 	}
-					// }
-
-					if f.Type().NumOut() == 1 {
-						return rets[0].Interface(), nil // одно значение
-					} else {
-						var result []interface{}
-						for _, r := range rets {
-							result = append(result, r.Interface())
-						}
-						return gonec_core.VMSlice(result), nil // массив возвращаемых значений
+					var result []interface{}
+					for _, r := range rets {
+						result = append(result, r.Interface())
 					}
+					return gonec_core.VMSlice(result), nil // массив возвращаемых значений
 				}
 			}
 

@@ -22,10 +22,6 @@ func (f VMFunc) String() string {
 	return fmt.Sprintf("[Функция: %p]", f)
 }
 
-func ToFunc(f VMFunc) reflect.Value {
-	return reflect.ValueOf(f)
-}
-
 ///////////////////////////////////////
 //Дата и время/////////////////////////
 ///////////////////////////////////////
