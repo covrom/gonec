@@ -3,7 +3,6 @@ package bincode
 import (
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/covrom/gonec/ast"
 )
@@ -130,15 +129,3 @@ func (e *Error) String() string {
 }
 
 type CatchFunc func() string
-
-// Функции такого типа создаются на языке Гонец,
-// их можно использовать в стандартной библиотеке, проверив на этот тип
-type Func func(args ...interface{}) (interface{}, error)
-
-func (f Func) String() string {
-	return fmt.Sprintf("[Функция: %p]", f)
-}
-
-func ToFunc(f Func) reflect.Value {
-	return reflect.ValueOf(f)
-}

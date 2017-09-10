@@ -14,16 +14,9 @@ type VMRegs struct {
 const initlenregs = 20
 
 func NewVMRegs(stmts BinCode) *VMRegs {
-	//собираем мапу переходов
-	lbls := make(map[int]int)
-	for i, stmt := range stmts {
-		if s, ok := stmt.(*BinLABEL); ok {
-			lbls[s.Label] = i
-		}
-	}
 	return &VMRegs{
 		Reg:          make([]interface{}, initlenregs),
-		Labels:       lbls,
+		Labels:       stmts.Labels,
 		TryLabel:     make([]int, 0, 5),
 		TryRegErr:    make([]int, 0, 5),
 		ForBreaks:    make([]int, 0, 5),

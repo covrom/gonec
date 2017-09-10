@@ -45,7 +45,7 @@ func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
 
 	prs, err = parser.Parse(scanner)
 	if err != nil {
-		return prs, nil, err
+		return prs, BinCode{}, err
 	}
 	// оптимизируем дерево AST
 	// свертка констант и нативные значения
@@ -128,7 +128,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		idx      int
 	)
 
-	for idx < len(stmts) {
+	for idx < len(stmts.Code) {
 		goschedidx++
 		if goschedidx == 1000 {
 			// даем воздуха другим горутинам каждые 1000 инструкций
@@ -141,7 +141,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			return nil, InterruptError
 		}
 
-		stmt := stmts[idx]
+		stmt := stmts.Code[idx]
 		switch s := stmt.(type) {
 
 		case *BinJMP:
@@ -628,7 +628,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			}
 			ftype := f.Type()
 			// isReflect = это функция на языке Гонец, а не встоенная в стандартную библиотеку
-			_, isReflect := f.Interface().(Func)
+			_, isReflect := f.Interface().(gonec_core.VMFunc)
 
 			// готовим аргументы для вызываемой функции
 			args := make([]reflect.Value, 0, s.NumArgs)
@@ -655,7 +655,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 							// log.Printf("arg-1 %#v\n", arg)
 
 						} else if arg.Kind() == reflect.Func {
-							if _, isFunc := arg.Interface().(Func); isFunc {
+							if _, isFunc := arg.Interface().(gonec_core.VMFunc); isFunc {
 								// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
 								rfunc := arg
 								if s.Go {
@@ -795,7 +795,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegRets, ret)
 
 		case *BinFUNC:
-			f := func(expr *BinFUNC, env *envir.Env) Func {
+			f := func(expr *BinFUNC, env *envir.Env) gonec_core.VMFunc {
 				return func(args ...interface{}) (interface{}, error) {
 					if !expr.VarArg {
 						if len(args) != len(expr.Args) {

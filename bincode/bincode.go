@@ -13,7 +13,12 @@ import (
 // компиляция в байткод
 ///////////////////////////////////////////////////////////////
 
-func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
+func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
+	bins := bcd.Code
+	defer func() {
+		bcd.Code = bins
+		bcd.MapLabels()
+	}()
 	for _, st := range inast {
 		// перебираем все подвыражения и команды, и выстраиваем их в линию
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
@@ -33,7 +38,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					JumpTo: lf,
 				}, s)
 			// Тогда
-			bins = append(bins, BinaryCode(s.Then, reg, lid)...)
+			bins = append(bins, BinaryCode(s.Then, reg, lid).Code...)
 			bins = appendBin(bins,
 				&BinJMP{
 					JumpTo: lend,
@@ -55,7 +60,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						Reg:    reg,
 						JumpTo: li,
 					}, stmtif)
-				bins = append(bins, BinaryCode(stmtif.Then, reg, lid)...)
+				bins = append(bins, BinaryCode(stmtif.Then, reg, lid).Code...)
 				bins = appendBin(bins,
 					&BinJMP{
 						JumpTo: lend,
@@ -67,7 +72,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			}
 			// Иначе
 			if len(s.Else) > 0 {
-				bins = append(bins, BinaryCode(s.Else, reg, lid)...)
+				bins = append(bins, BinaryCode(s.Else, reg, lid).Code...)
 			}
 			// КонецЕсли
 			bins = appendBin(bins,
@@ -92,7 +97,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Reg:    reg,
 					JumpTo: li,
 				}, s)
-			bins = append(bins, BinaryCode(s.Try, reg+1, lid)...) // чтобы не затереть регистр с ошибкой, увеличиваем номер
+			bins = append(bins, BinaryCode(s.Try, reg+1, lid).Code...) // чтобы не затереть регистр с ошибкой, увеличиваем номер
 			// сюда переходим, если в блоке выше возникла ошибка
 			bins = appendBin(bins,
 				&BinLABEL{
@@ -105,7 +110,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					JumpTo: lend,
 				}, s)
 			// тело обработки ошибки
-			bins = append(bins, BinaryCode(s.Catch, reg, lid)...) // регистр с ошибкой больше не нужен, текст определен функцией
+			bins = append(bins, BinaryCode(s.Catch, reg, lid).Code...) // регистр с ошибкой больше не нужен, текст определен функцией
 			// КонецПопытки
 			bins = appendBin(bins,
 				&BinLABEL{
@@ -162,7 +167,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Id:  s.Var,
 				}, s)
 
-			bins = append(bins, BinaryCode(s.Stmts, regsub, lid)...)
+			bins = append(bins, BinaryCode(s.Stmts, regsub, lid).Code...)
 
 			// повторяем итерацию
 			bins = appendBin(bins,
@@ -229,7 +234,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					Id:  s.Name,
 				}, s)
 
-			bins = append(bins, BinaryCode(s.Stmts, regsub, lid)...)
+			bins = append(bins, BinaryCode(s.Stmts, regsub, lid).Code...)
 
 			// повторяем итерацию
 			bins = appendBin(bins,
@@ -276,7 +281,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					JumpTo: lend,
 				}, s)
 			// тело цикла
-			bins = append(bins, BinaryCode(s.Stmts, reg+1, lid)...)
+			bins = append(bins, BinaryCode(s.Stmts, reg+1, lid).Code...)
 
 			// повторяем итерацию
 			bins = appendBin(bins,
@@ -358,7 +363,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 		case *ast.ModuleStmt:
 			if s.Name == ast.UniqueNames.Set("_") {
 				// добавляем все операторы в текущий контекст
-				bins = append(bins, BinaryCode(s.Stmts, reg, lid)...)
+				bins = append(bins, BinaryCode(s.Stmts, reg, lid).Code...)
 			} else {
 				bins = appendBin(bins,
 					&BinMODULE{
@@ -393,7 +398,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 						Reg:    reg + 2,
 						JumpTo: li,
 					}, case_stmt)
-				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid)...)
+				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid).Code...)
 				bins = appendBin(bins,
 					&BinJMP{
 						JumpTo: lend,
@@ -405,7 +410,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 					}, case_stmt)
 			}
 			if default_stmt != nil {
-				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid)...)
+				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid).Code...)
 			}
 			bins = appendBin(bins,
 				&BinLABEL{
@@ -539,7 +544,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 
 				}
 				// отправили или прочитали - выполняем ветку кода и выходим из цикла
-				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid)...)
+				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid).Code...)
 
 				// выходим из цикла
 				bins = appendBin(bins,
@@ -555,7 +560,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 			}
 			// если ни одна из веток не сработала - проверяем default
 			if default_stmt != nil {
-				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid)...)
+				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid).Code...)
 			} else {
 				// допускаем обработку других горутин
 				bins = appendBin(bins,
@@ -698,12 +703,12 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bins BinCode) {
 	return
 }
 
-func appendBin(bins BinCode, b BinStmt, e ast.Pos) BinCode {
+func appendBin(bins []BinStmt, b BinStmt, e ast.Pos) []BinStmt {
 	b.SetPosition(e.Position())
 	return append(bins, b)
 }
 
-func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
+func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins []BinStmt) {
 	// присваиваем значению переменной из e значение из регистра reg
 	switch ee := e.(type) {
 	case *ast.IdentExpr:
@@ -781,7 +786,7 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinCode) {
 	return
 }
 
-func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
+func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins []BinStmt) {
 	//inStmt=true - признак запуска выражения как опреатора в блоке кода, иначе это подвыражение
 	if expr == nil {
 		bins = appendBin(bins,
@@ -929,7 +934,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinCode) {
 					Operator: "=",
 					Rhss:     e.Rhss,
 				},
-			}, reg, lid)...)
+			}, reg, lid).Code...)
 			return
 		}
 		if len(e.Lhss) != 1 || len(e.Rhss) != 1 {

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -12,6 +13,18 @@ import (
 type VMSlice []interface{}
 
 type VMStringMap map[string]interface{}
+
+// Функции такого типа создаются на языке Гонец,
+// их можно использовать в стандартной библиотеке, проверив на этот тип
+type VMFunc func(args ...interface{}) (interface{}, error)
+
+func (f VMFunc) String() string {
+	return fmt.Sprintf("[Функция: %p]", f)
+}
+
+func ToFunc(f VMFunc) reflect.Value {
+	return reflect.ValueOf(f)
+}
 
 ///////////////////////////////////////
 //Дата и время/////////////////////////

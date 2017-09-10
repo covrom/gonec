@@ -26,14 +26,27 @@ type BinStmtImpl struct {
 func (x *BinStmtImpl) binstmt()           {}
 func (x *BinStmtImpl) SwapId(map[int]int) {}
 
-type BinCode []BinStmt
+type BinCode struct {
+	Code   []BinStmt
+	Labels map[int]int //индекс - это номер метки, значение = индекс stmt в Code
+}
 
 func (v BinCode) String() string {
 	s := ""
-	for _, e := range v {
+	for _, e := range v.Code {
 		s += fmt.Sprintf("%v\n", e)
 	}
 	return s
+}
+
+func (v *BinCode) MapLabels() {
+	//собираем мапу переходов
+	v.Labels = make(map[int]int)
+	for i, stmt := range v.Code {
+		if s, ok := stmt.(*BinLABEL); ok {
+			v.Labels[s.Label] = i
+		}
+	}
 }
 
 func WriteBinCode(w io.Writer, v BinCode) error {
@@ -62,7 +75,7 @@ func WriteBinCode(w io.Writer, v BinCode) error {
 func ReadBinCode(r io.Reader) (res BinCode, err error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, err
+		return res, err
 	}
 
 	dec := gob.NewDecoder(zr)
@@ -70,13 +83,13 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 	var gnxNames = ast.NewEnvNames()
 
 	if err := dec.Decode(gnxNames); err != nil {
-		return nil, err
+		return res, err
 	}
 	if err := dec.Decode(&res); err != nil {
-		return nil, err
+		return res, err
 	}
 	if err := zr.Close(); err != nil {
-		return nil, err
+		return res, err
 	}
 
 	// переносим загруженные имена в текущий контекст
@@ -110,7 +123,7 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 	}
 
 	// заменяем идентификаторы, если при слиянии были конфликты
-	for _, v := range res {
+	for _, v := range res.Code {
 		v.SwapId(swapIdents)
 	}
 
@@ -118,6 +131,7 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 }
 
 func init() {
+	gob.Register(BinCode{})
 	gob.Register(&ast.EnvNames{})
 	gob.Register(core.VMTime{})
 	gob.Register(core.VMSlice{})
