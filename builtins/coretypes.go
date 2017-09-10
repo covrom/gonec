@@ -8,11 +8,108 @@ import (
 	"time"
 )
 
+// иерархия базовых типов вирт. машины
+
+type VMValuer interface {
+	vmval()
+}
+
+type VMNiler interface {
+	VMValuer
+	IsNil() bool
+}
+
+type VMInterfacer interface {
+	VMNiler
+	Interface() interface{}
+}
+
+// конкретные типы
+
+type VMStringer interface {
+	VMInterfacer
+	String() string
+}
+type VMInter interface {
+	VMInterfacer
+	Int() int64
+}
+type VMFloater interface {
+	VMInterfacer
+	Float() float64
+}
+type VMBooler interface {
+	VMInterfacer
+	Bool() bool
+}
+type VMSlicer interface {
+	VMInterfacer
+	Slice() VMSlice
+}
+type VMMaper interface {
+	VMInterfacer
+	Map() VMStringMap
+}
+type VMFuncer interface {
+	VMInterfacer
+	Func() VMFunc
+}
+type VMDateTimer interface {
+	VMInterfacer
+	Time() VMTime
+}
+type VMChanneler interface {
+	VMInterfacer
+	Channel() VMChannel
+}
+
+// базовые структуры
+
+type VMValueImpl struct {
+	IsValid bool // не nil
+}
+
+func (x VMValueImpl) vmval()      {}
+func (x VMValueImpl) IsNil() bool { return !x.IsValid }
+
 // коллекции и типы вирт. машины
+
+type VMInt struct {
+	VMValueImpl
+	V int64
+}
+
+func (x VMInt) Interface() interface{} {
+	if x.IsValid {
+		return x.V
+	}
+	return nil
+}
+
+func (x VMInt) Int() int64 {
+	if x.IsValid {
+		return x.V
+	}
+	panic("Значение неопределено")
+}
+
+func (x VMInt) String() string {
+	if x.IsValid {
+		return fmt.Sprint(x.V)
+	}
+	panic("Значение неопределено")
+}
+
+
+
+
+
 
 type VMSlice []interface{}
 
 type VMStringMap map[string]interface{}
+
+type VMChannel chan interface{}
 
 // Функции такого типа создаются на языке Гонец,
 // их можно использовать в стандартной библиотеке, проверив на этот тип

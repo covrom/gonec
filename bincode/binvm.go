@@ -858,7 +858,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
 				break
 			}
-			v := make(chan interface{}, size)
+			v := make(gonec_core.VMChannel, size)
 			regs.Set(s.Reg, v)
 
 		case *BinMAKEARR:
