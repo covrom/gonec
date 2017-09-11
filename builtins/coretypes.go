@@ -6,104 +6,224 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 // иерархия базовых типов вирт. машины
+type (
+	// VMValuer корневой тип всех значений, доступных вирт. машине
+	VMValuer interface {
+		vmval()
+	}
 
-type VMValuer interface {
-	vmval()
-}
+	// VMInterfacer корневой тип всех значений, которые могут преобразовываться в значения на языке Го
+	VMInterfacer interface {
+		VMValuer
+		Interface() interface{} // может возвращать в т.ч. nil
+	}
 
-type VMNiler interface {
-	VMValuer
-	IsNil() bool
-}
+	VMParser interface {
+		VMValuer
+		Parse(string) error // используется для указателей, т.к. парсит в их значения
+	}
 
-type VMInterfacer interface {
-	VMNiler
-	Interface() interface{}
-}
+	VMChaner interface {
+		VMValuer
+		Send(VMValuer)
+		Recv() VMValuer
+		TrySend(VMValuer) bool
+		TryRecv() (VMValuer, bool)
+	}
 
-// конкретные типы
+	// конкретные типы виртуальной машины
 
-type VMStringer interface {
-	VMInterfacer
-	String() string
-}
-type VMInter interface {
-	VMInterfacer
-	Int() int64
-}
-type VMFloater interface {
-	VMInterfacer
-	Float() float64
-}
-type VMBooler interface {
-	VMInterfacer
-	Bool() bool
-}
-type VMSlicer interface {
-	VMInterfacer
-	Slice() VMSlice
-}
-type VMMaper interface {
-	VMInterfacer
-	Map() VMStringMap
-}
-type VMFuncer interface {
-	VMInterfacer
-	Func() VMFunc
-}
-type VMDateTimer interface {
-	VMInterfacer
-	Time() VMTime
-}
-type VMChanneler interface {
-	VMInterfacer
-	Channel() VMChannel
-}
+	// VMStringer строка
+	VMStringer interface {
+		VMInterfacer
+		String() string
+	}
 
-// базовые структуры
+	// VMNumberer число, внутреннее хранение в int64 или decimal формате
+	VMNumberer interface {
+		VMInterfacer
+		Int() int64
+		Float() float64
+		Decimal() VMDecimal
+	}
 
-type VMValueImpl struct {
-	IsValid bool // не nil
-}
+	// VMBooler сообщает значение булево
+	VMBooler interface {
+		VMInterfacer
+		Bool() bool
+	}
 
-func (x VMValueImpl) vmval()      {}
-func (x VMValueImpl) IsNil() bool { return !x.IsValid }
+	// VMSlicer может быть представлен в виде слайса Гонец
+	VMSlicer interface {
+		VMInterfacer
+		Slice() VMSlice
+	}
+
+	// VMMaper может быть представлен в виде структуры Гонец
+	VMMaper interface {
+		VMInterfacer
+		Map() VMStringMap
+	}
+
+	// VMFuncer это функция Гонец
+	VMFuncer interface {
+		VMInterfacer
+		Func() VMFunc
+	}
+
+	// VMDateTimer это дата/время
+	VMDateTimer interface {
+		VMInterfacer
+		Time() VMTime
+	}
+
+	// VMChanMaker может создать новый канал
+	VMChanMaker interface {
+		VMInterfacer
+		MakeChan(int) VMChaner
+	}
+)
 
 // коллекции и типы вирт. машины
 
-type VMInt struct {
-	VMValueImpl
-	V int64
-}
+// универсальные числа, реализуют целые и с плавающей точкой для финансовых расчетов (decimal)
+
+// VMInt для ускорения работы храним целочисленное представление отдельно от decimal
+type VMInt int64
+
+func (x VMInt) vmval() {}
 
 func (x VMInt) Interface() interface{} {
-	if x.IsValid {
-		return x.V
-	}
-	return nil
-}
-
-func (x VMInt) Int() int64 {
-	if x.IsValid {
-		return x.V
-	}
-	panic("Значение неопределено")
+	return x
 }
 
 func (x VMInt) String() string {
-	if x.IsValid {
-		return fmt.Sprint(x.V)
-	}
-	panic("Значение неопределено")
+	return strconv.FormatInt(int64(x), 10)
 }
 
+func (x VMInt) Int() int64 {
+	return int64(x)
+}
 
+func (x VMInt) Float() float64 {
+	return float64(x)
+}
 
+func (x VMInt) Decimal() VMDecimal {
+	return VMDecimal(decimal.New(int64(x), 0))
+}
 
+func (x VMInt) Bool() bool {
+	return x > 0
+}
 
+func (x VMInt) MakeChan(size int) VMChaner {
+	return make(VMChan, size)
+}
+
+func (x VMInt) Time() VMTime {
+	return VMTime(time.Unix(int64(x), 0))
+}
+
+func (x *VMInt) Parse(s string) error {
+	i64, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return err
+	}
+	*x = VMInt(i64)
+	return nil
+}
+
+type VMDecimal decimal.Decimal
+
+func (x VMDecimal) vmval() {}
+
+func (x VMDecimal) Interface() interface{} {
+	return x
+}
+
+func (x VMDecimal) String() string {
+	return decimal.Decimal(x).String()
+}
+
+func (x VMDecimal) Int() int64 {
+	return decimal.Decimal(x).IntPart()
+}
+
+func (x VMDecimal) Float() float64 {
+	f64, ok := decimal.Decimal(x).Float64()
+	if !ok {
+		panic("Невозможно получить значение с плавающей запятой 64 бит")
+	}
+	return f64
+}
+
+func (x VMDecimal) Decimal() VMDecimal {
+	return x
+}
+
+func (x VMDecimal) Bool() bool {
+	return decimal.Decimal(x).GreaterThan(decimal.Zero)
+}
+
+func (x VMDecimal) MakeChan(size int) VMChaner {
+	
+	return make(VMChan, size)
+}
+
+func (x VMDecimal) Time() VMTime {
+	intpart := decimal.Decimal(x).IntPart()
+	nanopart := decimal.Decimal(x).Sub(decimal.New(intpart, 0)).Mul(decimal.New(1e9, 0)).IntPart()
+	return VMTime(time.Unix(intpart, nanopart))
+}
+
+func (x *VMDecimal) Parse(s string) error {
+	d, err := decimal.NewFromString(s)
+	if err != nil {
+		return err
+	}
+	*x = VMDecimal(d)
+	return nil
+}
+
+type VMChan chan VMValuer
+
+func (x VMChan) vmval() {}
+
+func (x VMChan) Send(v VMValuer) {
+	x <- v
+}
+
+func (x VMChan) Recv() VMValuer {
+	return <-x
+}
+
+func (x VMChan) TrySend(v VMValuer) (ok bool) {
+	select {
+	case x <- v:
+		ok = true
+	default:
+		ok = false
+	}
+	return
+}
+
+func (x VMChan) TryRecv() (v VMValuer, ok bool) {
+	select {
+	case v = <-x:
+		ok = true
+	default:
+		ok = false
+	}
+	return
+}
+
+// старые типы
 
 type VMSlice []interface{}
 

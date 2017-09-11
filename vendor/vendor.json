@@ -1,5 +1,8 @@
 {
 	"comment": "",
+	"heroku": {
+		"goVersion": "go1.9"
+	},
 	"ignore": "test",
 	"package": [
 		{
@@ -13,10 +16,13 @@
 			"path": "github.com/mattn/go-isatty",
 			"revision": "fc9e8d8ef48496124e79ae0df75490096eccf6fe",
 			"revisionTime": "2017-03-22T23:44:13Z"
+		},
+		{
+			"checksumSHA1": "hU4FCpvSz/eV4G0cqnXEs9mFLh8=",
+			"path": "github.com/shopspring/decimal",
+			"revision": "730de27aa507d979cb5a8a17b11c82f361c3d4a3",
+			"revisionTime": "2017-09-05T13:57:20Z"
 		}
 	],
-	"rootPath": "github.com/covrom/gonec",
-	"heroku": {
-		"goVersion": "go1.9"
-	}
+	"rootPath": "github.com/covrom/gonec"
 }
