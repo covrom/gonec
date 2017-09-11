@@ -91,8 +91,6 @@ type (
 
 // коллекции и типы вирт. машины
 
-// универсальные числа, реализуют целые и с плавающей точкой для финансовых расчетов (decimal)
-
 // VMInt для ускорения работы храним целочисленное представление отдельно от decimal
 type VMInt int64
 
@@ -139,6 +137,7 @@ func (x *VMInt) Parse(s string) error {
 	return nil
 }
 
+// VMDecimal с плавающей токой, для финансовых расчетов высокой точности (decimal)
 type VMDecimal decimal.Decimal
 
 func (x VMDecimal) vmval() {}
