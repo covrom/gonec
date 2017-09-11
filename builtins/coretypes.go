@@ -17,12 +17,20 @@ type (
 		vmval()
 	}
 
-	// VMInterfacer корневой тип всех значений, которые могут преобразовываться в значения на языке Го
+	// VMInterfacer корневой тип всех значений,
+	// которые могут преобразовываться в значения для функций на языке Го
 	VMInterfacer interface {
 		VMValuer
 		Interface() interface{} // может возвращать в т.ч. nil
 	}
 
+	// VMFromGoParser может парсить из значений на языке Го
+	VMFromGoParser interface {
+		VMValuer
+		ParseGoType(interface{}) // используется для указателей, т.к. парсит в их значения
+	}
+
+	// VMParser может парсить из строки
 	VMParser interface {
 		VMValuer
 		Parse(string) error // используется для указателей, т.к. парсит в их значения
@@ -100,6 +108,43 @@ func (x VMInt) Interface() interface{} {
 	return x
 }
 
+func (x *VMInt) ParseGoType(v interface{}) {
+	switch vv := v.(type) {
+	case int:
+		*x = VMInt(vv)
+	case int8:
+		*x = VMInt(vv)
+	case int16:
+		*x = VMInt(vv)
+	case int32:
+		*x = VMInt(vv)
+	case int64:
+		*x = VMInt(vv)
+	case uint:
+		*x = VMInt(vv)
+	case uint8:
+		*x = VMInt(vv)
+	case uint16:
+		*x = VMInt(vv)
+	case uint32:
+		*x = VMInt(vv)
+	case uint64:
+		*x = VMInt(vv)
+	case uintptr:
+		*x = VMInt(vv)
+	case float32:
+		*x = VMInt(int64(vv))
+	case float64:
+		*x = VMInt(int64(vv))
+	default:
+		rv := reflect.Indirect(reflect.ValueOf(v))
+		if rv.Kind() == reflect.Interface {
+			rv = rv.Elem()
+		}
+		*x = VMInt(rv.Int()) // выдаст панику, если это не число
+	}
+}
+
 func (x VMInt) String() string {
 	return strconv.FormatInt(int64(x), 10)
 }
@@ -146,6 +191,47 @@ func (x VMDecimal) Interface() interface{} {
 	return x
 }
 
+func (x *VMDecimal) ParseGoType(v interface{}) {
+	switch vv := v.(type) {
+	case int:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case int8:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case int16:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case int32:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case int64:
+		*x = VMDecimal(decimal.New(vv, 0))
+	case uint:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case uint8:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case uint16:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case uint32:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case uint64:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case uintptr:
+		*x = VMDecimal(decimal.New(int64(vv), 0))
+	case float32:
+		*x = VMDecimal(decimal.NewFromFloat(float64(vv)))
+	case float64:
+		*x = VMDecimal(decimal.NewFromFloat(vv))
+	default:
+		rv := reflect.Indirect(reflect.ValueOf(v))
+		if rv.Kind() == reflect.Interface {
+			rv = rv.Elem()
+		}
+		if rv.Kind() == reflect.Float32 || rv.Kind() == reflect.Float64 {
+			*x = VMDecimal(decimal.NewFromFloat(rv.Float())) // выдаст панику, если это не число
+		} else {
+			*x = VMDecimal(decimal.New(rv.Int(), 0))
+		}
+	}
+}
+
 func (x VMDecimal) String() string {
 	return decimal.Decimal(x).String()
 }
@@ -189,6 +275,94 @@ func (x *VMDecimal) Parse(s string) error {
 	*x = VMDecimal(d)
 	return nil
 }
+
+// VMString строки
+type VMString string
+
+func (x VMString) vmval() {}
+
+func (x VMString) Interface() interface{} {
+	return x
+}
+
+func (x VMString) String() string {
+	return string(x)
+}
+
+func (x VMString) Int() int64 {
+	i64, err := strconv.ParseInt(string(x), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	return i64
+}
+
+func (x VMString) Float() float64 {
+	f64, err := strconv.ParseFloat(string(x), 64)
+	if err != nil {
+		panic(err)
+	}
+	return f64
+}
+
+func (x VMString) Decimal() VMDecimal {
+	d, err := decimal.NewFromString(string(x))
+	if err != nil {
+		panic(err)
+	}
+	return VMDecimal(d)
+}
+
+func (x VMString) MakeChan(size int) VMChaner {
+	return make(VMChan, size)
+}
+
+func (x VMString) Time() VMTime {
+	t, err := time.ParseInLocation("2006-01-02T15:04:05", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.Parse(time.RFC3339, string(x))
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.ParseInLocation("20060102150405", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.ParseInLocation("20060102", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.ParseInLocation("02.01.2006", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.ParseInLocation("02.01.2006 15:04:05", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.Parse(time.RFC1123, string(x))
+	if err == nil {
+		return VMTime(t)
+	}
+	panic("Неверный формат даты и времени")
+}
+
+func (x *VMString) Parse(s string) error {
+	*x = VMString(s)
+	return nil
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+func (x *VMString) Slice() VMSlice {
+	panic("TODO")
+}
+
+func (x *VMString) Map() VMStringMap {
+	panic("TODO")
+}
+///////////////////////////////////////////////////////////////////////////////////
 
 // VMChan - канал для передачи любого типа вирт. машины
 type VMChan chan VMValuer
