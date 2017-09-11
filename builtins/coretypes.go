@@ -171,7 +171,7 @@ func (x VMDecimal) Bool() bool {
 }
 
 func (x VMDecimal) MakeChan(size int) VMChaner {
-	
+
 	return make(VMChan, size)
 }
 
@@ -190,6 +190,7 @@ func (x *VMDecimal) Parse(s string) error {
 	return nil
 }
 
+// VMChan - канал для передачи любого типа вирт. машины
 type VMChan chan VMValuer
 
 func (x VMChan) vmval() {}
