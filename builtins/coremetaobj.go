@@ -110,6 +110,9 @@ func (v *VMMetaObj) VMGetMethod(name int) VMMeth {
 			case 0:
 				return nil, nil
 			case 1:
+				if x, ok := r[0].Interface().(VMInterfacer); ok {
+					return x, nil
+				}
 				return ReflectToVMValue(r[0]), nil
 			case 2:
 				if e, ok := r[1].Interface().(error); ok {
@@ -128,6 +131,9 @@ func (v *VMMetaObj) VMGetMethod(name int) VMMeth {
 
 // ReflectToVMValue преобразовывает значение Го в наиболее подходящий тип значения для вирт. машшины
 func ReflectToVMValue(rv reflect.Value) VMInterfacer {
+	if x, ok := rv.Interface().(VMInterfacer); ok {
+		return x
+	}
 	switch rv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return VMInt(rv.Int())
