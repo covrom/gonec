@@ -361,7 +361,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
 				}, s)
 
 		case *ast.ModuleStmt:
-			if s.Name == ast.UniqueNames.Set("_") {
+			if s.Name == env.UniqueNames.Set("_") {
 				// добавляем все операторы в текущий контекст
 				bins = append(bins, BinaryCode(s.Stmts, reg, lid).Code...)
 			} else {

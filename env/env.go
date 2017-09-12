@@ -8,8 +8,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-
-	"github.com/covrom/gonec/ast"
 )
 
 var (
@@ -91,7 +89,7 @@ func (e *Env) NewSubEnv() *Env {
 // Находим или создаем новый модуль в глобальном скоупе
 func (e *Env) NewModule(n string) *Env {
 	//ni := strings.ToLower(n)
-	id := ast.UniqueNames.Set(n)
+	id := UniqueNames.Set(n)
 	if v, err := e.Get(id); err == nil {
 		if vv, ok := v.Interface().(*Env); ok {
 			return vv
@@ -217,7 +215,7 @@ func (e *Env) Addr(k int) (reflect.Value, error) {
 			return v.Addr(), nil
 		}
 	}
-	return NilValue, fmt.Errorf("Имя неопределено '%s'", ast.UniqueNames.Get(k))
+	return NilValue, fmt.Errorf("Имя неопределено '%s'", UniqueNames.Get(k))
 }
 
 // TypeName определяет имя типа по типу значения
@@ -234,7 +232,7 @@ func (e *Env) TypeName(t reflect.Type) int {
 			}
 		}
 	}
-	return ast.UniqueNames.Set(t.String())
+	return UniqueNames.Set(t.String())
 }
 
 // Type returns type which specified symbol. It goes to upper scope until
@@ -250,7 +248,7 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 			return v, nil
 		}
 	}
-	return NilType, fmt.Errorf("Тип неопределен '%s'", ast.UniqueNames.Get(k))
+	return NilType, fmt.Errorf("Тип неопределен '%s'", UniqueNames.Get(k))
 }
 
 // Get returns value which specified symbol. It goes to upper scope until
@@ -270,7 +268,7 @@ func (e *Env) Get(k int) (reflect.Value, error) {
 			return v, nil
 		}
 	}
-	return NilValue, fmt.Errorf("Имя неопределено '%s'", ast.UniqueNames.Get(k))
+	return NilValue, fmt.Errorf("Имя неопределено '%s'", UniqueNames.Get(k))
 }
 
 // Set modifies value which specified as symbol. It goes to upper scope until
@@ -294,7 +292,7 @@ func (e *Env) Set(k int, v interface{}) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("Имя неопределено '%s'", ast.UniqueNames.Get(k))
+	return fmt.Errorf("Имя неопределено '%s'", UniqueNames.Get(k))
 }
 
 // DefineGlobal defines symbol in global scope.
@@ -320,51 +318,51 @@ func (e *Env) DefineType(k int, t interface{}) error {
 				defer ee.Unlock()
 			}
 			ee.typ[k] = typ
-			// пишем в кэш индексы полей и методов для структур
-			// для работы со структурами нам нужен конкретный тип
-			if typ.Kind() == reflect.Ptr {
-				typ = typ.Elem()
-			}
-			if typ.Kind() == reflect.Struct {
-				// методы берем в т.ч. у ссылки на структуру, они включают методы самой структуры
-				// это будут разные методы для разных reflect.Value
-				ptyp := reflect.TypeOf(reflect.New(typ).Interface())
-				basicpath := typ.PkgPath() + "." + typ.Name() + "."
+			// // пишем в кэш индексы полей и методов для структур
+			// // для работы со структурами нам нужен конкретный тип
+			// if typ.Kind() == reflect.Ptr {
+			// 	typ = typ.Elem()
+			// }
+			// if typ.Kind() == reflect.Struct {
+			// 	// методы берем в т.ч. у ссылки на структуру, они включают методы самой структуры
+			// 	// это будут разные методы для разных reflect.Value
+			// 	ptyp := reflect.TypeOf(reflect.New(typ).Interface())
+			// 	basicpath := typ.PkgPath() + "." + typ.Name() + "."
 
-				//методы
-				nm := typ.NumMethod()
-				for i := 0; i < nm; i++ {
-					meth := typ.Method(i)
-					// только экспортируемые
-					if meth.PkgPath == "" {
-						namtyp := ast.UniqueNames.Set(basicpath + meth.Name)
-						// fmt.Println("SET METHOD: "+basicpath+meth.Name, meth.Index)
-						ast.StructMethodIndexes.Cache[namtyp] = meth.Index
-					}
-				}
-				nm = ptyp.NumMethod()
-				for i := 0; i < nm; i++ {
-					meth := ptyp.Method(i)
-					// только экспортируемые
-					if meth.PkgPath == "" {
-						namtyp := ast.UniqueNames.Set(basicpath + "*" + meth.Name)
-						// fmt.Println("SET *METHOD: "+basicpath+"*"+meth.Name, meth.Index)
-						ast.StructMethodIndexes.Cache[namtyp] = meth.Index
-					}
-				}
+			// 	//методы
+			// 	nm := typ.NumMethod()
+			// 	for i := 0; i < nm; i++ {
+			// 		meth := typ.Method(i)
+			// 		// только экспортируемые
+			// 		if meth.PkgPath == "" {
+			// 			namtyp := UniqueNames.Set(basicpath + meth.Name)
+			// 			// fmt.Println("SET METHOD: "+basicpath+meth.Name, meth.Index)
+			// 			// ast.StructMethodIndexes.Cache[namtyp] = meth.Index
+			// 		}
+			// 	}
+			// 	nm = ptyp.NumMethod()
+			// 	for i := 0; i < nm; i++ {
+			// 		meth := ptyp.Method(i)
+			// 		// только экспортируемые
+			// 		if meth.PkgPath == "" {
+			// 			namtyp := UniqueNames.Set(basicpath + "*" + meth.Name)
+			// 			// fmt.Println("SET *METHOD: "+basicpath+"*"+meth.Name, meth.Index)
+			// 			// ast.StructMethodIndexes.Cache[namtyp] = meth.Index
+			// 		}
+			// 	}
 
-				//поля
-				nm = typ.NumField()
-				for i := 0; i < nm; i++ {
-					field := typ.Field(i)
-					// только экспортируемые неанонимные поля
-					if field.PkgPath == "" && !field.Anonymous {
-						namtyp := ast.UniqueNames.Set(basicpath + field.Name)
-						// fmt.Println("SET FIELD: "+basicpath+field.Name, field.Index)
-						ast.StructFieldIndexes.Cache[namtyp] = field.Index
-					}
-				}
-			}
+			// 	//поля
+			// 	nm = typ.NumField()
+			// 	for i := 0; i < nm; i++ {
+			// 		field := typ.Field(i)
+			// 		// только экспортируемые неанонимные поля
+			// 		if field.PkgPath == "" && !field.Anonymous {
+			// 			namtyp := UniqueNames.Set(basicpath + field.Name)
+			// 			// fmt.Println("SET FIELD: "+basicpath+field.Name, field.Index)
+			// 			// ast.StructFieldIndexes.Cache[namtyp] = field.Index
+			// 		}
+			// 	}
+			// }
 			return nil
 		}
 	}
@@ -372,7 +370,7 @@ func (e *Env) DefineType(k int, t interface{}) error {
 }
 
 func (e *Env) DefineTypeS(k string, t interface{}) error {
-	return e.DefineType(ast.UniqueNames.Set(k), t)
+	return e.DefineType(UniqueNames.Set(k), t)
 }
 
 // Define defines symbol in current scope.
@@ -397,7 +395,7 @@ func (e *Env) Define(k int, v interface{}) error {
 }
 
 func (e *Env) DefineS(k string, v interface{}) error {
-	return e.Define(ast.UniqueNames.Set(k), v)
+	return e.Define(UniqueNames.Set(k), v)
 }
 
 // String return the name of current scope.
@@ -421,7 +419,7 @@ func (e *Env) Dump() {
 	}
 	sort.Ints(keys)
 	for _, k := range keys {
-		e.Printf("%d %s = %#v %T\n", k, ast.UniqueNames.Get(k), e.env[k], e.env[k].Interface())
+		e.Printf("%d %s = %#v %T\n", k, UniqueNames.Get(k), e.env[k], e.env[k].Interface())
 	}
 	if e.goRunned {
 		e.RUnlock()
@@ -469,7 +467,7 @@ func (e *Env) SetSid(s string) error {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			ee.sid = s
-			return ee.Define(ast.UniqueNames.Set("ГлобальныйИдентификаторСессии"), s)
+			return ee.Define(UniqueNames.Set("ГлобальныйИдентификаторСессии"), s)
 		}
 	}
 	return fmt.Errorf("Отсутствует глобальный контекст!")

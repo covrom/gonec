@@ -1,11 +1,13 @@
-package ast
+package env
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"sync"
 )
+
+// все переменные
+var UniqueNames = NewEnvNames()
 
 // уникальные названия переменных, индекс используется в AST-дереве
 type EnvNames struct {
@@ -81,48 +83,4 @@ func (en *EnvNames) SetToId(n string, i int) {
 		en.Iter = i + 1 // гарантированно следующий
 	}
 	en.mu.Unlock()
-}
-
-// все переменные
-var UniqueNames = NewEnvNames()
-
-// TODO: упростить, перенести в binfuncs
-
-var StructMethodIndexes = struct {
-	Cache map[int]int // pkg.typename.methname из UniqueNames
-}{
-	Cache: make(map[int]int, 200),
-}
-
-func MethodByNameCI(v reflect.Value, name int) (reflect.Value, error) {
-	tv := v.Type()
-	var fullname string
-	// методы ссылок - вычисляем отдельно
-	if tv.Kind() == reflect.Ptr {
-		fullname = tv.Elem().PkgPath() + "." + tv.Elem().Name() + ".*" + UniqueNames.GetLowerCase(name)
-	} else {
-		fullname = tv.PkgPath() + "." + tv.Name() + "." + UniqueNames.GetLowerCase(name)
-	}
-	// fmt.Println("GET METHOD: " + fullname)
-	if idx, ok := StructMethodIndexes.Cache[UniqueNames.Set(fullname)]; ok {
-		return v.Method(idx), nil
-	}
-	return reflect.Value{}, fmt.Errorf("Метод %s не найден", fullname)
-}
-
-var StructFieldIndexes = struct {
-	Cache map[int][]int // pkg.typename.fieldname из UniqueNames
-}{
-	Cache: make(map[int][]int, 200),
-}
-
-func FieldByNameCI(v reflect.Value, name int) (reflect.Value, error) {
-	tv := v.Type()
-	// у ссылок поля не будут найдены - это правильно
-	fullname := tv.PkgPath() + "." + tv.Name() + "." + UniqueNames.GetLowerCase(name)
-	// fmt.Println("GET FIELD: " + fullname)
-	if idx, ok := StructFieldIndexes.Cache[UniqueNames.Set(fullname)]; ok {
-		return v.FieldByIndex(idx), nil
-	}
-	return reflect.Value{}, fmt.Errorf("Поле %s не найдено", fullname)
 }

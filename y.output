@@ -5,7 +5,7 @@ state 0
 	modules: .    (1)
 
 	MODULE  shift 3
-	.  reduce 1 (src line 70)
+	.  reduce 1 (src line 71)
 
 	modules  goto 1
 	module  goto 2
@@ -23,7 +23,7 @@ state 1
 state 2
 	modules:  module.    (2)
 
-	.  reduce 2 (src line 77)
+	.  reduce 2 (src line 78)
 
 
 state 3
@@ -36,7 +36,7 @@ state 3
 state 4
 	modules:  modules module.    (3)
 
-	.  reduce 3 (src line 84)
+	.  reduce 3 (src line 85)
 
 
 state 5
@@ -59,11 +59,11 @@ state 6
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	$end  reduce 7 (src line 110)
-	MODULE  reduce 7 (src line 110)
+	$end  reduce 7 (src line 111)
+	MODULE  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 10
 	stmts  goto 13
@@ -74,25 +74,25 @@ state 6
 state 7
 	terms:  term.    (133)
 
-	.  reduce 133 (src line 741)
+	.  reduce 133 (src line 742)
 
 
 state 8
 	term:  ';'.    (135)
 
-	.  reduce 135 (src line 749)
+	.  reduce 135 (src line 750)
 
 
 state 9
 	term:  '\n'.    (136)
 
-	.  reduce 136 (src line 752)
+	.  reduce 136 (src line 753)
 
 
 state 10
 	module:  MODULE IDENT terms compstmt.    (4)
 
-	.  reduce 4 (src line 94)
+	.  reduce 4 (src line 95)
 
 
  11: reduce/reduce conflict  (red'ns 133 and 134) on $end
@@ -135,7 +135,7 @@ state 11
 	terms:  term.    (133)
 	terms:  terms term.    (134)
 
-	.  reduce 133 (src line 741)
+	.  reduce 133 (src line 742)
 
 
 state 12
@@ -166,7 +166,7 @@ state 12
 	WHILE  shift 24
 	TERNARY  shift 39
 	TYPECAST  shift 47
-	','  reduce 50 (src line 324)
+	','  reduce 50 (src line 325)
 	'-'  shift 29
 	'*'  shift 33
 	'{'  shift 42
@@ -175,7 +175,7 @@ state 12
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 5 (src line 101)
+	.  reduce 5 (src line 102)
 
 	stmt  goto 15
 	stmt_if  goto 22
@@ -190,7 +190,7 @@ state 13
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 52
 	opt_terms  goto 51
@@ -204,14 +204,14 @@ state 14
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 132 (src line 737)
+	.  reduce 132 (src line 738)
 
 	term  goto 53
 
 state 15
 	stmts:  opt_terms stmt.    (8)
 
-	.  reduce 8 (src line 114)
+	.  reduce 8 (src line 115)
 
 
 16: shift/reduce conflict (shift 64(6), red'n 45(0)) on EQEQ
@@ -275,7 +275,7 @@ state 16
 	SHIFTRIGHT  shift 63
 	OPCHAN  shift 84
 	'='  shift 54
-	','  reduce 51 (src line 328)
+	','  reduce 51 (src line 329)
 	'>'  shift 66
 	'<'  shift 68
 	'+'  shift 56
@@ -288,7 +288,7 @@ state 16
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 25 (src line 198)
+	.  reduce 25 (src line 199)
 
 
 state 17
@@ -303,13 +303,13 @@ state 17
 state 18
 	stmt:  BREAK.    (13)
 
-	.  reduce 13 (src line 138)
+	.  reduce 13 (src line 139)
 
 
 state 19
 	stmt:  CONTINUE.    (14)
 
-	.  reduce 14 (src line 143)
+	.  reduce 14 (src line 144)
 
 
 state 20
@@ -338,7 +338,7 @@ state 20
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 88
 	exprs  goto 87
@@ -375,7 +375,7 @@ state 21
 state 22
 	stmt:  stmt_if.    (17)
 
-	.  reduce 17 (src line 158)
+	.  reduce 17 (src line 159)
 
 
 state 23
@@ -425,10 +425,10 @@ state 25
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	CATCH  reduce 7 (src line 110)
+	CATCH  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 93
 	stmts  goto 13
@@ -480,13 +480,13 @@ state 27
 
 	'('  shift 96
 	'['  shift 97
-	.  reduce 54 (src line 341)
+	.  reduce 54 (src line 342)
 
 
 state 28
 	expr:  NUMBER.    (55)
 
-	.  reduce 55 (src line 347)
+	.  reduce 55 (src line 348)
 
 
 state 29
@@ -639,31 +639,31 @@ state 33
 state 34
 	expr:  STRING.    (63)
 
-	.  reduce 63 (src line 387)
+	.  reduce 63 (src line 388)
 
 
 state 35
 	expr:  TRUE.    (64)
 
-	.  reduce 64 (src line 392)
+	.  reduce 64 (src line 393)
 
 
 state 36
 	expr:  FALSE.    (65)
 
-	.  reduce 65 (src line 397)
+	.  reduce 65 (src line 398)
 
 
 state 37
 	expr:  NIL.    (66)
 
-	.  reduce 66 (src line 402)
+	.  reduce 66 (src line 403)
 
 
 state 38
 	expr:  NULL.    (67)
 
-	.  reduce 67 (src line 407)
+	.  reduce 67 (src line 408)
 
 
 state 39
@@ -715,7 +715,7 @@ state 41
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 108
@@ -730,7 +730,7 @@ state 42
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 109
@@ -899,7 +899,7 @@ state 50
 state 51
 	compstmt:  stmts opt_terms.    (6)
 
-	.  reduce 6 (src line 105)
+	.  reduce 6 (src line 106)
 
 
 state 52
@@ -931,7 +931,7 @@ state 52
 	WHILE  shift 24
 	TERNARY  shift 39
 	TYPECAST  shift 47
-	','  reduce 50 (src line 324)
+	','  reduce 50 (src line 325)
 	'-'  shift 29
 	'*'  shift 33
 	'{'  shift 42
@@ -942,7 +942,7 @@ state 52
 	'['  shift 41
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 132 (src line 737)
+	.  reduce 132 (src line 738)
 
 	stmt  goto 122
 	stmt_if  goto 22
@@ -954,7 +954,7 @@ state 52
 state 53
 	terms:  terms term.    (134)
 
-	.  reduce 134 (src line 744)
+	.  reduce 134 (src line 745)
 
 
 state 54
@@ -1576,13 +1576,13 @@ state 75
 state 76
 	expr:  expr PLUSPLUS.    (99)
 
-	.  reduce 99 (src line 575)
+	.  reduce 99 (src line 576)
 
 
 state 77
 	expr:  expr MINUSMINUS.    (100)
 
-	.  reduce 100 (src line 580)
+	.  reduce 100 (src line 581)
 
 
 state 78
@@ -1728,7 +1728,7 @@ state 82
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 88
 	exprs  goto 149
@@ -1821,7 +1821,7 @@ state 85
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 154
 	exprs  goto 49
@@ -1853,7 +1853,7 @@ state 86
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 154
 	exprs  goto 49
@@ -1865,7 +1865,7 @@ state 87
 	exprs:  exprs.',' opt_terms IDENT 
 
 	','  shift 156
-	.  reduce 15 (src line 148)
+	.  reduce 15 (src line 149)
 
 
 state 88
@@ -1935,7 +1935,7 @@ state 88
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 51 (src line 328)
+	.  reduce 51 (src line 329)
 
 
 state 89
@@ -2005,7 +2005,7 @@ state 89
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 16 (src line 153)
+	.  reduce 16 (src line 154)
 
 
 state 90
@@ -2182,7 +2182,7 @@ state 95
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 31 (src line 231)
+	.  reduce 31 (src line 232)
 
 	stmt_cases  goto 163
 	terms  goto 14
@@ -2216,7 +2216,7 @@ state 96
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 88
 	exprs  goto 165
@@ -2317,7 +2317,7 @@ state 98
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 56 (src line 352)
+	.  reduce 56 (src line 353)
 
 
 99: shift/reduce conflict (shift 70(0), red'n 57(10)) on PLUSEQ
@@ -2383,7 +2383,7 @@ state 99
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 57 (src line 357)
+	.  reduce 57 (src line 358)
 
 
 100: shift/reduce conflict (shift 70(0), red'n 58(10)) on PLUSEQ
@@ -2449,7 +2449,7 @@ state 100
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 58 (src line 362)
+	.  reduce 58 (src line 363)
 
 
 101: shift/reduce conflict (shift 96(0), red'n 54(5)) on '('
@@ -2494,27 +2494,27 @@ state 101
 	expr:  IDENT.'[' expr ':' ']' 
 	expr:  IDENT.'[' ':' expr ']' 
 
-	$end  reduce 59 (src line 367)
-	VARARG  reduce 59 (src line 367)
-	ELSE  reduce 59 (src line 367)
-	MODULE  reduce 59 (src line 367)
-	CATCH  reduce 59 (src line 367)
-	CASE  reduce 59 (src line 367)
-	DEFAULT  reduce 59 (src line 367)
-	TO  reduce 59 (src line 367)
-	ELSIF  reduce 59 (src line 367)
-	'='  reduce 59 (src line 367)
-	':'  reduce 59 (src line 367)
-	','  reduce 59 (src line 367)
-	'{'  reduce 59 (src line 367)
-	'}'  reduce 59 (src line 367)
-	')'  reduce 59 (src line 367)
+	$end  reduce 59 (src line 368)
+	VARARG  reduce 59 (src line 368)
+	ELSE  reduce 59 (src line 368)
+	MODULE  reduce 59 (src line 368)
+	CATCH  reduce 59 (src line 368)
+	CASE  reduce 59 (src line 368)
+	DEFAULT  reduce 59 (src line 368)
+	TO  reduce 59 (src line 368)
+	ELSIF  reduce 59 (src line 368)
+	'='  reduce 59 (src line 368)
+	':'  reduce 59 (src line 368)
+	','  reduce 59 (src line 368)
+	'{'  reduce 59 (src line 368)
+	'}'  reduce 59 (src line 368)
+	')'  reduce 59 (src line 368)
 	'('  shift 96
 	'['  shift 97
-	']'  reduce 59 (src line 367)
-	';'  reduce 59 (src line 367)
-	'\n'  reduce 59 (src line 367)
-	.  reduce 54 (src line 341)
+	']'  reduce 59 (src line 368)
+	';'  reduce 59 (src line 368)
+	'\n'  reduce 59 (src line 368)
+	.  reduce 54 (src line 342)
 
 
 state 102
@@ -2629,27 +2629,27 @@ state 103
 	expr:  IDENT.'[' expr ':' ']' 
 	expr:  IDENT.'[' ':' expr ']' 
 
-	$end  reduce 61 (src line 377)
-	VARARG  reduce 61 (src line 377)
-	ELSE  reduce 61 (src line 377)
-	MODULE  reduce 61 (src line 377)
-	CATCH  reduce 61 (src line 377)
-	CASE  reduce 61 (src line 377)
-	DEFAULT  reduce 61 (src line 377)
-	TO  reduce 61 (src line 377)
-	ELSIF  reduce 61 (src line 377)
-	'='  reduce 61 (src line 377)
-	':'  reduce 61 (src line 377)
-	','  reduce 61 (src line 377)
-	'{'  reduce 61 (src line 377)
-	'}'  reduce 61 (src line 377)
-	')'  reduce 61 (src line 377)
+	$end  reduce 61 (src line 378)
+	VARARG  reduce 61 (src line 378)
+	ELSE  reduce 61 (src line 378)
+	MODULE  reduce 61 (src line 378)
+	CATCH  reduce 61 (src line 378)
+	CASE  reduce 61 (src line 378)
+	DEFAULT  reduce 61 (src line 378)
+	TO  reduce 61 (src line 378)
+	ELSIF  reduce 61 (src line 378)
+	'='  reduce 61 (src line 378)
+	':'  reduce 61 (src line 378)
+	','  reduce 61 (src line 378)
+	'{'  reduce 61 (src line 378)
+	'}'  reduce 61 (src line 378)
+	')'  reduce 61 (src line 378)
 	'('  shift 96
 	'['  shift 97
-	']'  reduce 61 (src line 377)
-	';'  reduce 61 (src line 377)
-	'\n'  reduce 61 (src line 377)
-	.  reduce 54 (src line 341)
+	']'  reduce 61 (src line 378)
+	';'  reduce 61 (src line 378)
+	'\n'  reduce 61 (src line 378)
+	.  reduce 54 (src line 342)
 
 
 state 104
@@ -2799,7 +2799,7 @@ state 106
 	expr_idents: .    (42)
 
 	IDENT  shift 172
-	.  reduce 42 (src line 288)
+	.  reduce 42 (src line 289)
 
 	expr_idents  goto 171
 
@@ -2838,7 +2838,7 @@ state 108
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 88
 	exprs  goto 174
@@ -2849,7 +2849,7 @@ state 109
 	expr_pairs: .    (39)
 
 	STRING  shift 177
-	.  reduce 39 (src line 275)
+	.  reduce 39 (src line 276)
 
 	expr_pair  goto 176
 	expr_pairs  goto 175
@@ -2940,7 +2940,7 @@ state 111
 
 	'('  shift 179
 	'['  shift 97
-	.  reduce 54 (src line 341)
+	.  reduce 54 (src line 342)
 
 
 state 112
@@ -3020,7 +3020,7 @@ state 113
 	expr:  MAKE typ.    (121)
 
 	'.'  shift 181
-	.  reduce 121 (src line 685)
+	.  reduce 121 (src line 686)
 
 
 114: shift/reduce conflict (shift 182(0), red'n 122(0)) on '('
@@ -3029,7 +3029,7 @@ state 114
 	expr:  MAKE CHAN.'(' expr ')' 
 
 	'('  shift 182
-	.  reduce 122 (src line 690)
+	.  reduce 122 (src line 691)
 
 
 state 115
@@ -3065,7 +3065,7 @@ state 115
 state 116
 	typ:  IDENT.    (48)
 
-	.  reduce 48 (src line 315)
+	.  reduce 48 (src line 316)
 
 
 state 117
@@ -3204,7 +3204,7 @@ state 119
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 130 (src line 730)
+	.  reduce 130 (src line 731)
 
 
 state 120
@@ -3216,7 +3216,7 @@ state 120
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 186
@@ -3297,7 +3297,7 @@ state 121
 state 122
 	stmts:  stmts terms stmt.    (9)
 
-	.  reduce 9 (src line 118)
+	.  reduce 9 (src line 119)
 
 
 state 123
@@ -3367,13 +3367,13 @@ state 123
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 10 (src line 125)
+	.  reduce 10 (src line 126)
 
 
 state 124
 	expr:  expr '.' IDENT.    (69)
 
-	.  reduce 69 (src line 417)
+	.  reduce 69 (src line 418)
 
 
 125: shift/reduce conflict (shift 70(0), red'n 79(8)) on PLUSEQ
@@ -3442,7 +3442,7 @@ state 125
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 79 (src line 475)
+	.  reduce 79 (src line 476)
 
 
 126: shift/reduce conflict (shift 70(0), red'n 80(8)) on PLUSEQ
@@ -3511,7 +3511,7 @@ state 126
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 80 (src line 480)
+	.  reduce 80 (src line 481)
 
 
 127: shift/reduce conflict (shift 70(0), red'n 81(9)) on PLUSEQ
@@ -3577,7 +3577,7 @@ state 127
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 81 (src line 485)
+	.  reduce 81 (src line 486)
 
 
 128: shift/reduce conflict (shift 70(0), red'n 82(9)) on PLUSEQ
@@ -3643,7 +3643,7 @@ state 128
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 82 (src line 490)
+	.  reduce 82 (src line 491)
 
 
 129: shift/reduce conflict (shift 70(0), red'n 83(9)) on PLUSEQ
@@ -3709,7 +3709,7 @@ state 129
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 83 (src line 495)
+	.  reduce 83 (src line 496)
 
 
 130: shift/reduce conflict (shift 64(6), red'n 84(0)) on EQEQ
@@ -3809,7 +3809,7 @@ state 130
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 84 (src line 500)
+	.  reduce 84 (src line 501)
 
 
 131: shift/reduce conflict (shift 70(0), red'n 85(7)) on PLUSEQ
@@ -3882,7 +3882,7 @@ state 131
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 85 (src line 505)
+	.  reduce 85 (src line 506)
 
 
 132: shift/reduce conflict (shift 70(0), red'n 86(7)) on PLUSEQ
@@ -3955,7 +3955,7 @@ state 132
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 86 (src line 510)
+	.  reduce 86 (src line 511)
 
 
 133: shift/reduce conflict (shift 70(0), red'n 87(6)) on PLUSEQ
@@ -4036,7 +4036,7 @@ state 133
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 87 (src line 515)
+	.  reduce 87 (src line 516)
 
 
 134: shift/reduce conflict (shift 70(0), red'n 88(6)) on PLUSEQ
@@ -4117,7 +4117,7 @@ state 134
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 88 (src line 520)
+	.  reduce 88 (src line 521)
 
 
 135: shift/reduce conflict (shift 70(0), red'n 89(7)) on PLUSEQ
@@ -4190,7 +4190,7 @@ state 135
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 89 (src line 525)
+	.  reduce 89 (src line 526)
 
 
 136: shift/reduce conflict (shift 70(0), red'n 90(7)) on PLUSEQ
@@ -4263,7 +4263,7 @@ state 136
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 90 (src line 530)
+	.  reduce 90 (src line 531)
 
 
 137: shift/reduce conflict (shift 70(0), red'n 91(7)) on PLUSEQ
@@ -4336,7 +4336,7 @@ state 137
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 91 (src line 535)
+	.  reduce 91 (src line 536)
 
 
 138: shift/reduce conflict (shift 70(0), red'n 92(7)) on PLUSEQ
@@ -4409,7 +4409,7 @@ state 138
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 92 (src line 540)
+	.  reduce 92 (src line 541)
 
 
 139: shift/reduce conflict (shift 64(6), red'n 93(0)) on EQEQ
@@ -4509,7 +4509,7 @@ state 139
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 93 (src line 545)
+	.  reduce 93 (src line 546)
 
 
 140: shift/reduce conflict (shift 64(6), red'n 94(0)) on EQEQ
@@ -4609,7 +4609,7 @@ state 140
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 94 (src line 550)
+	.  reduce 94 (src line 551)
 
 
 141: shift/reduce conflict (shift 64(6), red'n 95(0)) on EQEQ
@@ -4709,7 +4709,7 @@ state 141
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 95 (src line 555)
+	.  reduce 95 (src line 556)
 
 
 142: shift/reduce conflict (shift 64(6), red'n 96(0)) on EQEQ
@@ -4809,7 +4809,7 @@ state 142
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 96 (src line 560)
+	.  reduce 96 (src line 561)
 
 
 143: shift/reduce conflict (shift 64(6), red'n 97(0)) on EQEQ
@@ -4909,7 +4909,7 @@ state 143
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 97 (src line 565)
+	.  reduce 97 (src line 566)
 
 
 144: shift/reduce conflict (shift 64(6), red'n 98(0)) on EQEQ
@@ -5009,7 +5009,7 @@ state 144
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 98 (src line 570)
+	.  reduce 98 (src line 571)
 
 
 145: shift/reduce conflict (shift 64(6), red'n 101(0)) on EQEQ
@@ -5109,7 +5109,7 @@ state 145
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 101 (src line 585)
+	.  reduce 101 (src line 586)
 
 
 146: shift/reduce conflict (shift 70(0), red'n 102(3)) on PLUSEQ
@@ -5191,7 +5191,7 @@ state 146
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 102 (src line 590)
+	.  reduce 102 (src line 591)
 
 
 147: shift/reduce conflict (shift 64(6), red'n 103(0)) on EQEQ
@@ -5291,7 +5291,7 @@ state 147
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 103 (src line 595)
+	.  reduce 103 (src line 596)
 
 
 148: shift/reduce conflict (shift 70(0), red'n 104(4)) on PLUSEQ
@@ -5372,7 +5372,7 @@ state 148
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 104 (src line 600)
+	.  reduce 104 (src line 601)
 
 
 state 149
@@ -5587,13 +5587,13 @@ state 152
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 129 (src line 725)
+	.  reduce 129 (src line 726)
 
 
 state 153
 	stmt:  expr_many '=' expr_many.    (11)
 
-	.  reduce 11 (src line 130)
+	.  reduce 11 (src line 131)
 
 
 state 154
@@ -5652,7 +5652,7 @@ state 154
 	SHIFTLEFT  shift 62
 	SHIFTRIGHT  shift 63
 	OPCHAN  shift 84
-	','  reduce 51 (src line 328)
+	','  reduce 51 (src line 329)
 	'>'  shift 66
 	'<'  shift 68
 	'+'  shift 56
@@ -5665,13 +5665,13 @@ state 154
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 45 (src line 301)
+	.  reduce 45 (src line 302)
 
 
 state 155
 	stmt:  expr_many EQEQ expr_many.    (12)
 
-	.  reduce 12 (src line 134)
+	.  reduce 12 (src line 135)
 
 
 state 156
@@ -5681,7 +5681,7 @@ state 156
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 193
@@ -5760,10 +5760,10 @@ state 160
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 197
 	stmts  goto 13
@@ -5779,10 +5779,10 @@ state 161
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 198
 	stmts  goto 13
@@ -5799,7 +5799,7 @@ state 162
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 31 (src line 231)
+	.  reduce 31 (src line 232)
 
 	stmt_cases  goto 199
 	terms  goto 14
@@ -6004,7 +6004,7 @@ state 172
 	expr:  FUNC '(' IDENT.VARARG ')' opt_terms compstmt '}' 
 
 	VARARG  shift 217
-	.  reduce 43 (src line 292)
+	.  reduce 43 (src line 293)
 
 
 state 173
@@ -6013,7 +6013,7 @@ state 173
 	expr_idents: .    (42)
 
 	IDENT  shift 219
-	.  reduce 42 (src line 288)
+	.  reduce 42 (src line 289)
 
 	expr_idents  goto 218
 
@@ -6027,7 +6027,7 @@ state 174
 	','  shift 220
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 221
@@ -6042,7 +6042,7 @@ state 175
 	','  shift 222
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 223
@@ -6051,7 +6051,7 @@ state 175
 state 176
 	expr_pairs:  expr_pair.    (40)
 
-	.  reduce 40 (src line 279)
+	.  reduce 40 (src line 280)
 
 
 state 177
@@ -6064,7 +6064,7 @@ state 177
 state 178
 	expr:  '(' expr ')'.    (78)
 
-	.  reduce 78 (src line 470)
+	.  reduce 78 (src line 471)
 
 
 state 179
@@ -6096,7 +6096,7 @@ state 179
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 88
 	exprs  goto 225
@@ -6130,7 +6130,7 @@ state 180
 	'&'  shift 32
 	'('  shift 43
 	'['  shift 41
-	.  reduce 50 (src line 324)
+	.  reduce 50 (src line 325)
 
 	expr  goto 88
 	exprs  goto 226
@@ -6389,12 +6389,12 @@ state 187
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	ELSE  reduce 7 (src line 110)
-	ELSIF  reduce 7 (src line 110)
-	'}'  reduce 7 (src line 110)
+	ELSE  reduce 7 (src line 111)
+	ELSIF  reduce 7 (src line 111)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 236
 	stmts  goto 13
@@ -6412,13 +6412,13 @@ state 188
 state 189
 	expr:  expr '(' exprs ')'.    (110)
 
-	.  reduce 110 (src line 630)
+	.  reduce 110 (src line 631)
 
 
 state 190
 	expr:  expr '[' expr ']'.    (114)
 
-	.  reduce 114 (src line 650)
+	.  reduce 114 (src line 651)
 
 
 state 191
@@ -6754,19 +6754,19 @@ state 199
 state 200
 	stmt:  SWITCH ':' stmt_cases '}'.    (24)
 
-	.  reduce 24 (src line 193)
+	.  reduce 24 (src line 194)
 
 
 state 201
 	stmt_cases:  stmt_cases stmt_case.    (34)
 
-	.  reduce 34 (src line 243)
+	.  reduce 34 (src line 244)
 
 
 state 202
 	stmt_cases:  stmt_cases stmt_default.    (35)
 
-	.  reduce 35 (src line 247)
+	.  reduce 35 (src line 248)
 
 
 state 203
@@ -6808,13 +6808,13 @@ state 204
 state 205
 	stmt_cases:  opt_terms stmt_case.    (32)
 
-	.  reduce 32 (src line 235)
+	.  reduce 32 (src line 236)
 
 
 state 206
 	stmt_cases:  opt_terms stmt_default.    (33)
 
-	.  reduce 33 (src line 239)
+	.  reduce 33 (src line 240)
 
 
 state 207
@@ -6827,13 +6827,13 @@ state 207
 state 208
 	expr:  IDENT '(' exprs ')'.    (106)
 
-	.  reduce 106 (src line 610)
+	.  reduce 106 (src line 611)
 
 
 state 209
 	expr:  IDENT '[' expr ']'.    (113)
 
-	.  reduce 113 (src line 645)
+	.  reduce 113 (src line 646)
 
 
 state 210
@@ -6972,7 +6972,7 @@ state 212
 	expr:  '&' expr '.' IDENT.    (60)
 	expr:  expr '.' IDENT.    (69)
 
-	.  reduce 60 (src line 372)
+	.  reduce 60 (src line 373)
 
 
  213: reduce/reduce conflict  (red'ns 62 and 69) on EQEQ
@@ -7009,7 +7009,7 @@ state 213
 	expr:  '*' expr '.' IDENT.    (62)
 	expr:  expr '.' IDENT.    (69)
 
-	.  reduce 62 (src line 382)
+	.  reduce 62 (src line 383)
 
 
 state 214
@@ -7089,7 +7089,7 @@ state 215
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 256
@@ -7103,7 +7103,7 @@ state 216
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 257
@@ -7130,7 +7130,7 @@ state 219
 	expr:  FUNC IDENT '(' IDENT.VARARG ')' opt_terms compstmt '}' 
 
 	VARARG  shift 260
-	.  reduce 43 (src line 292)
+	.  reduce 43 (src line 293)
 
 
 state 220
@@ -7141,7 +7141,7 @@ state 220
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 261
@@ -7161,7 +7161,7 @@ state 222
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 263
@@ -7234,7 +7234,7 @@ state 226
 state 227
 	typ:  typ '.' IDENT.    (49)
 
-	.  reduce 49 (src line 319)
+	.  reduce 49 (src line 320)
 
 
 state 228
@@ -7311,7 +7311,7 @@ state 228
 state 229
 	expr:  MAKE '(' expr ')'.    (127)
 
-	.  reduce 127 (src line 715)
+	.  reduce 127 (src line 716)
 
 
 state 230
@@ -7346,7 +7346,7 @@ state 230
 state 231
 	expr:  ARRAYLIT '(' expr ')'.    (124)
 
-	.  reduce 124 (src line 700)
+	.  reduce 124 (src line 701)
 
 
 state 232
@@ -7505,7 +7505,7 @@ state 234
 	SHIFTLEFT  shift 62
 	SHIFTRIGHT  shift 63
 	OPCHAN  shift 84
-	','  reduce 52 (src line 332)
+	','  reduce 52 (src line 333)
 	'>'  shift 66
 	'<'  shift 68
 	'+'  shift 56
@@ -7518,7 +7518,7 @@ state 234
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 46 (src line 306)
+	.  reduce 46 (src line 307)
 
 
  235: reduce/reduce conflict  (red'ns 47 and 54) on $end
@@ -7547,22 +7547,22 @@ state 235
 	expr:  IDENT.'[' expr ':' ']' 
 	expr:  IDENT.'[' ':' expr ']' 
 
-	$end  reduce 47 (src line 310)
-	ELSE  reduce 47 (src line 310)
-	EQEQ  reduce 47 (src line 310)
-	MODULE  reduce 47 (src line 310)
-	CATCH  reduce 47 (src line 310)
-	CASE  reduce 47 (src line 310)
-	DEFAULT  reduce 47 (src line 310)
-	ELSIF  reduce 47 (src line 310)
-	'='  reduce 47 (src line 310)
-	','  reduce 53 (src line 336)
-	'}'  reduce 47 (src line 310)
+	$end  reduce 47 (src line 311)
+	ELSE  reduce 47 (src line 311)
+	EQEQ  reduce 47 (src line 311)
+	MODULE  reduce 47 (src line 311)
+	CATCH  reduce 47 (src line 311)
+	CASE  reduce 47 (src line 311)
+	DEFAULT  reduce 47 (src line 311)
+	ELSIF  reduce 47 (src line 311)
+	'='  reduce 47 (src line 311)
+	','  reduce 53 (src line 337)
+	'}'  reduce 47 (src line 311)
 	'('  shift 96
 	'['  shift 97
-	';'  reduce 47 (src line 310)
-	'\n'  reduce 47 (src line 310)
-	.  reduce 54 (src line 341)
+	';'  reduce 47 (src line 311)
+	'\n'  reduce 47 (src line 311)
+	.  reduce 54 (src line 342)
 
 
 state 236
@@ -7570,14 +7570,14 @@ state 236
 	stmt_if:  IF expr '{' compstmt.stmt_elsifs '}' 
 	stmt_elsifs: .    (26)
 
-	.  reduce 26 (src line 204)
+	.  reduce 26 (src line 205)
 
 	stmt_elsifs  goto 274
 
 state 237
 	expr:  expr '(' exprs VARARG ')'.    (109)
 
-	.  reduce 109 (src line 625)
+	.  reduce 109 (src line 626)
 
 
 state 238
@@ -7654,13 +7654,13 @@ state 238
 state 239
 	expr:  expr '[' expr ':' ']'.    (119)
 
-	.  reduce 119 (src line 675)
+	.  reduce 119 (src line 676)
 
 
 state 240
 	expr:  expr '[' ':' expr ']'.    (120)
 
-	.  reduce 120 (src line 680)
+	.  reduce 120 (src line 681)
 
 
 state 241
@@ -7730,7 +7730,7 @@ state 241
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 52 (src line 332)
+	.  reduce 52 (src line 333)
 
 
  242: reduce/reduce conflict  (red'ns 53 and 54) on $end
@@ -7759,23 +7759,23 @@ state 242
 	expr:  IDENT.'[' expr ':' ']' 
 	expr:  IDENT.'[' ':' expr ']' 
 
-	$end  reduce 53 (src line 336)
-	VARARG  reduce 53 (src line 336)
-	ELSE  reduce 53 (src line 336)
-	MODULE  reduce 53 (src line 336)
-	CATCH  reduce 53 (src line 336)
-	CASE  reduce 53 (src line 336)
-	DEFAULT  reduce 53 (src line 336)
-	ELSIF  reduce 53 (src line 336)
-	','  reduce 53 (src line 336)
-	'}'  reduce 53 (src line 336)
-	')'  reduce 53 (src line 336)
+	$end  reduce 53 (src line 337)
+	VARARG  reduce 53 (src line 337)
+	ELSE  reduce 53 (src line 337)
+	MODULE  reduce 53 (src line 337)
+	CATCH  reduce 53 (src line 337)
+	CASE  reduce 53 (src line 337)
+	DEFAULT  reduce 53 (src line 337)
+	ELSIF  reduce 53 (src line 337)
+	','  reduce 53 (src line 337)
+	'}'  reduce 53 (src line 337)
+	')'  reduce 53 (src line 337)
 	'('  shift 96
 	'['  shift 97
-	']'  reduce 53 (src line 336)
-	';'  reduce 53 (src line 336)
-	'\n'  reduce 53 (src line 336)
-	.  reduce 54 (src line 341)
+	']'  reduce 53 (src line 337)
+	';'  reduce 53 (src line 337)
+	'\n'  reduce 53 (src line 337)
+	.  reduce 54 (src line 342)
 
 
 state 243
@@ -7910,19 +7910,19 @@ state 245
 state 246
 	stmt:  WHILE expr '{' compstmt '}'.    (21)
 
-	.  reduce 21 (src line 178)
+	.  reduce 21 (src line 179)
 
 
 state 247
 	stmt:  TRY compstmt CATCH compstmt '}'.    (22)
 
-	.  reduce 22 (src line 183)
+	.  reduce 22 (src line 184)
 
 
 state 248
 	stmt:  SWITCH expr ':' stmt_cases '}'.    (23)
 
-	.  reduce 23 (src line 188)
+	.  reduce 23 (src line 189)
 
 
 state 249
@@ -8004,7 +8004,7 @@ state 250
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 280
@@ -8013,7 +8013,7 @@ state 250
 state 251
 	expr:  IDENT '(' exprs VARARG ')'.    (105)
 
-	.  reduce 105 (src line 605)
+	.  reduce 105 (src line 606)
 
 
 state 252
@@ -8090,13 +8090,13 @@ state 252
 state 253
 	expr:  IDENT '[' expr ':' ']'.    (116)
 
-	.  reduce 116 (src line 660)
+	.  reduce 116 (src line 661)
 
 
 state 254
 	expr:  IDENT '[' ':' expr ']'.    (117)
 
-	.  reduce 117 (src line 665)
+	.  reduce 117 (src line 666)
 
 
 state 255
@@ -8143,10 +8143,10 @@ state 257
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 284
 	stmts  goto 13
@@ -8162,7 +8162,7 @@ state 258
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 285
@@ -8176,7 +8176,7 @@ state 259
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 286
@@ -8224,7 +8224,7 @@ state 261
 state 262
 	expr:  '[' opt_terms exprs opt_terms ']'.    (74)
 
-	.  reduce 74 (src line 442)
+	.  reduce 74 (src line 443)
 
 
 state 263
@@ -8240,7 +8240,7 @@ state 263
 state 264
 	expr:  '{' opt_terms expr_pairs opt_terms '}'.    (76)
 
-	.  reduce 76 (src line 452)
+	.  reduce 76 (src line 453)
 
 
 state 265
@@ -8310,7 +8310,7 @@ state 265
 	'('  shift 82
 	'['  shift 83
 	'|'  shift 78
-	.  reduce 38 (src line 269)
+	.  reduce 38 (src line 270)
 
 
 state 266
@@ -8355,25 +8355,25 @@ state 267
 	expr:  IDENT '(' exprs ')'.    (106)
 	expr:  GO IDENT '(' exprs ')'.    (108)
 
-	$end  reduce 108 (src line 620)
-	VARARG  reduce 108 (src line 620)
-	ELSE  reduce 108 (src line 620)
-	MODULE  reduce 108 (src line 620)
-	CATCH  reduce 108 (src line 620)
-	CASE  reduce 108 (src line 620)
-	DEFAULT  reduce 108 (src line 620)
-	TO  reduce 108 (src line 620)
-	ELSIF  reduce 108 (src line 620)
-	'='  reduce 108 (src line 620)
-	':'  reduce 108 (src line 620)
-	','  reduce 108 (src line 620)
-	'{'  reduce 108 (src line 620)
-	'}'  reduce 108 (src line 620)
-	')'  reduce 108 (src line 620)
-	']'  reduce 108 (src line 620)
-	';'  reduce 108 (src line 620)
-	'\n'  reduce 108 (src line 620)
-	.  reduce 106 (src line 610)
+	$end  reduce 108 (src line 621)
+	VARARG  reduce 108 (src line 621)
+	ELSE  reduce 108 (src line 621)
+	MODULE  reduce 108 (src line 621)
+	CATCH  reduce 108 (src line 621)
+	CASE  reduce 108 (src line 621)
+	DEFAULT  reduce 108 (src line 621)
+	TO  reduce 108 (src line 621)
+	ELSIF  reduce 108 (src line 621)
+	'='  reduce 108 (src line 621)
+	':'  reduce 108 (src line 621)
+	','  reduce 108 (src line 621)
+	'{'  reduce 108 (src line 621)
+	'}'  reduce 108 (src line 621)
+	')'  reduce 108 (src line 621)
+	']'  reduce 108 (src line 621)
+	';'  reduce 108 (src line 621)
+	'\n'  reduce 108 (src line 621)
+	.  reduce 106 (src line 611)
 
 
 state 268
@@ -8418,31 +8418,31 @@ state 269
 	expr:  expr '(' exprs ')'.    (110)
 	expr:  GO expr '(' exprs ')'.    (112)
 
-	$end  reduce 112 (src line 640)
-	VARARG  reduce 112 (src line 640)
-	ELSE  reduce 112 (src line 640)
-	MODULE  reduce 112 (src line 640)
-	CATCH  reduce 112 (src line 640)
-	CASE  reduce 112 (src line 640)
-	DEFAULT  reduce 112 (src line 640)
-	TO  reduce 112 (src line 640)
-	ELSIF  reduce 112 (src line 640)
-	'='  reduce 112 (src line 640)
-	':'  reduce 112 (src line 640)
-	','  reduce 112 (src line 640)
-	'{'  reduce 112 (src line 640)
-	'}'  reduce 112 (src line 640)
-	')'  reduce 112 (src line 640)
-	']'  reduce 112 (src line 640)
-	';'  reduce 112 (src line 640)
-	'\n'  reduce 112 (src line 640)
-	.  reduce 110 (src line 630)
+	$end  reduce 112 (src line 641)
+	VARARG  reduce 112 (src line 641)
+	ELSE  reduce 112 (src line 641)
+	MODULE  reduce 112 (src line 641)
+	CATCH  reduce 112 (src line 641)
+	CASE  reduce 112 (src line 641)
+	DEFAULT  reduce 112 (src line 641)
+	TO  reduce 112 (src line 641)
+	ELSIF  reduce 112 (src line 641)
+	'='  reduce 112 (src line 641)
+	':'  reduce 112 (src line 641)
+	','  reduce 112 (src line 641)
+	'{'  reduce 112 (src line 641)
+	'}'  reduce 112 (src line 641)
+	')'  reduce 112 (src line 641)
+	']'  reduce 112 (src line 641)
+	';'  reduce 112 (src line 641)
+	'\n'  reduce 112 (src line 641)
+	.  reduce 110 (src line 631)
 
 
 state 270
 	expr:  MAKE CHAN '(' expr ')'.    (123)
 
-	.  reduce 123 (src line 695)
+	.  reduce 123 (src line 696)
 
 
 state 271
@@ -8590,7 +8590,7 @@ state 272
 state 273
 	expr:  TYPECAST typ '(' expr ')'.    (126)
 
-	.  reduce 126 (src line 710)
+	.  reduce 126 (src line 711)
 
 
 state 274
@@ -8608,7 +8608,7 @@ state 274
 state 275
 	expr:  expr '[' expr ':' expr ']'.    (118)
 
-	.  reduce 118 (src line 670)
+	.  reduce 118 (src line 671)
 
 
  276: reduce/reduce conflict  (red'ns 131 and 7) on '}'
@@ -8619,10 +8619,10 @@ state 276
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 299
 	stmts  goto 13
@@ -8780,7 +8780,7 @@ state 279
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 302
@@ -8796,12 +8796,12 @@ state 280
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	CASE  reduce 7 (src line 110)
-	DEFAULT  reduce 7 (src line 110)
-	'}'  reduce 7 (src line 110)
+	CASE  reduce 7 (src line 111)
+	DEFAULT  reduce 7 (src line 111)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 303
 	stmts  goto 13
@@ -8812,7 +8812,7 @@ state 280
 state 281
 	expr:  IDENT '[' expr ':' expr ']'.    (115)
 
-	.  reduce 115 (src line 655)
+	.  reduce 115 (src line 656)
 
 
 state 282
@@ -8889,7 +8889,7 @@ state 282
 state 283
 	expr_idents:  expr_idents ',' opt_terms IDENT.    (44)
 
-	.  reduce 44 (src line 296)
+	.  reduce 44 (src line 297)
 
 
 state 284
@@ -8907,10 +8907,10 @@ state 285
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 306
 	stmts  goto 13
@@ -8926,10 +8926,10 @@ state 286
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 307
 	stmts  goto 13
@@ -8945,7 +8945,7 @@ state 287
 
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	terms  goto 14
 	opt_terms  goto 308
@@ -8954,19 +8954,19 @@ state 287
 state 288
 	expr:  '[' opt_terms exprs ',' opt_terms ']'.    (75)
 
-	.  reduce 75 (src line 447)
+	.  reduce 75 (src line 448)
 
 
 state 289
 	expr_pairs:  expr_pairs ',' opt_terms expr_pair.    (41)
 
-	.  reduce 41 (src line 283)
+	.  reduce 41 (src line 284)
 
 
 state 290
 	expr:  '{' opt_terms expr_pairs ',' opt_terms '}'.    (77)
 
-	.  reduce 77 (src line 461)
+	.  reduce 77 (src line 462)
 
 
  291: reduce/reduce conflict  (red'ns 105 and 107) on EQEQ
@@ -9003,25 +9003,25 @@ state 291
 	expr:  IDENT '(' exprs VARARG ')'.    (105)
 	expr:  GO IDENT '(' exprs VARARG ')'.    (107)
 
-	$end  reduce 107 (src line 615)
-	VARARG  reduce 107 (src line 615)
-	ELSE  reduce 107 (src line 615)
-	MODULE  reduce 107 (src line 615)
-	CATCH  reduce 107 (src line 615)
-	CASE  reduce 107 (src line 615)
-	DEFAULT  reduce 107 (src line 615)
-	TO  reduce 107 (src line 615)
-	ELSIF  reduce 107 (src line 615)
-	'='  reduce 107 (src line 615)
-	':'  reduce 107 (src line 615)
-	','  reduce 107 (src line 615)
-	'{'  reduce 107 (src line 615)
-	'}'  reduce 107 (src line 615)
-	')'  reduce 107 (src line 615)
-	']'  reduce 107 (src line 615)
-	';'  reduce 107 (src line 615)
-	'\n'  reduce 107 (src line 615)
-	.  reduce 105 (src line 605)
+	$end  reduce 107 (src line 616)
+	VARARG  reduce 107 (src line 616)
+	ELSE  reduce 107 (src line 616)
+	MODULE  reduce 107 (src line 616)
+	CATCH  reduce 107 (src line 616)
+	CASE  reduce 107 (src line 616)
+	DEFAULT  reduce 107 (src line 616)
+	TO  reduce 107 (src line 616)
+	ELSIF  reduce 107 (src line 616)
+	'='  reduce 107 (src line 616)
+	':'  reduce 107 (src line 616)
+	','  reduce 107 (src line 616)
+	'{'  reduce 107 (src line 616)
+	'}'  reduce 107 (src line 616)
+	')'  reduce 107 (src line 616)
+	']'  reduce 107 (src line 616)
+	';'  reduce 107 (src line 616)
+	'\n'  reduce 107 (src line 616)
+	.  reduce 105 (src line 606)
 
 
  292: reduce/reduce conflict  (red'ns 109 and 111) on EQEQ
@@ -9058,43 +9058,43 @@ state 292
 	expr:  expr '(' exprs VARARG ')'.    (109)
 	expr:  GO expr '(' exprs VARARG ')'.    (111)
 
-	$end  reduce 111 (src line 635)
-	VARARG  reduce 111 (src line 635)
-	ELSE  reduce 111 (src line 635)
-	MODULE  reduce 111 (src line 635)
-	CATCH  reduce 111 (src line 635)
-	CASE  reduce 111 (src line 635)
-	DEFAULT  reduce 111 (src line 635)
-	TO  reduce 111 (src line 635)
-	ELSIF  reduce 111 (src line 635)
-	'='  reduce 111 (src line 635)
-	':'  reduce 111 (src line 635)
-	','  reduce 111 (src line 635)
-	'{'  reduce 111 (src line 635)
-	'}'  reduce 111 (src line 635)
-	')'  reduce 111 (src line 635)
-	']'  reduce 111 (src line 635)
-	';'  reduce 111 (src line 635)
-	'\n'  reduce 111 (src line 635)
-	.  reduce 109 (src line 625)
+	$end  reduce 111 (src line 636)
+	VARARG  reduce 111 (src line 636)
+	ELSE  reduce 111 (src line 636)
+	MODULE  reduce 111 (src line 636)
+	CATCH  reduce 111 (src line 636)
+	CASE  reduce 111 (src line 636)
+	DEFAULT  reduce 111 (src line 636)
+	TO  reduce 111 (src line 636)
+	ELSIF  reduce 111 (src line 636)
+	'='  reduce 111 (src line 636)
+	':'  reduce 111 (src line 636)
+	','  reduce 111 (src line 636)
+	'{'  reduce 111 (src line 636)
+	'}'  reduce 111 (src line 636)
+	')'  reduce 111 (src line 636)
+	']'  reduce 111 (src line 636)
+	';'  reduce 111 (src line 636)
+	'\n'  reduce 111 (src line 636)
+	.  reduce 109 (src line 626)
 
 
 state 293
 	expr:  MAKE '(' expr ',' expr ')'.    (128)
 
-	.  reduce 128 (src line 720)
+	.  reduce 128 (src line 721)
 
 
 state 294
 	expr:  ARRAYLIT '(' expr ',' expr ')'.    (125)
 
-	.  reduce 125 (src line 705)
+	.  reduce 125 (src line 706)
 
 
 state 295
 	stmt_elsifs:  stmt_elsifs stmt_elsif.    (27)
 
-	.  reduce 27 (src line 208)
+	.  reduce 27 (src line 209)
 
 
  296: reduce/reduce conflict  (red'ns 131 and 7) on '}'
@@ -9105,10 +9105,10 @@ state 296
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 309
 	stmts  goto 13
@@ -9119,7 +9119,7 @@ state 296
 state 297
 	stmt_if:  IF expr '{' compstmt stmt_elsifs '}'.    (30)
 
-	.  reduce 30 (src line 225)
+	.  reduce 30 (src line 226)
 
 
 state 298
@@ -9166,10 +9166,10 @@ state 300
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 312
 	stmts  goto 13
@@ -9185,10 +9185,10 @@ state 301
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 313
 	stmts  goto 13
@@ -9206,12 +9206,12 @@ state 302
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	CASE  reduce 7 (src line 110)
-	DEFAULT  reduce 7 (src line 110)
-	'}'  reduce 7 (src line 110)
+	CASE  reduce 7 (src line 111)
+	DEFAULT  reduce 7 (src line 111)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 314
 	stmts  goto 13
@@ -9222,19 +9222,19 @@ state 302
 state 303
 	stmt_default:  DEFAULT ':' opt_terms compstmt.    (37)
 
-	.  reduce 37 (src line 263)
+	.  reduce 37 (src line 264)
 
 
 state 304
 	expr:  TERNARY expr ',' expr ',' expr ')'.    (68)
 
-	.  reduce 68 (src line 412)
+	.  reduce 68 (src line 413)
 
 
 state 305
 	expr:  FUNC '(' expr_idents ')' opt_terms compstmt '}'.    (70)
 
-	.  reduce 70 (src line 422)
+	.  reduce 70 (src line 423)
 
 
 state 306
@@ -9259,10 +9259,10 @@ state 308
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	'}'  reduce 7 (src line 110)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 317
 	stmts  goto 13
@@ -9351,7 +9351,7 @@ state 310
 state 311
 	stmt:  FOR EACH IDENT IN expr '{' compstmt '}'.    (18)
 
-	.  reduce 18 (src line 163)
+	.  reduce 18 (src line 164)
 
 
 state 312
@@ -9371,19 +9371,19 @@ state 313
 state 314
 	stmt_case:  CASE expr ':' opt_terms compstmt.    (36)
 
-	.  reduce 36 (src line 257)
+	.  reduce 36 (src line 258)
 
 
 state 315
 	expr:  FUNC '(' IDENT VARARG ')' opt_terms compstmt '}'.    (71)
 
-	.  reduce 71 (src line 427)
+	.  reduce 71 (src line 428)
 
 
 state 316
 	expr:  FUNC IDENT '(' expr_idents ')' opt_terms compstmt '}'.    (72)
 
-	.  reduce 72 (src line 432)
+	.  reduce 72 (src line 433)
 
 
 state 317
@@ -9396,7 +9396,7 @@ state 317
 state 318
 	stmt_if:  IF expr '{' compstmt stmt_elsifs ELSE compstmt '}'.    (29)
 
-	.  reduce 29 (src line 219)
+	.  reduce 29 (src line 220)
 
 
  319: reduce/reduce conflict  (red'ns 131 and 7) on ELSE
@@ -9409,12 +9409,12 @@ state 319
 	opt_terms: .    (131)
 	stmts: .    (7)
 
-	ELSE  reduce 7 (src line 110)
-	ELSIF  reduce 7 (src line 110)
-	'}'  reduce 7 (src line 110)
+	ELSE  reduce 7 (src line 111)
+	ELSIF  reduce 7 (src line 111)
+	'}'  reduce 7 (src line 111)
 	';'  shift 8
 	'\n'  shift 9
-	.  reduce 131 (src line 736)
+	.  reduce 131 (src line 737)
 
 	compstmt  goto 323
 	stmts  goto 13
@@ -9425,25 +9425,25 @@ state 319
 state 320
 	stmt:  FOR IDENT '=' expr TO expr '{' compstmt '}'.    (19)
 
-	.  reduce 19 (src line 168)
+	.  reduce 19 (src line 169)
 
 
 state 321
 	stmt:  FOR IDENT EQEQ expr TO expr '{' compstmt '}'.    (20)
 
-	.  reduce 20 (src line 173)
+	.  reduce 20 (src line 174)
 
 
 state 322
 	expr:  FUNC IDENT '(' IDENT VARARG ')' opt_terms compstmt '}'.    (73)
 
-	.  reduce 73 (src line 437)
+	.  reduce 73 (src line 438)
 
 
 state 323
 	stmt_elsif:  ELSIF expr '{' compstmt.    (28)
 
-	.  reduce 28 (src line 213)
+	.  reduce 28 (src line 214)
 
 
 81 terminals, 22 nonterminals

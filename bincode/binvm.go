@@ -228,25 +228,28 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinSETMEMBER:
 
-			// TODO: обработка паники - передача ошибки в catch блок
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			rv := refregs.Index(s.RegVal).Elem()
 
 			switch v.Kind() {
 			case reflect.Struct:
-				v, err := ast.FieldByNameCI(v, s.Id)
-				if err != nil {
-					catcherr = NewError(stmt, err)
-					break
-				}
-				if !v.CanSet() {
-					catcherr = NewStringError(stmt, "Невозможно установить значение")
-					break
-				}
-				v.Set(rv)
+
+				////////////////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				// TODO:
+
+				// v, err := ast.FieldByNameCI(v, s.Id)
+				// if err != nil {
+				// 	catcherr = NewError(stmt, err)
+				// 	break
+				// }
+				// if !v.CanSet() {
+				// 	catcherr = NewStringError(stmt, "Невозможно установить значение")
+				// 	break
+				// }
+				// v.Set(rv)
 			case reflect.Map:
-				v.SetMapIndex(reflect.ValueOf(ast.UniqueNames.Get(s.Id)), rv)
+				v.SetMapIndex(reflect.ValueOf(envir.UniqueNames.Get(s.Id)), rv)
 			default:
 				if !v.CanSet() {
 					catcherr = NewStringError(stmt, "Невозможно установить значение")
@@ -261,7 +264,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 				catcherr = NewStringError(stmt, "Имя типа должно быть строкой")
 				break
 			}
-			eType := ast.UniqueNames.Set(v)
+			eType := envir.UniqueNames.Set(v)
 			regs.Set(s.Reg, eType)
 
 		case *BinSETITEM:
@@ -1038,7 +1041,7 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 
 		case *BinMODULE:
 			// модуль регистрируется в глобальном контексте
-			newenv := env.NewModule(ast.UniqueNames.Get(s.Name))
+			newenv := env.NewModule(envir.UniqueNames.Get(s.Name))
 			_, err := Run(s.Code, newenv) // инициируем модуль
 			if err != nil {
 				catcherr = NewError(stmt, err)

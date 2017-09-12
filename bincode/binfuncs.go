@@ -11,7 +11,6 @@ import (
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/builtins"
-	envir "github.com/covrom/gonec/env"
 )
 
 func InvokeNumber(lit string) (interface{}, error) {
@@ -167,28 +166,29 @@ func Equal(lhsV, rhsV interface{}) bool {
 
 func GetMember(v reflect.Value, name int, stmt ast.Pos) (reflect.Value, error) {
 
-	m, _ := ast.MethodByNameCI(v, name)
-	// ошибку не обрабатываем, т.к. ищем поле
-	if !m.IsValid() {
-		if v.Kind() == reflect.Ptr {
-			v = v.Elem()
-		}
-		if v.Kind() == reflect.Struct {
-			var err error
-			m, err = ast.FieldByNameCI(v, name)
-			if err != nil || !m.IsValid() {
-				return envir.NilValue, NewStringError(stmt, "Метод или поле не найдено: "+ast.UniqueNames.Get(name))
-			}
-		} else if v.Kind() == reflect.Map {
-			m = v.MapIndex(reflect.ValueOf(ast.UniqueNames.Get(name)))
-			if !m.IsValid() {
-				return envir.NilValue, NewStringError(stmt, "Значение по ключу не найдено")
-			}
-		} else {
-			return envir.NilValue, NewStringError(stmt, "У значения нет полей")
-		}
-	}
-	return m, nil
+	// m, _ := ast.MethodByNameCI(v, name)
+	// // ошибку не обрабатываем, т.к. ищем поле
+	// if !m.IsValid() {
+	// 	if v.Kind() == reflect.Ptr {
+	// 		v = v.Elem()
+	// 	}
+	// 	if v.Kind() == reflect.Struct {
+	// 		var err error
+	// 		m, err = ast.FieldByNameCI(v, name)
+	// 		if err != nil || !m.IsValid() {
+	// 			return envir.NilValue, NewStringError(stmt, "Метод или поле не найдено: "+env.UniqueNames.Get(name))
+	// 		}
+	// 	} else if v.Kind() == reflect.Map {
+	// 		m = v.MapIndex(reflect.ValueOf(env.UniqueNames.Get(name)))
+	// 		if !m.IsValid() {
+	// 			return envir.NilValue, NewStringError(stmt, "Значение по ключу не найдено")
+	// 		}
+	// 	} else {
+	// 		return envir.NilValue, NewStringError(stmt, "У значения нет полей")
+	// 	}
+	// }
+	// return m, nil
+	panic("TODO")
 }
 
 func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {

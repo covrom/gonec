@@ -10,6 +10,7 @@ import (
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/builtins"
+	"github.com/covrom/gonec/env"
 )
 
 type BinStmt interface {
@@ -58,7 +59,7 @@ func WriteBinCode(w io.Writer, v BinCode) error {
 	enc := gob.NewEncoder(zw)
 
 	// так же сохраняем уникальные имена
-	if err := enc.Encode(*ast.UniqueNames); err != nil {
+	if err := enc.Encode(*env.UniqueNames); err != nil {
 		return err
 	}
 
@@ -80,7 +81,7 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 
 	dec := gob.NewDecoder(zr)
 
-	var gnxNames = ast.NewEnvNames()
+	var gnxNames = env.NewEnvNames()
 
 	if err := dec.Decode(gnxNames); err != nil {
 		return res, err
@@ -102,11 +103,11 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 
 		// log.Printf("Проверяем %d, %q", i, v)
 
-		if vv, ok := ast.UniqueNames.GetLowerCaseOk(i); ok {
+		if vv, ok := env.UniqueNames.GetLowerCaseOk(i); ok {
 			// под тем же идентификатором находится другая строка, без учета регистра
 			if v != vv {
 				// новый id
-				ii := ast.UniqueNames.Set(gnxNames.Handles[i])
+				ii := env.UniqueNames.Set(gnxNames.Handles[i])
 				swapIdents[i] = ii
 
 				// log.Printf("Заменяем %d на %d для загружаемого %q, уже есть %q\n", i, ii, v, vv)
@@ -114,11 +115,11 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 			}
 		} else {
 			// такого идентификатора еще нет - устанавливаем значение на него
-			// последующие идентификаторы ast.UniqueNames будут идти после него
+			// последующие идентификаторы env.UniqueNames будут идти после него
 
 			// log.Printf("Устанавливаем %d для загружаемого %q\n", i, gnxNames.Handles[i])
 
-			ast.UniqueNames.SetToId(gnxNames.Handles[i], i)
+			env.UniqueNames.SetToId(gnxNames.Handles[i], i)
 		}
 	}
 
@@ -132,7 +133,7 @@ func ReadBinCode(r io.Reader) (res BinCode, err error) {
 
 func init() {
 	gob.Register(BinCode{})
-	gob.Register(&ast.EnvNames{})
+	gob.Register(&env.EnvNames{})
 	gob.Register(core.VMTime{})
 	gob.Register(core.VMSlice{})
 	gob.Register(core.VMStringMap{})
@@ -219,7 +220,7 @@ func (v *BinLOAD) SwapId(m map[int]int) {
 }
 func (v BinLOAD) String() string {
 	if v.IsId {
-		return fmt.Sprintf("LOAD r%d, %#v", v.Reg, ast.UniqueNames.Get(v.Val.(int)))
+		return fmt.Sprintf("LOAD r%d, %#v", v.Reg, env.UniqueNames.Get(v.Val.(int)))
 	}
 	return fmt.Sprintf("LOAD r%d, %#v", v.Reg, v.Val)
 }
@@ -318,7 +319,7 @@ func (v *BinGET) SwapId(m map[int]int) {
 	}
 }
 func (v BinGET) String() string {
-	return fmt.Sprintf("GET r%d, %q", v.Reg, ast.UniqueNames.Get(v.Id))
+	return fmt.Sprintf("GET r%d, %q", v.Reg, env.UniqueNames.Get(v.Id))
 }
 
 type BinSET struct {
@@ -335,7 +336,7 @@ func (v *BinSET) SwapId(m map[int]int) {
 	}
 }
 func (v BinSET) String() string {
-	return fmt.Sprintf("SET %q, r%d", ast.UniqueNames.Get(v.Id), v.Reg)
+	return fmt.Sprintf("SET %q, r%d", env.UniqueNames.Get(v.Id), v.Reg)
 }
 
 type BinSETMEMBER struct {
@@ -353,13 +354,13 @@ func (v *BinSETMEMBER) SwapId(m map[int]int) {
 	}
 }
 func (v BinSETMEMBER) String() string {
-	return fmt.Sprintf("SETMEMBER r%d.%q, r%d", v.Reg, ast.UniqueNames.Get(v.Id), v.RegVal)
+	return fmt.Sprintf("SETMEMBER r%d.%q, r%d", v.Reg, env.UniqueNames.Get(v.Id), v.RegVal)
 }
 
 type BinSETNAME struct {
 	BinStmtImpl
 
-	Reg int // регистр с именем (строкой), сюда же возвращается id имени, записанного в ast.UniqueNames.Set()
+	Reg int // регистр с именем (строкой), сюда же возвращается id имени, записанного в env.UniqueNames.Set()
 }
 
 func (v BinSETNAME) String() string {
@@ -417,7 +418,7 @@ func (v *BinADDRID) SwapId(m map[int]int) {
 	}
 }
 func (v BinADDRID) String() string {
-	return fmt.Sprintf("ADDRID r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
+	return fmt.Sprintf("ADDRID r%d, %q", v.Reg, env.UniqueNames.Get(v.Name))
 }
 
 type BinADDRMBR struct {
@@ -433,7 +434,7 @@ func (v *BinADDRMBR) SwapId(m map[int]int) {
 	}
 }
 func (v BinADDRMBR) String() string {
-	return fmt.Sprintf("ADDRMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
+	return fmt.Sprintf("ADDRMBR r%d, r%d.%q", v.Reg, v.Reg, env.UniqueNames.Get(v.Name))
 }
 
 type BinUNREFID struct {
@@ -449,7 +450,7 @@ func (v *BinUNREFID) SwapId(m map[int]int) {
 	}
 }
 func (v BinUNREFID) String() string {
-	return fmt.Sprintf("UNREFID r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
+	return fmt.Sprintf("UNREFID r%d, %q", v.Reg, env.UniqueNames.Get(v.Name))
 }
 
 type BinUNREFMBR struct {
@@ -465,7 +466,7 @@ func (v *BinUNREFMBR) SwapId(m map[int]int) {
 	}
 }
 func (v BinUNREFMBR) String() string {
-	return fmt.Sprintf("UNREFMBR r%d, r%d.%q", v.Reg, v.Reg, ast.UniqueNames.Get(v.Name))
+	return fmt.Sprintf("UNREFMBR r%d, r%d.%q", v.Reg, v.Reg, env.UniqueNames.Get(v.Name))
 }
 
 type BinLABEL struct {
@@ -525,7 +526,7 @@ func (v BinOPER) String() string {
 type BinCALL struct {
 	BinStmtImpl
 
-	Name int // либо вызов по имени из ast.UniqueNames, если Name != 0
+	Name int // либо вызов по имени из env.UniqueNames, если Name != 0
 	// либо вызов обработчика (Name==0), напр. для анонимной функции
 	// (выражение типа func, или ссылка или интерфейс с ним, находится в reg, а параметры начиная с reg+1)
 	NumArgs int // число аргументов, которое надо взять на входе из массива (Reg)
@@ -553,7 +554,7 @@ func (v BinCALL) String() string {
 	if v.Name == 0 {
 		return fmt.Sprintf("CALL REG r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 	}
-	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", ast.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go, v.RegRets)
+	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", env.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 }
 
 type BinGETMEMBER struct {
@@ -570,7 +571,7 @@ func (v *BinGETMEMBER) SwapId(m map[int]int) {
 	}
 }
 func (v BinGETMEMBER) String() string {
-	return fmt.Sprintf("GETMEMBER r%d, %q", v.Reg, ast.UniqueNames.Get(v.Name))
+	return fmt.Sprintf("GETMEMBER r%d, %q", v.Reg, env.UniqueNames.Get(v.Name))
 }
 
 type BinGETIDX struct {
@@ -625,13 +626,13 @@ func (v BinFUNC) String() string {
 		if s != "" {
 			s += ", "
 		}
-		s += ast.UniqueNames.Get(a)
+		s += env.UniqueNames.Get(a)
 	}
 	vrg := ""
 	if v.VarArg {
 		vrg = "..."
 	}
-	return fmt.Sprintf("FUNC r%d, %q, (%s %s)\n{\n%v}\n", v.Reg, ast.UniqueNames.Get(v.Name), s, vrg, v.Code)
+	return fmt.Sprintf("FUNC r%d, %q, (%s %s)\n{\n%v}\n", v.Reg, env.UniqueNames.Get(v.Name), s, vrg, v.Code)
 }
 
 type BinCASTTYPE struct {
@@ -879,7 +880,7 @@ func (v *BinMODULE) SwapId(m map[int]int) {
 	}
 }
 func (v BinMODULE) String() string {
-	return fmt.Sprintf("MODULE %s\n{\n%v}\n", ast.UniqueNames.Get(v.Name), v.Code)
+	return fmt.Sprintf("MODULE %s\n{\n%v}\n", env.UniqueNames.Get(v.Name), v.Code)
 }
 
 type BinERROR struct {

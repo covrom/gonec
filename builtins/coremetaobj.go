@@ -5,9 +5,8 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/covrom/gonec/env"
 	"github.com/shopspring/decimal"
-
-	"github.com/covrom/gonec/ast"
 )
 
 // VMMetaObj корневая структура для системных функциональных структур Го, доступных из языка Гонец
@@ -44,7 +43,7 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaStructer) {
 		meth := typ.Method(i)
 		// только экспортируемые
 		if meth.PkgPath == "" {
-			namtyp := ast.UniqueNames.Set(meth.Name)
+			namtyp := env.UniqueNames.Set(meth.Name)
 			v.vmMetaCacheM[namtyp] = meth.Index
 		}
 	}
@@ -55,7 +54,7 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaStructer) {
 		field := typ.Field(i)
 		// только экспортируемые неанонимные поля
 		if field.PkgPath == "" && !field.Anonymous {
-			namtyp := ast.UniqueNames.Set(field.Name)
+			namtyp := env.UniqueNames.Set(field.Name)
 			v.vmMetaCacheF[namtyp] = field.Index
 		}
 	}
