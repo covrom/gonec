@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -18,10 +19,10 @@ type (
 	}
 
 	// VMInterfacer корневой тип всех значений,
-	// которые могут преобразовываться в значения для функций на языке Го
+	// которые могут преобразовываться в значения для функций на языке Го в родные типы Го
 	VMInterfacer interface {
 		VMValuer
-		Interface() interface{} // может возвращать в т.ч. nil
+		Interface() interface{} // в типах Го, может возвращать в т.ч. nil
 	}
 
 	// VMFromGoParser может парсить из значений на языке Го
@@ -73,9 +74,9 @@ type (
 	}
 
 	// VMMaper может быть представлен в виде структуры Гонец
-	VMMaper interface {
+	VMStringMaper interface {
 		VMInterfacer
-		Map() VMStringMap
+		StringMap() VMStringMap
 	}
 
 	// VMFuncer это функция Гонец
@@ -105,7 +106,7 @@ type VMInt int64
 func (x VMInt) vmval() {}
 
 func (x VMInt) Interface() interface{} {
-	return x
+	return int64(x)
 }
 
 func (x *VMInt) ParseGoType(v interface{}) {
@@ -188,7 +189,7 @@ type VMDecimal decimal.Decimal
 func (x VMDecimal) vmval() {}
 
 func (x VMDecimal) Interface() interface{} {
-	return x
+	return decimal.Decimal(x)
 }
 
 func (x *VMDecimal) ParseGoType(v interface{}) {
@@ -225,9 +226,9 @@ func (x *VMDecimal) ParseGoType(v interface{}) {
 			rv = rv.Elem()
 		}
 		if rv.Kind() == reflect.Float32 || rv.Kind() == reflect.Float64 {
-			*x = VMDecimal(decimal.NewFromFloat(rv.Float())) // выдаст панику, если это не число
+			*x = VMDecimal(decimal.NewFromFloat(rv.Float()))
 		} else {
-			*x = VMDecimal(decimal.New(rv.Int(), 0))
+			*x = VMDecimal(decimal.New(rv.Int(), 0)) // выдаст панику, если это не число
 		}
 	}
 }
@@ -282,7 +283,7 @@ type VMString string
 func (x VMString) vmval() {}
 
 func (x VMString) Interface() interface{} {
-	return x
+	return string(x)
 }
 
 func (x VMString) String() string {
@@ -354,15 +355,21 @@ func (x *VMString) Parse(s string) error {
 	return nil
 }
 
-///////////////////////////////////////////////////////////////////////////////////
-func (x *VMString) Slice() VMSlice {
-	panic("TODO")
+func (x VMString) Slice() VMSlice {
+	var rm []interface{}
+	if err := json.Unmarshal([]byte(x), &rm); err != nil {
+		panic(err)
+	}
+	return VMSlice(rm)
 }
 
-func (x *VMString) Map() VMStringMap {
-	panic("TODO")
+func (x VMString) StringMap() VMStringMap {
+	var rm map[string]interface{}
+	if err := json.Unmarshal([]byte(x), rm); err != nil {
+		panic(err)
+	}
+	return VMStringMap(rm)
 }
-///////////////////////////////////////////////////////////////////////////////////
 
 // VMChan - канал для передачи любого типа вирт. машины
 type VMChan chan VMValuer
