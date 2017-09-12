@@ -5,6 +5,10 @@ type VMChan chan VMValuer
 
 func (x VMChan) vmval() {}
 
+func (x VMChan) Interface() interface{} {
+	return x
+}
+
 func (x VMChan) Send(v VMValuer) {
 	x <- v
 }

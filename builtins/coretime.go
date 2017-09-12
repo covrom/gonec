@@ -13,6 +13,12 @@ type VMTime time.Time
 
 var ReflectVMTime = reflect.TypeOf(VMTime{})
 
+func (v VMTime) vmval() {}
+
+func (v VMTime) Interface() interface{} {
+	return time.Time(v)
+}
+
 func (t VMTime) Time() VMTime {
 	return t
 }

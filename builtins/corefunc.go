@@ -6,8 +6,6 @@ import "fmt"
 // их можно использовать в стандартной библиотеке, проверив на этот тип
 type VMFunc func(args ...interface{}) (interface{}, error)
 
-// TODO: переделать на VMInterfacer
-
 func (f VMFunc) vmval() {}
 
 func (f VMFunc) Interface() interface{} {
@@ -24,7 +22,7 @@ func (f VMFunc) String() string {
 
 // VMMeth вызывается как обертка метода объекта метаданных
 // возвращаемое из обертки значение должно быть приведено к типу вирт. машины
-type VMMeth func(receiver VMMetaStructer, args VMSlicer) (VMInterfacer, error)
+type VMMeth func(args VMSlicer) (VMInterfacer, error)
 
 func (f VMMeth) vmval() {}
 
@@ -35,13 +33,10 @@ func (f VMMeth) Interface() interface{} {
 func (f VMMeth) Func() VMFunc {
 	// возвращает обертку, которая потребует первым параметром ссылку на объект метаданных (интерфейс VMMetaStructer)
 	return VMFunc(func(args ...interface{}) (interface{}, error) {
-		if len(args) == 0 {
-			panic("Отсутствует объект метаданных")
+		v, err := f(VMSlice(args))
+		if err != nil {
+			return nil, err
 		}
-		if ms, ok := args[0].(VMMetaStructer); ok {
-			return f(ms, VMSlice(args[1:])) // непосредственно вызов метода и возврат его результата
-			// результат возвращается в типах вирт. машины (интерфейс VMInterfacer)
-		}
-		panic("Отсутствует объект метаданных")
+		return v.Interface(), nil
 	})
 }

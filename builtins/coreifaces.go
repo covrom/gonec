@@ -28,7 +28,7 @@ type (
 
 	// VMChaner реализует поведение канала
 	VMChaner interface {
-		VMValuer
+		VMInterfacer
 		Send(VMValuer)
 		Recv() VMValuer
 		TrySend(VMValuer) bool
@@ -92,38 +92,12 @@ type (
 	// обертка получается через встраивание базовой структуры VMMetaObj
 	VMMetaStructer interface {
 		VMInterfacer
-		CacheMembers() // создает внутренние хранилища полей и методов,
+		VMCacheMembers(VMMetaStructer) // создает внутренние хранилища полей и методов,
 		// содержащие id строки с именем (независимое от регистра букв)
 		// и индекс среди полей или методов, для получения через рефлексию
-		IsField(int) bool
-		GetField(int) VMInterfacer
-		SetField(int, VMInterfacer)
-		GetMethod(int) VMMeth // получает обертку метода
+		VMIsField(int) bool
+		VMGetField(int) VMInterfacer
+		VMSetField(int, VMInterfacer)
+		VMGetMethod(int) VMMeth // получает обертку метода
 	}
 )
-
-// VMMetaObj корневая структура для системных функциональных структур Го, доступных из языка Гонец
-type VMMetaObj struct {
-}
-
-// TODO: доделать реализацию
-
-func (v *VMMetaObj) CacheMembers() {
-	panic("TODO")
-}
-
-func (v *VMMetaObj) IsField(name int) bool {
-	panic("TODO")
-}
-
-func (v *VMMetaObj) GetField(name int) VMInterfacer {
-	panic("TODO")
-}
-
-func (v *VMMetaObj) SetField(name int, val VMInterfacer) {
-	panic("TODO")
-}
-
-func (v *VMMetaObj) GetMethod(name int) VMMeth {
-	panic("TODO")
-}
