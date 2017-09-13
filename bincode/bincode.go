@@ -703,12 +703,12 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
 	return
 }
 
-func appendBin(bins []BinStmt, b BinStmt, e ast.Pos) []BinStmt {
+func appendBin(bins BinStmts, b BinStmt, e ast.Pos) BinStmts {
 	b.SetPosition(e.Position())
 	return append(bins, b)
 }
 
-func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins []BinStmt) {
+func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinStmts) {
 	// присваиваем значению переменной из e значение из регистра reg
 	switch ee := e.(type) {
 	case *ast.IdentExpr:
@@ -786,7 +786,7 @@ func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins []BinStmt) {
 	return
 }
 
-func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins []BinStmt) {
+func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	//inStmt=true - признак запуска выражения как опреатора в блоке кода, иначе это подвыражение
 	if expr == nil {
 		bins = appendBin(bins,

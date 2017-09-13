@@ -27,8 +27,10 @@ type BinStmtImpl struct {
 func (x *BinStmtImpl) binstmt()           {}
 func (x *BinStmtImpl) SwapId(map[int]int) {}
 
+type BinStmts []BinStmt
+
 type BinCode struct {
-	Code   []BinStmt
+	Code   BinStmts
 	Labels map[int]int //индекс - это номер метки, значение = индекс stmt в Code
 }
 
