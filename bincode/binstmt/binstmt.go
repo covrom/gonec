@@ -29,6 +29,10 @@ func (x *BinStmtImpl) SwapId(map[int]int) {}
 
 type BinStmts []BinStmt
 
+func (x *BinStmts) Append(bs BinStmt) {
+	*x = append(*x, bs)
+}
+
 type BinCode struct {
 	Code   BinStmts
 	Labels map[int]int //индекс - это номер метки, значение = индекс stmt в Code
@@ -518,6 +522,15 @@ type BinJFALSE struct {
 
 func (v BinJFALSE) String() string {
 	return fmt.Sprintf("JFALSE r%d, L%d", v.Reg, v.JumpTo)
+}
+
+func NewBinJFalse(reg, lf int, e pos.Pos) *BinJFALSE {
+	v := &BinJFALSE{
+		Reg:    reg,
+		JumpTo: lf,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinOPER struct {

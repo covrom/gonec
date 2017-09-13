@@ -6,6 +6,7 @@ import (
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/pos"
 )
 
 ///////////////////////////////////////////////////////////////
@@ -26,7 +27,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
 		switch s := st.(type) {
 		case *ast.ExprStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
+			// bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
 		case *ast.IfStmt:
 			*lid++
 			lend := *lid
@@ -705,7 +706,7 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
 	return
 }
 
-func appendBin(bins BinStmts, b BinStmt, e ast.Pos) BinStmts {
+func appendBin(bins BinStmts, b BinStmt, e pos.Pos) BinStmts {
 	b.SetPosition(e.Position())
 	return append(bins, b)
 }

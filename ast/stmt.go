@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"go/ast"
+
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/pos"
 )
@@ -56,6 +58,71 @@ func (x *IfStmt) Simplify() {
 	for _, st := range x.Else {
 		st.Simplify()
 	}
+}
+
+func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	*lid++
+	lend := *lid
+
+	// Если
+	s.If.BinTo(bins, reg, lid, false)
+
+	*lid++
+	lf := *lid
+
+	bins.Append(binstmt.NewBinJFalse(reg, lf, s))
+
+	//////////////////////////////////////////////////////////!!!!!!!!!!!!!!!!!!!!
+	// TODO: доделать
+
+	// Тогда
+	bins = append(bins, BinaryCode(s.Then, reg, lid).Code...)
+	bins = appendBin(bins,
+		&BinJMP{
+			JumpTo: lend,
+		}, s)
+	// ИначеЕсли
+	bins = appendBin(bins,
+		&BinLABEL{
+			Label: lf,
+		}, s)
+
+	for _, elif := range s.ElseIf {
+		stmtif := elif.(*ast.IfStmt)
+		bins = append(bins, addBinExpr(stmtif.If, reg, lid, false)...)
+		// если ложь, то перейдем на следующее условие
+		*lid++
+		li := *lid
+		bins = appendBin(bins,
+			&BinJFALSE{
+				Reg:    reg,
+				JumpTo: li,
+			}, stmtif)
+		bins = append(bins, BinaryCode(stmtif.Then, reg, lid).Code...)
+		bins = appendBin(bins,
+			&BinJMP{
+				JumpTo: lend,
+			}, stmtif)
+		bins = appendBin(bins,
+			&BinLABEL{
+				Label: li,
+			}, stmtif)
+	}
+	// Иначе
+	if len(s.Else) > 0 {
+		bins = append(bins, BinaryCode(s.Else, reg, lid).Code...)
+	}
+	// КонецЕсли
+	bins = appendBin(bins,
+		&BinLABEL{
+			Label: lend,
+		}, s)
+	// освобождаем память
+	bins = appendBin(bins,
+		&BinFREE{
+			Reg: reg + 1,
+		}, s)
+
 }
 
 // TryStmt provide "try/catch/finally" statement.
