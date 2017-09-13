@@ -12,46 +12,10 @@
 			"revisionTime": "2016-12-24T03:39:00Z"
 		},
 		{
-			"checksumSHA1": "dUZIXQ7ds+VB8okZOKnUA0d+1/Y=",
-			"path": "github.com/ericlagergren/decimal",
-			"revision": "522450d1e655d86ef13b0bfad42d090a0240ce03",
-			"revisionTime": "2017-03-16T21:34:15Z"
-		},
-		{
-			"checksumSHA1": "sZJ05+54tHTGxGZXcMq7Lk0WCfs=",
-			"path": "github.com/ericlagergren/decimal/internal/arith",
-			"revision": "522450d1e655d86ef13b0bfad42d090a0240ce03",
-			"revisionTime": "2017-03-16T21:34:15Z"
-		},
-		{
-			"checksumSHA1": "dA+Z+nSBCQVhznlowbxuCviMFJc=",
-			"path": "github.com/ericlagergren/decimal/internal/arith/checked",
-			"revision": "522450d1e655d86ef13b0bfad42d090a0240ce03",
-			"revisionTime": "2017-03-16T21:34:15Z"
-		},
-		{
-			"checksumSHA1": "UdVmzvOI0sx7rm82zM3vtIODTYM=",
-			"path": "github.com/ericlagergren/decimal/internal/arith/pow",
-			"revision": "522450d1e655d86ef13b0bfad42d090a0240ce03",
-			"revisionTime": "2017-03-16T21:34:15Z"
-		},
-		{
-			"checksumSHA1": "ndIcyKaJVxFBy/i9Wwxbm2qSRpU=",
-			"path": "github.com/ericlagergren/decimal/internal/c",
-			"revision": "522450d1e655d86ef13b0bfad42d090a0240ce03",
-			"revisionTime": "2017-03-16T21:34:15Z"
-		},
-		{
 			"checksumSHA1": "rCNfFpeYqd2Tpi5qOFX8ckaQcMU=",
 			"path": "github.com/mattn/go-isatty",
 			"revision": "fc9e8d8ef48496124e79ae0df75490096eccf6fe",
 			"revisionTime": "2017-03-22T23:44:13Z"
-		},
-		{
-			"checksumSHA1": "mR79ABWFyrDTTdhFPxwUN19T45Q=",
-			"path": "github.com/pkg/errors",
-			"revision": "2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb",
-			"revisionTime": "2017-09-10T13:46:14Z"
 		},
 		{
 			"checksumSHA1": "hU4FCpvSz/eV4G0cqnXEs9mFLh8=",
