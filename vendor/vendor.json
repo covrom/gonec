@@ -6,6 +6,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "6UYtYirpl/QISiUoG2nNeF80UZc=",
+			"path": "github.com/cockroachdb/apd",
+			"revision": "b1ce49cb2a474f4416531e7395373eaafaa4fbe2",
+			"revisionTime": "2017-09-12T20:59:01Z"
+		},
+		{
 			"checksumSHA1": "+RnqP2E0QQ0lVibq0H+62R12hEA=",
 			"path": "github.com/daviddengcn/go-colortext",
 			"revision": "805cee6e0d43c72ba1d4e3275965ff41e0da068a",
@@ -46,6 +52,12 @@
 			"path": "github.com/mattn/go-isatty",
 			"revision": "fc9e8d8ef48496124e79ae0df75490096eccf6fe",
 			"revisionTime": "2017-03-22T23:44:13Z"
+		},
+		{
+			"checksumSHA1": "mR79ABWFyrDTTdhFPxwUN19T45Q=",
+			"path": "github.com/pkg/errors",
+			"revision": "2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb",
+			"revisionTime": "2017-09-10T13:46:14Z"
 		},
 		{
 			"checksumSHA1": "hU4FCpvSz/eV4G0cqnXEs9mFLh8=",
