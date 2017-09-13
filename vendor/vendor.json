@@ -6,12 +6,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "6UYtYirpl/QISiUoG2nNeF80UZc=",
-			"path": "github.com/cockroachdb/apd",
-			"revision": "b1ce49cb2a474f4416531e7395373eaafaa4fbe2",
-			"revisionTime": "2017-09-12T20:59:01Z"
-		},
-		{
 			"checksumSHA1": "+RnqP2E0QQ0lVibq0H+62R12hEA=",
 			"path": "github.com/daviddengcn/go-colortext",
 			"revision": "805cee6e0d43c72ba1d4e3275965ff41e0da068a",
