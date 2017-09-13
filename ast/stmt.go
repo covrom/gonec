@@ -1,15 +1,21 @@
 package ast
 
+import (
+	"github.com/covrom/gonec/bincode/binstmt"
+	"github.com/covrom/gonec/pos"
+)
+
 // Stmt provides all of interfaces for statement.
 type Stmt interface {
-	Pos
+	pos.Pos
 	stmt()
 	Simplify()
+	BinTo(*binstmt.BinStmts, int, *int)
 }
 
 // StmtImpl provide commonly implementations for Stmt..
 type StmtImpl struct {
-	PosImpl // StmtImpl provide Pos() function.
+	pos.PosImpl // StmtImpl provide Pos() function.
 }
 
 // stmt provide restraint interface.
@@ -23,6 +29,11 @@ type ExprStmt struct {
 
 func (x *ExprStmt) Simplify() {
 	x.Expr = x.Expr.Simplify()
+}
+
+func (s *ExprStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	s.Expr.BinTo(bins, reg, lid, true)
+	// *bins = append(*bins, addBinExpr(s.Expr, reg, lid, true)...)
 }
 
 // IfStmt provide "if/else" statement.

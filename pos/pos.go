@@ -1,4 +1,4 @@
-package ast
+package pos
 
 // Position provides interface to store code locations.
 type Position struct {

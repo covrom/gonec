@@ -1,7 +1,9 @@
 package ast
 
+import "github.com/covrom/gonec/pos"
+
 type Token struct {
-	PosImpl // StmtImpl provide Pos() function.
-	Tok     int
-	Lit     string
+	pos.PosImpl // StmtImpl provide Pos() function.
+	Tok         int
+	Lit         string
 }

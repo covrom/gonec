@@ -3,19 +3,22 @@ package ast
 import (
 	"strings"
 
+	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/builtins"
+	"github.com/covrom/gonec/pos"
 )
 
 // Expr provides all of interfaces for expression.
 type Expr interface {
-	Pos
+	pos.Pos
 	expr()
 	Simplify() Expr
+	BinTo(*binstmt.BinStmts, int, *int, bool)
 }
 
 // ExprImpl provide commonly implementations for Expr.
 type ExprImpl struct {
-	PosImpl // ExprImpl provide Pos() function.
+	pos.PosImpl // ExprImpl provide Pos() function.
 }
 
 // expr provide restraint interface.

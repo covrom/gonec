@@ -1,4 +1,4 @@
-package bincode
+package binstmt
 
 import (
 	"compress/gzip"
@@ -8,19 +8,19 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/builtins"
 	"github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/pos"
 )
 
 type BinStmt interface {
-	ast.Pos
+	pos.Pos
 	binstmt()
 	SwapId(map[int]int)
 }
 
 type BinStmtImpl struct {
-	ast.PosImpl
+	pos.PosImpl
 	fmt.Stringer
 }
 
@@ -222,14 +222,14 @@ type BinLOAD struct {
 
 func (v *BinLOAD) SwapId(m map[int]int) {
 	if v.IsId {
-		if newid, ok := m[v.Val.(int)]; ok {
-			v.Val = newid
+		if newid, ok := m[int(v.Val.(core.VMInt))]; ok {
+			v.Val = core.VMInt(newid)
 		}
 	}
 }
 func (v BinLOAD) String() string {
 	if v.IsId {
-		return fmt.Sprintf("LOAD r%d, %#v", v.Reg, env.UniqueNames.Get(v.Val.(int)))
+		return fmt.Sprintf("LOAD r%d, %#v", v.Reg, env.UniqueNames.Get(int(v.Val.(core.VMInt))))
 	}
 	return fmt.Sprintf("LOAD r%d, %#v", v.Reg, v.Val)
 }
@@ -525,11 +525,11 @@ type BinOPER struct {
 
 	RegL int // сюда же помещается результат
 	RegR int
-	Op   int
+	Op   core.VMOperation
 }
 
 func (v BinOPER) String() string {
-	return fmt.Sprintf("OP r%d, %q, r%d", v.RegL, OperMapR[v.Op], v.RegR)
+	return fmt.Sprintf("OP r%d, %q, r%d", v.RegL, core.OperMapR[v.Op], v.RegR)
 }
 
 type BinCALL struct {

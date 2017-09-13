@@ -4,9 +4,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/covrom/gonec/env"
-
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/env"
 )
 
 ///////////////////////////////////////////////////////////////
@@ -20,6 +19,9 @@ func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
 		bcd.MapLabels()
 	}()
 	for _, st := range inast {
+
+		st.BinTo(&bins, reg, lid)
+
 		// перебираем все подвыражения и команды, и выстраиваем их в линию
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
 		switch s := st.(type) {
