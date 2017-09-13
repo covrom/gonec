@@ -793,7 +793,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins []BinStmt) 
 			&BinLOAD{
 				Reg: reg,
 				Val: nil,
-			}, &ast.NativeExpr{Value: env.NilValue}) // т.к. expr == nil, то у него нет Pos
+			}, &ast.NativeExpr{Value: nil}) // т.к. expr == nil, то у него нет Pos
 		return
 	}
 	switch e := expr.(type) {
@@ -802,7 +802,7 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins []BinStmt) 
 		bins = appendBin(bins,
 			&BinLOAD{
 				Reg: reg, // основной регистр
-				Val: e.Value.Interface(),
+				Val: e.Value,
 			}, e)
 	case *ast.NumberExpr:
 		// команда на загрузку строки в регистр и ее преобразование в число, в регистр

@@ -7,69 +7,6 @@ import (
 	"github.com/covrom/gonec/ast"
 )
 
-const (
-	_    = iota
-	ADD  // +
-	SUB  // -
-	MUL  // *
-	QUO  // /
-	REM  // %
-	EQL  // ==
-	NEQ  // !=
-	GTR  // >
-	GEQ  // >=
-	LSS  // <
-	LEQ  // <=
-	OR   // |
-	LOR  // ||
-	AND  // &
-	LAND // &&
-	POW  //**
-	SHL  // <<
-	SHR  // >>
-)
-
-var OperMap = map[string]int{
-	"+":  ADD,  // +
-	"-":  SUB,  // -
-	"*":  MUL,  // *
-	"/":  QUO,  // /
-	"%":  REM,  // %
-	"==": EQL,  // ==
-	"!=": NEQ,  // !=
-	">":  GTR,  // >
-	">=": GEQ,  // >=
-	"<":  LSS,  // <
-	"<=": LEQ,  // <=
-	"|":  OR,   // |
-	"||": LOR,  // ||
-	"&":  AND,  // &
-	"&&": LAND, // &&
-	"**": POW,  //**
-	"<<": SHL,  // <<
-	">>": SHR,  // >>
-}
-
-var OperMapR = map[int]string{
-	ADD:  "+",  // +
-	SUB:  "-",  // -
-	MUL:  "*",  // *
-	QUO:  "/",  // /
-	REM:  "%",  // %
-	EQL:  "==", // ==
-	NEQ:  "!=", // !=
-	GTR:  ">",  // >
-	GEQ:  ">=", // >=
-	LSS:  "<",  // <
-	LEQ:  "<=", // <=
-	OR:   "|",  // |
-	LOR:  "||", // ||
-	AND:  "&",  // &
-	LAND: "&&", // &&
-	POW:  "**", //**
-	SHL:  "<<", // <<
-	SHR:  ">>", // >>
-}
 
 // Error provides a convenient interface for handling runtime error.
 // It can be Error interface with type cast which can call Pos().

@@ -87,17 +87,17 @@ func (x *VMString) Parse(s string) error {
 }
 
 func (x VMString) Slice() VMSlice {
-	var rm []interface{}
+	var rm VMSlice
 	if err := json.Unmarshal([]byte(x), &rm); err != nil {
 		panic(err)
 	}
-	return VMSlice(rm)
+	return rm
 }
 
 func (x VMString) StringMap() VMStringMap {
-	var rm map[string]interface{}
+	var rm VMStringMap
 	if err := json.Unmarshal([]byte(x), rm); err != nil {
 		panic(err)
 	}
-	return VMStringMap(rm)
+	return rm
 }

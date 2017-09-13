@@ -20,6 +20,20 @@ type (
 		ParseGoType(interface{}) // используется для указателей, т.к. парсит в их значения
 	}
 
+	// VMOperationer может выполнить операцию с другим значением, операцию сравнения или математическую
+	VMOperationer interface {
+		VMValuer
+		EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) // возвращает результат выражения с другим значением
+	}
+
+	// VMUnarer может выполнить унарную операцию над свои значением
+	VMUnarer interface {
+		VMValuer
+		EvalUnOp(VMOperation) (VMValuer, error) // возвращает результат выражения с другим значением
+	}
+
+	// TODO: реализовать VMOperationer и VMUnarer во всех типах
+
 	// VMParser может парсить из строки
 	VMParser interface {
 		VMValuer
@@ -99,5 +113,11 @@ type (
 		VMGetField(int) VMInterfacer
 		VMSetField(int, VMInterfacer)
 		VMGetMethod(int) VMMeth // получает обертку метода
+	}
+
+	// VMNullable означает значение null
+	VMNullable interface {
+		VMStringer
+		null()
 	}
 )

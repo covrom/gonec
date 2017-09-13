@@ -143,6 +143,7 @@ func init() {
 	gob.Register(core.VMSlice{})
 	gob.Register(core.VMStringMap{})
 	gob.Register(make(core.VMChan))
+	gob.Register(core.VMNullVar)
 
 	gob.Register(&BinLOAD{})
 	gob.Register(&BinMV{})
@@ -213,7 +214,7 @@ type BinLOAD struct {
 	BinStmtImpl
 
 	Reg  int
-	Val  interface{}
+	Val  core.VMValuer
 	IsId bool
 }
 

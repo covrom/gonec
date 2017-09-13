@@ -1,13 +1,15 @@
 package core
 
-type VMStringMap map[string]interface{}
+type VMStringMap map[string]VMValuer
 
 func (x VMStringMap) vmval() {}
 
 func (x VMStringMap) Interface() interface{} {
-	return (map[string]interface{})(x)
+	return x
 }
 
 func (x VMStringMap) StringMap() VMStringMap {
 	return x
 }
+
+// TODO: маршаллинг!!!
