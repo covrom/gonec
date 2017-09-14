@@ -15,12 +15,9 @@ import (
 
 func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 	bins := bcd.Code
-	defer func() {
-		bcd.Code = bins
-		bcd.MapLabels()
-	}()
-
 	inast.BinTo(&bins, reg, lid)
+	bcd.Code = bins
+	bcd.MapLabels()
 
 	return
 
@@ -312,13 +309,13 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 			Reg: reg + 1,
 		// 		}, s)
 
-		case *ast.BreakStmt:
-			bins = appendBin(bins,
-				&BinBREAK{}, s)
+		// case *ast.BreakStmt:
+		// 	bins = appendBin(bins,
+		// 		&BinBREAK{}, s)
 
-		case *ast.ContinueStmt:
-			bins = appendBin(bins,
-				&BinCONTINUE{}, s)
+		// case *ast.ContinueStmt:
+		// 	bins = appendBin(bins,
+		// 		&BinCONTINUE{}, s)
 
 		case *ast.ReturnStmt:
 			if len(s.Exprs) == 0 {

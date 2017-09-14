@@ -1296,7 +1296,7 @@ func (v BinBREAK) String() string {
 	return fmt.Sprintf("BREAK")
 }
 
-func NewBinBREAK(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinBREAK {
+func NewBinBREAK(e pos.Pos) *BinBREAK {
 	v := &BinBREAK{}
 	v.SetPosition(e.Position())
 	return v
@@ -1310,7 +1310,7 @@ func (v BinCONTINUE) String() string {
 	return fmt.Sprintf("CONTINUE")
 }
 
-func NewBinCONTINUE(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinCONTINUE {
+func NewBinCONTINUE(e pos.Pos) *BinCONTINUE {
 	v := &BinCONTINUE{}
 	v.SetPosition(e.Position())
 	return v
@@ -1451,7 +1451,7 @@ func (v BinGOSHED) String() string {
 	return fmt.Sprintf("GOSHED")
 }
 
-func NewBinGOSHED(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinGOSHED {
+func NewBinGOSHED(e pos.Pos) *BinGOSHED {
 	v := &BinGOSHED{}
 	v.SetPosition(e.Position())
 	return v

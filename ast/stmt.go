@@ -337,12 +337,20 @@ type BreakStmt struct {
 
 func (x *BreakStmt) Simplify() {}
 
+func (s *BreakStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	bins.Append(binstmt.NewBinBREAK(s))
+}
+
 // ContinueStmt provide "continue" expression statement.
 type ContinueStmt struct {
 	StmtImpl
 }
 
 func (x *ContinueStmt) Simplify() {}
+
+func (s *ContinueStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	bins.Append(binstmt.NewBinCONTINUE(s))
+}
 
 // ForStmt provide "return" expression statement.
 type ReturnStmt struct {
