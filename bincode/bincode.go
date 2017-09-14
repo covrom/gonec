@@ -375,214 +375,214 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 				Code: BinaryCode(s.Stmts, 0, lid),
 		// 			}, s)
 		// 	}
-		case *ast.SwitchStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
-			// сравниваем с каждым case
-			*lid++
-			lend := *lid
-			var default_stmt *ast.DefaultStmt
-			for _, ss := range s.Cases {
-				if ssd, ok := ss.(*ast.DefaultStmt); ok {
-					default_stmt = ssd
-					continue
-				}
-				*lid++
-				li := *lid
-				case_stmt := ss.(*ast.CaseStmt)
-				bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid, false)...)
-				bins = appendBin(bins,
-					&BinEQUAL{
-						Reg:  reg + 2,
-						Reg1: reg,
-						Reg2: reg + 1,
-					}, case_stmt)
+		// case *ast.SwitchStmt:
+		// 	bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
+		// 	// сравниваем с каждым case
+		// 	*lid++
+		// 	lend := *lid
+		// 	var default_stmt *ast.DefaultStmt
+		// 	for _, ss := range s.Cases {
+		// 		if ssd, ok := ss.(*ast.DefaultStmt); ok {
+		// 			default_stmt = ssd
+		// 			continue
+		// 		}
+		// 		*lid++
+		// 		li := *lid
+		// 		case_stmt := ss.(*ast.CaseStmt)
+		// 		bins = append(bins, addBinExpr(case_stmt.Expr, reg+1, lid, false)...)
+		// 		bins = appendBin(bins,
+		// 			&BinEQUAL{
+		// 				Reg:  reg + 2,
+		// 				Reg1: reg,
+		// 				Reg2: reg + 1,
+		// 			}, case_stmt)
 
-				bins = appendBin(bins,
-					&BinJFALSE{
-						Reg:    reg + 2,
-						JumpTo: li,
-					}, case_stmt)
-				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid).Code...)
-				bins = appendBin(bins,
-					&BinJMP{
-						JumpTo: lend,
-					}, case_stmt)
+		// 		bins = appendBin(bins,
+		// 			&BinJFALSE{
+		// 				Reg:    reg + 2,
+		// 				JumpTo: li,
+		// 			}, case_stmt)
+		// 		bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid).Code...)
+		// 		bins = appendBin(bins,
+		// 			&BinJMP{
+		// 				JumpTo: lend,
+		// 			}, case_stmt)
 
-				bins = appendBin(bins,
-					&BinLABEL{
-						Label: li,
-					}, case_stmt)
-			}
-			if default_stmt != nil {
-				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid).Code...)
-			}
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// 		bins = appendBin(bins,
+		// 			&BinLABEL{
+		// 				Label: li,
+		// 			}, case_stmt)
+		// 	}
+		// 	if default_stmt != nil {
+		// 		bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid).Code...)
+		// 	}
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
-		case *ast.SelectStmt:
-			*lid++
-			lstart := *lid
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lstart,
-				}, s)
+		// case *ast.SelectStmt:
+		// 	*lid++
+		// 	lstart := *lid
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lstart,
+		// 		}, s)
 
-			*lid++
-			lend := *lid
-			var default_stmt *ast.DefaultStmt
-			for _, ss := range s.Cases {
-				if ssd, ok := ss.(*ast.DefaultStmt); ok {
-					default_stmt = ssd
-					continue
-				}
-				*lid++
-				li := *lid
-				case_stmt := ss.(*ast.CaseStmt)
-				e, ok := case_stmt.Expr.(*ast.ChanExpr)
-				if !ok {
-					panic(NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
-				}
-				// определяем значение справа
-				bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
-				if e.Lhs == nil {
-					// слева нет значения - это временное чтение из канала без сохранения значения в переменной
-					bins = appendBin(bins,
-						&BinTRYRECV{
-							Reg:       reg,
-							RegVal:    reg + 1,
-							RegOk:     reg + 2,
-							RegClosed: reg + 3,
-						}, e.Rhs)
-					// если канал закрыт или не получено значение - идем в следующую ветку
-					bins = appendBin(bins,
-						&BinJFALSE{
-							Reg:    reg + 2,
-							JumpTo: li,
-						}, s)
-				} else {
-					// значение слева
-					bins = append(bins, addBinExpr(e.Lhs, reg+1, lid, false)...)
+		// 	*lid++
+		// 	lend := *lid
+		// 	var default_stmt *ast.DefaultStmt
+		// 	for _, ss := range s.Cases {
+		// 		if ssd, ok := ss.(*ast.DefaultStmt); ok {
+		// 			default_stmt = ssd
+		// 			continue
+		// 		}
+		// 		*lid++
+		// 		li := *lid
+		// 		case_stmt := ss.(*ast.CaseStmt)
+		// 		e, ok := case_stmt.Expr.(*ast.ChanExpr)
+		// 		if !ok {
+		// 			panic(NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
+		// 		}
+		// 		// определяем значение справа
+		// 		bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
+		// 		if e.Lhs == nil {
+		// 			// слева нет значения - это временное чтение из канала без сохранения значения в переменной
+		// 			bins = appendBin(bins,
+		// 				&BinTRYRECV{
+		// 					Reg:       reg,
+		// 					RegVal:    reg + 1,
+		// 					RegOk:     reg + 2,
+		// 					RegClosed: reg + 3,
+		// 				}, e.Rhs)
+		// 			// если канал закрыт или не получено значение - идем в следующую ветку
+		// 			bins = appendBin(bins,
+		// 				&BinJFALSE{
+		// 					Reg:    reg + 2,
+		// 					JumpTo: li,
+		// 				}, s)
+		// 		} else {
+		// 			// значение слева
+		// 			bins = append(bins, addBinExpr(e.Lhs, reg+1, lid, false)...)
 
-					// проверяем: слева канал?
-					bins = appendBin(bins,
-						&BinMV{
-							RegFrom: reg + 1,
-							RegTo:   reg + 3,
-						}, e)
-					bins = appendBin(bins,
-						&BinISKIND{
-							Reg:  reg + 3,
-							Kind: reflect.Chan,
-						}, e)
+		// 			// проверяем: слева канал?
+		// 			bins = appendBin(bins,
+		// 				&BinMV{
+		// 					RegFrom: reg + 1,
+		// 					RegTo:   reg + 3,
+		// 				}, e)
+		// 			bins = appendBin(bins,
+		// 				&BinISKIND{
+		// 					Reg:  reg + 3,
+		// 					Kind: reflect.Chan,
+		// 				}, e)
 
-					*lid++
-					li3 := *lid
+		// 			*lid++
+		// 			li3 := *lid
 
-					bins = appendBin(bins,
-						&BinJFALSE{
-							Reg:    reg + 3,
-							JumpTo: li3,
-						}, e)
+		// 			bins = appendBin(bins,
+		// 				&BinJFALSE{
+		// 					Reg:    reg + 3,
+		// 					JumpTo: li3,
+		// 				}, e)
 
-					// слева канал - пишем в него правое
+		// 			// слева канал - пишем в него правое
 
-					bins = appendBin(bins,
-						&BinTRYSEND{
-							Reg:    reg + 1,
-							RegVal: reg,
-							RegOk:  reg + 2,
-							// RegClosed: reg + 3,
-						}, e.Lhs)
+		// 			bins = appendBin(bins,
+		// 				&BinTRYSEND{
+		// 					Reg:    reg + 1,
+		// 					RegVal: reg,
+		// 					RegOk:  reg + 2,
+		// 					// RegClosed: reg + 3,
+		// 				}, e.Lhs)
 
-					*lid++
-					li2 := *lid
+		// 			*lid++
+		// 			li2 := *lid
 
-					// если отправлено значение - выполняем код блока
-					bins = appendBin(bins,
-						&BinJTRUE{
-							Reg:    reg + 2,
-							JumpTo: li2,
-						}, s)
-					// если не отправлено значение - идем в следующую ветку
-					// если канал закрыт - будет паника
-					bins = appendBin(bins,
-						&BinJMP{
-							JumpTo: li,
-						}, s)
+		// 			// если отправлено значение - выполняем код блока
+		// 			bins = appendBin(bins,
+		// 				&BinJTRUE{
+		// 					Reg:    reg + 2,
+		// 					JumpTo: li2,
+		// 				}, s)
+		// 			// если не отправлено значение - идем в следующую ветку
+		// 			// если канал закрыт - будет паника
+		// 			bins = appendBin(bins,
+		// 				&BinJMP{
+		// 					JumpTo: li,
+		// 				}, s)
 
-					// иначе справа канал, а слева переменная (установим, если прочитали из канала)
-					bins = appendBin(bins,
-						&BinLABEL{
-							Label: li3,
-						}, s)
+		// 			// иначе справа канал, а слева переменная (установим, если прочитали из канала)
+		// 			bins = appendBin(bins,
+		// 				&BinLABEL{
+		// 					Label: li3,
+		// 				}, s)
 
-					bins = appendBin(bins,
-						&BinTRYRECV{
-							Reg:       reg,
-							RegVal:    reg + 1,
-							RegOk:     reg + 2,
-							RegClosed: reg + 3,
-						}, e.Rhs)
+		// 			bins = appendBin(bins,
+		// 				&BinTRYRECV{
+		// 					Reg:       reg,
+		// 					RegVal:    reg + 1,
+		// 					RegOk:     reg + 2,
+		// 					RegClosed: reg + 3,
+		// 				}, e.Rhs)
 
-					// если канал закрыт или не получено значение - идем в следующую ветку
-					bins = appendBin(bins,
-						&BinJFALSE{
-							Reg:    reg + 2,
-							JumpTo: li,
-						}, s)
+		// 			// если канал закрыт или не получено значение - идем в следующую ветку
+		// 			bins = appendBin(bins,
+		// 				&BinJFALSE{
+		// 					Reg:    reg + 2,
+		// 					JumpTo: li,
+		// 				}, s)
 
-					// устанавливаем переменную прочитанным значением
-					bins = append(bins, addBinLetExpr(e.Lhs, reg+1, lid)...)
+		// 			// устанавливаем переменную прочитанным значением
+		// 			bins = append(bins, addBinLetExpr(e.Lhs, reg+1, lid)...)
 
-					bins = appendBin(bins,
-						&BinLABEL{
-							Label: li2,
-						}, s)
+		// 			bins = appendBin(bins,
+		// 				&BinLABEL{
+		// 					Label: li2,
+		// 				}, s)
 
-				}
-				// отправили или прочитали - выполняем ветку кода и выходим из цикла
-				bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid).Code...)
+		// 		}
+		// 		// отправили или прочитали - выполняем ветку кода и выходим из цикла
+		// 		bins = append(bins, BinaryCode(case_stmt.Stmts, reg, lid).Code...)
 
-				// выходим из цикла
-				bins = appendBin(bins,
-					&BinJMP{
-						JumpTo: lend,
-					}, case_stmt)
+		// 		// выходим из цикла
+		// 		bins = appendBin(bins,
+		// 			&BinJMP{
+		// 				JumpTo: lend,
+		// 			}, case_stmt)
 
-				// к следующему case
-				bins = appendBin(bins,
-					&BinLABEL{
-						Label: li,
-					}, s)
-			}
-			// если ни одна из веток не сработала - проверяем default
-			if default_stmt != nil {
-				bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid).Code...)
-			} else {
-				// допускаем обработку других горутин
-				bins = appendBin(bins,
-					&BinGOSHED{}, s)
-				bins = appendBin(bins,
-					&BinJMP{
-						JumpTo: lstart,
-					}, s)
-			}
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// 		// к следующему case
+		// 		bins = appendBin(bins,
+		// 			&BinLABEL{
+		// 				Label: li,
+		// 			}, s)
+		// 	}
+		// 	// если ни одна из веток не сработала - проверяем default
+		// 	if default_stmt != nil {
+		// 		bins = append(bins, BinaryCode(default_stmt.Stmts, reg, lid).Code...)
+		// 	} else {
+		// 		// допускаем обработку других горутин
+		// 		bins = appendBin(bins,
+		// 			&BinGOSHED{}, s)
+		// 		bins = appendBin(bins,
+		// 			&BinJMP{
+		// 				JumpTo: lstart,
+		// 			}, s)
+		// 	}
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
 		case *ast.LetsStmt:
 			// если справа одно выражение - присваиваем его всем левым
@@ -712,83 +712,83 @@ func appendBin(bins BinStmts, b BinStmt, e pos.Pos) BinStmts {
 	return append(bins, b)
 }
 
-func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinStmts) {
-	// присваиваем значению переменной из e значение из регистра reg
-	switch ee := e.(type) {
-	case *ast.IdentExpr:
-		bins = appendBin(bins,
-			&BinSET{
-				Reg: reg,
-				Id:  ee.Id,
-			}, e)
+// func addBinLetExpr(e ast.Expr, reg int, lid *int) (bins BinStmts) {
+// 	// присваиваем значению переменной из e значение из регистра reg
+// 	switch ee := e.(type) {
+	// case *ast.IdentExpr:
+	// 	bins = appendBin(bins,
+	// 		&BinSET{
+	// 			Reg: reg,
+	// 			Id:  ee.Id,
+	// 		}, e)
 
-	case *ast.MemberExpr:
-		bins = append(bins, addBinExpr(ee.Expr, reg+1, lid, false)...)
-		bins = appendBin(bins,
-			&BinSETMEMBER{
-				Reg:    reg + 1,
-				Id:     ee.Name,
-				RegVal: reg,
-			}, e)
+	// case *ast.MemberExpr:
+	// 	bins = append(bins, addBinExpr(ee.Expr, reg+1, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinSETMEMBER{
+	// 			Reg:    reg + 1,
+	// 			Id:     ee.Name,
+	// 			RegVal: reg,
+	// 		}, e)
 
-	case *ast.ItemExpr:
-		*lid++
-		lend := *lid
-		bins = append(bins, addBinExpr(ee.Value, reg+1, lid, false)...)
-		bins = append(bins, addBinExpr(ee.Index, reg+2, lid, false)...)
-		bins = appendBin(bins,
-			&BinSETITEM{
-				Reg:        reg + 1,
-				RegIndex:   reg + 2,
-				RegVal:     reg,
-				RegNeedLet: reg + 3,
-			}, e)
-		bins = appendBin(bins,
-			&BinJFALSE{
-				Reg:    reg + 3,
-				JumpTo: lend,
-			}, ee)
+	// case *ast.ItemExpr:
+	// 	*lid++
+	// 	lend := *lid
+	// 	bins = append(bins, addBinExpr(ee.Value, reg+1, lid, false)...)
+	// 	bins = append(bins, addBinExpr(ee.Index, reg+2, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinSETITEM{
+	// 			Reg:        reg + 1,
+	// 			RegIndex:   reg + 2,
+	// 			RegVal:     reg,
+	// 			RegNeedLet: reg + 3,
+	// 		}, e)
+	// 	bins = appendBin(bins,
+	// 		&BinJFALSE{
+	// 			Reg:    reg + 3,
+	// 			JumpTo: lend,
+	// 		}, ee)
 
-		bins = append(bins, addBinLetExpr(ee.Value, reg+1, lid)...)
+	// 	bins = append(bins, addBinLetExpr(ee.Value, reg+1, lid)...)
 
-		bins = appendBin(bins,
-			&BinLABEL{
-				Label: lend,
-			}, ee)
+	// 	bins = appendBin(bins,
+	// 		&BinLABEL{
+	// 			Label: lend,
+	// 		}, ee)
 
-	case *ast.SliceExpr:
-		*lid++
-		lend := *lid
-		bins = append(bins, addBinExpr(ee.Value, reg+1, lid, false)...)
-		bins = append(bins, addBinExpr(ee.Begin, reg+2, lid, false)...)
-		bins = append(bins, addBinExpr(ee.End, reg+3, lid, false)...)
-		bins = appendBin(bins,
-			&BinSETSLICE{
-				Reg:        reg + 1,
-				RegBegin:   reg + 2,
-				RegEnd:     reg + 3,
-				RegVal:     reg,
-				RegNeedLet: reg + 4,
-			}, e)
-		bins = appendBin(bins,
-			&BinJFALSE{
-				Reg:    reg + 4,
-				JumpTo: lend,
-			}, ee)
+	// case *ast.SliceExpr:
+	// 	*lid++
+	// 	lend := *lid
+	// 	bins = append(bins, addBinExpr(ee.Value, reg+1, lid, false)...)
+	// 	bins = append(bins, addBinExpr(ee.Begin, reg+2, lid, false)...)
+	// 	bins = append(bins, addBinExpr(ee.End, reg+3, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinSETSLICE{
+	// 			Reg:        reg + 1,
+	// 			RegBegin:   reg + 2,
+	// 			RegEnd:     reg + 3,
+	// 			RegVal:     reg,
+	// 			RegNeedLet: reg + 4,
+	// 		}, e)
+	// 	bins = appendBin(bins,
+	// 		&BinJFALSE{
+	// 			Reg:    reg + 4,
+	// 			JumpTo: lend,
+	// 		}, ee)
 
-		bins = append(bins, addBinLetExpr(ee.Value, reg+1, lid)...)
+	// 	bins = append(bins, addBinLetExpr(ee.Value, reg+1, lid)...)
 
-		bins = appendBin(bins,
-			&BinLABEL{
-				Label: lend,
-			}, ee)
+	// 	bins = appendBin(bins,
+	// 		&BinLABEL{
+	// 			Label: lend,
+	// 		}, ee)
 
-	default:
-		// ошибка
-		panic(NewStringError(e, "Неверная операция"))
-	}
-	return
-}
+// 	default:
+// 		// ошибка
+// 		panic(NewStringError(e, "Неверная операция"))
+// 	}
+// 	return
+// }
 
 func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	//inStmt=true - признак запуска выражения как опреатора в блоке кода, иначе это подвыражение

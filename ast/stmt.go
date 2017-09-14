@@ -1,6 +1,8 @@
 package ast
 
 import (
+	"reflect"
+
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/pos"
@@ -424,19 +426,6 @@ func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	}
 }
 
-// VarStmt provide statement to let variables in current scope.
-type VarStmt struct {
-	StmtImpl
-	Names []int //string
-	Exprs []Expr
-}
-
-func (x *VarStmt) Simplify() {
-	for i := range x.Exprs {
-		x.Exprs[i] = x.Exprs[i].Simplify()
-	}
-}
-
 // SwitchStmt provide switch statement.
 type SwitchStmt struct {
 	StmtImpl
@@ -451,6 +440,35 @@ func (x *SwitchStmt) Simplify() {
 	}
 }
 
+func (s *SwitchStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	s.Expr.BinTo(bins, reg, lid, true)
+	// сравниваем с каждым case
+	*lid++
+	lend := *lid
+	var default_stmt *DefaultStmt
+	for _, ss := range s.Cases {
+		if ssd, ok := ss.(*DefaultStmt); ok {
+			default_stmt = ssd
+			continue
+		}
+		*lid++
+		li := *lid
+		case_stmt := ss.(*CaseStmt)
+		case_stmt.Expr.BinTo(bins, reg+1, lid, false)
+		bins.Append(binstmt.NewBinEQUAL(reg+2, reg, reg+1, case_stmt))
+		bins.Append(binstmt.NewBinJFALSE(reg+2, li, case_stmt))
+		case_stmt.Stmts.BinTo(bins, reg, lid)
+		bins.Append(binstmt.NewBinJMP(lend, case_stmt))
+		bins.Append(binstmt.NewBinLABEL(li, case_stmt))
+	}
+	if default_stmt != nil {
+		default_stmt.Stmts.BinTo(bins, reg, lid)
+	}
+	bins.Append(binstmt.NewBinLABEL(lend, s))
+	// освобождаем память
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
+}
+
 // SelectStmt provide switch statement.
 type SelectStmt struct {
 	StmtImpl
@@ -461,6 +479,94 @@ func (x *SelectStmt) Simplify() {
 	for _, st := range x.Cases {
 		st.Simplify()
 	}
+}
+
+func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	*lid++
+	lstart := *lid
+	bins.Append(binstmt.NewBinLABEL(lstart, s))
+
+	*lid++
+	lend := *lid
+	var default_stmt *DefaultStmt
+	for _, ss := range s.Cases {
+		if ssd, ok := ss.(*DefaultStmt); ok {
+			default_stmt = ssd
+			continue
+		}
+		*lid++
+		li := *lid
+		case_stmt := ss.(*CaseStmt)
+		e, ok := case_stmt.Expr.(*ChanExpr)
+		if !ok {
+			panic(NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
+		}
+		// определяем значение справа
+		e.Rhs.BinTo(bins, reg, lid, false)
+		if e.Lhs == nil {
+			// слева нет значения - это временное чтение из канала без сохранения значения в переменной
+			bins.Append(binstmt.NewBinTRYRECV(reg, reg+1, reg+2, reg+3, e.Rhs))
+			// если канал закрыт или не получено значение - идем в следующую ветку
+			bins.Append(binstmt.NewBinJFALSE(reg+2, li, s))
+		} else {
+			// значение слева
+			e.Lhs.BinTo(bins, reg+1, lid, false)
+
+			// проверяем: слева канал?
+			bins.Append(binstmt.NewBinMV(reg+1, reg+3, e))
+			bins.Append(binstmt.NewBinISKIND(reg+3, reflect.Chan, e))
+
+			*lid++
+			li3 := *lid
+
+			bins.Append(binstmt.NewBinJFALSE(reg+3, li3, e))
+
+			// слева канал - пишем в него правое
+			bins.Append(binstmt.NewBinTRYSEND(reg+1, reg, reg+2, e.Lhs))
+
+			*lid++
+			li2 := *lid
+
+			// если отправлено значение - выполняем код блока
+			bins.Append(binstmt.NewBinJTRUE(reg+2, li2, s))
+
+			// если не отправлено значение - идем в следующую ветку
+			// если канал закрыт - будет паника
+			bins.Append(binstmt.NewBinJMP(li, s))
+
+			// иначе справа канал, а слева переменная (установим, если прочитали из канала)
+			bins.Append(binstmt.NewBinLABEL(li3, s))
+
+			bins.Append(binstmt.NewBinTRYRECV(reg, reg+1, reg+2, reg+3, e.Rhs))
+
+			// если канал закрыт или не получено значение - идем в следующую ветку
+			bins.Append(binstmt.NewBinJFALSE(reg+2, li, s))
+
+			// устанавливаем переменную прочитанным значением
+			e.Lhs.(CanLetExpr).BinLetTo(bins, reg+1, lid)
+
+			bins.Append(binstmt.NewBinLABEL(li2, s))
+		}
+		// отправили или прочитали - выполняем ветку кода и выходим из цикла
+		case_stmt.Stmts.BinTo(bins, reg, lid)
+
+		// выходим из цикла
+		bins.Append(binstmt.NewBinJMP(lend, case_stmt))
+
+		// к следующему case
+		bins.Append(binstmt.NewBinLABEL(li, s))
+	}
+	// если ни одна из веток не сработала - проверяем default
+	if default_stmt != nil {
+		default_stmt.Stmts.BinTo(bins, reg, lid)
+	} else {
+		// допускаем обработку других горутин
+		bins.Append(binstmt.NewBinGOSHED(s))
+		bins.Append(binstmt.NewBinJMP(lstart, s))
+	}
+	bins.Append(binstmt.NewBinLABEL(lend, s))
+	// освобождаем память
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
 }
 
 // CaseStmt provide switch/case statement.
@@ -477,6 +583,10 @@ func (x *CaseStmt) Simplify() {
 	}
 }
 
+func (s *CaseStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	//ничего не делаем, эти блоки обрабатываются в родительских контекстах
+}
+
 // DefaultStmt provide switch/default statement.
 type DefaultStmt struct {
 	StmtImpl
@@ -487,6 +597,10 @@ func (x *DefaultStmt) Simplify() {
 	for _, st := range x.Stmts {
 		st.Simplify()
 	}
+}
+
+func (s *DefaultStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	//ничего не делаем, эти блоки обрабатываются в родительских контекстах
 }
 
 // LetsStmt provide multiple statement of let.
@@ -503,5 +617,18 @@ func (x *LetsStmt) Simplify() {
 	}
 	for i := range x.Rhss {
 		x.Rhss[i] = x.Rhss[i].Simplify()
+	}
+}
+
+// VarStmt provide statement to let variables in current scope.
+type VarStmt struct {
+	StmtImpl
+	Names []int //string
+	Exprs []Expr
+}
+
+func (x *VarStmt) Simplify() {
+	for i := range x.Exprs {
+		x.Exprs[i] = x.Exprs[i].Simplify()
 	}
 }

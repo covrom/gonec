@@ -16,6 +16,11 @@ type Expr interface {
 	BinTo(*binstmt.BinStmts, int, *int, bool)
 }
 
+type CanLetExpr interface {
+	Expr
+	BinLetTo(*binstmt.BinStmts, int, *int)
+}
+
 // ExprImpl provide commonly implementations for Expr.
 type ExprImpl struct {
 	pos.PosImpl // ExprImpl provide Pos() function.
@@ -127,6 +132,10 @@ type IdentExpr struct {
 }
 
 func (x *IdentExpr) Simplify() Expr { return x }
+
+func (e *IdentExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	bins.Append(binstmt.NewBinSET(reg, e.Id, e))
+}
 
 // UnaryExpr provide unary minus expression. ex: -1, ^1, ~1.
 type UnaryExpr struct {
@@ -290,6 +299,11 @@ func (x *MemberExpr) Simplify() Expr {
 	return x
 }
 
+func (e *MemberExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	e.Expr.BinTo(bins, reg+1, lid, false)
+	bins.Append(binstmt.NewBinSETMEMBER(reg+1, e.Name, reg, e))
+}
+
 // ItemExpr provide expression to refer Map/Array item.
 type ItemExpr struct {
 	ExprImpl
@@ -315,6 +329,19 @@ func (x *ItemExpr) Simplify() Expr {
 		}
 	}
 	return x
+}
+
+func (e *ItemExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+
+	*lid++
+	lend := *lid
+	e.Value.BinTo(bins, reg+1, lid, false)
+	e.Index.BinTo(bins, reg+2, lid, false)
+	bins.Append(binstmt.NewBinSETITEM(reg+1, reg+2, reg, reg+3, e))
+	bins.Append(binstmt.NewBinJFALSE(reg+3, lend, e))
+	ee := e.Value.(CanLetExpr)
+	ee.BinLetTo(bins, reg+1, lid)
+	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
 // SliceExpr provide expression to refer slice of Array.
@@ -343,6 +370,20 @@ func (x *SliceExpr) Simplify() Expr {
 		}
 	}
 	return x
+}
+
+func (e *SliceExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	*lid++
+	lend := *lid
+	e.Value.BinTo(bins, reg+1, lid, false)
+	e.Begin.BinTo(bins, reg+2, lid, false)
+	e.End.BinTo(bins, reg+3, lid, false)
+	bins.Append(binstmt.NewBinSETSLICE(reg+1, reg+2, reg+3, reg, reg+4, e))
+
+	bins.Append(binstmt.NewBinJFALSE(reg+4, lend, e))
+	ee := e.Value.(CanLetExpr)
+	ee.BinLetTo(bins, reg+1, lid)
+	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
 // FuncExpr provide function expression.
