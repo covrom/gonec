@@ -364,6 +364,28 @@ func (x *ReturnStmt) Simplify() {
 	}
 }
 
+func (s *ReturnStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+
+	if len(s.Exprs) == 0 {
+		bins.Append(binstmt.NewBinLOAD(reg, nil, false, s))
+	}
+	if len(s.Exprs) == 1 {
+		// одиночное значение в reg
+		s.Exprs[0].BinTo(bins, reg, lid, false)
+	} else {
+		// создание слайса в reg
+		bins.Append(binstmt.NewBinMAKESLICE(reg, len(s.Exprs), len(s.Exprs), s))
+
+		for i, ee := range s.Exprs {
+			ee.BinTo(bins, reg+1, lid, false)
+			bins.Append(binstmt.NewBinSETIDX(reg, i, reg+1, ee))
+		}
+	}
+	// в reg имеем значение или структуру возврата
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	bins.Append(binstmt.NewBinRET(reg, s))
+}
+
 // ThrowStmt provide "throw" expression statement.
 type ThrowStmt struct {
 	StmtImpl

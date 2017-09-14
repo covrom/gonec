@@ -317,45 +317,45 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 	bins = appendBin(bins,
 		// 		&BinCONTINUE{}, s)
 
-		case *ast.ReturnStmt:
-			if len(s.Exprs) == 0 {
-				bins = appendBin(bins,
-					&BinLOAD{
-						Reg: reg, // основной регистр
-						Val: nil,
-					}, s)
-			}
-			if len(s.Exprs) == 1 {
-				// одиночное значение в reg
-				bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, false)...)
-			} else {
-				// создание слайса в reg
-				bins = appendBin(bins,
-					&BinMAKESLICE{
-						Reg: reg,
-						Len: len(s.Exprs),
-						Cap: len(s.Exprs),
-					}, s)
+		// case *ast.ReturnStmt:
+		// 	if len(s.Exprs) == 0 {
+		// 		bins = appendBin(bins,
+		// 			&BinLOAD{
+		// 				Reg: reg, // основной регистр
+		// 				Val: nil,
+		// 			}, s)
+		// 	}
+		// 	if len(s.Exprs) == 1 {
+		// 		// одиночное значение в reg
+		// 		bins = append(bins, addBinExpr(s.Exprs[0], reg, lid, false)...)
+		// 	} else {
+		// 		// создание слайса в reg
+		// 		bins = appendBin(bins,
+		// 			&BinMAKESLICE{
+		// 				Reg: reg,
+		// 				Len: len(s.Exprs),
+		// 				Cap: len(s.Exprs),
+		// 			}, s)
 
-				for i, ee := range s.Exprs {
-					bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
-					bins = appendBin(bins,
-						&BinSETIDX{
-							Reg:    reg,
-							Index:  i,
-							RegVal: reg + 1,
-						}, ee)
-				}
-			}
-			// в reg имеем значение или структуру возврата
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
-			bins = appendBin(bins,
-				&BinRET{
-					Reg: reg,
-				}, s)
+		// 		for i, ee := range s.Exprs {
+		// 			bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
+		// 			bins = appendBin(bins,
+		// 				&BinSETIDX{
+		// 					Reg:    reg,
+		// 					Index:  i,
+		// 					RegVal: reg + 1,
+		// 				}, ee)
+		// 		}
+		// 	}
+		// 	// в reg имеем значение или структуру возврата
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
+		// 	bins = appendBin(bins,
+		// 		&BinRET{
+		// 			Reg: reg,
+		// 		}, s)
 
 		case *ast.ThrowStmt:
 			bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
