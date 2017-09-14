@@ -1279,7 +1279,7 @@ func (v BinWHILE) String() string {
 	return fmt.Sprintf("WHILE BREAK TO L%d", v.BreakLabel)
 }
 
-func NewBinWHILE(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinWHILE {
+func NewBinWHILE(brl, cnl int, e pos.Pos) *BinWHILE {
 	v := &BinWHILE{
 		BreakLabel:    brl,
 		ContinueLabel: cnl,

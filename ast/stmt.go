@@ -298,6 +298,38 @@ func (x *LoopStmt) Simplify() {
 	}
 }
 
+func (s *LoopStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	*lid++
+	lend := *lid
+	*lid++
+	li := *lid
+	bins.Append(binstmt.NewBinWHILE(lend, li, s))
+
+	// очередная итерация
+	// сюда же переходим по Продолжить
+	bins.Append(binstmt.NewBinLABEL(li, s))
+
+	s.Expr.BinTo(bins, reg, lid, false)
+
+	bins.Append(binstmt.NewBinJFALSE(reg, lend, s))
+
+	// тело цикла
+	s.Stmts.BinTo(bins, reg+1, lid)
+
+	// повторяем итерацию
+	bins.Append(binstmt.NewBinJMP(li, s))
+
+	// КонецЦикла
+	bins.Append(binstmt.NewBinLABEL(lend, s))
+
+	// снимаем со стека наличие цикла для Прервать и Продолжить
+	bins.Append(binstmt.NewBinPOPFOR(li, s))
+
+	// освобождаем память
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
+
+}
+
 // BreakStmt provide "break" expression statement.
 type BreakStmt struct {
 	StmtImpl
