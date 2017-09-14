@@ -140,42 +140,29 @@ func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	li := *lid
 	// эта инструкция сообщает, в каком регистре будет отслеживаться ошибка выполнения кода до блока CATCH
 	// по-умолчанию, ошибка в регистрах не отслеживается, а передается по уровням исполнения вирт. машины
-	bins = appendBin(bins,
-		&BinTRY{
-			Reg:    reg,
-			JumpTo: li,
-		}, s)
-	bins = append(bins, BinaryCode(s.Try, reg+1, lid).Code...) // чтобы не затереть регистр с ошибкой, увеличиваем номер
-	// сюда переходим, если в блоке выше возникла ошибка
-	bins = appendBin(bins,
-		&BinLABEL{
-			Label: li,
-		}, s)
-	// CATCH работает как JFALSE, и определяет функцию ОписаниеОшибки()
-	bins = appendBin(bins,
-		&BinCATCH{
-			Reg:    reg,
-			JumpTo: lend,
-		}, s)
-	// тело обработки ошибки
-	bins = append(bins, BinaryCode(s.Catch, reg, lid).Code...) // регистр с ошибкой больше не нужен, текст определен функцией
-	// КонецПопытки
-	bins = appendBin(bins,
-		&BinLABEL{
-			Label: lend,
-		}, s)
-	// снимаем со стека состояние обработки ошибок, чтобы последующий код не был включен в текущую обработку
-	bins = appendBin(bins,
-		&BinPOPTRY{
-			CatchLabel: li,
-		}, s)
-	// освобождаем память
-	bins = appendBin(bins,
-		&BinFREE{
-			Reg: reg + 1,
-		}, s)
+	bins.Append(binstmt.NewBinTRY(reg, li, s))
 
-}	
+	s.Try.BinTo(bins, reg+1, lid) // чтобы не затереть регистр с ошибкой, увеличиваем номер
+
+	// сюда переходим, если в блоке выше возникла ошибка
+	bins.Append(binstmt.NewBinLABEL(li, s))
+
+	// CATCH работает как JFALSE, и определяет функцию ОписаниеОшибки()
+	bins.Append(binstmt.NewBinCATCH(reg, lend, s))
+
+	// тело обработки ошибки
+	s.Catch.BinTo(bins, reg, lid) // регистр с ошибкой больше не нужен, текст определен функцией
+
+	bins.Append(binstmt.NewBinLABEL(lend, s))
+	// КонецПопытки
+
+	// снимаем со стека состояние обработки ошибок, чтобы последующий код не был включен в текущую обработку
+	bins.Append(binstmt.NewBinPOPTRY(li, s))
+
+	// освобождаем память
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
+}
+
 // ForStmt provide "for in" expression statement.
 type ForStmt struct {
 	StmtImpl
@@ -189,6 +176,45 @@ func (x *ForStmt) Simplify() {
 	for _, st := range x.Stmts {
 		st.Simplify()
 	}
+}
+
+func (s *ForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	// для каждого
+	s.Value.BinTo(bins, reg, lid, false)
+
+	*lid++
+	lend := *lid
+	*lid++
+	li := *lid
+
+	regiter := reg + 1
+	regval := reg + 2
+	regsub := reg + 3
+	// инициализируем итератор, параметры цикла и цикл в стеке циклов
+	bins.Append(binstmt.NewBinFOREACH(reg, regiter, lend, li, s))
+
+	// очередная итерация
+	// сюда же переходим по Продолжить
+	bins.Append(binstmt.NewBinLABEL(li, s))
+
+	bins.Append(binstmt.NewBinNEXT(reg, regiter, regval, lend, s))
+
+	// устанавливаем переменную-итератор
+	bins.Append(binstmt.NewBinSET(regval, s.Var, s))
+
+	s.Stmts.BinTo(bins, regsub, lid)
+
+	// повторяем итерацию
+	bins.Append(binstmt.NewBinJMP(li, s))
+
+	// КонецЦикла
+	bins.Append(binstmt.NewBinLABEL(lend, s))
+
+	// снимаем со стека наличие цикла для Прервать и Продолжить
+	bins.Append(binstmt.NewBinPOPFOR(li, s))
+
+	// освобождаем память
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
 }
 
 // NumForStmt name = expr1 to expr2

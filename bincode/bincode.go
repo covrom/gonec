@@ -92,111 +92,111 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 			Reg: reg + 1,
 		// 		}, s)
 
-		case *ast.TryStmt:
-			*lid++
-			lend := *lid
-			*lid++
-			li := *lid
-			// эта инструкция сообщает, в каком регистре будет отслеживаться ошибка выполнения кода до блока CATCH
-			// по-умолчанию, ошибка в регистрах не отслеживается, а передается по уровням исполнения вирт. машины
-			bins = appendBin(bins,
-				&BinTRY{
-					Reg:    reg,
-					JumpTo: li,
-				}, s)
-			bins = append(bins, BinaryCode(s.Try, reg+1, lid).Code...) // чтобы не затереть регистр с ошибкой, увеличиваем номер
-			// сюда переходим, если в блоке выше возникла ошибка
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: li,
-				}, s)
-			// CATCH работает как JFALSE, и определяет функцию ОписаниеОшибки()
-			bins = appendBin(bins,
-				&BinCATCH{
-					Reg:    reg,
-					JumpTo: lend,
-				}, s)
-			// тело обработки ошибки
-			bins = append(bins, BinaryCode(s.Catch, reg, lid).Code...) // регистр с ошибкой больше не нужен, текст определен функцией
-			// КонецПопытки
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// снимаем со стека состояние обработки ошибок, чтобы последующий код не был включен в текущую обработку
-			bins = appendBin(bins,
-				&BinPOPTRY{
-					CatchLabel: li,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// case *ast.TryStmt:
+		// 	*lid++
+		// 	lend := *lid
+		// 	*lid++
+		// 	li := *lid
+		// 	// эта инструкция сообщает, в каком регистре будет отслеживаться ошибка выполнения кода до блока CATCH
+		// 	// по-умолчанию, ошибка в регистрах не отслеживается, а передается по уровням исполнения вирт. машины
+		// 	bins = appendBin(bins,
+		// 		&BinTRY{
+		// 			Reg:    reg,
+		// 			JumpTo: li,
+		// 		}, s)
+		// 	bins = append(bins, BinaryCode(s.Try, reg+1, lid).Code...) // чтобы не затереть регистр с ошибкой, увеличиваем номер
+		// 	// сюда переходим, если в блоке выше возникла ошибка
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: li,
+		// 		}, s)
+		// 	// CATCH работает как JFALSE, и определяет функцию ОписаниеОшибки()
+		// 	bins = appendBin(bins,
+		// 		&BinCATCH{
+		// 			Reg:    reg,
+		// 			JumpTo: lend,
+		// 		}, s)
+		// 	// тело обработки ошибки
+		// 	bins = append(bins, BinaryCode(s.Catch, reg, lid).Code...) // регистр с ошибкой больше не нужен, текст определен функцией
+		// 	// КонецПопытки
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// снимаем со стека состояние обработки ошибок, чтобы последующий код не был включен в текущую обработку
+		// 	bins = appendBin(bins,
+		// 		&BinPOPTRY{
+		// 			CatchLabel: li,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
-		case *ast.ForStmt:
-			// для каждого
-			bins = append(bins, addBinExpr(s.Value, reg, lid, false)...)
+		// case *ast.ForStmt:
+		// 	// для каждого
+		// 	bins = append(bins, addBinExpr(s.Value, reg, lid, false)...)
 
-			*lid++
-			lend := *lid
-			*lid++
-			li := *lid
+		// 	*lid++
+		// 	lend := *lid
+		// 	*lid++
+		// 	li := *lid
 
-			regiter := reg + 1
-			regval := reg + 2
-			regsub := reg + 3
-			// инициализируем итератор, параметры цикла и цикл в стеке циклов
-			bins = appendBin(bins,
-				&BinFOREACH{
-					Reg:           reg,
-					RegIter:       regiter,
-					BreakLabel:    lend,
-					ContinueLabel: li,
-				}, s)
-			// очередная итерация
-			// сюда же переходим по Продолжить
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: li,
-				}, s)
-			bins = appendBin(bins,
-				&BinNEXT{
-					Reg:     reg,
-					RegIter: regiter,
-					RegVal:  regval,
-					JumpTo:  lend,
-				}, s)
-			// устанавливаем переменную-итератор
-			bins = appendBin(bins,
-				&BinSET{
-					Reg: regval,
-					Id:  s.Var,
-				}, s)
+		// 	regiter := reg + 1
+		// 	regval := reg + 2
+		// 	regsub := reg + 3
+		// 	// инициализируем итератор, параметры цикла и цикл в стеке циклов
+		// 	bins = appendBin(bins,
+		// 		&BinFOREACH{
+		// 			Reg:           reg,
+		// 			RegIter:       regiter,
+		// 			BreakLabel:    lend,
+		// 			ContinueLabel: li,
+		// 		}, s)
+		// 	// очередная итерация
+		// 	// сюда же переходим по Продолжить
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: li,
+		// 		}, s)
+		// 	bins = appendBin(bins,
+		// 		&BinNEXT{
+		// 			Reg:     reg,
+		// 			RegIter: regiter,
+		// 			RegVal:  regval,
+		// 			JumpTo:  lend,
+		// 		}, s)
+		// 	// устанавливаем переменную-итератор
+		// 	bins = appendBin(bins,
+		// 		&BinSET{
+		// 			Reg: regval,
+		// 			Id:  s.Var,
+		// 		}, s)
 
-			bins = append(bins, BinaryCode(s.Stmts, regsub, lid).Code...)
+		// 	bins = append(bins, BinaryCode(s.Stmts, regsub, lid).Code...)
 
-			// повторяем итерацию
-			bins = appendBin(bins,
-				&BinJMP{
-					JumpTo: li,
-				}, s)
+		// 	// повторяем итерацию
+		// 	bins = appendBin(bins,
+		// 		&BinJMP{
+		// 			JumpTo: li,
+		// 		}, s)
 
-			// КонецЦикла
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// снимаем со стека наличие цикла для Прервать и Продолжить
-			bins = appendBin(bins,
-				&BinPOPFOR{
-					ContinueLabel: li,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// 	// КонецЦикла
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// снимаем со стека наличие цикла для Прервать и Продолжить
+		// 	bins = appendBin(bins,
+		// 		&BinPOPFOR{
+		// 			ContinueLabel: li,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
 		case *ast.NumForStmt:
 			// для .. по ..
