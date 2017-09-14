@@ -234,6 +234,47 @@ func (x *NumForStmt) Simplify() {
 	}
 }
 
+func (s *NumForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	// для .. по ..
+	regfrom := reg + 1
+	regto := reg + 2
+	regsub := reg + 3
+
+	s.Expr1.BinTo(bins, regfrom, lid, false)
+	s.Expr2.BinTo(bins, regto, lid, false)
+
+	*lid++
+	lend := *lid
+	*lid++
+	li := *lid
+
+	// инициализируем итератор, параметры цикла и цикл в стеке циклов
+	bins.Append(binstmt.NewBinFORNUM(reg, regfrom, regto, lend, li, s))
+
+	// очередная итерация
+	// сюда же переходим по Продолжить
+	bins.Append(binstmt.NewBinLABEL(li, s))
+
+	bins.Append(binstmt.NewBinNEXTNUM(reg, regfrom, regto, lend, s))
+
+	// устанавливаем переменную-итератор
+	bins.Append(binstmt.NewBinSET(reg, s.Name, s))
+
+	s.Stmts.BinTo(bins, regsub, lid)
+	// повторяем итерацию
+	bins.Append(binstmt.NewBinJMP(li, s))
+
+	// КонецЦикла
+	bins.Append(binstmt.NewBinLABEL(lend, s))
+
+	// снимаем со стека наличие цикла для Прервать и Продолжить
+	bins.Append(binstmt.NewBinPOPFOR(li, s))
+
+	// освобождаем память
+	bins.Append(binstmt.NewBinFREE(reg+1, s))
+
+}
+
 // CForStmt provide C-style "for (;;)" expression statement.
 // type CForStmt struct {
 // 	StmtImpl
