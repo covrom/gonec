@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/covrom/gonec/bincode/binstmt"
+	"github.com/covrom/gonec/builtins"
 	"github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/pos"
 )
@@ -620,6 +621,55 @@ func (x *LetsStmt) Simplify() {
 	}
 }
 
+func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	// если справа одно выражение - присваиваем его всем левым
+	// и если там массив, то по очереди элементы, начиная с 0-го
+	// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
+	if len(s.Rhss) == 1 && len(s.Lhss) > 1 {
+		s.Rhss[0].BinTo(bins, reg, lid, false)
+		// проверяем на массив
+		*lid++
+		lend := *lid
+		*lid++
+		li := *lid
+		bins.Append(binstmt.NewBinISSLICE(reg, reg+1, s))
+		bins.Append(binstmt.NewBinJFALSE(reg+1, li, s))
+
+		// присваиваем из слайса
+		i := 0
+		for _, e := range s.Lhss {
+			// в рег+1 сохраним очередной элемент
+			bins.Append(binstmt.NewBinMV(reg, reg+1, e))
+			bins.Append(binstmt.NewBinLOAD(reg+2, core.VMInt(i), false, e))
+			bins.Append(binstmt.NewBinGETIDX(reg+1, reg+2, e))
+			e.(CanLetExpr).BinLetTo(bins, reg+1, lid)
+			i++
+		}
+		bins.Append(binstmt.NewBinJMP(lend, s))
+
+		// присваиваем одно и то же значение
+		bins.Append(binstmt.NewBinLABEL(li, s))
+		for _, e := range s.Lhss {
+			e.(CanLetExpr).BinLetTo(bins, reg, lid)
+		}
+		bins.Append(binstmt.NewBinLABEL(lend, s))
+	} else {
+		if len(s.Lhss) == len(s.Rhss) {
+			// сначала все вычисляем в разные регистры, затем все присваиваем
+			// так обеспечиваем взаимный обмен
+			for i := range s.Rhss {
+				s.Rhss[i].BinTo(reg+i, lid, false)
+			}
+			for i, e := range s.Lhss {
+				e.(CanLetExpr).BinLetTo(bins, reg+i, lid)
+			}
+		} else {
+			// ошибка
+			panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
+		}
+	}
+}
+
 // VarStmt provide statement to let variables in current scope.
 type VarStmt struct {
 	StmtImpl
@@ -630,5 +680,26 @@ type VarStmt struct {
 func (x *VarStmt) Simplify() {
 	for i := range x.Exprs {
 		x.Exprs[i] = x.Exprs[i].Simplify()
+	}
+}
+
+func (s *VarStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	// если справа одно выражение - присваиваем его всем левым
+	// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
+	if len(s.Exprs) == 1 {
+		s.Exprs[0].BinTo(bins, reg, lid, false)
+		for _, e := range s.Names {
+			bins.Append(binstmt.NewBinSET(reg, e, s))
+		}
+	} else {
+		if len(s.Exprs) == len(s.Names) {
+			for i, e := range s.Exprs {
+				e.BinTo(bins, reg, lid, false)
+				bins.Append(binstmt.NewBinSET(reg, s.Names[i], s))
+			}
+		} else {
+			// ошибка
+			panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
+		}
 	}
 }

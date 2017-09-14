@@ -584,90 +584,90 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 			Reg: reg + 1,
 		// 		}, s)
 
-		case *ast.LetsStmt:
-			// если справа одно выражение - присваиваем его всем левым
-			// и если там массив, то по очереди элементы, начиная с 0-го
-			// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
-			if len(s.Rhss) == 1 && len(s.Lhss) > 1 {
-				bins = append(bins, addBinExpr(s.Rhss[0], reg, lid, false)...)
-				// проверяем на массив
-				*lid++
-				lend := *lid
-				*lid++
-				li := *lid
-				bins = appendBin(bins,
-					&BinISSLICE{
-						Reg:     reg,
-						RegBool: reg + 1,
-					}, s)
-				bins = appendBin(bins,
-					&BinJFALSE{
-						Reg:    reg + 1,
-						JumpTo: li,
-					}, s)
+		// case *ast.LetsStmt:
+		// 	// если справа одно выражение - присваиваем его всем левым
+		// 	// и если там массив, то по очереди элементы, начиная с 0-го
+		// 	// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
+		// 	if len(s.Rhss) == 1 && len(s.Lhss) > 1 {
+		// 		bins = append(bins, addBinExpr(s.Rhss[0], reg, lid, false)...)
+		// 		// проверяем на массив
+		// 		*lid++
+		// 		lend := *lid
+		// 		*lid++
+		// 		li := *lid
+		// 		bins = appendBin(bins,
+		// 			&BinISSLICE{
+		// 				Reg:     reg,
+		// 				RegBool: reg + 1,
+		// 			}, s)
+		// 		bins = appendBin(bins,
+		// 			&BinJFALSE{
+		// 				Reg:    reg + 1,
+		// 				JumpTo: li,
+		// 			}, s)
 
-				// присваиваем из слайса
-				i := 0
-				for _, e := range s.Lhss {
-					// в рег+1 сохраним очередной элемент
-					bins = appendBin(bins,
-						&BinMV{
-							RegFrom: reg,
-							RegTo:   reg + 1,
-						}, e)
-					bins = appendBin(bins,
-						&BinLOAD{
-							Reg: reg + 2,
-							Val: i,
-						}, e)
-					bins = appendBin(bins,
-						&BinGETIDX{
-							Reg:      reg + 1,
-							RegIndex: reg + 2,
-						}, e)
+		// 		// присваиваем из слайса
+		// 		i := 0
+		// 		for _, e := range s.Lhss {
+		// 			// в рег+1 сохраним очередной элемент
+		// 			bins = appendBin(bins,
+		// 				&BinMV{
+		// 					RegFrom: reg,
+		// 					RegTo:   reg + 1,
+		// 				}, e)
+		// 			bins = appendBin(bins,
+		// 				&BinLOAD{
+		// 					Reg: reg + 2,
+		// 					Val: i,
+		// 				}, e)
+		// 			bins = appendBin(bins,
+		// 				&BinGETIDX{
+		// 					Reg:      reg + 1,
+		// 					RegIndex: reg + 2,
+		// 				}, e)
 
-					bins = append(bins, addBinLetExpr(e, reg+1, lid)...)
-					i++
-				}
+		// 			bins = append(bins, addBinLetExpr(e, reg+1, lid)...)
+		// 			i++
+		// 		}
 
-				bins = appendBin(bins,
-					&BinJMP{
-						JumpTo: lend,
-					}, s)
+		// 		bins = appendBin(bins,
+		// 			&BinJMP{
+		// 				JumpTo: lend,
+		// 			}, s)
 
-				// присваиваем одно и то же значение
-				bins = appendBin(bins,
-					&BinLABEL{
-						Label: li,
-					}, s)
-				for _, e := range s.Lhss {
-					bins = append(bins, addBinLetExpr(e, reg, lid)...)
-				}
+		// 		// присваиваем одно и то же значение
+		// 		bins = appendBin(bins,
+		// 			&BinLABEL{
+		// 				Label: li,
+		// 			}, s)
+		// 		for _, e := range s.Lhss {
+		// 			bins = append(bins, addBinLetExpr(e, reg, lid)...)
+		// 		}
 
-				bins = appendBin(bins,
-					&BinLABEL{
-						Label: lend,
-					}, s)
-			} else {
-				if len(s.Lhss) == len(s.Rhss) {
-					// сначала все вычисляем в разные регистры, затем все присваиваем
-					// так обеспечиваем взаимный обмен
-					for i := range s.Lhss {
-						bins = append(bins, addBinExpr(s.Rhss[i], reg+i, lid, false)...)
-					}
-					for i, e := range s.Lhss {
-						bins = append(bins, addBinLetExpr(e, reg+i, lid)...)
-					}
-				} else {
-					// ошибка
-					panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
-				}
-			}
-			// освобождаем память
-			// bins = appendBin(bins,
-			// 	&BinFREE{
-			// 		Reg: reg + 1,
-			// 	}, s)
+		// 		bins = appendBin(bins,
+		// 			&BinLABEL{
+		// 				Label: lend,
+		// 			}, s)
+		// 	} else {
+		// 		if len(s.Lhss) == len(s.Rhss) {
+		// 			// сначала все вычисляем в разные регистры, затем все присваиваем
+		// 			// так обеспечиваем взаимный обмен
+		// 			for i := range s.Lhss {
+		// 				bins = append(bins, addBinExpr(s.Rhss[i], reg+i, lid, false)...)
+		// 			}
+		// 			for i, e := range s.Lhss {
+		// 				bins = append(bins, addBinLetExpr(e, reg+i, lid)...)
+		// 			}
+		// 		} else {
+		// 			// ошибка
+		// 			panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
+		// 		}
+		// 	}
+		// 	// освобождаем память
+		// 	// bins = appendBin(bins,
+		// 	// 	&BinFREE{
+		// 	// 		Reg: reg + 1,
+		// 	// 	}, s)
 
 		case *ast.VarStmt:
 			// если справа одно выражение - присваиваем его всем левым
