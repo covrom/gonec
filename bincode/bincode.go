@@ -13,80 +13,84 @@ import (
 // компиляция в байткод
 ///////////////////////////////////////////////////////////////
 
-func BinaryCode(inast []ast.Stmt, reg int, lid *int) (bcd BinCode) {
+func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 	bins := bcd.Code
 	defer func() {
 		bcd.Code = bins
 		bcd.MapLabels()
 	}()
+
+	inast.BinTo(&bins, reg, lid)
+
+	return
+
 	for _, st := range inast {
 
-		st.BinTo(&bins, reg, lid)
 
 		// перебираем все подвыражения и команды, и выстраиваем их в линию
 		// если в команде есть выражение - определяем новый id регистра, присваиваем ему выражение, а в команду передаем id этого регистра
 		switch s := st.(type) {
-		case *ast.ExprStmt:
-			// bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
-		case *ast.IfStmt:
-			*lid++
-			lend := *lid
-			// Если
-			bins = append(bins, addBinExpr(s.If, reg, lid, false)...)
-			*lid++
-			lf := *lid
-			bins = appendBin(bins,
-				&BinJFALSE{
-					Reg:    reg,
-					JumpTo: lf,
-				}, s)
-			// Тогда
-			bins = append(bins, BinaryCode(s.Then, reg, lid).Code...)
-			bins = appendBin(bins,
-				&BinJMP{
-					JumpTo: lend,
-				}, s)
-			// ИначеЕсли
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lf,
-				}, s)
+		// case *ast.ExprStmt:
+		// 	bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
+		// case *ast.IfStmt:
+		// 	*lid++
+		// 	lend := *lid
+		// 	// Если
+		// 	bins = append(bins, addBinExpr(s.If, reg, lid, false)...)
+		// 	*lid++
+		// 	lf := *lid
+		// 	bins = appendBin(bins,
+		// 		&BinJFALSE{
+		// 			Reg:    reg,
+		// 			JumpTo: lf,
+		// 		}, s)
+		// 	// Тогда
+		// 	bins = append(bins, BinaryCode(s.Then, reg, lid).Code...)
+		// 	bins = appendBin(bins,
+		// 		&BinJMP{
+		// 			JumpTo: lend,
+		// 		}, s)
+		// 	// ИначеЕсли
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lf,
+		// 		}, s)
 
-			for _, elif := range s.ElseIf {
-				stmtif := elif.(*ast.IfStmt)
-				bins = append(bins, addBinExpr(stmtif.If, reg, lid, false)...)
-				// если ложь, то перейдем на следующее условие
-				*lid++
-				li := *lid
-				bins = appendBin(bins,
-					&BinJFALSE{
-						Reg:    reg,
-						JumpTo: li,
-					}, stmtif)
-				bins = append(bins, BinaryCode(stmtif.Then, reg, lid).Code...)
-				bins = appendBin(bins,
-					&BinJMP{
-						JumpTo: lend,
-					}, stmtif)
-				bins = appendBin(bins,
-					&BinLABEL{
-						Label: li,
-					}, stmtif)
-			}
-			// Иначе
-			if len(s.Else) > 0 {
-				bins = append(bins, BinaryCode(s.Else, reg, lid).Code...)
-			}
-			// КонецЕсли
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// 	for _, elif := range s.ElseIf {
+		// 		stmtif := elif.(*ast.IfStmt)
+		// 		bins = append(bins, addBinExpr(stmtif.If, reg, lid, false)...)
+		// 		// если ложь, то перейдем на следующее условие
+		// 		*lid++
+		// 		li := *lid
+		// 		bins = appendBin(bins,
+		// 			&BinJFALSE{
+		// 				Reg:    reg,
+		// 				JumpTo: li,
+		// 			}, stmtif)
+		// 		bins = append(bins, BinaryCode(stmtif.Then, reg, lid).Code...)
+		// 		bins = appendBin(bins,
+		// 			&BinJMP{
+		// 				JumpTo: lend,
+		// 			}, stmtif)
+		// 		bins = appendBin(bins,
+		// 			&BinLABEL{
+		// 				Label: li,
+		// 			}, stmtif)
+		// 	}
+		// 	// Иначе
+		// 	if len(s.Else) > 0 {
+		// 		bins = append(bins, BinaryCode(s.Else, reg, lid).Code...)
+		// 	}
+		// 	// КонецЕсли
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
 		case *ast.TryStmt:
 			*lid++

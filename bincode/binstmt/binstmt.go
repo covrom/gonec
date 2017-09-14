@@ -231,11 +231,22 @@ func (v *BinLOAD) SwapId(m map[int]int) {
 		}
 	}
 }
+
 func (v BinLOAD) String() string {
 	if v.IsId {
 		return fmt.Sprintf("LOAD r%d, %#v", v.Reg, env.UniqueNames.Get(int(v.Val.(core.VMInt))))
 	}
 	return fmt.Sprintf("LOAD r%d, %#v", v.Reg, v.Val)
+}
+
+func NewBinLOAD(reg int, val core.VMValuer, isid bool, e pos.Pos) *BinLOAD {
+	v := &BinLOAD{
+		Reg:  reg,
+		Val:  val,
+		IsId: isid,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinMV struct {
@@ -247,6 +258,15 @@ type BinMV struct {
 
 func (v BinMV) String() string {
 	return fmt.Sprintf("MV r%d, r%d", v.RegTo, v.RegFrom)
+}
+
+func NewBinMV(regfrom, regto int, e pos.Pos) *BinMV {
+	v := &BinMV{
+		RegFrom: regfrom,
+		RegTo:   regto,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinEQUAL struct {
@@ -261,6 +281,16 @@ func (v BinEQUAL) String() string {
 	return fmt.Sprintf("EQUAL r%d, r%d == r%d", v.Reg, v.Reg1, v.Reg2)
 }
 
+func NewBinEQUAL(reg, reg1, reg2 int, e pos.Pos) *BinEQUAL {
+	v := &BinEQUAL{
+		Reg:  reg,
+		Reg1: reg1,
+		Reg2: reg2,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinCASTNUM struct {
 	BinStmtImpl
 
@@ -269,6 +299,14 @@ type BinCASTNUM struct {
 
 func (v BinCASTNUM) String() string {
 	return fmt.Sprintf("CAST r%d, NUMBER", v.Reg)
+}
+
+func NewBinCASTNUM(reg int, e pos.Pos) *BinCASTNUM {
+	v := &BinCASTNUM{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinMAKESLICE struct {
@@ -283,6 +321,16 @@ func (v BinMAKESLICE) String() string {
 	return fmt.Sprintf("MAKESLICE r%d, LEN %d, CAP %d", v.Reg, v.Len, v.Cap)
 }
 
+func NewBinMAKESLICE(reg, l, c int, e pos.Pos) *BinMAKESLICE {
+	v := &BinMAKESLICE{
+		Reg: reg,
+		Len: l,
+		Cap: c,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinSETIDX struct {
 	BinStmtImpl
 
@@ -293,6 +341,16 @@ type BinSETIDX struct {
 
 func (v BinSETIDX) String() string {
 	return fmt.Sprintf("SETIDX r%d[%d], r%d", v.Reg, v.Index, v.RegVal)
+}
+
+func NewBinSETIDX(reg, i, regv int, e pos.Pos) *BinSETIDX {
+	v := &BinSETIDX{
+		Reg:    reg,
+		Index:  i,
+		RegVal: regv,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinMAKEMAP struct {
@@ -306,6 +364,15 @@ func (v BinMAKEMAP) String() string {
 	return fmt.Sprintf("MAKEMAP r%d, LEN %d", v.Reg, v.Len)
 }
 
+func NewBinMAKEMAP(reg, l int, e pos.Pos) *BinMAKEMAP {
+	v := &BinMAKEMAP{
+		Reg: reg,
+		Len: l,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinSETKEY struct {
 	BinStmtImpl
 
@@ -316,6 +383,16 @@ type BinSETKEY struct {
 
 func (v BinSETKEY) String() string {
 	return fmt.Sprintf("SETKEY r%d[%q], r%d", v.Reg, v.Key, v.RegVal)
+}
+
+func NewBinSETKEY(reg, regv int, s string, e pos.Pos) *BinSETKEY {
+	v := &BinSETKEY{
+		Reg:    reg,
+		Key:    s,
+		RegVal: regv,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinGET struct {
@@ -331,8 +408,18 @@ func (v *BinGET) SwapId(m map[int]int) {
 		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
+
 func (v BinGET) String() string {
 	return fmt.Sprintf("GET r%d, %q", v.Reg, env.UniqueNames.Get(v.Id))
+}
+
+func NewBinGET(reg, id int, e pos.Pos) *BinGET {
+	v := &BinGET{
+		Reg: reg,
+		Id:  id,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinSET struct {
@@ -348,8 +435,18 @@ func (v *BinSET) SwapId(m map[int]int) {
 		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
+
 func (v BinSET) String() string {
 	return fmt.Sprintf("SET %q, r%d", env.UniqueNames.Get(v.Id), v.Reg)
+}
+
+func NewBinSET(reg, id int, e pos.Pos) *BinSET {
+	v := &BinSET{
+		Reg: reg,
+		Id:  id,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinSETMEMBER struct {
@@ -366,8 +463,19 @@ func (v *BinSETMEMBER) SwapId(m map[int]int) {
 		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
+
 func (v BinSETMEMBER) String() string {
 	return fmt.Sprintf("SETMEMBER r%d.%q, r%d", v.Reg, env.UniqueNames.Get(v.Id), v.RegVal)
+}
+
+func NewBinSETMEMBER(reg, id, regv int, e pos.Pos) *BinSETMEMBER {
+	v := &BinSETMEMBER{
+		Reg:    reg,
+		Id:     id,
+		RegVal: regv,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinSETNAME struct {
@@ -378,6 +486,14 @@ type BinSETNAME struct {
 
 func (v BinSETNAME) String() string {
 	return fmt.Sprintf("SETNAME r%d", v.Reg)
+}
+
+func NewBinSETNAME(reg int, e pos.Pos) *BinSETNAME {
+	v := &BinSETNAME{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinSETITEM struct {
@@ -391,6 +507,17 @@ type BinSETITEM struct {
 
 func (v BinSETITEM) String() string {
 	return fmt.Sprintf("SETITEM r%d[r%d], r%d", v.Reg, v.RegIndex, v.RegVal)
+}
+
+func NewBinSETITEM(reg, regidx, regv, regneedlet int, e pos.Pos) *BinSETITEM {
+	v := &BinSETITEM{
+		Reg:        reg,
+		RegIndex:   regidx,
+		RegVal:     regv,
+		RegNeedLet: regneedlet,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinSETSLICE struct {
@@ -407,6 +534,18 @@ func (v BinSETSLICE) String() string {
 	return fmt.Sprintf("SETSLICE r%d[r%d:r%d], r%d", v.Reg, v.RegBegin, v.RegEnd, v.RegVal)
 }
 
+func NewBinSETSLICE(reg, regbegin, regend, regv, regneedlet int, e pos.Pos) *BinSETSLICE {
+	v := &BinSETSLICE{
+		Reg:        reg,
+		RegBegin:   regbegin,
+		RegEnd:     regend,
+		RegVal:     regv,
+		RegNeedLet: regneedlet,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinUNARY struct {
 	BinStmtImpl
 
@@ -416,6 +555,15 @@ type BinUNARY struct {
 
 func (v BinUNARY) String() string {
 	return fmt.Sprintf("UNARY %sr%d", string(v.Op), v.Reg)
+}
+
+func NewBinUNARY(reg int, op rune, e pos.Pos) *BinUNARY {
+	v := &BinUNARY{
+		Reg: reg,
+		Op:  op,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinADDRID struct {
@@ -430,8 +578,18 @@ func (v *BinADDRID) SwapId(m map[int]int) {
 		v.Name = newid
 	}
 }
+
 func (v BinADDRID) String() string {
 	return fmt.Sprintf("ADDRID r%d, %q", v.Reg, env.UniqueNames.Get(v.Name))
+}
+
+func NewBinADDRID(reg, name int, e pos.Pos) *BinADDRID {
+	v := &BinADDRID{
+		Reg:  reg,
+		Name: name,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinADDRMBR struct {
@@ -446,8 +604,18 @@ func (v *BinADDRMBR) SwapId(m map[int]int) {
 		v.Name = newid
 	}
 }
+
 func (v BinADDRMBR) String() string {
 	return fmt.Sprintf("ADDRMBR r%d, r%d.%q", v.Reg, v.Reg, env.UniqueNames.Get(v.Name))
+}
+
+func NewBinADDRMBR(reg, name int, e pos.Pos) *BinADDRMBR {
+	v := &BinADDRMBR{
+		Reg:  reg,
+		Name: name,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinUNREFID struct {
@@ -462,8 +630,18 @@ func (v *BinUNREFID) SwapId(m map[int]int) {
 		v.Name = newid
 	}
 }
+
 func (v BinUNREFID) String() string {
 	return fmt.Sprintf("UNREFID r%d, %q", v.Reg, env.UniqueNames.Get(v.Name))
+}
+
+func NewBinUNREFID(reg, name int, e pos.Pos) *BinUNREFID {
+	v := &BinUNREFID{
+		Reg:  reg,
+		Name: name,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinUNREFMBR struct {
@@ -478,8 +656,18 @@ func (v *BinUNREFMBR) SwapId(m map[int]int) {
 		v.Name = newid
 	}
 }
+
 func (v BinUNREFMBR) String() string {
 	return fmt.Sprintf("UNREFMBR r%d, r%d.%q", v.Reg, v.Reg, env.UniqueNames.Get(v.Name))
+}
+
+func NewBinUNREFMBR(reg, name int, e pos.Pos) *BinUNREFMBR {
+	v := &BinUNREFMBR{
+		Reg:  reg,
+		Name: name,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinLABEL struct {
@@ -492,6 +680,14 @@ func (v BinLABEL) String() string {
 	return fmt.Sprintf("L%d:", v.Label)
 }
 
+func NewBinLABEL(lb int, e pos.Pos) *BinLABEL {
+	v := &BinLABEL{
+		Label: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinJMP struct {
 	BinStmtImpl
 
@@ -500,6 +696,14 @@ type BinJMP struct {
 
 func (v BinJMP) String() string {
 	return fmt.Sprintf("JMP L%d", v.JumpTo)
+}
+
+func NewBinJMP(lb int, e pos.Pos) *BinJMP {
+	v := &BinJMP{
+		JumpTo: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinJTRUE struct {
@@ -513,6 +717,15 @@ func (v BinJTRUE) String() string {
 	return fmt.Sprintf("JTRUE r%d, L%d", v.Reg, v.JumpTo)
 }
 
+func NewBinJTRUE(reg, lb int, e pos.Pos) *BinJTRUE {
+	v := &BinJTRUE{
+		Reg:    reg,
+		JumpTo: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinJFALSE struct {
 	BinStmtImpl
 
@@ -524,10 +737,10 @@ func (v BinJFALSE) String() string {
 	return fmt.Sprintf("JFALSE r%d, L%d", v.Reg, v.JumpTo)
 }
 
-func NewBinJFalse(reg, lf int, e pos.Pos) *BinJFALSE {
+func NewBinJFALSE(reg, lb int, e pos.Pos) *BinJFALSE {
 	v := &BinJFALSE{
 		Reg:    reg,
-		JumpTo: lf,
+		JumpTo: lb,
 	}
 	v.SetPosition(e.Position())
 	return v
@@ -543,6 +756,16 @@ type BinOPER struct {
 
 func (v BinOPER) String() string {
 	return fmt.Sprintf("OP r%d, %q, r%d", v.RegL, core.OperMapR[v.Op], v.RegR)
+}
+
+func NewBinOPER(regl, regr int, op core.VMOperation, e pos.Pos) *BinOPER {
+	v := &BinOPER{
+		RegL: regl,
+		RegR: regr,
+		Op:   op,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinCALL struct {
@@ -572,11 +795,25 @@ func (v *BinCALL) SwapId(m map[int]int) {
 		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
+
 func (v BinCALL) String() string {
 	if v.Name == 0 {
 		return fmt.Sprintf("CALL REG r%d, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", v.RegArgs, v.RegArgs+1, v.NumArgs, v.VarArg, v.Go, v.RegRets)
 	}
 	return fmt.Sprintf("CALL %q, ARGS r%d, ARGS_COUNT %d, VARARG %v, GO %v, RETURN r%d", env.UniqueNames.Get(v.Name), v.RegArgs, v.NumArgs, v.VarArg, v.Go, v.RegRets)
+}
+
+func NewBinCALL(name, numargs, regargs, regrets int, vararg, isgo bool, e pos.Pos) *BinCALL {
+	v := &BinCALL{
+		Name:    name,
+		NumArgs: numargs,
+		RegArgs: regargs,
+		RegRets: regrets,
+		VarArg:  vararg,
+		Go:      isgo,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinGETMEMBER struct {
@@ -592,8 +829,18 @@ func (v *BinGETMEMBER) SwapId(m map[int]int) {
 		// log.Printf("Замена в %#v %v\n",v, v)
 	}
 }
+
 func (v BinGETMEMBER) String() string {
 	return fmt.Sprintf("GETMEMBER r%d, %q", v.Reg, env.UniqueNames.Get(v.Name))
+}
+
+func NewBinGETMEMBER(reg, name int, e pos.Pos) *BinGETMEMBER {
+	v := &BinGETMEMBER{
+		Reg:  reg,
+		Name: name,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinGETIDX struct {
@@ -607,6 +854,15 @@ func (v BinGETIDX) String() string {
 	return fmt.Sprintf("GETIDX r%d[r%d]", v.Reg, v.RegIndex)
 }
 
+func NewBinGETIDX(reg, regidx int, e pos.Pos) *BinGETIDX {
+	v := &BinGETIDX{
+		Reg:      reg,
+		RegIndex: regidx,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinGETSUBSLICE struct {
 	BinStmtImpl
 
@@ -617,6 +873,16 @@ type BinGETSUBSLICE struct {
 
 func (v BinGETSUBSLICE) String() string {
 	return fmt.Sprintf("SLICE r%d[r%d : r%d]", v.Reg, v.RegBegin, v.RegEnd)
+}
+
+func NewBinGETSUBSLICE(reg, regbegin, regend int, e pos.Pos) *BinGETSUBSLICE {
+	v := &BinGETSUBSLICE{
+		Reg:      reg,
+		RegBegin: regbegin,
+		RegEnd:   regend,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinFUNC struct {
@@ -657,6 +923,18 @@ func (v BinFUNC) String() string {
 	return fmt.Sprintf("FUNC r%d, %q, (%s %s)\n{\n%v}\n", v.Reg, env.UniqueNames.Get(v.Name), s, vrg, v.Code)
 }
 
+func NewBinFUNC(reg, name int, args []int, code BinCode, vararg bool, e pos.Pos) *BinFUNC {
+	v := &BinFUNC{
+		Reg:    reg,
+		Name:   name,
+		Code:   code,
+		Args:   args,
+		VarArg: vararg,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinCASTTYPE struct {
 	BinStmtImpl
 
@@ -666,6 +944,15 @@ type BinCASTTYPE struct {
 
 func (v BinCASTTYPE) String() string {
 	return fmt.Sprintf("CAST r%d AS TYPE r%d", v.Reg, v.TypeReg)
+}
+
+func NewBinCASTTYPE(reg, regtype int, e pos.Pos) *BinCASTTYPE {
+	v := &BinCASTTYPE{
+		Reg:     reg,
+		TypeReg: regtype,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinMAKE struct {
@@ -678,6 +965,14 @@ func (v BinMAKE) String() string {
 	return fmt.Sprintf("MAKE r%d AS TYPE r%d", v.Reg, v.Reg)
 }
 
+func NewBinMAKE(reg int, e pos.Pos) *BinMAKE {
+	v := &BinMAKE{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinMAKECHAN struct {
 	BinStmtImpl
 
@@ -686,6 +981,14 @@ type BinMAKECHAN struct {
 
 func (v BinMAKECHAN) String() string {
 	return fmt.Sprintf("MAKECHAN r%d SIZE r%d", v.Reg, v.Reg)
+}
+
+func NewBinMAKECHAN(reg int, e pos.Pos) *BinMAKECHAN {
+	v := &BinMAKECHAN{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinMAKEARR struct {
@@ -699,6 +1002,15 @@ func (v BinMAKEARR) String() string {
 	return fmt.Sprintf("MAKEARR r%d, LEN r%d, CAP r%d", v.Reg, v.Reg, v.RegCap)
 }
 
+func NewBinMAKEARR(reg, regcap int, e pos.Pos) *BinMAKEARR {
+	v := &BinMAKEARR{
+		Reg:    reg,
+		RegCap: regcap,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinCHANRECV struct {
 	BinStmtImpl
 	// с ожиданием
@@ -708,6 +1020,15 @@ type BinCHANRECV struct {
 
 func (v BinCHANRECV) String() string {
 	return fmt.Sprintf("<-CHAN r%d, r%d", v.RegVal, v.Reg)
+}
+
+func NewBinCHANRECV(reg, regv int, e pos.Pos) *BinCHANRECV {
+	v := &BinCHANRECV{
+		Reg:    reg,
+		RegVal: regv,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinCHANSEND struct {
@@ -721,6 +1042,15 @@ func (v BinCHANSEND) String() string {
 	return fmt.Sprintf("CHAN<- r%d, r%d", v.Reg, v.RegVal)
 }
 
+func NewBinCHANSEND(reg, regv int, e pos.Pos) *BinCHANSEND {
+	v := &BinCHANSEND{
+		Reg:    reg,
+		RegVal: regv,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinISKIND struct {
 	BinStmtImpl
 
@@ -730,6 +1060,15 @@ type BinISKIND struct {
 
 func (v BinISKIND) String() string {
 	return fmt.Sprintf("ISKIND r%d, %s", v.Reg, v.Kind)
+}
+
+func NewBinISKIND(reg int, reflkind reflect.Kind, e pos.Pos) *BinISKIND {
+	v := &BinISKIND{
+		Reg:  reg,
+		Kind: reflkind,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinISSLICE struct {
@@ -743,6 +1082,15 @@ func (v BinISSLICE) String() string {
 	return fmt.Sprintf("ISSLICE r%d, r%d", v.RegBool, v.Reg)
 }
 
+func NewBinISSLICE(reg, regbool int, e pos.Pos) *BinISSLICE {
+	v := &BinISSLICE{
+		Reg:     reg,
+		RegBool: regbool,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinTRY struct {
 	BinStmtImpl
 
@@ -752,6 +1100,15 @@ type BinTRY struct {
 
 func (v BinTRY) String() string {
 	return fmt.Sprintf("TRY r%d, CATCH L%d", v.Reg, v.JumpTo)
+}
+
+func NewBinTRY(reg, lb int, e pos.Pos) *BinTRY {
+	v := &BinTRY{
+		Reg:    reg,
+		JumpTo: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinCATCH struct {
@@ -765,6 +1122,15 @@ func (v BinCATCH) String() string {
 	return fmt.Sprintf("CATCH r%d, NOERR L%d", v.Reg, v.JumpTo)
 }
 
+func NewBinCATCH(reg, lb int, e pos.Pos) *BinCATCH {
+	v := &BinCATCH{
+		Reg:    reg,
+		JumpTo: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinPOPTRY struct {
 	BinStmtImpl
 
@@ -773,6 +1139,14 @@ type BinPOPTRY struct {
 
 func (v BinPOPTRY) String() string {
 	return fmt.Sprintf("POPTRY L%d", v.CatchLabel)
+}
+
+func NewBinPOPTRY(lb int, e pos.Pos) *BinPOPTRY {
+	v := &BinPOPTRY{
+		CatchLabel: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinFOREACH struct {
@@ -786,6 +1160,17 @@ type BinFOREACH struct {
 
 func (v BinFOREACH) String() string {
 	return fmt.Sprintf("FOREACH r%d, ITER r%d, BREAK TO L%d", v.Reg, v.RegIter, v.BreakLabel)
+}
+
+func NewBinFOREACH(reg, regiter, brl, cnl int, e pos.Pos) *BinFOREACH {
+	v := &BinFOREACH{
+		Reg:           reg,
+		RegIter:       regiter,
+		BreakLabel:    brl,
+		ContinueLabel: cnl,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinNEXT struct {
@@ -803,6 +1188,17 @@ func (v BinNEXT) String() string {
 	return fmt.Sprintf("NEXT r%d, FROM r%d, ITER r%d, ENDLOOP L%d", v.RegVal, v.Reg, v.RegIter, v.JumpTo)
 }
 
+func NewBinNEXT(reg, regiter, regval, lend int, e pos.Pos) *BinNEXT {
+	v := &BinNEXT{
+		Reg:     reg,
+		RegIter: regiter,
+		RegVal:  regval,
+		JumpTo:  lend,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinPOPFOR struct {
 	BinStmtImpl
 
@@ -811,6 +1207,14 @@ type BinPOPFOR struct {
 
 func (v BinPOPFOR) String() string {
 	return fmt.Sprintf("POPFOR L%d", v.ContinueLabel)
+}
+
+func NewBinPOPFOR(lb int, e pos.Pos) *BinPOPFOR {
+	v := &BinPOPFOR{
+		ContinueLabel: lb,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinFORNUM struct {
@@ -827,6 +1231,18 @@ func (v BinFORNUM) String() string {
 	return fmt.Sprintf("FORNUM r%d, FROM r%d, TO r%d, BREAK TO L%d", v.Reg, v.RegFrom, v.RegTo, v.BreakLabel)
 }
 
+func NewBinFORNUM(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinFORNUM {
+	v := &BinFORNUM{
+		Reg:           reg,
+		RegFrom:       regfrom,
+		RegTo:         regto,
+		BreakLabel:    brl,
+		ContinueLabel: cnl,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinNEXTNUM struct {
 	BinStmtImpl
 
@@ -841,6 +1257,17 @@ func (v BinNEXTNUM) String() string {
 	return fmt.Sprintf("NEXTNUM r%d, ENDLOOP L%d", v.Reg, v.JumpTo)
 }
 
+func NewBinNEXTNUM(reg, regfrom, regto, lend int, e pos.Pos) *BinNEXTNUM {
+	v := &BinNEXTNUM{
+		Reg:     reg,
+		RegFrom: regfrom,
+		RegTo:   regto,
+		JumpTo:  lend,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinWHILE struct {
 	BinStmtImpl
 
@@ -852,6 +1279,15 @@ func (v BinWHILE) String() string {
 	return fmt.Sprintf("WHILE BREAK TO L%d", v.BreakLabel)
 }
 
+func NewBinWHILE(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinWHILE {
+	v := &BinWHILE{
+		BreakLabel:    brl,
+		ContinueLabel: cnl,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinBREAK struct {
 	BinStmtImpl
 }
@@ -860,12 +1296,24 @@ func (v BinBREAK) String() string {
 	return fmt.Sprintf("BREAK")
 }
 
+func NewBinBREAK(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinBREAK {
+	v := &BinBREAK{}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinCONTINUE struct {
 	BinStmtImpl
 }
 
 func (v BinCONTINUE) String() string {
 	return fmt.Sprintf("CONTINUE")
+}
+
+func NewBinCONTINUE(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinCONTINUE {
+	v := &BinCONTINUE{}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinRET struct {
@@ -878,6 +1326,14 @@ func (v BinRET) String() string {
 	return fmt.Sprintf("RETURN r%d", v.Reg)
 }
 
+func NewBinRET(reg int, e pos.Pos) *BinRET {
+	v := &BinRET{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinTHROW struct {
 	BinStmtImpl
 
@@ -886,6 +1342,14 @@ type BinTHROW struct {
 
 func (v BinTHROW) String() string {
 	return fmt.Sprintf("THROW r%d", v.Reg)
+}
+
+func NewBinTHROW(reg int, e pos.Pos) *BinTHROW {
+	v := &BinTHROW{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinMODULE struct {
@@ -905,6 +1369,15 @@ func (v BinMODULE) String() string {
 	return fmt.Sprintf("MODULE %s\n{\n%v}\n", env.UniqueNames.Get(v.Name), v.Code)
 }
 
+func NewBinMODULE(name int, code BinCode, e pos.Pos) *BinMODULE {
+	v := &BinMODULE{
+		Name: name,
+		Code: code,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinERROR struct {
 	BinStmtImpl
 
@@ -913,6 +1386,14 @@ type BinERROR struct {
 
 func (v BinERROR) String() string {
 	return fmt.Sprintf("ERROR %q", v.Error)
+}
+
+func NewBinERROR(es string, e pos.Pos) *BinERROR {
+	v := &BinERROR{
+		Error: es,
+	}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinTRYRECV struct {
@@ -928,6 +1409,17 @@ func (v BinTRYRECV) String() string {
 	return fmt.Sprintf("TRYRECV r%d, OK r%d", v.Reg, v.RegOk)
 }
 
+func NewBinTRYRECV(reg, regval, regok, regclosed int, e pos.Pos) *BinTRYRECV {
+	v := &BinTRYRECV{
+		Reg:       reg,
+		RegVal:    regval,
+		RegOk:     regok,
+		RegClosed: regclosed,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinTRYSEND struct {
 	BinStmtImpl
 
@@ -941,12 +1433,28 @@ func (v BinTRYSEND) String() string {
 	return fmt.Sprintf("TRYSEND r%d, r%d, OK r%d", v.Reg, v.RegVal, v.RegOk)
 }
 
+func NewBinTRYSEND(reg, regval, regok int, e pos.Pos) *BinTRYSEND {
+	v := &BinTRYSEND{
+		Reg:    reg,
+		RegVal: regval,
+		RegOk:  regok,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinGOSHED struct {
 	BinStmtImpl
 }
 
 func (v BinGOSHED) String() string {
 	return fmt.Sprintf("GOSHED")
+}
+
+func NewBinGOSHED(reg, regfrom, regto, brl, cnl int, e pos.Pos) *BinGOSHED {
+	v := &BinGOSHED{}
+	v.SetPosition(e.Position())
+	return v
 }
 
 type BinINC struct {
@@ -959,6 +1467,14 @@ func (v BinINC) String() string {
 	return fmt.Sprintf("INC r%d", v.Reg)
 }
 
+func NewBinINC(reg int, e pos.Pos) *BinINC {
+	v := &BinINC{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinDEC struct {
 	BinStmtImpl
 
@@ -969,6 +1485,14 @@ func (v BinDEC) String() string {
 	return fmt.Sprintf("DEC r%d", v.Reg)
 }
 
+func NewBinDEC(reg int, e pos.Pos) *BinDEC {
+	v := &BinDEC{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
+}
+
 type BinFREE struct {
 	BinStmtImpl
 
@@ -977,4 +1501,12 @@ type BinFREE struct {
 
 func (v BinFREE) String() string {
 	return fmt.Sprintf("FREE FROM r%d", v.Reg)
+}
+
+func NewBinFREE(reg int, e pos.Pos) *BinFREE {
+	v := &BinFREE{
+		Reg: reg,
+	}
+	v.SetPosition(e.Position())
+	return v
 }

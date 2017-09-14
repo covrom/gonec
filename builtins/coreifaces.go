@@ -29,7 +29,7 @@ type (
 	// VMUnarer может выполнить унарную операцию над свои значением
 	VMUnarer interface {
 		VMValuer
-		EvalUnOp(VMOperation) (VMValuer, error) // возвращает результат выражения с другим значением
+		EvalUnOp(rune) (VMValuer, error) // возвращает результат выражения с другим значением
 	}
 
 	// TODO: реализовать VMOperationer и VMUnarer во всех типах

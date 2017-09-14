@@ -349,7 +349,7 @@ func (x *SliceExpr) Simplify() Expr {
 type FuncExpr struct {
 	ExprImpl
 	Name   int //string
-	Stmts  []Stmt
+	Stmts  Stmts
 	Args   []int //string
 	VarArg bool
 }
