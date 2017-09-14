@@ -198,72 +198,72 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 			Reg: reg + 1,
 		// 		}, s)
 
-		case *ast.NumForStmt:
-			// для .. по ..
-			regfrom := reg + 1
-			regto := reg + 2
-			regsub := reg + 3
+		// case *ast.NumForStmt:
+		// 	// для .. по ..
+		// 	regfrom := reg + 1
+		// 	regto := reg + 2
+		// 	regsub := reg + 3
 
-			bins = append(bins, addBinExpr(s.Expr1, regfrom, lid, false)...)
-			bins = append(bins, addBinExpr(s.Expr2, regto, lid, false)...)
+		// 	bins = append(bins, addBinExpr(s.Expr1, regfrom, lid, false)...)
+		// 	bins = append(bins, addBinExpr(s.Expr2, regto, lid, false)...)
 
-			*lid++
-			lend := *lid
-			*lid++
-			li := *lid
+		// 	*lid++
+		// 	lend := *lid
+		// 	*lid++
+		// 	li := *lid
 
-			// инициализируем итератор, параметры цикла и цикл в стеке циклов
-			bins = appendBin(bins,
-				&BinFORNUM{
-					Reg:           reg,
-					RegFrom:       regfrom,
-					RegTo:         regto,
-					BreakLabel:    lend,
-					ContinueLabel: li,
-				}, s)
-			// очередная итерация
-			// сюда же переходим по Продолжить
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: li,
-				}, s)
-			bins = appendBin(bins,
-				&BinNEXTNUM{
-					Reg:     reg,
-					RegFrom: regfrom,
-					RegTo:   regto,
-					JumpTo:  lend, // сюда же переходим по Прервать
-				}, s)
-			// устанавливаем переменную-итератор
-			bins = appendBin(bins,
-				&BinSET{
-					Reg: reg,
-					Id:  s.Name,
-				}, s)
+		// 	// инициализируем итератор, параметры цикла и цикл в стеке циклов
+		// 	bins = appendBin(bins,
+		// 		&BinFORNUM{
+		// 			Reg:           reg,
+		// 			RegFrom:       regfrom,
+		// 			RegTo:         regto,
+		// 			BreakLabel:    lend,
+		// 			ContinueLabel: li,
+		// 		}, s)
+		// 	// очередная итерация
+		// 	// сюда же переходим по Продолжить
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: li,
+		// 		}, s)
+		// 	bins = appendBin(bins,
+		// 		&BinNEXTNUM{
+		// 			Reg:     reg,
+		// 			RegFrom: regfrom,
+		// 			RegTo:   regto,
+		// 			JumpTo:  lend, // сюда же переходим по Прервать
+		// 		}, s)
+		// 	// устанавливаем переменную-итератор
+		// 	bins = appendBin(bins,
+		// 		&BinSET{
+		// 			Reg: reg,
+		// 			Id:  s.Name,
+		// 		}, s)
 
-			bins = append(bins, BinaryCode(s.Stmts, regsub, lid).Code...)
+		// 	bins = append(bins, BinaryCode(s.Stmts, regsub, lid).Code...)
 
-			// повторяем итерацию
-			bins = appendBin(bins,
-				&BinJMP{
-					JumpTo: li,
-				}, s)
+		// 	// повторяем итерацию
+		// 	bins = appendBin(bins,
+		// 		&BinJMP{
+		// 			JumpTo: li,
+		// 		}, s)
 
-			// КонецЦикла
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// снимаем со стека наличие цикла для Прервать и Продолжить
-			bins = appendBin(bins,
-				&BinPOPFOR{
-					ContinueLabel: li,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// 	// КонецЦикла
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// снимаем со стека наличие цикла для Прервать и Продолжить
+		// 	bins = appendBin(bins,
+		// 		&BinPOPFOR{
+		// 			ContinueLabel: li,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
 		case *ast.LoopStmt:
 			*lid++
