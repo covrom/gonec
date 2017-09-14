@@ -265,52 +265,52 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 			Reg: reg + 1,
 		// 		}, s)
 
-		case *ast.LoopStmt:
-			*lid++
-			lend := *lid
-			*lid++
-			li := *lid
-			bins = appendBin(bins,
-				&BinWHILE{
-					BreakLabel:    lend,
-					ContinueLabel: li,
-				}, s)
-			// очередная итерация
-			// сюда же переходим по Продолжить
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: li,
-				}, s)
-			bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinJFALSE{
-					Reg:    reg,
-					JumpTo: lend,
-				}, s)
-			// тело цикла
-			bins = append(bins, BinaryCode(s.Stmts, reg+1, lid).Code...)
+		// case *ast.LoopStmt:
+		// 	*lid++
+		// 	lend := *lid
+		// 	*lid++
+		// 	li := *lid
+		// 	bins = appendBin(bins,
+		// 		&BinWHILE{
+		// 			BreakLabel:    lend,
+		// 			ContinueLabel: li,
+		// 		}, s)
+		// 	// очередная итерация
+		// 	// сюда же переходим по Продолжить
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: li,
+		// 		}, s)
+		// 	bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
+		// 	bins = appendBin(bins,
+		// 		&BinJFALSE{
+		// 			Reg:    reg,
+		// 			JumpTo: lend,
+		// 		}, s)
+		// 	// тело цикла
+		// 	bins = append(bins, BinaryCode(s.Stmts, reg+1, lid).Code...)
 
-			// повторяем итерацию
-			bins = appendBin(bins,
-				&BinJMP{
-					JumpTo: li,
-				}, s)
+		// 	// повторяем итерацию
+		// 	bins = appendBin(bins,
+		// 		&BinJMP{
+		// 			JumpTo: li,
+		// 		}, s)
 
-			// КонецЦикла
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lend,
-				}, s)
-			// снимаем со стека наличие цикла для Прервать и Продолжить
-			bins = appendBin(bins,
-				&BinPOPFOR{
-					ContinueLabel: li,
-				}, s)
-			// освобождаем память
-			bins = appendBin(bins,
-				&BinFREE{
-					Reg: reg + 1,
-				}, s)
+		// 	// КонецЦикла
+		// 	bins = appendBin(bins,
+		// 		&BinLABEL{
+		// 			Label: lend,
+		// 		}, s)
+		// 	// снимаем со стека наличие цикла для Прервать и Продолжить
+		// 	bins = appendBin(bins,
+		// 		&BinPOPFOR{
+		// 			ContinueLabel: li,
+		// 		}, s)
+		// 	// освобождаем память
+		// 	bins = appendBin(bins,
+		// 		&BinFREE{
+		// 			Reg: reg + 1,
+		// 		}, s)
 
 		case *ast.BreakStmt:
 			bins = appendBin(bins,
