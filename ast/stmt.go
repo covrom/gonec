@@ -2,6 +2,7 @@ package ast
 
 import (
 	"github.com/covrom/gonec/bincode/binstmt"
+	"github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/pos"
 )
 
@@ -396,6 +397,11 @@ func (x *ThrowStmt) Simplify() {
 	x.Expr = x.Expr.Simplify()
 }
 
+func (s *ThrowStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	s.Expr.BinTo(bins, reg, lid, false)
+	bins.Append(binstmt.NewBinTHROW(reg, s))
+}
+
 // ModuleStmt provide "module" expression statement.
 type ModuleStmt struct {
 	StmtImpl
@@ -406,6 +412,15 @@ type ModuleStmt struct {
 func (x *ModuleStmt) Simplify() {
 	for _, st := range x.Stmts {
 		st.Simplify()
+	}
+}
+
+func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	if s.Name == env.UniqueNames.Set("_") {
+		// добавляем все операторы в текущий контекст
+		s.Stmts.BinTo(bins, reg, lid)
+	} else {
+		bins.Append(binstmt.NewBinMODULE(s.Name, BinaryCode(s.Stmts, 0, lid), s))
 	}
 }
 

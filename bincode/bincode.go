@@ -357,24 +357,24 @@ func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
 		// 			Reg: reg,
 		// 		}, s)
 
-		case *ast.ThrowStmt:
-			bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinTHROW{
-					Reg: reg,
-				}, s)
+		// case *ast.ThrowStmt:
+		// 	bins = append(bins, addBinExpr(s.Expr, reg, lid, false)...)
+		// 	bins = appendBin(bins,
+		// 		&BinTHROW{
+		// 			Reg: reg,
+		// 		}, s)
 
-		case *ast.ModuleStmt:
-			if s.Name == env.UniqueNames.Set("_") {
-				// добавляем все операторы в текущий контекст
-				bins = append(bins, BinaryCode(s.Stmts, reg, lid).Code...)
-			} else {
-				bins = appendBin(bins,
-					&BinMODULE{
-						Name: s.Name,
-						Code: BinaryCode(s.Stmts, 0, lid),
-					}, s)
-			}
+		// case *ast.ModuleStmt:
+		// 	if s.Name == env.UniqueNames.Set("_") {
+		// 		// добавляем все операторы в текущий контекст
+		// 		bins = append(bins, BinaryCode(s.Stmts, reg, lid).Code...)
+		// 	} else {
+		// 		bins = appendBin(bins,
+		// 			&BinMODULE{
+		// 				Name: s.Name,
+		// 				Code: BinaryCode(s.Stmts, 0, lid),
+		// 			}, s)
+		// 	}
 		case *ast.SwitchStmt:
 			bins = append(bins, addBinExpr(s.Expr, reg, lid, true)...)
 			// сравниваем с каждым case
