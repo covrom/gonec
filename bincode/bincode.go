@@ -886,44 +886,44 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 			Reg: reg,
 	// 			Op:  rune(e.Operator[0]),
 	// 		}, e)
-	case *ast.AddrExpr:
-		switch ee := e.Expr.(type) {
-		case *ast.IdentExpr:
-			bins = appendBin(bins,
-				&BinADDRID{
-					Reg:  reg,
-					Name: ee.Id,
-				}, e)
-		case *ast.MemberExpr:
-			bins = append(bins, addBinExpr(ee.Expr, reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinADDRMBR{
-					Reg:  reg,
-					Name: ee.Name,
-				}, e)
-		default:
-			panic(NewStringError(e, "Неверная операция над значением"))
-		}
-	case *ast.DerefExpr:
-		switch ee := e.Expr.(type) {
-		case *ast.IdentExpr:
-			bins = appendBin(bins,
-				&BinUNREFID{
-					Reg:  reg,
-					Name: ee.Id,
-				}, e)
-		case *ast.MemberExpr:
-			bins = append(bins, addBinExpr(ee.Expr, reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinUNREFMBR{
-					Reg:  reg,
-					Name: ee.Name,
-				}, e)
-		default:
-			panic(NewStringError(e, "Неверная операция над значением"))
-		}
-	case *ast.ParenExpr:
-		bins = append(bins, addBinExpr(e.SubExpr, reg, lid, false)...)
+	// case *ast.AddrExpr:
+	// 	switch ee := e.Expr.(type) {
+	// 	case *ast.IdentExpr:
+	// 		bins = appendBin(bins,
+	// 			&BinADDRID{
+	// 				Reg:  reg,
+	// 				Name: ee.Id,
+	// 			}, e)
+	// 	case *ast.MemberExpr:
+	// 		bins = append(bins, addBinExpr(ee.Expr, reg, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinADDRMBR{
+	// 				Reg:  reg,
+	// 				Name: ee.Name,
+	// 			}, e)
+	// 	default:
+	// 		panic(NewStringError(e, "Неверная операция над значением"))
+	// 	}
+	// case *ast.DerefExpr:
+	// 	switch ee := e.Expr.(type) {
+	// 	case *ast.IdentExpr:
+	// 		bins = appendBin(bins,
+	// 			&BinUNREFID{
+	// 				Reg:  reg,
+	// 				Name: ee.Id,
+	// 			}, e)
+	// 	case *ast.MemberExpr:
+	// 		bins = append(bins, addBinExpr(ee.Expr, reg, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinUNREFMBR{
+	// 				Reg:  reg,
+	// 				Name: ee.Name,
+	// 			}, e)
+	// 	default:
+	// 		panic(NewStringError(e, "Неверная операция над значением"))
+	// 	}
+	// case *ast.ParenExpr:
+	// 	bins = append(bins, addBinExpr(e.SubExpr, reg, lid, false)...)
 	case *ast.BinOpExpr:
 		oper := OperMap[e.Operator]
 		// если это равенство в контексте исполнения блока кода, то это присваивание, а не вычисление выражения

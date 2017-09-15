@@ -222,6 +222,18 @@ func (x *AddrExpr) Simplify() Expr {
 	return x
 }
 
+func (e *AddrExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	switch ee := e.Expr.(type) {
+	case *IdentExpr:
+		bins.Append(binstmt.NewBinADDRID(reg, ee.Id, e))
+	case *MemberExpr:
+		ee.Expr.BinTo(bins, reg, lid, false)
+		bins.Append(binstmt.NewBinADDRMBR(reg, ee.Name, e))
+	default:
+		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
+	}
+}
+
 // DerefExpr provide dereferencing address expression.
 type DerefExpr struct {
 	ExprImpl
@@ -231,6 +243,18 @@ type DerefExpr struct {
 func (x *DerefExpr) Simplify() Expr {
 	x.Expr = x.Expr.Simplify()
 	return x
+}
+
+func (e *DerefExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	switch ee := e.Expr.(type) {
+	case *IdentExpr:
+		bins.Append(binstmt.NewBinUNREFID(reg, ee.Id, e))
+	case *MemberExpr:
+		ee.Expr.BinTo(bins, reg, lid, false)
+		bins.Append(binstmt.NewBinUNREFMBR(reg, ee.Name, e))
+	default:
+		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
+	}
 }
 
 // ParenExpr provide parent block expression.
@@ -245,6 +269,10 @@ func (x *ParenExpr) Simplify() Expr {
 		return arg
 	}
 	return x
+}
+
+func (e *ParenExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.SubExpr.BinTo(bins, reg, lid, false)
 }
 
 // BinOpExpr provide binary operator expression.
@@ -281,6 +309,44 @@ func (x *BinOpExpr) Simplify() Expr {
 		}
 	}
 	return x
+}
+
+func (e *BinOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+
+	oper := core.OperMap[e.Operator]
+	// если это равенство в контексте исполнения блока кода, то это присваивание, а не вычисление выражения
+	if inStmt && oper == core.EQL {
+		(&LetsStmt{
+			Lhss:     e.Lhss,
+			Operator: "=",
+			Rhss:     e.Rhss,
+		}).BinTo(bins, reg, lid)
+		return
+	}
+	if len(e.Lhss) != 1 || len(e.Rhss) != 1 {
+		panic(binstmt.NewStringError(e, "С каждой стороны операции может быть только одно выражение"))
+	}
+	// сначала вычисляем левую часть
+	e.Lhss[0].BinTo(bins, reg, lid, false)
+	switch oper {
+	case core.LOR:
+		*lid++
+		lab := *lid
+		// вставляем проверку на истину слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
+		bins.Append(binstmt.NewBinJTRUE(reg, lab, e))
+		e.Rhss[0].BinTo(bins, reg, lid, false)
+		bins.Append(binstmt.NewBinLABEL(lab, e))
+	case core.LAND:
+		*lid++
+		lab := *lid
+		// вставляем проверку на ложь слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
+		bins.Append(binstmt.NewBinJFALSE(reg, lab, e))
+		e.Rhss[0].BinTo(bins, reg, lid, false)
+		bins.Append(binstmt.NewBinLABEL(lab, e))
+	default:
+		e.Rhss[0].BinTo(bins, reg+1, lid, false)
+		bins.Append(binstmt.NewBinOPER(reg, reg+1, oper, e))
+	}
 }
 
 type TernaryOpExpr struct {

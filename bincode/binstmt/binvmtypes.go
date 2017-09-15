@@ -1,18 +1,17 @@
-package bincode
+package binstmt
 
 import (
 	"errors"
 	"fmt"
 
-	"github.com/covrom/gonec/ast"
+	posit "github.com/covrom/gonec/pos"
 )
-
 
 // Error provides a convenient interface for handling runtime error.
 // It can be Error interface with type cast which can call Pos().
 type Error struct {
 	Message string
-	Pos     ast.Position
+	Pos     posit.Position
 }
 
 var (
@@ -24,21 +23,21 @@ var (
 )
 
 // NewStringError makes error interface with message.
-func NewStringError(pos ast.Pos, err string) error {
+func NewStringError(pos posit.Pos, err string) error {
 	if pos == nil {
-		return &Error{Message: err, Pos: ast.Position{1, 1}}
+		return &Error{Message: err, Pos: posit.Position{1, 1}}
 	}
 	return &Error{Message: err, Pos: pos.Position()}
 }
 
 // NewErrorf makes error interface with message.
-func NewErrorf(pos ast.Pos, format string, args ...interface{}) error {
+func NewErrorf(pos posit.Pos, format string, args ...interface{}) error {
 	return &Error{Message: fmt.Sprintf(format, args...), Pos: pos.Position()}
 }
 
 // NewError makes error interface with message.
 // This doesn't overwrite last error.
-func NewError(pos ast.Pos, err error) error {
+func NewError(pos posit.Pos, err error) error {
 	if err == nil {
 		return nil
 	}
