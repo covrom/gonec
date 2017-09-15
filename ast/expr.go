@@ -29,6 +29,16 @@ type ExprImpl struct {
 // expr provide restraint interface.
 func (x *ExprImpl) expr() {}
 
+// отсутствующее выражение, используется для пропущенных значений в диапазонах
+type NoneExpr struct {
+	ExprImpl
+}
+
+func (x *NoneExpr) Simplify() Expr { return x }
+func (e *NoneExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	bins.Append(binstmt.NewBinLOAD(reg, nil, false, e))
+}
+
 // NumberExpr provide Number expression.
 type NumberExpr struct {
 	ExprImpl
@@ -37,7 +47,7 @@ type NumberExpr struct {
 
 func (x *NumberExpr) Simplify() Expr {
 	var rv core.VMValuer
-	if strings.ContainsAny(x.Lit, ".e") {
+	if strings.ContainsAny(x.Lit, ".eE") {
 		v := &core.VMDecimal{}
 		if err := v.Parse(x.Lit); err != nil {
 			return x
@@ -53,6 +63,12 @@ func (x *NumberExpr) Simplify() Expr {
 	return &NativeExpr{Value: rv}
 }
 
+func (e *NumberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	// команда на загрузку строки в регистр и ее преобразование в число, в регистр reg
+	bins.Append(binstmt.NewBinLOAD(reg, core.VMString(e.Lit), false, e))
+	bins.Append(binstmt.NewBinCASTNUM(reg, e))
+}
+
 // StringExpr provide String expression.
 type StringExpr struct {
 	ExprImpl
@@ -61,6 +77,10 @@ type StringExpr struct {
 
 func (x *StringExpr) Simplify() Expr {
 	return &NativeExpr{Value: core.VMString(x.Lit)}
+}
+
+func (e *StringExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	bins.Append(binstmt.NewBinLOAD(reg, core.VMString(e.Lit), false, e))
 }
 
 // ArrayExpr provide Array expression.
@@ -84,6 +104,17 @@ func (x *ArrayExpr) Simplify() Expr {
 		return x
 	} else {
 		return &NativeExpr{Value: a}
+	}
+}
+
+func (e *ArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	// создание слайса
+	bins.Append(binstmt.NewBinMAKESLICE(reg, len(e.Exprs), len(e.Exprs), e))
+
+	for i, ee := range e.Exprs {
+		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
+		ee.BinTo(bins, reg+1, lid, false)
+		bins.Append(binstmt.NewBinSETIDX(reg, i, reg+1, ee))
 	}
 }
 
@@ -461,6 +492,23 @@ func (x *ConstExpr) Simplify() Expr {
 	return x
 }
 
+func (e *ConstExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	var v core.VMValuer
+
+	switch strings.ToLower(e.Value) {
+	case "истина", "true":
+		v = core.VMBool(true)
+	case "ложь", "false":
+		v = core.VMBool(false)
+	case "null":
+		v = core.VMNullVar
+	default:
+		v = core.VMNil
+	}
+
+	bins.Append(binstmt.NewBinLOAD(reg, v, false, e))
+}
+
 type ChanExpr struct {
 	ExprImpl
 	Lhs Expr
@@ -533,4 +581,8 @@ type NativeExpr struct {
 
 func (x *NativeExpr) Simplify() Expr {
 	return x
+}
+
+func (e *NativeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	bins.Append(binstmt.NewBinLOAD(reg, e.Value, false, e))
 }

@@ -788,55 +788,55 @@ func appendBin(bins BinStmts, b BinStmt, e pos.Pos) BinStmts {
 
 func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	//inStmt=true - признак запуска выражения как опреатора в блоке кода, иначе это подвыражение
-	if expr == nil {
-		bins = appendBin(bins,
-			&BinLOAD{
-				Reg: reg,
-				Val: nil,
-			}, &ast.NativeExpr{Value: nil}) // т.к. expr == nil, то у него нет Pos
-		return
-	}
+	// if expr == nil {
+	// 	bins = appendBin(bins,
+	// 		&BinLOAD{
+	// 			Reg: reg,
+	// 			Val: nil,
+	// 		}, &ast.NativeExpr{Value: nil}) // т.к. expr == nil, то у него нет Pos
+	// 	return
+	// }
 	switch e := expr.(type) {
-	case *ast.NativeExpr:
-		// добавляем команду загрузки значения
-		bins = appendBin(bins,
-			&BinLOAD{
-				Reg: reg, // основной регистр
-				Val: e.Value,
-			}, e)
-	case *ast.NumberExpr:
-		// команда на загрузку строки в регистр и ее преобразование в число, в регистр
-		bins = appendBin(bins,
-			&BinLOAD{
-				Reg: reg,
-				Val: e.Lit,
-			}, e)
+	// case *ast.NativeExpr:
+	// 	// добавляем команду загрузки значения
+	// 	bins = appendBin(bins,
+	// 		&BinLOAD{
+	// 			Reg: reg, // основной регистр
+	// 			Val: e.Value,
+	// 		}, e)
+	// case *ast.NumberExpr:
+	// 	// команда на загрузку строки в регистр и ее преобразование в число, в регистр
+	// 	bins = appendBin(bins,
+	// 		&BinLOAD{
+	// 			Reg: reg,
+	// 			Val: e.Lit,
+	// 		}, e)
 
-		bins = appendBin(bins,
-			&BinCASTNUM{
-				Reg: reg,
-			}, e)
-	case *ast.StringExpr:
-		bins = appendBin(bins,
-			&BinLOAD{
-				Reg: reg,
-				Val: e.Lit,
-			}, e)
-	case *ast.ConstExpr:
-		b := BinLOAD{
-			Reg: reg,
-		}
-		switch strings.ToLower(e.Value) {
-		case "истина":
-			b.Val = true
-		case "ложь":
-			b.Val = false
-		case "null":
-			b.Val = ast.NullVar
-		default:
-			b.Val = nil
-		}
-		bins = appendBin(bins, &b, e)
+	// 	bins = appendBin(bins,
+	// 		&BinCASTNUM{
+	// 			Reg: reg,
+	// 		}, e)
+	// case *ast.StringExpr:
+	// 	bins = appendBin(bins,
+	// 		&BinLOAD{
+	// 			Reg: reg,
+	// 			Val: e.Lit,
+	// 		}, e)
+	// case *ast.ConstExpr:
+	// 	b := BinLOAD{
+	// 		Reg: reg,
+	// 	}
+	// 	switch strings.ToLower(e.Value) {
+	// 	case "истина":
+	// 		b.Val = true
+	// 	case "ложь":
+	// 		b.Val = false
+	// 	case "null":
+	// 		b.Val = ast.NullVar
+	// 	default:
+	// 		b.Val = nil
+	// 	}
+	// 	bins = appendBin(bins, &b, e)
 	case *ast.ArrayExpr:
 		// создание слайса
 		bins = appendBin(bins,

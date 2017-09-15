@@ -33,6 +33,14 @@ func (x Stmts) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	}
 }
 
+// NoneStmt используется для пропуска блоков кода, например, Else
+type NoneStmt struct {
+	StmtImpl
+}
+
+func (x *NoneStmt) Simplify()                                       {}
+func (s *NoneStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {}
+
 // ExprStmt provide expression statement.
 type ExprStmt struct {
 	StmtImpl

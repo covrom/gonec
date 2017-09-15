@@ -2083,14 +2083,14 @@ yydefault:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		//line ./parser/parser.y:662
 		{
-			yyVAL.expr = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: yyDollar[1].tok.Lit, Id: env.UniqueNames.Set(yyDollar[1].tok.Lit)}, Begin: yyDollar[3].expr, End: nil}
+			yyVAL.expr = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: yyDollar[1].tok.Lit, Id: env.UniqueNames.Set(yyDollar[1].tok.Lit)}, Begin: yyDollar[3].expr, End: &ast.NoneExpr{}}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 117:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		//line ./parser/parser.y:667
 		{
-			yyVAL.expr = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: yyDollar[1].tok.Lit, Id: env.UniqueNames.Set(yyDollar[1].tok.Lit)}, Begin: nil, End: yyDollar[4].expr}
+			yyVAL.expr = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: yyDollar[1].tok.Lit, Id: env.UniqueNames.Set(yyDollar[1].tok.Lit)}, Begin: &ast.NoneExpr{}, End: yyDollar[4].expr}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 118:
@@ -2104,14 +2104,14 @@ yydefault:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		//line ./parser/parser.y:677
 		{
-			yyVAL.expr = &ast.SliceExpr{Value: yyDollar[1].expr, Begin: yyDollar[3].expr, End: nil}
+			yyVAL.expr = &ast.SliceExpr{Value: yyDollar[1].expr, Begin: yyDollar[3].expr, End: &ast.NoneExpr{}}
 			yyVAL.expr.SetPosition(yyDollar[1].expr.Position())
 		}
 	case 120:
 		yyDollar = yyS[yypt-5 : yypt+1]
 		//line ./parser/parser.y:682
 		{
-			yyVAL.expr = &ast.SliceExpr{Value: yyDollar[1].expr, Begin: nil, End: yyDollar[4].expr}
+			yyVAL.expr = &ast.SliceExpr{Value: yyDollar[1].expr, Begin: &ast.NoneExpr{}, End: yyDollar[4].expr}
 			yyVAL.expr.SetPosition(yyDollar[1].expr.Position())
 		}
 	case 121:
@@ -2125,7 +2125,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line ./parser/parser.y:692
 		{
-			yyVAL.expr = &ast.MakeChanExpr{SizeExpr: nil}
+			yyVAL.expr = &ast.MakeChanExpr{SizeExpr: &ast.NoneExpr{}}
 			yyVAL.expr.SetPosition(yyDollar[1].tok.Position())
 		}
 	case 123:

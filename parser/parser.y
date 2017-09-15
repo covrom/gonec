@@ -660,12 +660,12 @@ expr :
 	}
 	| IDENT '[' expr ':' ']'
 	{
-		$$ = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: $1.Lit, Id: env.UniqueNames.Set($1.Lit)}, Begin: $3, End: nil}
+		$$ = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: $1.Lit, Id: env.UniqueNames.Set($1.Lit)}, Begin: $3, End: &ast.NoneExpr{}}
 		$$.SetPosition($1.Position())
 	}
 	| IDENT '[' ':' expr ']'
 	{
-		$$ = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: $1.Lit, Id: env.UniqueNames.Set($1.Lit)}, Begin: nil, End: $4}
+		$$ = &ast.SliceExpr{Value: &ast.IdentExpr{Lit: $1.Lit, Id: env.UniqueNames.Set($1.Lit)}, Begin: &ast.NoneExpr{}, End: $4}
 		$$.SetPosition($1.Position())
 	}
 	| expr '[' expr ':' expr ']'
@@ -675,12 +675,12 @@ expr :
 	}
 	| expr '[' expr ':' ']'
 	{
-		$$ = &ast.SliceExpr{Value: $1, Begin: $3, End: nil}
+		$$ = &ast.SliceExpr{Value: $1, Begin: $3, End: &ast.NoneExpr{}}
 		$$.SetPosition($1.Position())
 	}
 	| expr '[' ':' expr ']'
 	{
-		$$ = &ast.SliceExpr{Value: $1, Begin: nil, End: $4}
+		$$ = &ast.SliceExpr{Value: $1, Begin: &ast.NoneExpr{}, End: $4}
 		$$.SetPosition($1.Position())
 	}
 	| MAKE typ
@@ -690,7 +690,7 @@ expr :
 	}
 	| MAKE CHAN
 	{
-		$$ = &ast.MakeChanExpr{SizeExpr: nil}
+		$$ = &ast.MakeChanExpr{SizeExpr: &ast.NoneExpr{}}
 		$$.SetPosition($1.Position())
 	}
 	| MAKE CHAN '(' expr ')'

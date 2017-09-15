@@ -2,11 +2,9 @@ package core
 
 import (
 	"reflect"
-	"time"
 	"unsafe"
 
 	"github.com/covrom/gonec/env"
-	"github.com/shopspring/decimal"
 )
 
 // VMMetaObj корневая структура для системных функциональных структур Го, доступных из языка Гонец
@@ -126,57 +124,4 @@ func (v *VMMetaObj) VMGetMethod(name int) VMMeth {
 				return rvm, nil
 			}
 		})
-}
-
-// ReflectToVMValue преобразовывает значение Го в наиболее подходящий тип значения для вирт. машшины
-func ReflectToVMValue(rv reflect.Value) VMInterfacer {
-	if x, ok := rv.Interface().(VMInterfacer); ok {
-		return x
-	}
-	switch rv.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return VMInt(rv.Int())
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return VMInt(rv.Uint())
-	case reflect.String:
-		return VMString(rv.String())
-	case reflect.Bool:
-		return VMBool(rv.Bool())
-	case reflect.Float32, reflect.Float64:
-		return VMDecimal(decimal.NewFromFloat(rv.Float()))
-	case reflect.Chan:
-		// проверяем, может это VMChaner
-		if x, ok := rv.Interface().(VMChaner); ok {
-			return x
-		}
-	case reflect.Array, reflect.Slice:
-		// проверяем, может это VMSlicer
-		if x, ok := rv.Interface().(VMSlicer); ok {
-			return x
-		}
-	case reflect.Map:
-		// проверяем, может это VMStringMaper
-		if x, ok := rv.Interface().(VMStringMaper); ok {
-			return x
-		}
-	case reflect.Func:
-		// проверяем, может это VMFuncer
-		if x, ok := rv.Interface().(VMFuncer); ok {
-			return x
-		}
-	case reflect.Struct:
-		switch v := rv.Interface().(type) {
-		case decimal.Decimal:
-			return VMDecimal(v)
-		case time.Time:
-			return VMTime(v)
-		case VMNumberer:
-			return v
-		case VMDateTimer:
-			return v
-		case VMMetaStructer:
-			return v
-		}
-	}
-	panic("Невозможно привести к типу интерпретатора")
 }
