@@ -980,35 +980,35 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 				Op:   oper,
 	// 			}, e)
 	// 	}
-	case *ast.TernaryOpExpr:
-		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
-		*lid++
-		lab := *lid
-		bins = appendBin(bins,
-			&BinJFALSE{
-				Reg:    reg,
-				JumpTo: lab,
-			}, e)
-		// если истина - берем левое выражение
-		bins = append(bins, addBinExpr(e.Lhs, reg, lid, false)...)
-		// прыгаем в конец
-		*lid++
-		lend := *lid
-		bins = appendBin(bins,
-			&BinJMP{
-				JumpTo: lend,
-			}, e)
+	// case *ast.TernaryOpExpr:
+	// 	bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
+	// 	*lid++
+	// 	lab := *lid
+	// 	bins = appendBin(bins,
+	// 		&BinJFALSE{
+	// 			Reg:    reg,
+	// 			JumpTo: lab,
+	// 		}, e)
+	// 	// если истина - берем левое выражение
+	// 	bins = append(bins, addBinExpr(e.Lhs, reg, lid, false)...)
+	// 	// прыгаем в конец
+	// 	*lid++
+	// 	lend := *lid
+	// 	bins = appendBin(bins,
+	// 		&BinJMP{
+	// 			JumpTo: lend,
+	// 		}, e)
 
-		// правое выражение
-		bins = appendBin(bins,
-			&BinLABEL{
-				Label: lab,
-			}, e)
-		bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
-		bins = appendBin(bins,
-			&BinLABEL{
-				Label: lend,
-			}, e)
+	// 	// правое выражение
+	// 	bins = appendBin(bins,
+	// 		&BinLABEL{
+	// 			Label: lab,
+	// 		}, e)
+	// 	bins = append(bins, addBinExpr(e.Rhs, reg, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinLABEL{
+	// 			Label: lend,
+	// 		}, e)
 
 	case *ast.CallExpr:
 		// если это анонимный вызов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg

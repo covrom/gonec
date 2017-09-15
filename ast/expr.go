@@ -372,6 +372,23 @@ func (x *TernaryOpExpr) Simplify() Expr {
 	return x
 }
 
+func (e *TernaryOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.Expr.BinTo(bins, reg, lid, false)
+	*lid++
+	lab := *lid
+	bins.Append(binstmt.NewBinJFALSE(reg, lab, e))
+	// если истина - берем левое выражение
+	e.Lhs.BinTo(bins, reg, lid, false)
+	// прыгаем в конец
+	*lid++
+	lend := *lid
+	bins.Append(binstmt.NewBinJMP(lend, e))
+	// правое выражение
+	bins.Append(binstmt.NewBinLABEL(lab, e))
+	e.Rhs.BinTo(bins, reg, lid, false)
+	bins.Append(binstmt.NewBinLABEL(lend, e))
+}
+
 // CallExpr provide calling expression.
 type CallExpr struct {
 	ExprImpl
