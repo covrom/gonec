@@ -924,62 +924,62 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 	}
 	// case *ast.ParenExpr:
 	// 	bins = append(bins, addBinExpr(e.SubExpr, reg, lid, false)...)
-	case *ast.BinOpExpr:
-		oper := OperMap[e.Operator]
-		// если это равенство в контексте исполнения блока кода, то это присваивание, а не вычисление выражения
-		if inStmt && oper == EQL {
-			bins = append(bins, BinaryCode([]ast.Stmt{
-				&ast.LetsStmt{
-					Lhss:     e.Lhss,
-					Operator: "=",
-					Rhss:     e.Rhss,
-				},
-			}, reg, lid).Code...)
-			return
-		}
-		if len(e.Lhss) != 1 || len(e.Rhss) != 1 {
-			panic(NewStringError(e, "С каждой стороны операции может быть только одно выражение"))
-		}
-		// сначала вычисляем левую часть
-		bins = append(bins, addBinExpr(e.Lhss[0], reg, lid, false)...)
-		switch oper {
-		case LOR:
-			*lid++
-			lab := *lid
-			// вставляем проверку на истину слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
-			bins = appendBin(bins,
-				&BinJTRUE{
-					Reg:    reg,
-					JumpTo: lab,
-				}, e)
-			bins = append(bins, addBinExpr(e.Rhss[0], reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lab,
-				}, e)
-		case LAND:
-			*lid++
-			lab := *lid
-			// вставляем проверку на ложь слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
-			bins = appendBin(bins,
-				&BinJFALSE{
-					Reg:    reg,
-					JumpTo: lab,
-				}, e)
-			bins = append(bins, addBinExpr(e.Rhss[0], reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: lab,
-				}, e)
-		default:
-			bins = append(bins, addBinExpr(e.Rhss[0], reg+1, lid, false)...)
-			bins = appendBin(bins,
-				&BinOPER{
-					RegL: reg, // сюда же помещается результат
-					RegR: reg + 1,
-					Op:   oper,
-				}, e)
-		}
+	// case *ast.BinOpExpr:
+	// 	oper := OperMap[e.Operator]
+	// 	// если это равенство в контексте исполнения блока кода, то это присваивание, а не вычисление выражения
+	// 	if inStmt && oper == EQL {
+	// 		bins = append(bins, BinaryCode([]ast.Stmt{
+	// 			&ast.LetsStmt{
+	// 				Lhss:     e.Lhss,
+	// 				Operator: "=",
+	// 				Rhss:     e.Rhss,
+	// 			},
+	// 		}, reg, lid).Code...)
+	// 		return
+	// 	}
+	// 	if len(e.Lhss) != 1 || len(e.Rhss) != 1 {
+	// 		panic(NewStringError(e, "С каждой стороны операции может быть только одно выражение"))
+	// 	}
+	// 	// сначала вычисляем левую часть
+	// 	bins = append(bins, addBinExpr(e.Lhss[0], reg, lid, false)...)
+	// 	switch oper {
+	// 	case LOR:
+	// 		*lid++
+	// 		lab := *lid
+	// 		// вставляем проверку на истину слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
+	// 		bins = appendBin(bins,
+	// 			&BinJTRUE{
+	// 				Reg:    reg,
+	// 				JumpTo: lab,
+	// 			}, e)
+	// 		bins = append(bins, addBinExpr(e.Rhss[0], reg, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinLABEL{
+	// 				Label: lab,
+	// 			}, e)
+	// 	case LAND:
+	// 		*lid++
+	// 		lab := *lid
+	// 		// вставляем проверку на ложь слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
+	// 		bins = appendBin(bins,
+	// 			&BinJFALSE{
+	// 				Reg:    reg,
+	// 				JumpTo: lab,
+	// 			}, e)
+	// 		bins = append(bins, addBinExpr(e.Rhss[0], reg, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinLABEL{
+	// 				Label: lab,
+	// 			}, e)
+	// 	default:
+	// 		bins = append(bins, addBinExpr(e.Rhss[0], reg+1, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinOPER{
+	// 				RegL: reg, // сюда же помещается результат
+	// 				RegR: reg + 1,
+	// 				Op:   oper,
+	// 			}, e)
+	// 	}
 	case *ast.TernaryOpExpr:
 		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
 		*lid++
