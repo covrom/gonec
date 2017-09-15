@@ -508,7 +508,7 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 		case_stmt := ss.(*CaseStmt)
 		e, ok := case_stmt.Expr.(*ChanExpr)
 		if !ok {
-			panic(NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
+			panic(binstmt.NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
 		}
 		// определяем значение справа
 		e.Rhs.BinTo(bins, reg, lid, false)
@@ -673,7 +673,7 @@ func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			}
 		} else {
 			// ошибка
-			panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
+			panic(binstmt.NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
 		}
 	}
 }
@@ -707,7 +707,7 @@ func (s *VarStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			}
 		} else {
 			// ошибка
-			panic(NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
+			panic(binstmt.NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
 		}
 	}
 }
