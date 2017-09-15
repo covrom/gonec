@@ -130,6 +130,8 @@ func (x *PairExpr) Simplify() Expr {
 	return x
 }
 
+func (e *PairExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {}
+
 // MapExpr provide Map expression.
 type MapExpr struct {
 	ExprImpl
@@ -155,6 +157,17 @@ func (x *MapExpr) Simplify() Expr {
 	}
 }
 
+func (e *MapExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	// создание мапы
+	bins.Append(binstmt.NewBinMAKEMAP(reg, len(e.MapExpr), e))
+
+	for k, ee := range e.MapExpr {
+		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
+		ee.BinTo(bins, reg+1, lid, false)
+		bins.Append(binstmt.NewBinSETKEY(reg, reg+1, k, ee))
+	}
+}
+
 // IdentExpr provide identity expression.
 type IdentExpr struct {
 	ExprImpl
@@ -168,6 +181,10 @@ func (e *IdentExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	bins.Append(binstmt.NewBinSET(reg, e.Id, e))
 }
 
+func (e *IdentExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	bins.Append(binstmt.NewBinGET(reg, e.Id, e))
+}
+
 // UnaryExpr provide unary minus expression. ex: -1, ^1, ~1.
 type UnaryExpr struct {
 	ExprImpl
@@ -179,7 +196,7 @@ func (x *UnaryExpr) Simplify() Expr {
 	x.Expr = x.Expr.Simplify()
 	if v, ok := x.Expr.(*NativeExpr); ok {
 		if vv := v.Value.(core.VMUnarer); ok {
-			oper := core.OperMap[x.Operator]
+			oper := rune(x.Operator[0])
 			rv, err := vv.EvalUnOp(oper)
 			if err == nil {
 				return &NativeExpr{Value: rv}
@@ -187,6 +204,11 @@ func (x *UnaryExpr) Simplify() Expr {
 		}
 	}
 	return x
+}
+
+func (e *UnaryExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.Expr.BinTo(bins, reg, lid, false)
+	bins.Append(binstmt.NewBinUNARY(reg, rune(e.Operator[0]), e))
 }
 
 // AddrExpr provide referencing address expression.

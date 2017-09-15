@@ -837,55 +837,55 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 		b.Val = nil
 	// 	}
 	// 	bins = appendBin(bins, &b, e)
-	case *ast.ArrayExpr:
-		// создание слайса
-		bins = appendBin(bins,
-			&BinMAKESLICE{
-				Reg: reg,
-				Len: len(e.Exprs),
-				Cap: len(e.Exprs),
-			}, e)
+	// case *ast.ArrayExpr:
+	// 	// создание слайса
+	// 	bins = appendBin(bins,
+	// 		&BinMAKESLICE{
+	// 			Reg: reg,
+	// 			Len: len(e.Exprs),
+	// 			Cap: len(e.Exprs),
+	// 		}, e)
 
-		for i, ee := range e.Exprs {
-			// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-			bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
-			bins = appendBin(bins,
-				&BinSETIDX{
-					Reg:    reg,
-					Index:  i,
-					RegVal: reg + 1,
-				}, ee)
-		}
-	case *ast.MapExpr:
-		// создание мапы
-		bins = appendBin(bins,
-			&BinMAKEMAP{
-				Reg: reg,
-				Len: len(e.MapExpr),
-			}, e)
+	// 	for i, ee := range e.Exprs {
+	// 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
+	// 		bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinSETIDX{
+	// 				Reg:    reg,
+	// 				Index:  i,
+	// 				RegVal: reg + 1,
+	// 			}, ee)
+	// 	}
+	// case *ast.MapExpr:
+	// 	// создание мапы
+	// 	bins = appendBin(bins,
+	// 		&BinMAKEMAP{
+	// 			Reg: reg,
+	// 			Len: len(e.MapExpr),
+	// 		}, e)
 
-		for k, ee := range e.MapExpr {
-			bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
-			bins = appendBin(bins,
-				&BinSETKEY{
-					Reg:    reg,
-					Key:    k,
-					RegVal: reg + 1,
-				}, ee)
-		}
-	case *ast.IdentExpr:
-		bins = appendBin(bins,
-			&BinGET{
-				Reg: reg,
-				Id:  e.Id,
-			}, e)
-	case *ast.UnaryExpr:
-		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
-		bins = appendBin(bins,
-			&BinUNARY{
-				Reg: reg,
-				Op:  rune(e.Operator[0]),
-			}, e)
+	// 	for k, ee := range e.MapExpr {
+	// 		bins = append(bins, addBinExpr(ee, reg+1, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinSETKEY{
+	// 				Reg:    reg,
+	// 				Key:    k,
+	// 				RegVal: reg + 1,
+	// 			}, ee)
+	// 	}
+	// case *ast.IdentExpr:
+	// 	bins = appendBin(bins,
+	// 		&BinGET{
+	// 			Reg: reg,
+	// 			Id:  e.Id,
+	// 		}, e)
+	// case *ast.UnaryExpr:
+	// 	bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinUNARY{
+	// 			Reg: reg,
+	// 			Op:  rune(e.Operator[0]),
+	// 		}, e)
 	case *ast.AddrExpr:
 		switch ee := e.Expr.(type) {
 		case *ast.IdentExpr:
