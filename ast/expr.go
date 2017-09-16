@@ -737,6 +737,16 @@ func (x *MakeExpr) Simplify() Expr {
 	return x
 }
 
+func (e *MakeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	if e.TypeExpr == nil {
+		bins.Append(binstmt.NewBinLOAD(reg, core.VMInt(e.Type), true, e))
+	} else {
+		e.TypeExpr.BinTo(bins, reg, lid, false)
+		bins.Append(binstmt.NewBinSETNAME(reg, e))
+	}
+	bins.Append(binstmt.NewBinMAKE(reg, e))
+}
+
 type MakeChanExpr struct {
 	ExprImpl
 	// Type     int //string
