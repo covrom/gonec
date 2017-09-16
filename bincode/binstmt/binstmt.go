@@ -888,11 +888,13 @@ func NewBinGETSUBSLICE(reg, regbegin, regend int, e pos.Pos) *BinGETSUBSLICE {
 type BinFUNC struct {
 	BinStmtImpl
 
-	Reg    int // регистр, в который сохраняется значение определяемой функции типа func
-	Name   int
-	Code   BinCode
-	Args   []int // идентификаторы параметров
-	VarArg bool
+	Reg  int // регистр, в который сохраняется значение определяемой функции типа func
+	Name int
+	// Code   BinCode
+	LabelStart int
+	LabelEnd   int
+	Args       []int // идентификаторы параметров
+	VarArg     bool
 	// ReturnTo int //метка инструкции возврата из функции
 }
 
@@ -920,16 +922,17 @@ func (v BinFUNC) String() string {
 	if v.VarArg {
 		vrg = "..."
 	}
-	return fmt.Sprintf("FUNC r%d, %q, (%s %s)\n{\n%v}\n", v.Reg, env.UniqueNames.Get(v.Name), s, vrg, v.Code)
+	return fmt.Sprintf("FUNC r%d, %q (%s%s) BEGIN L%d END L%d", v.Reg, env.UniqueNames.Get(v.Name), s, vrg, v.LabelStart, v.LabelEnd)
 }
 
-func NewBinFUNC(reg, name int, args []int, code BinCode, vararg bool, e pos.Pos) *BinFUNC {
+func NewBinFUNC(reg, name int, args []int, vararg bool, lbeg, lend int, e pos.Pos) *BinFUNC {
 	v := &BinFUNC{
-		Reg:    reg,
-		Name:   name,
-		Code:   code,
-		Args:   args,
-		VarArg: vararg,
+		Reg:        reg,
+		Name:       name,
+		LabelStart: lbeg,
+		LabelEnd:   lend,
+		Args:       args,
+		VarArg:     vararg,
 	}
 	v.SetPosition(e.Position())
 	return v

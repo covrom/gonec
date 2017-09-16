@@ -1057,56 +1057,56 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 		Go:       e.Go,
 	// 	}, reg, lid, false)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
 
-	case *ast.MemberExpr:
-		// здесь идет только вычисление значения свойства
-		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
-		bins = appendBin(bins,
-			&BinGETMEMBER{
-				Name: e.Name,
-				Reg:  reg,
-			}, e)
-	case *ast.ItemExpr:
-		// только вычисление значения по индексу
-		bins = append(bins, addBinExpr(e.Value, reg, lid, false)...)
-		bins = append(bins, addBinExpr(e.Index, reg+1, lid, false)...)
-		bins = appendBin(bins,
-			&BinGETIDX{
-				Reg:      reg,
-				RegIndex: reg + 1,
-			}, e)
-	case *ast.SliceExpr:
-		// только вычисление субслайса
-		bins = append(bins, addBinExpr(e.Value, reg, lid, false)...)
-		bins = append(bins, addBinExpr(e.Begin, reg+1, lid, false)...)
-		bins = append(bins, addBinExpr(e.End, reg+2, lid, false)...)
-		bins = appendBin(bins,
-			&BinGETSUBSLICE{
-				Reg:      reg,
-				RegBegin: reg + 1,
-				RegEnd:   reg + 2,
-			}, e)
-	case *ast.FuncExpr:
-		// *lid++
-		// lend := *lid
-		bins = appendBin(bins,
-			&BinFUNC{
-				Reg:    reg,
-				Name:   e.Name,
-				Code:   BinaryCode(e.Stmts, 0, lid),
-				Args:   e.Args,
-				VarArg: e.VarArg,
-				// ReturnTo: lend,
-			}, e)
-		// КонецФункции
-		// bins = appendBin(bins,
-		// 	&BinLABEL{
-		// 		Label: lend,
-		// 	}, e)
-		// // возвращаем значения в регистре reg, установленные функцией
-		// bins = appendBin(bins,
-		// 	&BinRET{
-		// 		Reg: reg,
-		// 	}, e)
+	// case *ast.MemberExpr:
+	// 	// здесь идет только вычисление значения свойства
+	// 	bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinGETMEMBER{
+	// 			Name: e.Name,
+	// 			Reg:  reg,
+	// 		}, e)
+	// case *ast.ItemExpr:
+	// 	// только вычисление значения по индексу
+	// 	bins = append(bins, addBinExpr(e.Value, reg, lid, false)...)
+	// 	bins = append(bins, addBinExpr(e.Index, reg+1, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinGETIDX{
+	// 			Reg:      reg,
+	// 			RegIndex: reg + 1,
+	// 		}, e)
+	// case *ast.SliceExpr:
+	// 	// только вычисление субслайса
+	// 	bins = append(bins, addBinExpr(e.Value, reg, lid, false)...)
+	// 	bins = append(bins, addBinExpr(e.Begin, reg+1, lid, false)...)
+	// 	bins = append(bins, addBinExpr(e.End, reg+2, lid, false)...)
+	// 	bins = appendBin(bins,
+	// 		&BinGETSUBSLICE{
+	// 			Reg:      reg,
+	// 			RegBegin: reg + 1,
+	// 			RegEnd:   reg + 2,
+	// 		}, e)
+	// case *ast.FuncExpr:
+	// 	// *lid++
+	// 	// lend := *lid
+	// 	bins = appendBin(bins,
+	// 		&BinFUNC{
+	// 			Reg:    reg,
+	// 			Name:   e.Name,
+	// 			Code:   BinaryCode(e.Stmts, 0, lid),
+	// 			Args:   e.Args,
+	// 			VarArg: e.VarArg,
+	// 			// ReturnTo: lend,
+	// 		}, e)
+	// 	// КонецФункции
+	// 	// bins = appendBin(bins,
+	// 	// 	&BinLABEL{
+	// 	// 		Label: lend,
+	// 	// 	}, e)
+	// 	// // возвращаем значения в регистре reg, установленные функцией
+	// 	// bins = appendBin(bins,
+	// 	// 	&BinRET{
+	// 	// 		Reg: reg,
+	// 	// 	}, e)
 
 	case *ast.TypeCast:
 		bins = append(bins, addBinExpr(e.CastExpr, reg, lid, false)...)

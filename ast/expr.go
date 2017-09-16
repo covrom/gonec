@@ -478,6 +478,11 @@ func (e *MemberExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	bins.Append(binstmt.NewBinSETMEMBER(reg+1, e.Name, reg, e))
 }
 
+func (e *MemberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.Expr.BinTo(bins, reg, lid, false)
+	bins.Append(binstmt.NewBinGETMEMBER(reg, e.Name, e))
+}
+
 // ItemExpr provide expression to refer Map/Array item.
 type ItemExpr struct {
 	ExprImpl
@@ -516,6 +521,12 @@ func (e *ItemExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	ee := e.Value.(CanLetExpr)
 	ee.BinLetTo(bins, reg+1, lid)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
+}
+
+func (e *ItemExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.Value.BinTo(bins, reg, lid, false)
+	e.Index.BinTo(bins, reg+1, lid, false)
+	bins.Append(binstmt.NewBinGETIDX(reg, reg+1, e))
 }
 
 // SliceExpr provide expression to refer slice of Array.
@@ -560,6 +571,13 @@ func (e *SliceExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
+func (e *SliceExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.Value.BinTo(bins, reg, lid, false)
+	e.Begin.BinTo(bins, reg+1, lid, false)
+	e.End.BinTo(bins, reg+2, lid, false)
+	bins.Append(binstmt.NewBinGETSUBSLICE(reg, reg+1, reg+2, e))
+}
+
 // FuncExpr provide function expression.
 type FuncExpr struct {
 	ExprImpl
@@ -576,6 +594,17 @@ func (x *FuncExpr) Simplify() Expr {
 	return x
 }
 
+func (e *FuncExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	*lid++
+	lstart := *lid
+	*lid++
+	lend := *lid
+	bins.Append(binstmt.NewBinFUNC(reg, e.Name, e.Args, e.VarArg, lstart, lend, e))
+	bins.Append(binstmt.NewBinLABEL(lstart, e))
+	e.Stmts.BinTo(bins, reg, lid)
+	bins.Append(binstmt.NewBinLABEL(lend, e))
+}
+
 // LetExpr provide expression to let variable.
 type LetExpr struct {
 	ExprImpl
@@ -588,6 +617,13 @@ func (x *LetExpr) Simplify() Expr {
 	x.Rhs = x.Rhs.Simplify()
 	return x
 }
+
+func (e *LetExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+	e.Rhs.BinTo(bins, reg, lid, false)
+	e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
+}
+
+func (e *LetExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {}
 
 // LetsExpr provide multiple expression of let.
 // type LetsExpr struct {

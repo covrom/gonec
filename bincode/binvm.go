@@ -57,7 +57,7 @@ func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
 	return prs, bin, err
 }
 
-func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
+func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -72,6 +72,13 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 		// }
 	}()
 
+	const (
+		LastNone uint64 = 0
+		LastSet  uint64 = 1 << iota
+	)
+
+	flagset := LastNone
+	
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 	regs := NewVMRegs(stmts)
 
@@ -606,6 +613,9 @@ func Run(stmts BinCode, env *envir.Env) (retval interface{}, reterr error) {
 			regs.Set(s.RegL, r)
 
 		case *BinCALL:
+			
+			// TODO: сохранять все текущее состояние в стэке, включая набор меток перехода, т.к. в функциях модулей они могут повторяться
+
 			var err error
 
 			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
