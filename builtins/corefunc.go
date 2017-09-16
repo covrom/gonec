@@ -32,7 +32,7 @@ func (f VMMeth) Interface() interface{} {
 }
 
 func (f VMMeth) Func() VMFunc {
-	// возвращает обертку, которая потребует первым параметром ссылку на объект метаданных (интерфейс VMMetaStructer)
+	// возвращает обертку, которая потребует первым параметром ссылку на объект метаданных (интерфейс VMMetaObject)
 	return VMFunc(func(args ...interface{}) (interface{}, error) {
 		as := make(VMSlice, len(args))
 		for i := range args {

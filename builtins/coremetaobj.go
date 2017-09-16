@@ -12,21 +12,21 @@ import (
 type VMMetaObj struct {
 	vmMetaCacheM map[int]int
 	vmMetaCacheF map[int][]int
-	vmOriginal   VMMetaStructer
+	vmOriginal   VMMetaObject
 }
 
 func (v *VMMetaObj) vmval() {}
 
 func (v *VMMetaObj) Interface() interface{} {
 	// возвращает ссылку на структуру, от которой был вызван метод VMCacheMembers
-	//rv:=*(*VMMetaStructer)(v.vmOriginal)
+	//rv:=*(*VMMetaObject)(v.vmOriginal)
 	return v.vmOriginal
 }
 
-// VMCacheMembers кэширует все поля и методы ссылки на объединенную структуру в VMMetaStructer
+// VMCacheMembers кэширует все поля и методы ссылки на объединенную структуру в VMMetaObject
 // Вызывать эту функцию надо так:
 // v:=&struct{VMMetaObj, a int}{}; v.VMCacheMembers(v)
-func (v *VMMetaObj) VMCacheMembers(vv VMMetaStructer) {
+func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 	v.vmMetaCacheM = make(map[int]int)
 	v.vmMetaCacheF = make(map[int][]int)
 	v.vmOriginal = vv

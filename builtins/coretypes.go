@@ -156,7 +156,7 @@ func ReflectToVMValue(rv reflect.Value) VMInterfacer {
 			return v
 		case VMDateTimer:
 			return v
-		case VMMetaStructer:
+		case VMMetaObject:
 			return v
 		}
 	}
