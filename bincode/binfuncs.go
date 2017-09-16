@@ -51,27 +51,6 @@ func ToString(v interface{}) string {
 	return fmt.Sprint(v)
 }
 
-func ToBool(v interface{}) bool {
-
-	switch v.(type) {
-	case float32, float64:
-		return ToFloat64(v) != 0.0
-	case int, int32, int64:
-		return ToInt64(v) != 0
-	case bool:
-		return v.(bool)
-	case string:
-		vlow := strings.ToLower(v.(string))
-		if vlow == "true" || vlow == "истина" {
-			return true
-		}
-		if ToInt64(v) != 0 {
-			return true
-		}
-	}
-	return false
-}
-
 func ToFloat64(v interface{}) float64 {
 	switch x := v.(type) {
 	case float32:

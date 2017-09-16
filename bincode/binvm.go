@@ -73,21 +73,11 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 		// }
 	}()
 
-	const (
-		LastNone uint64 = 0
-		LastSet  uint64 = 1 << iota
-	)
-
-	flagset := LastNone
-
-	// подготавливаем состояние машины: регистры значений, управляющие регистры
-	regs := NewVMRegs(stmts,env)
-
 	// стандартная библиотека - загружаем, если она еще не была загружена в это или в родительское окружение
 
 	if !env.IsBuiltsLoaded() {
 		// эту функцию определяем тут, чтобы исключить циклические зависимости пакетов
-		env.DefineS("загрузитьивыполнить", func(s string) interface{} {
+		env.DefineS("загрузитьивыполнить", func(s string) core.VMValuer {
 			body, err := ioutil.ReadFile(s)
 			if err != nil {
 				panic(err)
@@ -129,6 +119,17 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 		core.LoadAllBuiltins(env)
 	}
 
+	// подготавливаем состояние машины: регистры значений, управляющие регистры
+
+	const (
+		LastNone uint64 = 0
+		// LastSet  uint64 = 1 << iota
+	)
+
+	flagset := LastNone
+
+	regs := NewVMRegs(stmts, env)
+
 	goschedidx := 0
 
 	var (
@@ -144,7 +145,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			goschedidx = 0
 		}
 
-		if env.CheckInterrupt() {
+		if regs.Env.CheckInterrupt() {
 			// проверяем, был ли прерван интерпретатор
 			return nil, binstmt.InterruptError
 		}
@@ -157,9 +158,13 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			continue
 
 		case *binstmt.BinJFALSE:
-			if ok := ToBool(regs.Reg[s.Reg]); !ok {
-				idx = regs.Labels[s.JumpTo]
-				continue
+			if b, ok := regs.Reg[s.Reg].(core.VMBooler); ok {
+				if !b.Bool() {
+					idx = regs.Labels[s.JumpTo]
+					continue
+				}
+			} else {
+				return nil, binstmt.NewStringError(s, "Невозможно определить значение булево")
 			}
 
 		case *binstmt.BinJTRUE:
