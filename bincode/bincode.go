@@ -1010,41 +1010,41 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 			Label: lend,
 	// 		}, e)
 
-	case *ast.CallExpr:
-		// если это анонимный вызов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg
-		var regoff int
-		if e.Name == 0 {
-			regoff = 1
-		}
+	// case *ast.CallExpr:
+	// 	// если это анонимный вызов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg
+	// 	var regoff int
+	// 	if e.Name == 0 {
+	// 		regoff = 1
+	// 	}
 
-		// помещаем аргументы в массив аргументов в reg
-		bins = appendBin(bins,
-			&BinMAKESLICE{
-				Reg: reg + regoff,
-				Len: len(e.SubExprs),
-				Cap: len(e.SubExprs),
-			}, e)
+	// 	// помещаем аргументы в массив аргументов в reg
+	// 	bins = appendBin(bins,
+	// 		&BinMAKESLICE{
+	// 			Reg: reg + regoff,
+	// 			Len: len(e.SubExprs),
+	// 			Cap: len(e.SubExprs),
+	// 		}, e)
 
-		for i, ee := range e.SubExprs {
-			// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-			bins = append(bins, addBinExpr(ee, reg+1+regoff, lid, false)...)
-			bins = appendBin(bins,
-				&BinSETIDX{
-					Reg:    reg + regoff,
-					Index:  i,
-					RegVal: reg + 1 + regoff,
-				}, ee)
-		}
+	// 	for i, ee := range e.SubExprs {
+	// 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
+	// 		bins = append(bins, addBinExpr(ee, reg+1+regoff, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinSETIDX{
+	// 				Reg:    reg + regoff,
+	// 				Index:  i,
+	// 				RegVal: reg + 1 + regoff,
+	// 			}, ee)
+	// 	}
 
-		bins = appendBin(bins,
-			&BinCALL{
-				Name:    e.Name,
-				NumArgs: len(e.SubExprs),
-				RegArgs: reg, // для анонимных (Name==0) - тут будет функция, иначе первый аргумент (см. выше)
-				VarArg:  e.VarArg,
-				Go:      e.Go,
-				RegRets: reg,
-			}, e)
+	// 	bins = appendBin(bins,
+	// 		&BinCALL{
+	// 			Name:    e.Name,
+	// 			NumArgs: len(e.SubExprs),
+	// 			RegArgs: reg, // для анонимных (Name==0) - тут будет функция, иначе первый аргумент (см. выше)
+	// 			VarArg:  e.VarArg,
+	// 			Go:      e.Go,
+	// 			RegRets: reg,
+	// 		}, e)
 
 	case *ast.AnonCallExpr:
 		// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
