@@ -35,7 +35,7 @@ type Env struct {
 }
 
 // NewEnv creates new global scope.
-// !!!не забывать вызывать gonec_core.LoadAllBuiltins(m)!!!
+// !!!не забывать вызывать core.LoadAllBuiltins(m)!!!
 func NewEnv() *Env {
 	b := false
 

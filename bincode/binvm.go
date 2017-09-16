@@ -11,7 +11,8 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/ast"
-	gonec_core "github.com/covrom/gonec/builtins"
+	"github.com/covrom/gonec/bincode/binstmt"
+	core "github.com/covrom/gonec/builtins"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 )
@@ -21,7 +22,7 @@ func Interrupt(env *envir.Env) {
 }
 
 // ParserSrc provides way to parse the code from source.
-func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
+func ParseSrc(src string) (prs []ast.Stmt, bin binstmt.BinCode, err error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -57,7 +58,7 @@ func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
 	return prs, bin, err
 }
 
-func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
+func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -125,7 +126,7 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 			return nil
 		})
 
-		gonec_core.LoadAllBuiltins(env)
+		core.LoadAllBuiltins(env)
 	}
 
 	goschedidx := 0
@@ -198,20 +199,20 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 			regs.Set(s.Reg, v)
 
 		case *BinMAKESLICE:
-			regs.Set(s.Reg, make(gonec_core.VMSlice, s.Len, s.Cap))
+			regs.Set(s.Reg, make(core.VMSlice, s.Len, s.Cap))
 
 		case *BinSETIDX:
-			if v, ok := regs.Reg[s.Reg].(gonec_core.VMSlice); ok {
+			if v, ok := regs.Reg[s.Reg].(core.VMSlice); ok {
 				v[s.Index] = regs.Reg[s.RegVal]
 			} else {
 				catcherr = NewStringError(stmt, "Невозможно изменить значение по индексу")
 				break
 			}
 		case *BinMAKEMAP:
-			regs.Set(s.Reg, make(gonec_core.VMStringMap, s.Len))
+			regs.Set(s.Reg, make(core.VMStringMap, s.Len))
 
 		case *BinSETKEY:
-			if v, ok := regs.Reg[s.Reg].(gonec_core.VMStringMap); ok {
+			if v, ok := regs.Reg[s.Reg].(core.VMStringMap); ok {
 				v[s.Key] = regs.Reg[s.RegVal]
 			} else {
 				catcherr = NewStringError(stmt, "Невозможно изменить значение по ключу")
@@ -633,17 +634,17 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 				fgnc = fgncv.Interface()
 				argssl = regs.Reg[s.RegArgs]
 			}
-			if fnc, ok := fgnc.(gonec_core.VMFunc); ok {
+			if fnc, ok := fgnc.(core.VMFunc); ok {
 				// если ее надо вызвать в горутине - вызываем
 				if s.Go {
 					env.SetGoRunned(true)
-					go fnc(argssl.(gonec_core.VMSlice)...)
+					go fnc(argssl.(core.VMSlice)...)
 					regs.Set(s.RegRets, nil)
 					break
 				}
 
 				// не в горутине
-				ret, err := fnc(argssl.(gonec_core.VMSlice)...)
+				ret, err := fnc(argssl.(core.VMSlice)...)
 
 				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
 				// и аналогично проверить значения в переданных указателях
@@ -690,7 +691,7 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 							arg = arg.Convert(it)
 
 						} else if arg.Kind() == reflect.Func {
-							if _, isFunc := arg.Interface().(gonec_core.VMFunc); isFunc {
+							if _, isFunc := arg.Interface().(core.VMFunc); isFunc {
 								// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
 								rfunc := arg
 								if s.Go {
@@ -761,7 +762,7 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 					for _, r := range rets {
 						result = append(result, r.Interface())
 					}
-					return gonec_core.VMSlice(result), nil // массив возвращаемых значений
+					return core.VMSlice(result), nil // массив возвращаемых значений
 				}
 			}
 
@@ -787,7 +788,7 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 			regs.Set(s.RegRets, ret)
 
 		case *BinFUNC:
-			f := func(expr *BinFUNC, env *envir.Env) gonec_core.VMFunc {
+			f := func(expr *BinFUNC, env *envir.Env) core.VMFunc {
 				return func(args ...interface{}) (interface{}, error) {
 					if !expr.VarArg {
 						if len(args) != len(expr.Args) {
@@ -871,13 +872,13 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
 				break
 			}
-			v := make(gonec_core.VMChannel, size)
+			v := make(core.VMChannel, size)
 			regs.Set(s.Reg, v)
 
 		case *BinMAKEARR:
 			alen := int(ToInt64(regs.Reg[s.Reg]))
 			acap := int(ToInt64(regs.Reg[s.RegCap]))
-			v := make(gonec_core.VMSlice, alen, acap)
+			v := make(core.VMSlice, alen, acap)
 			regs.Set(s.Reg, v)
 
 		case *BinCHANRECV:
