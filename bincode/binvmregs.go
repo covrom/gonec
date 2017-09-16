@@ -1,21 +1,24 @@
 package bincode
 
+import (
+	"github.com/covrom/gonec/bincode/binstmt"
+	"github.com/covrom/gonec/builtins"
+)
+
 // Регистры виртуальной машины
 
 type VMRegs struct {
-	Reg          []interface{} // регистры значений
-	Labels       map[int]int   // [label]=index в BinCode
-	TryLabel     []int         // последний элемент - это метка на текущий обработчик CATCH
-	TryRegErr    []int         // последний элемент - это регистр с ошибкой текущего обработчика
-	ForBreaks    []int         // последний элемент - это метка для break
-	ForContinues []int         // последний элемент - это метка для continue
+	Reg          []core.VMValuer // регистры значений
+	Labels       []int           // [label]=index в BinCode
+	TryLabel     []int           // последний элемент - это метка на текущий обработчик CATCH
+	TryRegErr    []int           // последний элемент - это регистр с ошибкой текущего обработчика
+	ForBreaks    []int           // последний элемент - это метка для break
+	ForContinues []int           // последний элемент - это метка для continue
 }
 
-const initlenregs = 20
-
-func NewVMRegs(stmts BinCode) *VMRegs {
+func NewVMRegs(stmts binstmt.BinCode) *VMRegs {
 	return &VMRegs{
-		Reg:          make([]interface{}, initlenregs),
+		Reg:          make([]core.VMValuer, 0, 5),
 		Labels:       stmts.Labels,
 		TryLabel:     make([]int, 0, 5),
 		TryRegErr:    make([]int, 0, 5),
@@ -29,7 +32,7 @@ func (v *VMRegs) Set(reg int, val interface{}) {
 		v.Reg[reg] = val
 	} else {
 		for reg >= len(v.Reg) {
-			v.Reg = append(v.Reg, make([]interface{}, initlenregs)...)
+			v.Reg = append(v.Reg, nil)
 		}
 		v.Reg[reg] = val
 	}
@@ -38,9 +41,14 @@ func (v *VMRegs) Set(reg int, val interface{}) {
 func (v *VMRegs) FreeFromReg(reg int) {
 	// освобождаем память, начиная с reg, для сборщика мусора
 	// v.Reg = v.Reg[:reg]
-	for i := reg; i < len(v.Reg); i++ {
-		v.Reg[i] = nil
+	if reg<len(v.Reg){
+		cl:=[len(v.Reg)-reg]core.VMValuer
+		copy(v.Reg[reg:],cl)
 	}
+
+	// for i := reg; i < len(v.Reg); i++ {
+	// 	v.Reg[i] = nil
+	// }
 }
 
 func (v *VMRegs) PushTry(reg, label int) {

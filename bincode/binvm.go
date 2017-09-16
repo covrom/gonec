@@ -12,7 +12,7 @@ import (
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/bincode/binstmt"
-	core "github.com/covrom/gonec/builtins"
+	"github.com/covrom/gonec/builtins"
 	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 )
@@ -46,7 +46,7 @@ func ParseSrc(src string) (prs []ast.Stmt, bin binstmt.BinCode, err error) {
 
 	prs, err = parser.Parse(scanner)
 	if err != nil {
-		return prs, BinCode{}, err
+		panic(err)
 	}
 	// оптимизируем дерево AST
 	// свертка констант и нативные значения
@@ -58,7 +58,7 @@ func ParseSrc(src string) (prs []ast.Stmt, bin binstmt.BinCode, err error) {
 	return prs, bin, err
 }
 
-func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
+func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
