@@ -1129,25 +1129,25 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 			Reg:     reg,
 	// 			TypeReg: reg + 1,
 	// 		}, e)
-	case *ast.MakeExpr:
-		if e.TypeExpr == nil {
-			bins = appendBin(bins,
-				&BinLOAD{
-					Reg:  reg,
-					Val:  e.Type,
-					IsId: true,
-				}, e)
-		} else {
-			bins = append(bins, addBinExpr(e.TypeExpr, reg, lid, false)...)
-			bins = appendBin(bins,
-				&BinSETNAME{
-					Reg: reg,
-				}, e)
-		}
-		bins = appendBin(bins,
-			&BinMAKE{
-				Reg: reg,
-			}, e)
+	// case *ast.MakeExpr:
+	// 	if e.TypeExpr == nil {
+	// 		bins = appendBin(bins,
+	// 			&BinLOAD{
+	// 				Reg:  reg,
+	// 				Val:  e.Type,
+	// 				IsId: true,
+	// 			}, e)
+	// 	} else {
+	// 		bins = append(bins, addBinExpr(e.TypeExpr, reg, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinSETNAME{
+	// 				Reg: reg,
+	// 			}, e)
+	// 	}
+	// 	bins = appendBin(bins,
+	// 		&BinMAKE{
+	// 			Reg: reg,
+	// 		}, e)
 	case *ast.MakeChanExpr:
 		if e.SizeExpr == nil {
 			bins = appendBin(bins,
