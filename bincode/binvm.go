@@ -168,9 +168,13 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 
 		case *binstmt.BinJTRUE:
-			if ok := ToBool(regs.Reg[s.Reg]); ok {
-				idx = regs.Labels[s.JumpTo]
-				continue
+			if b, ok := regs.Reg[s.Reg].(core.VMBooler); ok {
+				if b.Bool() {
+					idx = regs.Labels[s.JumpTo]
+					continue
+				}
+			} else {
+				return nil, binstmt.NewStringError(s, "Невозможно определить значение булево")
 			}
 
 		case *binstmt.BinLABEL:
