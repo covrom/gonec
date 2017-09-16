@@ -63,7 +63,7 @@ type (
 		Int() int64
 		Float() float64
 		Decimal() VMDecimal
-		InvokeNumber() (VMNumberer, error)
+		InvokeNumber() (VMNumberer, error) // извлекает VMInt или VMDecimal, в зависимости от наличия .eE
 	}
 
 	// VMBooler сообщает значение булево
