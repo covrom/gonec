@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/ast"
+	posit "github.com/covrom/gonec/pos"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 // It can be Error inteface with type cast which can call Pos().
 type Error struct {
 	Message  string
-	Pos      ast.Position
+	Pos      posit.Position
 	Filename string
 	Fatal    bool
 }
@@ -122,7 +123,7 @@ func (s *Scanner) Init(src string) {
 }
 
 // Scan analyses token, and decide identify or literals.
-func (s *Scanner) Scan() (tok int, lit string, pos ast.Position, err error) {
+func (s *Scanner) Scan() (tok int, lit string, pos posit.Position, err error) {
 	if s.typecast {
 		//вставляем название типа
 		s.typecast = false
@@ -480,8 +481,8 @@ func (s *Scanner) reachEOF() bool {
 }
 
 // pos returns the position of current.
-func (s *Scanner) pos() ast.Position {
-	return ast.Position{Line: s.line + 1, Column: s.offset - s.lineHead + 1}
+func (s *Scanner) pos() posit.Position {
+	return posit.Position{Line: s.line + 1, Column: s.offset - s.lineHead + 1}
 }
 
 // skipBlank moves position into non-black character.
@@ -610,7 +611,7 @@ eos:
 type Lexer struct {
 	s     *Scanner
 	lit   string
-	pos   ast.Position
+	pos   posit.Position
 	e     error
 	stmts []ast.Stmt
 }
