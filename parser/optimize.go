@@ -6,7 +6,7 @@ import (
 
 // TODO: переделать на универсальную рефлексию перебора полей структур
 
-func ConstFolding(inast []ast.Stmt) []ast.Stmt {
+func ConstFolding(inast ast.Stmts) ast.Stmts {
 	for i := range inast {
 		inast[i].Simplify()
 	}

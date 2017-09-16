@@ -613,7 +613,7 @@ type Lexer struct {
 	lit   string
 	pos   posit.Position
 	e     error
-	stmts []ast.Stmt
+	stmts ast.Stmts
 }
 
 // Lex scans the token and literals.
@@ -635,7 +635,7 @@ func (l *Lexer) Error(msg string) {
 }
 
 // Parser provides way to parse the code using Scanner.
-func Parse(s *Scanner) ([]ast.Stmt, error) {
+func Parse(s *Scanner) (ast.Stmts, error) {
 	l := Lexer{s: s}
 	if yyParse(&l) != 0 {
 		return nil, l.e

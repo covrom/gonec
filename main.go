@@ -148,7 +148,7 @@ func main() {
 
 		var (
 			bins bincode.BinCode
-			// stmts          []ast.Stmt
+			// stmts          ast.Stmts
 			err            error
 			tstart         time.Time
 			tsParse, tsRun time.Duration

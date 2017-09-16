@@ -28,16 +28,16 @@ import (
 %type<expr_idents> expr_idents
 
 %union{
-	compstmt               []ast.Stmt
-	modules                []ast.Stmt
+	compstmt               ast.Stmts
+	modules                ast.Stmts
 	module                 ast.Stmt
 	stmt_if                ast.Stmt
 	stmt_default           ast.Stmt
 	stmt_elsif             ast.Stmt
-	stmt_elsifs            []ast.Stmt
+	stmt_elsifs            ast.Stmts
 	stmt_case              ast.Stmt
-	stmt_cases             []ast.Stmt
-	stmts                  []ast.Stmt
+	stmt_cases             ast.Stmts
+	stmts                  ast.Stmts
 	stmt                   ast.Stmt
 	typ                    ast.Type
 	expr                   ast.Expr
@@ -77,7 +77,7 @@ modules :
 	}
 	| module
 	{
-		$$ = []ast.Stmt{$1}
+		$$ = ast.Stmts{$1}
 		if l, ok := yylex.(*Lexer); ok {
 			l.stmts = $$
 		}
@@ -114,7 +114,7 @@ stmts :
 	}
 	| opt_terms stmt
 	{
-		$$ = []ast.Stmt{$2}
+		$$ = ast.Stmts{$2}
 	}
 	| stmts terms stmt
 	{
@@ -204,7 +204,7 @@ stmt :
 
 stmt_elsifs:
 	{
-		$$ = []ast.Stmt{}
+		$$ = ast.Stmts{}
 	}
 	| stmt_elsifs stmt_elsif
 	{
@@ -231,15 +231,15 @@ stmt_if :
 
 stmt_cases :
 	{
-		$$ = []ast.Stmt{}
+		$$ = ast.Stmts{}
 	}
 	| opt_terms stmt_case
 	{
-		$$ = []ast.Stmt{$2}
+		$$ = ast.Stmts{$2}
 	}
 	| opt_terms stmt_default
 	{
-		$$ = []ast.Stmt{$2}
+		$$ = ast.Stmts{$2}
 	}
 	| stmt_cases stmt_case
 	{

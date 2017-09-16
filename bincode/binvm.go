@@ -22,7 +22,7 @@ func Interrupt(env *envir.Env) {
 }
 
 // ParserSrc provides way to parse the code from source.
-func ParseSrc(src string) (prs []ast.Stmt, bin binstmt.BinCode, err error) {
+func ParseSrc(src string) (prs ast.Stmts, bin binstmt.BinCode, err error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -81,7 +81,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 	flagset := LastNone
 
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
-	regs := NewVMRegs(stmts)
+	regs := NewVMRegs(stmts,env)
 
 	// стандартная библиотека - загружаем, если она еще не была загружена в это или в родительское окружение
 
@@ -95,7 +95,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			isGNX := strings.HasSuffix(strings.ToLower(s), ".gnx")
 			if isGNX {
 				bbuf := bytes.NewBuffer(body)
-				bins, err := ReadBinCode(bbuf)
+				bins, err := binstmt.ReadBinCode(bbuf)
 				if err != nil {
 					panic(err)
 				}
@@ -146,83 +146,83 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 		if env.CheckInterrupt() {
 			// проверяем, был ли прерван интерпретатор
-			return nil, InterruptError
+			return nil, binstmt.InterruptError
 		}
 
 		stmt := stmts.Code[idx]
 		switch s := stmt.(type) {
 
-		case *BinJMP:
+		case *binstmt.BinJMP:
 			idx = regs.Labels[s.JumpTo]
 			continue
 
-		case *BinJFALSE:
+		case *binstmt.BinJFALSE:
 			if ok := ToBool(regs.Reg[s.Reg]); !ok {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
 
-		case *BinJTRUE:
+		case *binstmt.BinJTRUE:
 			if ok := ToBool(regs.Reg[s.Reg]); ok {
 				idx = regs.Labels[s.JumpTo]
 				continue
 			}
 
-		case *BinLABEL:
+		case *binstmt.BinLABEL:
 			// пропускаем
 
-		case *BinLOAD:
+		case *binstmt.BinLOAD:
 			regs.Set(s.Reg, s.Val)
 
-		case *BinMV:
+		case *binstmt.BinMV:
 			regs.Set(s.RegTo, regs.Reg[s.RegFrom])
 
-		case *BinEQUAL:
+		case *binstmt.BinEQUAL:
 
 			regs.Set(s.Reg, Equal(regs.Reg[s.Reg1], regs.Reg[s.Reg2]))
 
-		case *BinCASTNUM:
+		case *binstmt.BinCASTNUM:
 			// ошибки обрабатываем в попытке
-			var str string
+			var str core.VMString
 			var ok bool
-			if str, ok = regs.Reg[s.Reg].(string); !ok {
+			if str, ok = regs.Reg[s.Reg].(core.VMString); !ok {
 				regs.Set(s.Reg, nil)
-				catcherr = NewStringError(stmt, "Литерал должен быть числом")
+				catcherr = binstmt.NewStringError(stmt, "Литерал должен быть числом")
 				break
 			}
 			v, err := InvokeNumber(str)
 			if err != nil {
 				regs.Set(s.Reg, nil)
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			regs.Set(s.Reg, v)
 
-		case *BinMAKESLICE:
+		case *binstmt.BinMAKESLICE:
 			regs.Set(s.Reg, make(core.VMSlice, s.Len, s.Cap))
 
-		case *BinSETIDX:
+		case *binstmt.BinSETIDX:
 			if v, ok := regs.Reg[s.Reg].(core.VMSlice); ok {
 				v[s.Index] = regs.Reg[s.RegVal]
 			} else {
-				catcherr = NewStringError(stmt, "Невозможно изменить значение по индексу")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно изменить значение по индексу")
 				break
 			}
-		case *BinMAKEMAP:
+		case *binstmt.BinMAKEMAP:
 			regs.Set(s.Reg, make(core.VMStringMap, s.Len))
 
-		case *BinSETKEY:
+		case *binstmt.BinSETKEY:
 			if v, ok := regs.Reg[s.Reg].(core.VMStringMap); ok {
 				v[s.Key] = regs.Reg[s.RegVal]
 			} else {
-				catcherr = NewStringError(stmt, "Невозможно изменить значение по ключу")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно изменить значение по ключу")
 				break
 			}
 
-		case *BinGET:
+		case *binstmt.BinGET:
 			v, err := env.Get(s.Id)
 			if err != nil {
-				catcherr = NewStringError(stmt, "Невозможно получить значение")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
 				break
 			}
 			if !v.IsValid() {
@@ -231,10 +231,10 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				regs.Set(s.Reg, v.Interface())
 			}
 
-		case *BinSET:
+		case *binstmt.BinSET:
 			env.Define(s.Id, regs.Reg[s.Reg])
 
-		case *BinSETMEMBER:
+		case *binstmt.BinSETMEMBER:
 
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
@@ -260,22 +260,22 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				v.SetMapIndex(reflect.ValueOf(envir.UniqueNames.Get(s.Id)), rv)
 			default:
 				if !v.CanSet() {
-					catcherr = NewStringError(stmt, "Невозможно установить значение")
+					catcherr = binstmt.NewStringError(stmt, "Невозможно установить значение")
 					break
 				}
 				v.Set(rv)
 			}
 
-		case *BinSETNAME:
-			v, ok := regs.Reg[s.Reg].(string)
+		case *binstmt.BinSETNAME:
+			v, ok := regs.Reg[s.Reg].(core.VMString)
 			if !ok {
-				catcherr = NewStringError(stmt, "Имя типа должно быть строкой")
+				catcherr = binstmt.NewStringError(stmt, "Имя типа должно быть строкой")
 				break
 			}
 			eType := envir.UniqueNames.Set(v)
 			regs.Set(s.Reg, eType)
 
-		case *BinSETITEM:
+		case *binstmt.BinSETITEM:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
@@ -286,7 +286,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 			case reflect.Array, reflect.Slice:
 				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 					break
 				}
 				ii := int(i.Int())
@@ -294,26 +294,26 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					ii += v.Len()
 				}
 				if ii < 0 || ii >= v.Len() {
-					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
 					break
 				}
 
 				// для элементов массивов и слайсов это работает, а для строк - нет
 				vv := v.Index(ii)
 				if !vv.CanSet() {
-					catcherr = NewStringError(stmt, "Невозможно установить значение")
+					catcherr = binstmt.NewStringError(stmt, "Невозможно установить значение")
 					break
 				}
 				vv.Set(rv)
 
 			case reflect.String:
 				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 					break
 				}
 				rvs := []rune(rv.String())
 				if len(rvs) != 1 {
-					catcherr = NewStringError(stmt, "Длина присваиваемой строки должна быть ровно один символ")
+					catcherr = binstmt.NewStringError(stmt, "Длина присваиваемой строки должна быть ровно один символ")
 					break
 				}
 				r := []rune(v.String())
@@ -323,7 +323,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					ii += vlen
 				}
 				if ii < 0 || ii >= vlen {
-					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
 					break
 				}
 				// заменяем руну
@@ -335,17 +335,17 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 			case reflect.Map:
 				if i.Kind() != reflect.String {
-					catcherr = NewStringError(stmt, "Ключ должен быть строкой")
+					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
 					break
 				}
 				v.SetMapIndex(i, rv)
 
 			default:
-				catcherr = NewStringError(stmt, "Неверная операция")
+				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break
 			}
 
-		case *BinSETSLICE:
+		case *binstmt.BinSETSLICE:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
@@ -358,29 +358,29 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				vlen := v.Len()
 				ii, ij, err := LeftRightBounds(rb, re, vlen)
 				if err != nil {
-					catcherr = NewError(stmt, err)
+					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
 				if ij < ii {
-					catcherr = NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
+					catcherr = binstmt.NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
 					break
 				}
 				vv := v.Slice(ii, ij)
 				if vv.Len() != rv.Len() {
-					catcherr = NewStringError(stmt, "Размер массива должен быть равен ширине диапазона")
+					catcherr = binstmt.NewStringError(stmt, "Размер массива должен быть равен ширине диапазона")
 					break
 				}
 				reflect.Copy(vv, rv)
 			case reflect.String:
 				r, ii, ij, err := StringToRuneSliceAt(v, rb, re)
 				if err != nil {
-					catcherr = NewError(stmt, err)
+					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
 
 				rvs := []rune(rv.String())
 				if len(rvs) != len(r[ii:ij]) {
-					catcherr = NewStringError(stmt, "Длина строки должна быть равна длине диапазона")
+					catcherr = binstmt.NewStringError(stmt, "Длина строки должна быть равна длине диапазона")
 					break
 				}
 
@@ -391,11 +391,11 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				regs.Set(s.RegNeedLet, true)
 
 			default:
-				catcherr = NewStringError(stmt, "Неверная операция")
+				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break
 			}
 
-		case *BinUNARY:
+		case *binstmt.BinUNARY:
 			switch s.Op {
 			case '-':
 				if x, ok := regs.Reg[s.Reg].(float64); ok {
@@ -403,46 +403,46 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				} else if x, ok := regs.Reg[s.Reg].(int64); ok {
 					regs.Set(s.Reg, -x)
 				} else {
-					catcherr = NewStringError(stmt, "Операция применима только к числам")
+					catcherr = binstmt.NewStringError(stmt, "Операция применима только к числам")
 					break
 				}
 			case '^':
 				if x, ok := regs.Reg[s.Reg].(int64); ok {
 					regs.Set(s.Reg, ^x)
 				} else {
-					catcherr = NewStringError(stmt, "Операция применима только к целым числам")
+					catcherr = binstmt.NewStringError(stmt, "Операция применима только к целым числам")
 					break
 				}
 			case '!':
 				regs.Set(s.Reg, !ToBool(regs.Reg[s.Reg]))
 			default:
-				catcherr = NewStringError(stmt, "Неизвестный оператор")
+				catcherr = binstmt.NewStringError(stmt, "Неизвестный оператор")
 				break
 			}
 
-		case *BinADDRID:
+		case *binstmt.BinADDRID:
 			v, err := env.Get(s.Name)
 			if err != nil {
-				catcherr = NewStringError(stmt, "Невозможно получить значение")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
 				break
 			}
 			if !v.CanAddr() {
-				catcherr = NewStringError(stmt, "Невозможно получить адрес значения")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
 				break
 			}
 			regs.Set(s.Reg, v.Addr().Interface())
 
-		case *BinADDRMBR:
+		case *binstmt.BinADDRMBR:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := refregs.Index(s.Reg).Elem()
 			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
-					catcherr = NewStringError(stmt, "Значение не найдено")
+					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
 					break
 				}
 				if !m.CanAddr() {
-					catcherr = NewStringError(stmt, "Невозможно получить адрес значения")
+					catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
 					break
 				}
 				regs.Set(s.Reg, m.Addr().Interface())
@@ -450,38 +450,38 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			m, err := GetMember(v, s.Name, s)
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			if !m.CanAddr() {
-				catcherr = NewStringError(stmt, "Невозможно получить адрес значения")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
 				break
 			}
 			regs.Set(s.Reg, m.Addr().Interface())
 
-		case *BinUNREFID:
+		case *binstmt.BinUNREFID:
 			v, err := env.Get(s.Name)
 			if err != nil {
-				catcherr = NewStringError(stmt, "Невозможно получить значение")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
 				break
 			}
 			if v.Kind() != reflect.Ptr {
-				catcherr = NewStringError(stmt, "Отсутствует ссылка на значение")
+				catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
 				break
 			}
 			regs.Set(s.Reg, v.Elem().Interface())
 
-		case *BinUNREFMBR:
+		case *binstmt.BinUNREFMBR:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := refregs.Index(s.Reg).Elem()
 			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
-					catcherr = NewStringError(stmt, "Значение не найдено")
+					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
 					break
 				}
 				if m.Kind() != reflect.Ptr {
-					catcherr = NewStringError(stmt, "Отсутствует ссылка на значение")
+					catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
 					break
 				}
 				regs.Set(s.Reg, m.Elem().Interface())
@@ -489,22 +489,22 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			m, err := GetMember(v, s.Name, s)
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			if m.Kind() != reflect.Ptr {
-				catcherr = NewStringError(stmt, "Отсутствует ссылка на значение")
+				catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
 				break
 			}
 			regs.Set(s.Reg, m.Elem().Interface())
 
-		case *BinGETMEMBER:
+		case *binstmt.BinGETMEMBER:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := refregs.Index(s.Reg).Elem()
 			if vme, ok := v.Interface().(*envir.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
-					catcherr = NewStringError(stmt, "Значение не найдено")
+					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
 					break
 				}
 				regs.Set(s.Reg, m.Interface())
@@ -512,12 +512,12 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			m, err := GetMember(v, s.Name, s)
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			regs.Set(s.Reg, m.Interface())
 
-		case *BinGETIDX:
+		case *binstmt.BinGETIDX:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
@@ -526,7 +526,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 			case reflect.Array, reflect.Slice:
 				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 					break
 				}
 				ii := int(i.Int())
@@ -534,7 +534,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					ii += v.Len()
 				}
 				if ii < 0 || ii >= v.Len() {
-					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
 					break
 				}
 
@@ -542,7 +542,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 			case reflect.String:
 				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-					catcherr = NewStringError(stmt, "Индекс должен быть целым числом")
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 					break
 				}
 				r := []rune(v.String())
@@ -552,24 +552,24 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					ii += vlen
 				}
 				if ii < 0 || ii >= vlen {
-					catcherr = NewStringError(stmt, "Индекс за пределами границ")
+					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
 					break
 				}
 				regs.Set(s.Reg, string(r[ii]))
 
 			case reflect.Map:
 				if i.Kind() != reflect.String {
-					catcherr = NewStringError(stmt, "Ключ должен быть строкой")
+					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
 					break
 				}
 				regs.Set(s.Reg, v.MapIndex(i))
 
 			default:
-				catcherr = NewStringError(stmt, "Неверная операция")
+				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break
 			}
 
-		case *BinGETSUBSLICE:
+		case *binstmt.BinGETSUBSLICE:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
@@ -579,23 +579,23 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			case reflect.Array, reflect.Slice:
 				rv, err := SliceAt(v, rb, re)
 				if err != nil {
-					catcherr = NewError(stmt, err)
+					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
 				regs.Set(s.Reg, rv)
 			case reflect.String:
 				rv, err := StringAt(v, rb, re)
 				if err != nil {
-					catcherr = NewError(stmt, err)
+					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
 				regs.Set(s.Reg, rv)
 			default:
-				catcherr = NewStringError(stmt, "Неверная операция")
+				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break
 			}
 
-		case *BinOPER:
+		case *binstmt.BinOPER:
 			refregs := reflect.ValueOf(regs.Reg)
 			lhsV := refregs.Index(s.RegL).Elem()
 			rhsV := refregs.Index(s.RegR).Elem()
@@ -608,12 +608,12 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			// log.Println("r", r)
 
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			regs.Set(s.RegL, r)
 
-		case *BinCALL:
+		case *binstmt.BinCALL:
 
 			// TODO: сохранять все текущее состояние в стэке, включая набор меток перехода, т.к. в функциях модулей они могут повторяться
 
@@ -628,7 +628,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				var fgncv reflect.Value
 				fgncv, err = env.Get(s.Name)
 				if err != nil {
-					catcherr = NewError(stmt, err)
+					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
 				fgnc = fgncv.Interface()
@@ -651,7 +651,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 				if err != nil {
 					// ошибку передаем в блок обработки исключений
-					catcherr = NewError(stmt, err)
+					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
 				regs.Set(s.RegRets, ret)
@@ -663,7 +663,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			vargs := reflect.ValueOf(argssl)
 			// это не функция - тогда ошибка
 			if f.Kind() != reflect.Func {
-				catcherr = NewStringError(stmt, "Не является функцией")
+				catcherr = binstmt.NewStringError(stmt, "Не является функцией")
 				break
 			}
 			ftype := f.Type()
@@ -782,17 +782,17 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 			if err != nil {
 				// ошибку передаем в блок обработки исключений
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			regs.Set(s.RegRets, ret)
 
-		case *BinFUNC:
+		case *binstmt.BinFUNC:
 			f := func(expr *BinFUNC, env *envir.Env) core.VMFunc {
 				return func(args ...interface{}) (interface{}, error) {
 					if !expr.VarArg {
 						if len(args) != len(expr.Args) {
-							return nil, NewStringError(expr, "Неверное количество аргументов")
+							return nil, binstmt.NewStringError(expr, "Неверное количество аргументов")
 						}
 					}
 					var newenv *envir.Env
@@ -812,7 +812,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 						}
 					}
 					rr, err := Run(expr.Code, newenv)
-					if err == ReturnError {
+					if err == binstmt.ReturnError {
 						err = nil
 					}
 					// TODO: проверить при единичном и множественном возврате, при "..." аргументах
@@ -822,7 +822,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			env.Define(s.Name, f)
 			regs.Set(s.Reg, f)
 
-		case *BinCASTTYPE:
+		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив
 			eType, ok := regs.Reg[s.TypeReg].(int)
 			if !ok {
@@ -843,7 +843,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 			regs.Set(s.Reg, v)
 
-		case *BinMAKE:
+		case *binstmt.BinMAKE:
 			eType, ok := regs.Reg[s.Reg].(int)
 			if !ok {
 				catcherr = NewStringError(stmt, "Неизвестный тип")
@@ -866,7 +866,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			regs.Set(s.Reg, v.Interface())
 
-		case *BinMAKECHAN:
+		case *binstmt.BinMAKECHAN:
 			size, ok := regs.Reg[s.Reg].(int64)
 			if !ok {
 				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
@@ -875,13 +875,13 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			v := make(core.VMChannel, size)
 			regs.Set(s.Reg, v)
 
-		case *BinMAKEARR:
+		case *binstmt.BinMAKEARR:
 			alen := int(ToInt64(regs.Reg[s.Reg]))
 			acap := int(ToInt64(regs.Reg[s.RegCap]))
 			v := make(core.VMSlice, alen, acap)
 			regs.Set(s.Reg, v)
 
-		case *BinCHANRECV:
+		case *binstmt.BinCHANRECV:
 			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
 				catcherr = NewStringError(stmt, "Не является каналом")
@@ -890,7 +890,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			v, _ := ch.Recv()
 			regs.Set(s.RegVal, v.Interface())
 
-		case *BinCHANSEND:
+		case *binstmt.BinCHANSEND:
 			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
 				catcherr = NewStringError(stmt, "Не является каналом")
@@ -899,15 +899,15 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			v := regs.Reg[s.RegVal]
 			ch.Send(reflect.ValueOf(v))
 
-		case *BinISKIND:
+		case *binstmt.BinISKIND:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			regs.Set(s.Reg, v.Kind() == s.Kind)
 
-		case *BinISSLICE:
+		case *binstmt.BinISSLICE:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			regs.Set(s.RegBool, v.Kind() == reflect.Array || v.Kind() == reflect.Slice)
 
-		case *BinINC:
+		case *binstmt.BinINC:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
 			if v.Kind() == reflect.Float64 {
@@ -917,7 +917,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			regs.Set(s.Reg, x)
 
-		case *BinDEC:
+		case *binstmt.BinDEC:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			var x interface{}
 			if v.Kind() == reflect.Float64 {
@@ -927,11 +927,11 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			regs.Set(s.Reg, x)
 
-		case *BinTRY:
+		case *binstmt.BinTRY:
 			regs.PushTry(s.Reg, s.JumpTo)
 			regs.Set(s.Reg, nil) // изначально ошибки нет
 
-		case *BinCATCH:
+		case *binstmt.BinCATCH:
 			// получаем ошибку, и если ее нет, переходим на метку, иначе, выполняем дальше
 			nerr := regs.Reg[s.Reg]
 			if nerr == nil {
@@ -939,13 +939,13 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				continue
 			}
 
-		case *BinPOPTRY:
+		case *binstmt.BinPOPTRY:
 			// если catch блок отработал, то стек уже очищен, иначе снимаем со стека (ошибок не было)
 			if regs.TopTryLabel() == s.CatchLabel {
 				regs.PopTry()
 			}
 
-		case *BinFOREACH:
+		case *binstmt.BinFOREACH:
 			val := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 
 			switch val.Kind() {
@@ -964,7 +964,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			regs.PushBreak(s.BreakLabel)
 			regs.PushContinue(s.ContinueLabel)
 
-		case *BinNEXT:
+		case *binstmt.BinNEXT:
 			val := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 
 			switch val.Kind() {
@@ -991,13 +991,13 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				break
 			}
 
-		case *BinPOPFOR:
+		case *binstmt.BinPOPFOR:
 			if regs.TopContinue() == s.ContinueLabel {
 				regs.PopContinue()
 				regs.PopBreak()
 			}
 
-		case *BinFORNUM:
+		case *binstmt.BinFORNUM:
 
 			if !IsNum(regs.Reg[s.RegFrom]) {
 				catcherr = NewStringError(stmt, "Начальное значение должно быть целым числом")
@@ -1012,7 +1012,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			regs.PushBreak(s.BreakLabel)
 			regs.PushContinue(s.ContinueLabel)
 
-		case *BinNEXTNUM:
+		case *binstmt.BinNEXTNUM:
 			afrom := ToInt64(regs.Reg[s.RegFrom])
 			ato := ToInt64(regs.Reg[s.RegTo])
 			fviadd := int64(1)
@@ -1038,19 +1038,19 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				continue
 			}
 
-		case *BinWHILE:
+		case *binstmt.BinWHILE:
 			regs.PushBreak(s.BreakLabel)
 			regs.PushContinue(s.ContinueLabel)
 
-		case *BinRET:
+		case *binstmt.BinRET:
 			retval = regs.Reg[s.Reg]
 			return retval, ReturnError
 
-		case *BinTHROW:
+		case *binstmt.BinTHROW:
 			catcherr = NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
 			break
 
-		case *BinMODULE:
+		case *binstmt.BinMODULE:
 			// модуль регистрируется в глобальном контексте
 			newenv := env.NewModule(envir.UniqueNames.Get(s.Name))
 			_, err := Run(s.Code, newenv) // инициируем модуль
@@ -1059,11 +1059,11 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				break
 			}
 
-		case *BinERROR:
+		case *binstmt.BinERROR:
 			// необрабатываемая в попытке ошибка
 			return retval, NewStringError(s, s.Error)
 
-		case *BinBREAK:
+		case *binstmt.BinBREAK:
 			label := regs.PopBreak()
 			if label != -1 {
 				regs.PopContinue()
@@ -1072,7 +1072,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			return nil, BreakError
 
-		case *BinCONTINUE:
+		case *binstmt.BinCONTINUE:
 			label := regs.PopContinue()
 			if label != -1 {
 				regs.PopBreak()
@@ -1081,7 +1081,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			}
 			return nil, ContinueError
 
-		case *BinTRYRECV:
+		case *binstmt.BinTRYRECV:
 
 			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
@@ -1099,27 +1099,27 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				regs.Set(s.RegClosed, false)
 			}
 
-		case *BinTRYSEND:
+		case *binstmt.BinTRYSEND:
 			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
 			if ch.Kind() != reflect.Chan {
-				catcherr = NewStringError(stmt, "Не является каналом")
+				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
 			ok := ch.TrySend(reflect.ValueOf(regs.Reg).Index(s.RegVal).Elem())
 			regs.Set(s.RegOk, ok)
 
-		case *BinGOSHED:
+		case *binstmt.BinGOSHED:
 			runtime.Gosched()
 
-		case *BinFREE:
+		case *binstmt.BinFREE:
 			regs.FreeFromReg(s.Reg)
 
 		default:
-			return nil, NewStringError(stmt, "Неизвестная инструкция")
+			return nil, binstmt.NewStringError(stmt, "Неизвестная инструкция")
 		}
 
 		if catcherr != nil {
-			nerr := NewError(stmt, catcherr)
+			nerr := binstmt.NewError(stmt, catcherr)
 			catcherr = nil
 			// учитываем стек обработки ошибок
 			if regs.TopTryLabel() == -1 {

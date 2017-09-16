@@ -12,16 +12,16 @@ import (
 //line ./parser/parser.y:30
 type yySymType struct {
 	yys          int
-	compstmt     []ast.Stmt
-	modules      []ast.Stmt
+	compstmt     ast.Stmts
+	modules      ast.Stmts
 	module       ast.Stmt
 	stmt_if      ast.Stmt
 	stmt_default ast.Stmt
 	stmt_elsif   ast.Stmt
-	stmt_elsifs  []ast.Stmt
+	stmt_elsifs  ast.Stmts
 	stmt_case    ast.Stmt
-	stmt_cases   []ast.Stmt
-	stmts        []ast.Stmt
+	stmt_cases   ast.Stmts
+	stmts        ast.Stmts
 	stmt         ast.Stmt
 	typ          ast.Type
 	expr         ast.Expr
@@ -1288,7 +1288,7 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line ./parser/parser.y:79
 		{
-			yyVAL.modules = []ast.Stmt{yyDollar[1].module}
+			yyVAL.modules = ast.Stmts{yyDollar[1].module}
 			if l, ok := yylex.(*Lexer); ok {
 				l.stmts = yyVAL.modules
 			}
@@ -1333,7 +1333,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line ./parser/parser.y:116
 		{
-			yyVAL.stmts = []ast.Stmt{yyDollar[2].stmt}
+			yyVAL.stmts = ast.Stmts{yyDollar[2].stmt}
 		}
 	case 9:
 		yyDollar = yyS[yypt-3 : yypt+1]
@@ -1456,7 +1456,7 @@ yydefault:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		//line ./parser/parser.y:206
 		{
-			yyVAL.stmt_elsifs = []ast.Stmt{}
+			yyVAL.stmt_elsifs = ast.Stmts{}
 		}
 	case 27:
 		yyDollar = yyS[yypt-2 : yypt+1]
@@ -1488,19 +1488,19 @@ yydefault:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		//line ./parser/parser.y:233
 		{
-			yyVAL.stmt_cases = []ast.Stmt{}
+			yyVAL.stmt_cases = ast.Stmts{}
 		}
 	case 32:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line ./parser/parser.y:237
 		{
-			yyVAL.stmt_cases = []ast.Stmt{yyDollar[2].stmt_case}
+			yyVAL.stmt_cases = ast.Stmts{yyDollar[2].stmt_case}
 		}
 	case 33:
 		yyDollar = yyS[yypt-2 : yypt+1]
 		//line ./parser/parser.y:241
 		{
-			yyVAL.stmt_cases = []ast.Stmt{yyDollar[2].stmt_default}
+			yyVAL.stmt_cases = ast.Stmts{yyDollar[2].stmt_default}
 		}
 	case 34:
 		yyDollar = yyS[yypt-2 : yypt+1]

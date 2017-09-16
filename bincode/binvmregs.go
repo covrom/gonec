@@ -3,11 +3,13 @@ package bincode
 import (
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/builtins"
+	envir "github.com/covrom/gonec/env"
 )
 
 // Регистры виртуальной машины
 
 type VMRegs struct {
+	Env *envir.Env
 	Reg          []core.VMValuer // регистры значений
 	Labels       []int           // [label]=index в BinCode
 	TryLabel     []int           // последний элемент - это метка на текущий обработчик CATCH
@@ -16,8 +18,9 @@ type VMRegs struct {
 	ForContinues []int           // последний элемент - это метка для continue
 }
 
-func NewVMRegs(stmts binstmt.BinCode) *VMRegs {
+func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
 	return &VMRegs{
+		Env: env,
 		Reg:          make([]core.VMValuer, 0, 5),
 		Labels:       stmts.Labels,
 		TryLabel:     make([]int, 0, 5),

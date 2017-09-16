@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/builtins"
+	posit "github.com/covrom/gonec/pos"
 )
 
 func InvokeNumber(lit string) (interface{}, error) {
@@ -164,7 +164,7 @@ func Equal(lhsV, rhsV interface{}) bool {
 	return reflect.DeepEqual(lhsV, rhsV)
 }
 
-func GetMember(v reflect.Value, name int, stmt ast.Pos) (reflect.Value, error) {
+func GetMember(v reflect.Value, name int, stmt posit.Pos) (reflect.Value, error) {
 
 	// m, _ := ast.MethodByNameCI(v, name)
 	// // ошибку не обрабатываем, т.к. ищем поле
@@ -289,7 +289,7 @@ func StringAt(v, rb, re reflect.Value) (interface{}, error) {
 	return string(r[ii:ij]), nil
 }
 
-func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
+func EvalBinOp(op core.VMOperation, lhsV, rhsV reflect.Value) (interface{}, error) {
 	// log.Println(OperMapR[op])
 	if !lhsV.IsValid() || !rhsV.IsValid() {
 		if !rhsV.IsValid() && !rhsV.IsValid() {
@@ -309,7 +309,7 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 
 	// TODO: математика множеств и графов
 
-	case ADD:
+	case core.ADD:
 		if lk == reflect.String || rk == reflect.String {
 			return ToString(lvi) + ToString(rvi), nil
 		}
@@ -335,7 +335,7 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 			}
 		}
 		return ToInt64(lvi) + ToInt64(rvi), nil
-	case SUB:
+	case core.SUB:
 		if lk == reflect.Float64 || rk == reflect.Float64 {
 			return ToFloat64(lvi) - ToFloat64(rvi), nil
 		}
@@ -358,7 +358,7 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 			}
 		}
 		return ToInt64(lvi) - ToInt64(rvi), nil
-	case MUL:
+	case core.MUL:
 		if lk == reflect.String && (rk == reflect.Int || rk == reflect.Int32 || rk == reflect.Int64) {
 			return strings.Repeat(ToString(lvi), int(ToInt64(rvi))), nil
 		}
@@ -366,46 +366,46 @@ func EvalBinOp(op int, lhsV, rhsV reflect.Value) (interface{}, error) {
 			return ToFloat64(lvi) * ToFloat64(rvi), nil
 		}
 		return ToInt64(lvi) * ToInt64(rvi), nil
-	case QUO:
+	case core.QUO:
 		return ToFloat64(lvi) / ToFloat64(rvi), nil
-	case REM:
+	case core.REM:
 		return ToInt64(lvi) % ToInt64(rvi), nil
-	case EQL:
+	case core.EQL:
 		return Equal(lvi, rvi), nil
-	case NEQ:
+	case core.NEQ:
 		return Equal(lvi, rvi) == false, nil
-	case GTR:
+	case core.GTR:
 		return ToFloat64(lvi) > ToFloat64(rvi), nil
-	case GEQ:
+	case core.GEQ:
 		return ToFloat64(lvi) >= ToFloat64(rvi), nil
-	case LSS:
+	case core.LSS:
 		return ToFloat64(lvi) < ToFloat64(rvi), nil
-	case LEQ:
+	case core.LEQ:
 		return ToFloat64(lvi) <= ToFloat64(rvi), nil
-	case OR:
+	case core.OR:
 		return ToInt64(lvi) | ToInt64(rvi), nil
-	case LOR:
+	case core.LOR:
 		if x := ToBool(lvi); x {
 			return x, nil
 		} else {
 			return ToBool(rvi), nil
 		}
-	case AND:
+	case core.AND:
 		return ToInt64(lvi) & ToInt64(rvi), nil
-	case LAND:
+	case core.LAND:
 		if x := ToBool(lvi); x {
 			return ToBool(rvi), nil
 		} else {
 			return x, nil
 		}
-	case POW:
+	case core.POW:
 		if lk == reflect.Float64 {
 			return math.Pow(ToFloat64(lvi), ToFloat64(rvi)), nil
 		}
 		return int64(math.Pow(ToFloat64(lvi), ToFloat64(rvi))), nil
-	case SHR:
+	case core.SHR:
 		return ToInt64(lvi) >> uint64(ToInt64(rvi)), nil
-	case SHL:
+	case core.SHL:
 		return ToInt64(lvi) << uint64(ToInt64(rvi)), nil
 	default:
 		return nil, fmt.Errorf("Неизвестный оператор")
@@ -521,18 +521,18 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 			}
 		case reflect.Array, reflect.Slice:
 			//парсим json из строки и пытаемся получить массив
-			var rm []interface{}
+			var rm core.VMSlice
 			if err := json.Unmarshal([]byte(ToString(v)), &rm); err != nil {
 				return nil, err
 			}
-			return core.VMSlice(rm), nil
+			return rm, nil
 		case reflect.Map:
 			//парсим json из строки и пытаемся получить мапу
-			var rm map[string]interface{}
+			var rm core.VMStringMap
 			if err := json.Unmarshal([]byte(ToString(v)), rm); err != nil {
 				return nil, err
 			}
-			return core.VMStringMap(rm), nil
+			return rm, nil
 		case reflect.Struct:
 			//парсим json из строки и пытаемся получить указатель на структуру
 			rm := reflect.New(nt).Interface()
@@ -645,16 +645,16 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 			switch nt.Kind() {
 			case reflect.Map:
 				// структура может быть приведена в мапу
-				rs := make(map[string]interface{})
+				rs := make(core.VMStringMap)
 				rtyp := rv.Type()
 				for i := 0; i < rtyp.NumField(); i++ {
 					f := rtyp.Field(i)
 					fv := rv.Field(i)
 					if f.PkgPath == "" && !f.Anonymous {
-						rs[f.Name] = fv.Interface()
+						rs[f.Name] = core.ReflectToVMValue(fv)
 					}
 				}
-				return core.VMStringMap(rs), nil
+				return rs, nil
 			case reflect.String:
 				// сериализуем структуру в json
 				b, err := json.Marshal(v)
