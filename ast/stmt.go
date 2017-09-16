@@ -33,6 +33,14 @@ func (x Stmts) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	}
 }
 
+func (x Stmts) BinaryCode(reg int, lid *int) (bcd binstmt.BinCode) {
+	bins := bcd.Code
+	x.BinTo(&bins, reg, lid)
+	bcd.Code = bins
+	bcd.MapLabels()
+	return
+}
+
 // NoneStmt используется для пропуска блоков кода, например, Else
 type NoneStmt struct {
 	StmtImpl
@@ -431,7 +439,7 @@ func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 		// добавляем все операторы в текущий контекст
 		s.Stmts.BinTo(bins, reg, lid)
 	} else {
-		bins.Append(binstmt.NewBinMODULE(s.Name, BinaryCode(s.Stmts, 0, lid), s))
+		bins.Append(binstmt.NewBinMODULE(s.Name, s.Stmts.BinaryCode(0, lid), s))
 	}
 }
 
@@ -666,7 +674,7 @@ func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			// сначала все вычисляем в разные регистры, затем все присваиваем
 			// так обеспечиваем взаимный обмен
 			for i := range s.Rhss {
-				s.Rhss[i].BinTo(reg+i, lid, false)
+				s.Rhss[i].BinTo(bins, reg+i, lid, false)
 			}
 			for i, e := range s.Lhss {
 				e.(CanLetExpr).BinLetTo(bins, reg+i, lid)

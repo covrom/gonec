@@ -1,19 +1,15 @@
 package bincode
 
-import (
-	"github.com/covrom/gonec/ast"
-)
-
 ///////////////////////////////////////////////////////////////
 // компиляция в байткод
 ///////////////////////////////////////////////////////////////
 
-func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd BinCode) {
-	bins := bcd.Code
-	inast.BinTo(&bins, reg, lid)
-	bcd.Code = bins
-	bcd.MapLabels()
-}
+// func BinaryCode(inast ast.Stmts, reg int, lid *int) (bcd binstmt.BinCode) {
+// 	bins := bcd.Code
+// 	inast.BinTo(&bins, reg, lid)
+// 	bcd.Code = bins
+// 	bcd.MapLabels()
+// }
 
 // for _, st := range inast {
 

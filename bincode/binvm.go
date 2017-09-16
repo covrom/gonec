@@ -52,7 +52,7 @@ func ParseSrc(src string) (prs []ast.Stmt, bin BinCode, err error) {
 	prs = parser.ConstFolding(prs)
 	// компиляция в бинарный код
 	lid := 0
-	bin = BinaryCode(prs, 0, &lid)
+	bin = prs.BinaryCode(0, &lid)
 
 	return prs, bin, err
 }
@@ -78,7 +78,7 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 	)
 
 	flagset := LastNone
-	
+
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 	regs := NewVMRegs(stmts)
 
@@ -613,7 +613,7 @@ func Run(stmts BinCode, env *envir.Env) (retval core.VMValue, reterr error) {
 			regs.Set(s.RegL, r)
 
 		case *BinCALL:
-			
+
 			// TODO: сохранять все текущее состояние в стэке, включая набор меток перехода, т.к. в функциях модулей они могут повторяться
 
 			var err error
