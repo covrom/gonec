@@ -2,7 +2,6 @@ package core
 
 import (
 	"reflect"
-	"unsafe"
 
 	"github.com/covrom/gonec/env"
 )
@@ -13,14 +12,15 @@ import (
 type VMMetaObj struct {
 	vmMetaCacheM map[int]int
 	vmMetaCacheF map[int][]int
-	vmReflectPtr unsafe.Pointer
+	vmOriginal   VMMetaStructer
 }
 
 func (v *VMMetaObj) vmval() {}
 
 func (v *VMMetaObj) Interface() interface{} {
 	// возвращает ссылку на структуру, от которой был вызван метод VMCacheMembers
-	return *(*VMMetaStructer)(v.vmReflectPtr)
+	//rv:=*(*VMMetaStructer)(v.vmOriginal)
+	return v.vmOriginal
 }
 
 // VMCacheMembers кэширует все поля и методы ссылки на объединенную структуру в VMMetaStructer
@@ -29,7 +29,7 @@ func (v *VMMetaObj) Interface() interface{} {
 func (v *VMMetaObj) VMCacheMembers(vv VMMetaStructer) {
 	v.vmMetaCacheM = make(map[int]int)
 	v.vmMetaCacheF = make(map[int][]int)
-	v.vmReflectPtr = unsafe.Pointer(&vv)
+	v.vmOriginal = vv
 
 	typ := reflect.TypeOf(vv)
 
