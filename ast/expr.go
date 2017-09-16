@@ -449,6 +449,18 @@ func (x *AnonCallExpr) Simplify() Expr {
 	return x
 }
 
+func (e *AnonCallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
+	e.Expr.BinTo(bins, reg, lid, false)
+	// далее аргументы, как при вызове обычной функции
+	(&CallExpr{
+		Name:     0,
+		SubExprs: e.SubExprs,
+		VarArg:   e.VarArg,
+		Go:       e.Go,
+	}).BinTo(bins, reg, lid, false) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
+}
+
 // MemberExpr provide expression to refer menber.
 type MemberExpr struct {
 	ExprImpl

@@ -1046,16 +1046,16 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 			RegRets: reg,
 	// 		}, e)
 
-	case *ast.AnonCallExpr:
-		// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
-		bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
-		// далее аргументы, как при вызове обычной функции
-		bins = append(bins, addBinExpr(&ast.CallExpr{
-			Name:     0,
-			SubExprs: e.SubExprs,
-			VarArg:   e.VarArg,
-			Go:       e.Go,
-		}, reg, lid, false)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
+	// case *ast.AnonCallExpr:
+	// 	// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
+	// 	bins = append(bins, addBinExpr(e.Expr, reg, lid, false)...)
+	// 	// далее аргументы, как при вызове обычной функции
+	// 	bins = append(bins, addBinExpr(&ast.CallExpr{
+	// 		Name:     0,
+	// 		SubExprs: e.SubExprs,
+	// 		VarArg:   e.VarArg,
+	// 		Go:       e.Go,
+	// 	}, reg, lid, false)...) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
 
 	case *ast.MemberExpr:
 		// здесь идет только вычисление значения свойства
