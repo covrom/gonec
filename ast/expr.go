@@ -646,6 +646,30 @@ func (x *AssocExpr) Simplify() Expr {
 	return x
 }
 
+func (e *AssocExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	switch e.Operator {
+	case "++":
+		if alhs, ok := e.Lhs.(*IdentExpr); ok {
+			bins.Append(binstmt.NewBinGET(reg, alhs.Id, alhs))
+			bins.Append(binstmt.NewBinINC(reg, alhs))
+			bins.Append(binstmt.NewBinSET(reg, alhs.Id, alhs))
+		} else {
+			panic(binstmt.NewStringError(alhs, "Инкремент применим только к переменным"))
+		}
+	case "--":
+		if alhs, ok := e.Lhs.(*IdentExpr); ok {
+			bins.Append(binstmt.NewBinGET(reg, alhs.Id, alhs))
+			bins.Append(binstmt.NewBinDEC(reg, alhs))
+			bins.Append(binstmt.NewBinSET(reg, alhs.Id, alhs))
+		} else {
+			panic(binstmt.NewStringError(alhs, "Декремент применим только к переменным"))
+		}
+	default:
+		(&BinOpExpr{Lhss: []Expr{e.Lhs}, Operator: e.Operator[0:1], Rhss: []Expr{e.Rhs}}).BinTo(bins, reg, lid, false)
+		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
+	}
+}
+
 // NewExpr provide expression to make new instance.
 // type NewExpr struct {
 // 	ExprImpl
