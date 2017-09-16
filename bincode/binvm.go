@@ -193,31 +193,31 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			v2 := regs.Reg[s.Reg2]
 			if vv1, ok := v1.(core.VMOperationer); ok {
 				if vv2, ok := v2.(core.VMOperationer); ok {
-					if rv,err:=vv1.EvalBinOp(core.EQL, vv2);err==nil{
-						regs.Set(s.Reg, rv)					
-					}else{
+					if rv, err := vv1.EvalBinOp(core.EQL, vv2); err == nil {
+						regs.Set(s.Reg, rv)
+					} else {
 						catcherr = binstmt.NewError(stmt, err)
-						break								
+						break
 					}
-				}else{
+				} else {
 					catcherr = binstmt.NewStringError(stmt, "Значение нельзя сравнивать")
-					break	
+					break
 				}
-			}else{
+			} else {
 				catcherr = binstmt.NewStringError(stmt, "Значение нельзя сравнивать")
-				break			
+				break
 			}
 
 		case *binstmt.BinCASTNUM:
 			// ошибки обрабатываем в попытке
-			var str core.VMString
+			var str core.VMNumberer
 			var ok bool
-			if str, ok = regs.Reg[s.Reg].(core.VMString); !ok {
+			if str, ok = regs.Reg[s.Reg].(core.VMNumberer); !ok {
 				regs.Set(s.Reg, nil)
 				catcherr = binstmt.NewStringError(stmt, "Литерал должен быть числом")
 				break
 			}
-			v, err := InvokeNumber(str)
+			v, err := str.InvokeNumber()
 			if err != nil {
 				regs.Set(s.Reg, nil)
 				catcherr = binstmt.NewError(stmt, err)
