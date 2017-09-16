@@ -30,7 +30,7 @@ func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
 	}
 }
 
-func (v *VMRegs) Set(reg int, val interface{}) {
+func (v *VMRegs) Set(reg int, val core.VMValuer) {
 	if reg < len(v.Reg) {
 		v.Reg[reg] = val
 	} else {

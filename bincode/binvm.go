@@ -164,7 +164,8 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					continue
 				}
 			} else {
-				return nil, binstmt.NewStringError(s, "Невозможно определить значение булево")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно определить значение булево")
+				break
 			}
 
 		case *binstmt.BinJTRUE:
@@ -174,7 +175,8 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					continue
 				}
 			} else {
-				return nil, binstmt.NewStringError(s, "Невозможно определить значение булево")
+				catcherr = binstmt.NewStringError(stmt, "Невозможно определить значение булево")
+				break
 			}
 
 		case *binstmt.BinLABEL:
@@ -187,8 +189,24 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			regs.Set(s.RegTo, regs.Reg[s.RegFrom])
 
 		case *binstmt.BinEQUAL:
-
-			regs.Set(s.Reg, Equal(regs.Reg[s.Reg1], regs.Reg[s.Reg2]))
+			v1 := regs.Reg[s.Reg1]
+			v2 := regs.Reg[s.Reg2]
+			if vv1, ok := v1.(core.VMOperationer); ok {
+				if vv2, ok := v2.(core.VMOperationer); ok {
+					if rv,err:=vv1.EvalBinOp(core.EQL, vv2);err==nil{
+						regs.Set(s.Reg, rv)					
+					}else{
+						catcherr = binstmt.NewError(stmt, err)
+						break								
+					}
+				}else{
+					catcherr = binstmt.NewStringError(stmt, "Значение нельзя сравнивать")
+					break	
+				}
+			}else{
+				catcherr = binstmt.NewStringError(stmt, "Значение нельзя сравнивать")
+				break			
+			}
 
 		case *binstmt.BinCASTNUM:
 			// ошибки обрабатываем в попытке
