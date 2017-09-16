@@ -1148,107 +1148,107 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 		&BinMAKE{
 	// 			Reg: reg,
 	// 		}, e)
-	case *ast.MakeChanExpr:
-		if e.SizeExpr == nil {
-			bins = appendBin(bins,
-				&BinLOAD{
-					Reg: reg,
-					Val: int64(0),
-				}, e)
-		} else {
-			bins = append(bins, addBinExpr(e.SizeExpr, reg, lid, false)...)
-		}
-		bins = appendBin(bins,
-			&BinMAKECHAN{
-				Reg: reg,
-			}, e)
-	case *ast.MakeArrayExpr:
-		bins = append(bins, addBinExpr(e.LenExpr, reg, lid, false)...)
-		if e.CapExpr == nil {
-			bins = appendBin(bins,
-				&BinMV{
-					RegFrom: reg,
-					RegTo:   reg + 1,
-				}, e)
-		} else {
-			bins = append(bins, addBinExpr(e.CapExpr, reg+1, lid, false)...)
-		}
-		bins = appendBin(bins,
-			&BinMAKEARR{
-				Reg:    reg,
-				RegCap: reg + 1,
-			}, e)
-	case *ast.ChanExpr:
+	// case *ast.MakeChanExpr:
+	// 	if e.SizeExpr == nil {
+	// 		bins = appendBin(bins,
+	// 			&BinLOAD{
+	// 				Reg: reg,
+	// 				Val: int64(0),
+	// 			}, e)
+	// 	} else {
+	// 		bins = append(bins, addBinExpr(e.SizeExpr, reg, lid, false)...)
+	// 	}
+	// 	bins = appendBin(bins,
+	// 		&BinMAKECHAN{
+	// 			Reg: reg,
+	// 		}, e)
+	// case *ast.MakeArrayExpr:
+	// 	bins = append(bins, addBinExpr(e.LenExpr, reg, lid, false)...)
+	// 	if e.CapExpr == nil {
+	// 		bins = appendBin(bins,
+	// 			&BinMV{
+	// 				RegFrom: reg,
+	// 				RegTo:   reg + 1,
+	// 			}, e)
+	// 	} else {
+	// 		bins = append(bins, addBinExpr(e.CapExpr, reg+1, lid, false)...)
+	// 	}
+	// 	bins = appendBin(bins,
+	// 		&BinMAKEARR{
+	// 			Reg:    reg,
+	// 			RegCap: reg + 1,
+	// 		}, e)
+	// case *ast.ChanExpr:
 
-		// определяем значение справа
-		bins = append(bins, addBinExpr(e.Rhs, reg+1, lid, false)...)
-		if e.Lhs == nil {
-			// слева нет значения - это временное чтение из канала без сохранения значения в переменной
-			bins = appendBin(bins,
-				&BinCHANRECV{
-					Reg:    reg + 1,
-					RegVal: reg,
-				}, e)
-		} else {
-			// значение слева
-			bins = append(bins, addBinExpr(e.Lhs, reg+2, lid, false)...)
-			bins = appendBin(bins,
-				&BinMV{
-					RegFrom: reg + 2,
-					RegTo:   reg + 3,
-				}, e)
-			// слева канал - пишем в него правое
-			bins = appendBin(bins,
-				&BinISKIND{
-					Reg:  reg + 3,
-					Kind: reflect.Chan,
-				}, e)
-			*lid++
-			li := *lid
-			bins = appendBin(bins,
-				&BinJFALSE{
-					Reg:    reg + 3,
-					JumpTo: li,
-				}, e)
+	// 	// определяем значение справа
+	// 	bins = append(bins, addBinExpr(e.Rhs, reg+1, lid, false)...)
+	// 	if e.Lhs == nil {
+	// 		// слева нет значения - это временное чтение из канала без сохранения значения в переменной
+	// 		bins = appendBin(bins,
+	// 			&BinCHANRECV{
+	// 				Reg:    reg + 1,
+	// 				RegVal: reg,
+	// 			}, e)
+	// 	} else {
+	// 		// значение слева
+	// 		bins = append(bins, addBinExpr(e.Lhs, reg+2, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinMV{
+	// 				RegFrom: reg + 2,
+	// 				RegTo:   reg + 3,
+	// 			}, e)
+	// 		// слева канал - пишем в него правое
+	// 		bins = appendBin(bins,
+	// 			&BinISKIND{
+	// 				Reg:  reg + 3,
+	// 				Kind: reflect.Chan,
+	// 			}, e)
+	// 		*lid++
+	// 		li := *lid
+	// 		bins = appendBin(bins,
+	// 			&BinJFALSE{
+	// 				Reg:    reg + 3,
+	// 				JumpTo: li,
+	// 			}, e)
 
-			bins = appendBin(bins,
-				&BinCHANSEND{
-					Reg:    reg + 2,
-					RegVal: reg + 1,
-				}, e)
+	// 		bins = appendBin(bins,
+	// 			&BinCHANSEND{
+	// 				Reg:    reg + 2,
+	// 				RegVal: reg + 1,
+	// 			}, e)
 
-			bins = appendBin(bins,
-				&BinLOAD{
-					Reg: reg,
-					Val: true,
-				}, e)
+	// 		bins = appendBin(bins,
+	// 			&BinLOAD{
+	// 				Reg: reg,
+	// 				Val: true,
+	// 			}, e)
 
-			*lid++
-			li2 := *lid
+	// 		*lid++
+	// 		li2 := *lid
 
-			bins = appendBin(bins,
-				&BinJMP{
-					JumpTo: li2,
-				}, e)
+	// 		bins = appendBin(bins,
+	// 			&BinJMP{
+	// 				JumpTo: li2,
+	// 			}, e)
 
-			// иначе справа канал, а слева переменная (установим, если прочитали из канала)
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: li,
-				}, e)
-			bins = appendBin(bins,
-				&BinCHANRECV{
-					Reg:    reg + 1,
-					RegVal: reg,
-				}, e)
+	// 		// иначе справа канал, а слева переменная (установим, если прочитали из канала)
+	// 		bins = appendBin(bins,
+	// 			&BinLABEL{
+	// 				Label: li,
+	// 			}, e)
+	// 		bins = appendBin(bins,
+	// 			&BinCHANRECV{
+	// 				Reg:    reg + 1,
+	// 				RegVal: reg,
+	// 			}, e)
 
-			bins = append(bins, addBinLetExpr(e.Lhs, reg, lid)...)
+	// 		bins = append(bins, addBinLetExpr(e.Lhs, reg, lid)...)
 
-			bins = appendBin(bins,
-				&BinLABEL{
-					Label: li2,
-				}, e)
-		}
+	// 		bins = appendBin(bins,
+	// 			&BinLABEL{
+	// 				Label: li2,
+	// 			}, e)
+	// 	}
 
 	case *ast.AssocExpr:
 		switch e.Operator {

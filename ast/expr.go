@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/covrom/gonec/bincode/binstmt"
@@ -698,6 +699,38 @@ func (x *ChanExpr) Simplify() Expr {
 	return x
 }
 
+func (e *ChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	// определяем значение справа
+	e.Rhs.BinTo(bins, reg+1, lid, false)
+	if e.Lhs == nil {
+		// слева нет значения - это временное чтение из канала без сохранения значения в переменной
+		bins.Append(binstmt.NewBinCHANRECV(reg+1, reg, e))
+	} else {
+		// значение слева
+		e.Lhs.BinTo(bins, reg+2, lid, false)
+		bins.Append(binstmt.NewBinMV(reg+2, reg+3, e))
+		// слева канал - пишем в него правое
+		bins.Append(binstmt.NewBinISKIND(reg+3, reflect.Chan, e))
+		*lid++
+		li := *lid
+		bins.Append(binstmt.NewBinJFALSE(reg+3, li, e))
+		bins.Append(binstmt.NewBinCHANSEND(reg+2, reg+1, e))
+		bins.Append(binstmt.NewBinLOAD(reg, core.VMBool(true), false, e))
+
+		*lid++
+		li2 := *lid
+
+		bins.Append(binstmt.NewBinJMP(li2, e))
+
+		// иначе справа канал, а слева переменная (установим, если прочитали из канала)
+		bins.Append(binstmt.NewBinLABEL(li, e))
+		bins.Append(binstmt.NewBinCHANRECV(reg+1, reg, e))
+		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
+
+		bins.Append(binstmt.NewBinLABEL(li2, e))
+	}
+}
+
 type Type struct {
 	Name int //string
 }
@@ -758,6 +791,15 @@ func (x *MakeChanExpr) Simplify() Expr {
 	return x
 }
 
+func (e *MakeChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	if e.SizeExpr == nil {
+		bins.Append(binstmt.NewBinLOAD(reg, core.VMInt(0), false, e))
+	} else {
+		e.SizeExpr.BinTo(bins, reg, lid, false)
+	}
+	bins.Append(binstmt.NewBinMAKECHAN(reg, e))
+}
+
 type MakeArrayExpr struct {
 	ExprImpl
 	// Type    int //string
@@ -769,6 +811,16 @@ func (x *MakeArrayExpr) Simplify() Expr {
 	x.LenExpr = x.LenExpr.Simplify()
 	x.CapExpr = x.CapExpr.Simplify()
 	return x
+}
+
+func (e *MakeArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.LenExpr.BinTo(bins, reg, lid, false)
+	if e.CapExpr == nil {
+		bins.Append(binstmt.NewBinMV(reg, reg+1, e))
+	} else {
+		e.CapExpr.BinTo(bins, reg+1, lid, false)
+	}
+	bins.Append(binstmt.NewBinMAKEARR(reg, reg+1, e))
 }
 
 // хранит реальное значение, рассчитанное на этапе оптимизации AST
