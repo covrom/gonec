@@ -1108,27 +1108,27 @@ func addBinExpr(expr ast.Expr, reg int, lid *int, inStmt bool) (bins BinStmts) {
 	// 	// 		Reg: reg,
 	// 	// 	}, e)
 
-	case *ast.TypeCast:
-		bins = append(bins, addBinExpr(e.CastExpr, reg, lid, false)...)
-		if e.TypeExpr == nil {
-			bins = appendBin(bins,
-				&BinLOAD{
-					Reg:  reg + 1,
-					Val:  e.Type,
-					IsId: true,
-				}, e)
-		} else {
-			bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid, false)...)
-			bins = appendBin(bins,
-				&BinSETNAME{
-					Reg: reg + 1,
-				}, e)
-		}
-		bins = appendBin(bins,
-			&BinCASTTYPE{
-				Reg:     reg,
-				TypeReg: reg + 1,
-			}, e)
+	// case *ast.TypeCast:
+	// 	bins = append(bins, addBinExpr(e.CastExpr, reg, lid, false)...)
+	// 	if e.TypeExpr == nil {
+	// 		bins = appendBin(bins,
+	// 			&BinLOAD{
+	// 				Reg:  reg + 1,
+	// 				Val:  e.Type,
+	// 				IsId: true,
+	// 			}, e)
+	// 	} else {
+	// 		bins = append(bins, addBinExpr(e.TypeExpr, reg+1, lid, false)...)
+	// 		bins = appendBin(bins,
+	// 			&BinSETNAME{
+	// 				Reg: reg + 1,
+	// 			}, e)
+	// 	}
+	// 	bins = appendBin(bins,
+	// 		&BinCASTTYPE{
+	// 			Reg:     reg,
+	// 			TypeReg: reg + 1,
+	// 		}, e)
 	case *ast.MakeExpr:
 		if e.TypeExpr == nil {
 			bins = appendBin(bins,

@@ -618,12 +618,10 @@ func (x *LetExpr) Simplify() Expr {
 	return x
 }
 
-func (e *LetExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (e *LetExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
 	e.Rhs.BinTo(bins, reg, lid, false)
 	e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
 }
-
-func (e *LetExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {}
 
 // LetsExpr provide multiple expression of let.
 // type LetsExpr struct {
@@ -715,6 +713,17 @@ func (x *TypeCast) Simplify() Expr {
 	x.TypeExpr = x.TypeExpr.Simplify()
 	x.CastExpr = x.CastExpr.Simplify()
 	return x
+}
+
+func (e *TypeCast) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+	e.CastExpr.BinTo(bins, reg, lid, false)
+	if e.TypeExpr == nil {
+		bins.Append(binstmt.NewBinLOAD(reg+1, core.VMInt(e.Type), true, e))
+	} else {
+		e.TypeExpr.BinTo(bins, reg+1, lid, false)
+		bins.Append(binstmt.NewBinSETNAME(reg+1, e))
+	}
+	bins.Append(binstmt.NewBinCASTTYPE(reg, reg+1, e))
 }
 
 type MakeExpr struct {
