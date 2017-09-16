@@ -210,14 +210,14 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 		case *binstmt.BinCASTNUM:
 			// ошибки обрабатываем в попытке
-			var str core.VMNumberer
+			var num core.VMNumberer
 			var ok bool
-			if str, ok = regs.Reg[s.Reg].(core.VMNumberer); !ok {
+			if num, ok = regs.Reg[s.Reg].(core.VMNumberer); !ok {
 				regs.Set(s.Reg, nil)
 				catcherr = binstmt.NewStringError(stmt, "Литерал должен быть числом")
 				break
 			}
-			v, err := str.InvokeNumber()
+			v, err := num.InvokeNumber()
 			if err != nil {
 				regs.Set(s.Reg, nil)
 				catcherr = binstmt.NewError(stmt, err)
