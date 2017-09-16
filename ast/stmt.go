@@ -37,7 +37,7 @@ func (x Stmts) BinaryCode(reg int, lid *int) (bcd binstmt.BinCode) {
 	bins := bcd.Code
 	x.BinTo(&bins, reg, lid)
 	bcd.Code = bins
-	bcd.MapLabels()
+	bcd.MapLabels(*lid)
 	return
 }
 

@@ -35,7 +35,7 @@ func (x *BinStmts) Append(bs BinStmt) {
 
 type BinCode struct {
 	Code   BinStmts
-	Labels map[int]int //индекс - это номер метки, значение = индекс stmt в Code
+	Labels []int //индекс - это номер метки, значение = индекс stmt в Code
 }
 
 func (v BinCode) String() string {
@@ -46,9 +46,9 @@ func (v BinCode) String() string {
 	return s
 }
 
-func (v *BinCode) MapLabels() {
+func (v *BinCode) MapLabels(lastlabel int) {
 	//собираем мапу переходов
-	v.Labels = make(map[int]int)
+	v.Labels = make([]int, lastlabel+1)
 	for i, stmt := range v.Code {
 		if s, ok := stmt.(*BinLABEL); ok {
 			v.Labels[s.Label] = i
