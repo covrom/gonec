@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 // LoadAllBuiltins is a convenience function that loads all defineSd builtins.
@@ -138,23 +140,34 @@ func Import(env *Env) *Env {
 			return nil, errors.New("Должен быть один параметр")
 		}
 		if rv, ok := as[0].(VMTime); ok {
+			// TODO: переделать на VMDurationer в VMTime
 			return VMTimeDuration(time.Since(time.Time(rv.Time()))), nil
 		}
 		return nil, errors.New("Допустим только аргумент типа Дата")
 
 	}))
 
-	env.DefineS("пауза", time.Sleep)
+	env.DefineS("пауза", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		as := args.Slice()
+		if len(as) != 1 {
+			return nil, errors.New("Должен быть один параметр")
+		}
+		if v, ok := as[0].(VMNumberer); ok {
+			sec1 := decimal.New(int64(time.Second), 0)
+			time.Sleep(time.Duration(v.Decimal().Mul(VMDecimal(sec1)).Int()))
+			return nil, nil
+		}
+		return nil, errors.New("Должно быть число секунд (с дробной частью)")
+	}))
 
-	env.DefineS("выполнитьспустя", time.AfterFunc)
+	env.DefineS("длительностьнаносекунды", VMNanosecond)
+	env.DefineS("длительностьмикросекунды", VMMicrosecond)
+	env.DefineS("длительностьмиллисекунды", VMMillisecond)
+	env.DefineS("длительностьсекунды", VMSecond)
+	env.DefineS("длительностьминуты", VMMinute)
+	env.DefineS("длительностьчаса", VMHour)
+	env.DefineS("длительностьдня", VMDay)
 
-	env.DefineS("длительностьнаносекунды", time.Nanosecond)
-	env.DefineS("длительностьмикросекунды", time.Microsecond)
-	env.DefineS("длительностьмиллисекунды", time.Millisecond)
-	env.DefineS("длительностьсекунды", time.Second)
-	env.DefineS("длительностьминуты", time.Minute)
-	env.DefineS("длительностьчаса", time.Hour)
-	env.DefineS("длительностьдня", VMTimeDuration(time.Hour*24))
 	env.DefineS("длительность", func(s string) VMTimeDuration {
 		d, err := time.ParseDuration(s)
 		if err != nil {
@@ -227,7 +240,7 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("массив", VMSlice{})
 	env.DefineTypeS("структура", VMStringMap{})
 	env.DefineTypeS("дата", VMTime{})
-
+	
 	//////////////////
 	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})
 	env.DefineS("__дамп__", env.Dump)

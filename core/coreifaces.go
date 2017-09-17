@@ -103,6 +103,13 @@ type (
 		Time() VMTime
 	}
 
+	// VMDurationer это промежуток времени (time.Duration)
+	VMDurationer interface {
+		VMInterfacer
+		Duration() VMTimeDuration
+	}
+	
+	
 	// VMChanMaker может создать новый канал
 	VMChanMaker interface {
 		VMInterfacer

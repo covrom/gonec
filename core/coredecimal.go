@@ -100,3 +100,11 @@ func (x *VMDecimal) Parse(s string) error {
 	*x = VMDecimal(d)
 	return nil
 }
+
+func (x VMDecimal) Add(d2 VMDecimal) VMDecimal {
+	return VMDecimal(decimal.Decimal(x).Add(decimal.Decimal(d2)))
+}
+
+func (x VMDecimal) Mul(d2 VMDecimal) VMDecimal {
+	return VMDecimal(decimal.Decimal(x).Mul(decimal.Decimal(d2)))
+}

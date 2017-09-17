@@ -90,3 +90,5 @@ func (x *VMInt) Parse(s string) error {
 	*x = VMInt(i64)
 	return nil
 }
+
+// TODO: реализовать VMDurationer

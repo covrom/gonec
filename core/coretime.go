@@ -7,13 +7,30 @@ import (
 	"time"
 )
 
+const (
+	VMNanosecond  VMTimeDuration = 1
+	VMMicrosecond                = 1000 * VMNanosecond
+	VMMillisecond                = 1000 * VMMicrosecond
+	VMSecond                     = 1000 * VMMillisecond
+	VMMinute                     = 60 * VMSecond
+	VMHour                       = 60 * VMMinute
+	VMDay                        = 24 * VMHour
+)
+
 // VMTimeDuration - диапазон между отметками времени
+
+// TODO: переделать на тип VMInt (наносекунды) и обрабатывать его в VMTime диапазонах
+
 type VMTimeDuration time.Duration
 
 func (v VMTimeDuration) vmval() {}
 
 func (v VMTimeDuration) Interface() interface{} {
 	return time.Duration(v)
+}
+
+func (v VMTimeDuration) Duration() VMTimeDuration {
+	return v
 }
 
 func (v VMTimeDuration) String() string {
