@@ -75,14 +75,19 @@ func Import(env *Env) *Env {
 		if len(as) != 1 {
 			return nil, errors.New("Должен быть один параметр")
 		}
+		if vv, ok := as[0].(VMStringMaper); ok {
+			rv := vv.StringMap()
+			keys := make(VMSlice, len(rv))
+			i:=0
+			for k, v := range rv {
+				keys[i]=VMString(k)
+				i++
+			}
+			return keys,nil
+		}
 
-		rv := reflect.ValueOf(as[0])
-		if rv.Kind() == reflect.Interface {
-			rv = rv.Elem()
-		}
-		if rv.Kind() != reflect.Map {
-			return nil, errors.New("Аргумент должен быть структурой")
-		}
+		return nil, errors.New("Аргумент должен быть структурой")
+		
 		keys := []string{}
 		mk := rv.MapKeys()
 		for _, key := range mk {
