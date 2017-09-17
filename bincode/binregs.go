@@ -2,8 +2,7 @@ package bincode
 
 import (
 	"github.com/covrom/gonec/bincode/binstmt"
-	"github.com/covrom/gonec/builtins"
-	envir "github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/core"
 )
 
 // Регистры виртуальной машины
@@ -21,7 +20,7 @@ type VMRegs struct {
 func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
 	return &VMRegs{
 		Env: env,
-		Reg:          make([]core.VMValuer, 0, 16),
+		Reg:          make([]core.VMValuer, stmts.MaxReg+1),
 		Labels:       stmts.Labels,
 		TryLabel:     make([]int, 0, 8),
 		TryRegErr:    make([]int, 0, 8),
@@ -30,16 +29,16 @@ func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
 	}
 }
 
-func (v *VMRegs) Set(reg int, val core.VMValuer) {
-	if reg < len(v.Reg) {
-		v.Reg[reg] = val
-	} else {
-		for reg >= len(v.Reg) {
-			v.Reg = append(v.Reg, nil)
-		}
-		v.Reg[reg] = val
-	}
-}
+// func (v *VMRegs) Set(reg int, val core.VMValuer) {
+// 	if reg < len(v.Reg) {
+// 		v.Reg[reg] = val
+// 	} else {
+// 		for reg >= len(v.Reg) {
+// 			v.Reg = append(v.Reg, nil)
+// 		}
+// 		v.Reg[reg] = val
+// 	}
+// }
 
 func (v *VMRegs) FreeFromReg(reg int) {
 	// освобождаем память, начиная с reg, для сборщика мусора

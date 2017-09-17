@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	envir "github.com/covrom/gonec/env"
 
 )
 

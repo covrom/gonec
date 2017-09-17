@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/covrom/gonec/bincode"
-	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 )
 

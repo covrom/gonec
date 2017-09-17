@@ -3,7 +3,6 @@ package core
 import (
 	"reflect"
 
-	"github.com/covrom/gonec/env"
 )
 
 // VMMetaObj корневая структура для системных функциональных структур Го, доступных из языка Гонец

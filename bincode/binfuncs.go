@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/covrom/gonec/builtins"
+	"github.com/covrom/gonec/core"
 	posit "github.com/covrom/gonec/pos"
 )
 

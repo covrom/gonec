@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/covrom/gonec/bincode/binstmt"
-	"github.com/covrom/gonec/builtins"
+	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/pos"
 )
 
@@ -38,6 +38,9 @@ type NoneExpr struct {
 func (x *NoneExpr) Simplify() Expr { return x }
 func (e *NoneExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinLOAD(reg, nil, false, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // NumberExpr provide Number expression.
@@ -68,6 +71,9 @@ func (e *NumberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt boo
 	// команда на загрузку строки в регистр и ее преобразование в число, в регистр reg
 	bins.Append(binstmt.NewBinLOAD(reg, core.VMString(e.Lit), false, e))
 	bins.Append(binstmt.NewBinCASTNUM(reg, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // StringExpr provide String expression.
@@ -82,6 +88,9 @@ func (x *StringExpr) Simplify() Expr {
 
 func (e *StringExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinLOAD(reg, core.VMString(e.Lit), false, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // ArrayExpr provide Array expression.
@@ -116,6 +125,9 @@ func (e *ArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
 		ee.BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinSETIDX(reg, i, reg+1, ee))
+	}
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
 	}
 }
 
@@ -167,6 +179,9 @@ func (e *MapExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, 
 		ee.BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinSETKEY(reg, reg+1, k, ee))
 	}
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 // IdentExpr provide identity expression.
@@ -180,10 +195,16 @@ func (x *IdentExpr) Simplify() Expr { return x }
 
 func (e *IdentExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinSET(reg, e.Id, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 func (e *IdentExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinGET(reg, e.Id, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // UnaryExpr provide unary minus expression. ex: -1, ^1, ~1.
@@ -210,53 +231,62 @@ func (x *UnaryExpr) Simplify() Expr {
 func (e *UnaryExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	e.Expr.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinUNARY(reg, rune(e.Operator[0]), e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // AddrExpr provide referencing address expression.
-type AddrExpr struct {
-	ExprImpl
-	Expr Expr
-}
+// type AddrExpr struct {
+// 	ExprImpl
+// 	Expr Expr
+// }
 
-func (x *AddrExpr) Simplify() Expr {
-	x.Expr = x.Expr.Simplify()
-	return x
-}
+// func (x *AddrExpr) Simplify() Expr {
+// 	x.Expr = x.Expr.Simplify()
+// 	return x
+// }
 
-func (e *AddrExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
-	switch ee := e.Expr.(type) {
-	case *IdentExpr:
-		bins.Append(binstmt.NewBinADDRID(reg, ee.Id, e))
-	case *MemberExpr:
-		ee.Expr.BinTo(bins, reg, lid, false, maxreg)
-		bins.Append(binstmt.NewBinADDRMBR(reg, ee.Name, e))
-	default:
-		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
-	}
-}
+// func (e *AddrExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+// 	switch ee := e.Expr.(type) {
+// 	case *IdentExpr:
+// 		bins.Append(binstmt.NewBinADDRID(reg, ee.Id, e))
+// 	case *MemberExpr:
+// 		ee.Expr.BinTo(bins, reg, lid, false, maxreg)
+// 		bins.Append(binstmt.NewBinADDRMBR(reg, ee.Name, e))
+// 	default:
+// 		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
+// 	}
+// 	if reg > *maxreg {
+// 		*maxreg = reg
+// 	}
+// }
 
 // DerefExpr provide dereferencing address expression.
-type DerefExpr struct {
-	ExprImpl
-	Expr Expr
-}
+// type DerefExpr struct {
+// 	ExprImpl
+// 	Expr Expr
+// }
 
-func (x *DerefExpr) Simplify() Expr {
-	x.Expr = x.Expr.Simplify()
-	return x
-}
+// func (x *DerefExpr) Simplify() Expr {
+// 	x.Expr = x.Expr.Simplify()
+// 	return x
+// }
 
-func (e *DerefExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
-	switch ee := e.Expr.(type) {
-	case *IdentExpr:
-		bins.Append(binstmt.NewBinUNREFID(reg, ee.Id, e))
-	case *MemberExpr:
-		ee.Expr.BinTo(bins, reg, lid, false, maxreg)
-		bins.Append(binstmt.NewBinUNREFMBR(reg, ee.Name, e))
-	default:
-		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
-	}
-}
+// func (e *DerefExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+// 	switch ee := e.Expr.(type) {
+// 	case *IdentExpr:
+// 		bins.Append(binstmt.NewBinUNREFID(reg, ee.Id, e))
+// 	case *MemberExpr:
+// 		ee.Expr.BinTo(bins, reg, lid, false, maxreg)
+// 		bins.Append(binstmt.NewBinUNREFMBR(reg, ee.Name, e))
+// 	default:
+// 		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
+// 	}
+// 	if reg > *maxreg {
+// 		*maxreg = reg
+// 	}
+// }
 
 // ParenExpr provide parent block expression.
 type ParenExpr struct {
@@ -274,6 +304,9 @@ func (x *ParenExpr) Simplify() Expr {
 
 func (e *ParenExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	e.SubExpr.BinTo(bins, reg, lid, false, maxreg)
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // BinOpExpr provide binary operator expression.
@@ -348,6 +381,9 @@ func (e *BinOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 		e.Rhss[0].BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinOPER(reg, reg+1, oper, e))
 	}
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 type TernaryOpExpr struct {
@@ -388,6 +424,9 @@ func (e *TernaryOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt 
 	bins.Append(binstmt.NewBinLABEL(lab, e))
 	e.Rhs.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // CallExpr provide calling expression.
@@ -431,6 +470,10 @@ func (e *CallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 
 	// для анонимных (Name==0) - в reg будет функция, иначе первый аргумент (см. выше) или слайс аргументов
 	bins.Append(binstmt.NewBinCALL(e.Name, len(e.SubExprs), reg, reg, e.VarArg, e.Go, e))
+
+	if reg+regoff+sliceoff > *maxreg {
+		*maxreg = reg + regoff + sliceoff
+	}
 }
 
 // AnonCallExpr provide anonymous calling expression. ex: func(){}().
@@ -460,6 +503,9 @@ func (e *AnonCallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt b
 		VarArg:   e.VarArg,
 		Go:       e.Go,
 	}).BinTo(bins, reg, lid, false, maxreg) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // MemberExpr provide expression to refer menber.
@@ -477,11 +523,17 @@ func (x *MemberExpr) Simplify() Expr {
 func (e *MemberExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	e.Expr.BinTo(bins, reg+1, lid, false, maxreg)
 	bins.Append(binstmt.NewBinSETMEMBER(reg+1, e.Name, reg, e))
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 func (e *MemberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	e.Expr.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinGETMEMBER(reg, e.Name, e))
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 // ItemExpr provide expression to refer Map/Array item.
@@ -522,12 +574,18 @@ func (e *ItemExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *i
 	ee := e.Value.(CanLetExpr)
 	ee.BinLetTo(bins, reg+1, lid, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
+	if reg+3 > *maxreg {
+		*maxreg = reg + 3
+	}
 }
 
 func (e *ItemExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	e.Value.BinTo(bins, reg, lid, false, maxreg)
 	e.Index.BinTo(bins, reg+1, lid, false, maxreg)
 	bins.Append(binstmt.NewBinGETIDX(reg, reg+1, e))
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 // SliceExpr provide expression to refer slice of Array.
@@ -570,6 +628,9 @@ func (e *SliceExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *
 	ee := e.Value.(CanLetExpr)
 	ee.BinLetTo(bins, reg+1, lid, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
+	if reg+4 > *maxreg {
+		*maxreg = reg + 4
+	}
 }
 
 func (e *SliceExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
@@ -577,6 +638,9 @@ func (e *SliceExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 	e.Begin.BinTo(bins, reg+1, lid, false, maxreg)
 	e.End.BinTo(bins, reg+2, lid, false, maxreg)
 	bins.Append(binstmt.NewBinGETSUBSLICE(reg, reg+1, reg+2, e))
+	if reg+2 > *maxreg {
+		*maxreg = reg + 2
+	}
 }
 
 // FuncExpr provide function expression.
@@ -604,6 +668,9 @@ func (e *FuncExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 	bins.Append(binstmt.NewBinLABEL(lstart, e))
 	e.Stmts.BinTo(bins, reg, lid, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // LetExpr provide expression to let variable.
@@ -622,6 +689,9 @@ func (x *LetExpr) Simplify() Expr {
 func (e *LetExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	e.Rhs.BinTo(bins, reg, lid, false, maxreg)
 	e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // LetsExpr provide multiple expression of let.
@@ -668,6 +738,9 @@ func (e *AssocExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 		(&BinOpExpr{Lhss: []Expr{e.Lhs}, Operator: e.Operator[0:1], Rhss: []Expr{e.Rhs}}).BinTo(bins, reg, lid, false, maxreg)
 		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
 	}
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // NewExpr provide expression to make new instance.
@@ -709,6 +782,9 @@ func (e *ConstExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 	}
 
 	bins.Append(binstmt.NewBinLOAD(reg, v, false, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 type ChanExpr struct {
@@ -753,6 +829,9 @@ func (e *ChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 
 		bins.Append(binstmt.NewBinLABEL(li2, e))
 	}
+	if reg+3 > *maxreg {
+		*maxreg = reg + 3
+	}
 }
 
 type Type struct {
@@ -781,6 +860,9 @@ func (e *TypeCast) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 		bins.Append(binstmt.NewBinSETNAME(reg+1, e))
 	}
 	bins.Append(binstmt.NewBinCASTTYPE(reg, reg+1, e))
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 type MakeExpr struct {
@@ -802,6 +884,9 @@ func (e *MakeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 		bins.Append(binstmt.NewBinSETNAME(reg, e))
 	}
 	bins.Append(binstmt.NewBinMAKE(reg, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 type MakeChanExpr struct {
@@ -822,6 +907,9 @@ func (e *MakeChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt b
 		e.SizeExpr.BinTo(bins, reg, lid, false, maxreg)
 	}
 	bins.Append(binstmt.NewBinMAKECHAN(reg, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 type MakeArrayExpr struct {
@@ -845,6 +933,9 @@ func (e *MakeArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt 
 		e.CapExpr.BinTo(bins, reg+1, lid, false, maxreg)
 	}
 	bins.Append(binstmt.NewBinMAKEARR(reg, reg+1, e))
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 // хранит реальное значение, рассчитанное на этапе оптимизации AST
@@ -859,4 +950,7 @@ func (x *NativeExpr) Simplify() Expr {
 
 func (e *NativeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinLOAD(reg, e.Value, false, e))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }

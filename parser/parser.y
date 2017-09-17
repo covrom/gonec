@@ -3,7 +3,7 @@ package parser
 
 import (
 	"github.com/covrom/gonec/ast"
-	"github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/core"
 )
 
 %}
@@ -363,26 +363,6 @@ expr :
 	| '^' expr %prec UNARY
 	{
 		$$ = &ast.UnaryExpr{Operator: "^", Expr: $2}
-		$$.SetPosition($2.Position())
-	}
-	| '&' IDENT %prec UNARY
-	{
-		$$ = &ast.AddrExpr{Expr: &ast.IdentExpr{Lit: $2.Lit, Id: env.UniqueNames.Set($2.Lit)}}
-		$$.SetPosition($2.Position())
-	}
-	| '&' expr '.' IDENT %prec UNARY
-	{
-		$$ = &ast.AddrExpr{Expr: &ast.MemberExpr{Expr: $2, Name: env.UniqueNames.Set($4.Lit)}}
-		$$.SetPosition($2.Position())
-	}
-	| '*' IDENT %prec UNARY
-	{
-		$$ = &ast.DerefExpr{Expr: &ast.IdentExpr{Lit: $2.Lit, Id: env.UniqueNames.Set($2.Lit)}}
-		$$.SetPosition($2.Position())
-	}
-	| '*' expr '.' IDENT %prec UNARY
-	{
-		$$ = &ast.DerefExpr{Expr: &ast.MemberExpr{Expr: $2, Name: env.UniqueNames.Set($4.Lit)}}
 		$$.SetPosition($2.Position())
 	}
 	| STRING

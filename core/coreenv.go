@@ -1,4 +1,4 @@
-package env
+package core
 
 import (
 	"fmt"
@@ -8,13 +8,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
-)
 
-var (
-	NilValue   = reflect.ValueOf((*interface{})(nil))
-	NilType    = reflect.TypeOf((*interface{})(nil))
-	TrueValue  = reflect.ValueOf(true)
-	FalseValue = reflect.ValueOf(false)
+	"github.com/covrom/gonec/names"
 )
 
 // Env provides interface to run VM. This mean function scope and blocked-scope.
@@ -22,7 +17,7 @@ var (
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          map[int]reflect.Value
+	env          map[int]VMValuer
 	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
@@ -30,9 +25,11 @@ type Env struct {
 	sid          string
 	goRunned     bool
 	lastid       int
-	lastval      reflect.Value
+	lastval      VMValuer
 	builtsLoaded bool
 }
+
+func (e *Env) vmval() {} // нужно для того, чтобы *Env можно было сохранять в переменные VMValuer
 
 // NewEnv creates new global scope.
 // !!!не забывать вызывать core.LoadAllBuiltins(m)!!!
@@ -40,7 +37,7 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:          make(map[int]reflect.Value),
+		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       nil,
 		interrupt:    &b,
@@ -57,7 +54,7 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:          make(map[int]reflect.Value),
+				env:          make(map[int]VMValuer),
 				typ:          make(map[int]reflect.Type),
 				parent:       ee,
 				interrupt:    e.interrupt,
@@ -75,7 +72,7 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:          make(map[int]reflect.Value),
+		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		interrupt:    e.interrupt,
@@ -89,9 +86,9 @@ func (e *Env) NewSubEnv() *Env {
 // Находим или создаем новый модуль в глобальном скоупе
 func (e *Env) NewModule(n string) *Env {
 	//ni := strings.ToLower(n)
-	id := UniqueNames.Set(n)
+	id := names.UniqueNames.Set(n)
 	if v, err := e.Get(id); err == nil {
-		if vv, ok := v.Interface().(*Env); ok {
+		if vv, ok := v.(*Env); ok {
 			return vv
 		}
 	}
@@ -119,7 +116,7 @@ func (e *Env) NewModule(n string) *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:          make(map[int]reflect.Value),
+		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		name:         strings.ToLower(n),
@@ -141,9 +138,12 @@ func (e *Env) Destroy() {
 	if e.parent == nil {
 		return
 	}
+
 	for k, v := range e.parent.env {
-		if v.IsValid() && v.Interface() == e {
-			delete(e.parent.env, k)
+		if vv, ok := v.(*Env); ok {
+			if vv == e {
+				delete(e.parent.env, k)
+			}
 		}
 	}
 	e.parent = nil
@@ -202,22 +202,6 @@ func (e *Env) GetName() string {
 	return e.name
 }
 
-// Addr returns pointer value which specified symbol. It goes to upper scope until
-// found or returns error.
-func (e *Env) Addr(k int) (reflect.Value, error) {
-
-	for ee := e; ee != nil; ee = ee.parent {
-		if ee.goRunned {
-			ee.RLock()
-			defer ee.RUnlock()
-		}
-		if v, ok := ee.env[k]; ok {
-			return v.Addr(), nil
-		}
-	}
-	return NilValue, fmt.Errorf("Имя неопределено '%s'", UniqueNames.Get(k))
-}
-
 // TypeName определяет имя типа по типу значения
 func (e *Env) TypeName(t reflect.Type) int {
 
@@ -232,7 +216,7 @@ func (e *Env) TypeName(t reflect.Type) int {
 			}
 		}
 	}
-	return UniqueNames.Set(t.String())
+	return names.UniqueNames.Set(t.String())
 }
 
 // Type returns type which specified symbol. It goes to upper scope until
@@ -248,12 +232,12 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 			return v, nil
 		}
 	}
-	return NilType, fmt.Errorf("Тип неопределен '%s'", UniqueNames.Get(k))
+	return nil, fmt.Errorf("Тип неопределен '%s'", names.UniqueNames.Get(k))
 }
 
 // Get returns value which specified symbol. It goes to upper scope until
 // found or returns error.
-func (e *Env) Get(k int) (reflect.Value, error) {
+func (e *Env) Get(k int) (VMValuer, error) {
 
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.goRunned {
@@ -268,17 +252,12 @@ func (e *Env) Get(k int) (reflect.Value, error) {
 			return v, nil
 		}
 	}
-	return NilValue, fmt.Errorf("Имя неопределено '%s'", UniqueNames.Get(k))
+	return nil, fmt.Errorf("Имя неопределено '%s'", names.UniqueNames.Get(k))
 }
 
 // Set modifies value which specified as symbol. It goes to upper scope until
 // found or returns error.
-func (e *Env) Set(k int, v interface{}) error {
-
-	val, ok := v.(reflect.Value)
-	if !ok {
-		val = reflect.ValueOf(v)
-	}
+func (e *Env) Set(k int, v VMValuer) error {
 
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.goRunned {
@@ -286,17 +265,17 @@ func (e *Env) Set(k int, v interface{}) error {
 			defer ee.Unlock()
 		}
 		if _, ok := ee.env[k]; ok {
-			ee.env[k] = val
+			ee.env[k] = v
 			e.lastid = k
-			e.lastval = val
+			e.lastval = v
 			return nil
 		}
 	}
-	return fmt.Errorf("Имя неопределено '%s'", UniqueNames.Get(k))
+	return fmt.Errorf("Имя неопределено '%s'", names.UniqueNames.Get(k))
 }
 
 // DefineGlobal defines symbol in global scope.
-func (e *Env) DefineGlobal(k int, v interface{}) error {
+func (e *Env) DefineGlobal(k int, v VMValuer) error {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return ee.Define(k, v)
@@ -370,22 +349,17 @@ func (e *Env) DefineType(k int, t interface{}) error {
 }
 
 func (e *Env) DefineTypeS(k string, t interface{}) error {
-	return e.DefineType(UniqueNames.Set(k), t)
+	return e.DefineType(names.UniqueNames.Set(k), t)
 }
 
 // Define defines symbol in current scope.
-func (e *Env) Define(k int, v interface{}) error {
-	val, ok := v.(reflect.Value)
-	if !ok {
-		val = reflect.ValueOf(v)
-	}
-
+func (e *Env) Define(k int, v VMValuer) error {
 	if e.goRunned {
 		e.Lock()
 	}
-	e.env[k] = val
+	e.env[k] = v
 	e.lastid = k
-	e.lastval = val
+	e.lastval = v
 
 	if e.goRunned {
 		e.Unlock()
@@ -394,8 +368,8 @@ func (e *Env) Define(k int, v interface{}) error {
 	return nil
 }
 
-func (e *Env) DefineS(k string, v interface{}) error {
-	return e.Define(UniqueNames.Set(k), v)
+func (e *Env) DefineS(k string, v VMValuer) error {
+	return e.Define(names.UniqueNames.Set(k), v)
 }
 
 // String return the name of current scope.
@@ -404,7 +378,6 @@ func (e *Env) String() string {
 		e.RLock()
 		defer e.RUnlock()
 	}
-
 	return e.name
 }
 
@@ -419,7 +392,7 @@ func (e *Env) Dump() {
 	}
 	sort.Ints(keys)
 	for _, k := range keys {
-		e.Printf("%d %s = %#v %T\n", k, UniqueNames.Get(k), e.env[k], e.env[k].Interface())
+		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), e.env[k], e.env[k])
 	}
 	if e.goRunned {
 		e.RUnlock()
@@ -467,7 +440,7 @@ func (e *Env) SetSid(s string) error {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			ee.sid = s
-			return ee.Define(UniqueNames.Set("ГлобальныйИдентификаторСессии"), s)
+			return ee.Define(names.UniqueNames.Set("ГлобальныйИдентификаторСессии"), VMString(s))
 		}
 	}
 	return fmt.Errorf("Отсутствует глобальный контекст!")

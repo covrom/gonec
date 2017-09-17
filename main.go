@@ -21,7 +21,6 @@ import (
 
 	"github.com/covrom/gonec/bincode"
 
-	envir "github.com/covrom/gonec/env"
 	"github.com/covrom/gonec/parser"
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"

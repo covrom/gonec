@@ -4,8 +4,7 @@ import (
 	"reflect"
 
 	"github.com/covrom/gonec/bincode/binstmt"
-	"github.com/covrom/gonec/builtins"
-	"github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/pos"
 )
 
@@ -62,6 +61,9 @@ func (x *ExprStmt) Simplify() {
 
 func (s *ExprStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	s.Expr.BinTo(bins, reg, lid, true, maxreg)
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 	// *bins = append(*bins, addBinExpr(s.Expr, reg, lid, true)...)
 }
 
@@ -134,6 +136,10 @@ func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
+
 }
 
 // TryStmt provide "try/catch/finally" statement.
@@ -182,6 +188,10 @@ func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) 
 
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
+
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
 }
 
 // ForStmt provide "for in" expression statement.
@@ -236,6 +246,10 @@ func (s *ForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) 
 
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
+
+	if reg+3 > *maxreg {
+		*maxreg = reg + 3
+	}
 }
 
 // NumForStmt name = expr1 to expr2
@@ -294,6 +308,10 @@ func (s *NumForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
 
+	if reg+3 > *maxreg {
+		*maxreg = reg + 3
+	}
+
 }
 
 // CForStmt provide C-style "for (;;)" expression statement.
@@ -349,6 +367,10 @@ func (s *LoopStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int)
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
 
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
+
 }
 
 // BreakStmt provide "break" expression statement.
@@ -360,6 +382,9 @@ func (x *BreakStmt) Simplify() {}
 
 func (s *BreakStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinBREAK(s))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // ContinueStmt provide "continue" expression statement.
@@ -371,6 +396,9 @@ func (x *ContinueStmt) Simplify() {}
 
 func (s *ContinueStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinCONTINUE(s))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // ForStmt provide "return" expression statement.
@@ -405,6 +433,11 @@ func (s *ReturnStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	// в reg имеем значение или структуру возврата
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
 	bins.Append(binstmt.NewBinRET(reg, s))
+
+	if reg+1 > *maxreg {
+		*maxreg = reg + 1
+	}
+
 }
 
 // ThrowStmt provide "throw" expression statement.
@@ -420,6 +453,9 @@ func (x *ThrowStmt) Simplify() {
 func (s *ThrowStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	s.Expr.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinTHROW(reg, s))
+	if reg > *maxreg {
+		*maxreg = reg
+	}
 }
 
 // ModuleStmt provide "module" expression statement.
@@ -441,6 +477,9 @@ func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 		s.Stmts.BinTo(bins, reg, lid, maxreg)
 	} else {
 		bins.Append(binstmt.NewBinMODULE(s.Name, s.Stmts.BinaryCode(0, lid), s))
+	}
+	if reg > *maxreg {
+		*maxreg = reg
 	}
 }
 
@@ -485,6 +524,9 @@ func (s *SwitchStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	if reg+2 > *maxreg {
+		*maxreg = reg + 2
+	}
 }
 
 // SelectStmt provide switch statement.
@@ -585,6 +627,10 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 	// освобождаем память
 	bins.Append(binstmt.NewBinFREE(reg+1, s))
+
+	if reg+3 > *maxreg {
+		*maxreg = reg + 3
+	}
 }
 
 // CaseStmt provide switch/case statement.
@@ -670,15 +716,26 @@ func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int)
 			e.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
 		}
 		bins.Append(binstmt.NewBinLABEL(lend, s))
+
+		if reg+2 > *maxreg {
+			*maxreg = reg + 2
+		}
+
 	} else {
 		if len(s.Lhss) == len(s.Rhss) {
 			// сначала все вычисляем в разные регистры, затем все присваиваем
 			// так обеспечиваем взаимный обмен
 			for i := range s.Rhss {
 				s.Rhss[i].BinTo(bins, reg+i, lid, false, maxreg)
+				if reg+i > *maxreg {
+					*maxreg = reg + i
+				}
 			}
 			for i, e := range s.Lhss {
 				e.(CanLetExpr).BinLetTo(bins, reg+i, lid, maxreg)
+				if reg+i > *maxreg {
+					*maxreg = reg + i
+				}
 			}
 		} else {
 			// ошибка
@@ -718,5 +775,8 @@ func (s *VarStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) 
 			// ошибка
 			panic(binstmt.NewStringError(s, "Количество переменных и значений должно совпадать или значение должно быть одно"))
 		}
+	}
+	if reg > *maxreg {
+		*maxreg = reg
 	}
 }

@@ -8,8 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/covrom/gonec/builtins"
-	"github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/pos"
 )
 

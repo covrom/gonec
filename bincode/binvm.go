@@ -12,8 +12,7 @@ import (
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/bincode/binstmt"
-	"github.com/covrom/gonec/builtins"
-	envir "github.com/covrom/gonec/env"
+	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/parser"
 )
 
@@ -121,13 +120,6 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
-	const (
-		LastNone uint64 = 0
-		// LastSet  uint64 = 1 << iota
-	)
-
-	flagset := LastNone
-
 	regs := NewVMRegs(stmts, env)
 
 	goschedidx := 0
@@ -183,10 +175,10 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			// пропускаем
 
 		case *binstmt.BinLOAD:
-			regs.Set(s.Reg, s.Val)
+			regs.Reg[s.Reg] = s.Val
 
 		case *binstmt.BinMV:
-			regs.Set(s.RegTo, regs.Reg[s.RegFrom])
+			regs.Reg[s.RegTo] = regs.Reg[s.RegFrom]
 
 		case *binstmt.BinEQUAL:
 			v1 := regs.Reg[s.Reg1]
@@ -194,7 +186,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			if vv1, ok := v1.(core.VMOperationer); ok {
 				if vv2, ok := v2.(core.VMOperationer); ok {
 					if rv, err := vv1.EvalBinOp(core.EQL, vv2); err == nil {
-						regs.Set(s.Reg, rv)
+						regs.Reg[s.Reg] = rv
 					} else {
 						catcherr = binstmt.NewError(stmt, err)
 						break
@@ -213,20 +205,20 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			var num core.VMNumberer
 			var ok bool
 			if num, ok = regs.Reg[s.Reg].(core.VMNumberer); !ok {
-				regs.Set(s.Reg, nil)
+				regs.Reg[s.Reg] = nil
 				catcherr = binstmt.NewStringError(stmt, "Литерал должен быть числом")
 				break
 			}
 			v, err := num.InvokeNumber()
 			if err != nil {
-				regs.Set(s.Reg, nil)
+				regs.Reg[s.Reg] = nil
 				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
-			regs.Set(s.Reg, v)
+			regs.Reg[s.Reg] = v
 
 		case *binstmt.BinMAKESLICE:
-			regs.Set(s.Reg, make(core.VMSlice, s.Len, s.Cap))
+			regs.Reg[s.Reg] = make(core.VMSlice, s.Len, s.Cap)
 
 		case *binstmt.BinSETIDX:
 			if v, ok := regs.Reg[s.Reg].(core.VMSlice); ok {
@@ -236,7 +228,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				break
 			}
 		case *binstmt.BinMAKEMAP:
-			regs.Set(s.Reg, make(core.VMStringMap, s.Len))
+			regs.Reg[s.Reg] = make(core.VMStringMap, s.Len)
 
 		case *binstmt.BinSETKEY:
 			if v, ok := regs.Reg[s.Reg].(core.VMStringMap); ok {
@@ -253,7 +245,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				break
 			}
 			if !v.IsValid() {
-				regs.Set(s.Reg, nil)
+				regs.Reg[s.Reg]= nil
 			} else {
 				regs.Set(s.Reg, v.Interface())
 			}

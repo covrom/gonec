@@ -112,7 +112,7 @@ func main() {
 package %s
 
 import (
-	envir "github.com/covrom/gonec/env"
+	envir "github.com/covrom/gonec/core"
 	pkg "%s"
 )
 
