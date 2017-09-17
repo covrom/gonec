@@ -49,6 +49,13 @@ type (
 		TryRecv() (VMValuer, bool)
 	}
 
+	// VMIndexer имеет длину и значение по индексу
+	VMIndexer interface{
+		VMInterfacer
+		Len() VMInt
+		Index(VMValuer) VMValuer
+	}
+	
 	// конкретные типы виртуальной машины
 
 	// VMStringer строка
@@ -113,7 +120,7 @@ type (
 		VMIsField(int) bool
 		VMGetField(int) VMInterfacer
 		VMSetField(int, VMInterfacer)
-		VMGetMethod(int) VMMeth // получает обертку метода
+		VMGetMethod(int) VMFunc // получает обертку метода
 	}
 
 	// VMNullable означает значение null

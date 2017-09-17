@@ -2,32 +2,39 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
 	"sort"
 	"strings"
 	"time"
-
-
 )
 
 // LoadAllBuiltins is a convenience function that loads all defineSd builtins.
-func LoadAllBuiltins(env *envir.Env) {
+func LoadAllBuiltins(env *Env) {
 	Import(env)
 
-	pkgs := map[string]func(env *envir.Env) *envir.Env{
-		// "sort":          gonec_sort.Import,
-		// "strings":       gonec_strings.Import,
+	pkgs := map[string]func(env *Env) *Env{
+	// "sort":          gonec_sort.Import,
+	// "strings":       gonec_strings.Import,
 	}
 
-	env.DefineS("импорт", func(s string) interface{} {
-		if loader, ok := pkgs[strings.ToLower(s)]; ok {
-			m := loader(env)
-			return m
+	env.DefineS("импорт", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		as := args.Slice()
+		if len(as) != 1 {
+			return nil, errors.New("Должно быть одно название пакета")
 		}
-		panic(fmt.Sprintf("Пакет '%s' не найден", s))
-	})
+		if s, ok := as[0].(VMString); ok {
+			if loader, ok := pkgs[strings.ToLower(string(s))]; ok {
+				m := loader(env)
+				return m, nil // возвращает окружение, инициализированное пакетом
+			}
+			return nil, fmt.Errorf("Пакет '%s' не найден", s)
+		} else {
+			return nil, errors.New("Название пакета должно быть строкой")
+		}
+	}))
 
 	// успешно загружен глобальный контекст
 	env.SetBuiltsIsLoaded()
@@ -36,44 +43,45 @@ func LoadAllBuiltins(env *envir.Env) {
 /////////////////
 // TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
 type TttStructTest struct {
-	ПолеЦелоеЧисло int
-	ПолеСтрока     string
+	VMMetaObj
+
+	ПолеЦелоеЧисло VMInt
+	ПолеСтрока     VMString
 }
 
 // обратите внимание - русскоязычное название метода для структуры
-func (tst *TttStructTest) ВСтроку() string {
-	return fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)
-}
-
-func (tst TttStructTest) ВСтроку2() string {
-	return fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)
+func (tst *TttStructTest) ВСтроку() VMString {
+	return VMString(fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока))
 }
 
 /////////////////
 
-// Import defineSs core language builtins - len, range, println, int64, etc.
-func Import(env *envir.Env) *envir.Env {
-	env.DefineS("длина", func(v interface{}) int64 {
-		rv := reflect.ValueOf(v)
-		if rv.Kind() == reflect.Interface {
-			rv = rv.Elem()
-		}
-		if rv.Kind() == reflect.String {
-			return int64(len([]byte(rv.String())))
-		}
-		if rv.Kind() != reflect.Array && rv.Kind() != reflect.Slice {
-			panic("Аргумент должен быть строкой или массивом")
-		}
-		return int64(rv.Len())
-	})
+// Import общая стандартная бибилиотека
+func Import(env *Env) *Env {
 
-	env.DefineS("ключи", func(v interface{}) []string {
-		rv := reflect.ValueOf(v)
+	env.DefineS("длина", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		as := args.Slice()
+		if len(as) != 1 {
+			return nil, errors.New("Должен быть один параметр")
+		}
+		if rv, ok := as[0].(VMIndexer); ok {
+			return rv.Len(), nil
+		}
+		return nil, errors.New("Аргумент должен иметь длину")
+	}))
+
+	env.DefineS("ключи", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		as := args.Slice()
+		if len(as) != 1 {
+			return nil, errors.New("Должен быть один параметр")
+		}
+
+		rv := reflect.ValueOf(as[0])
 		if rv.Kind() == reflect.Interface {
 			rv = rv.Elem()
 		}
 		if rv.Kind() != reflect.Map {
-			panic("Аргумент должен быть структурой")
+			return nil, errors.New("Аргумент должен быть структурой")
 		}
 		keys := []string{}
 		mk := rv.MapKeys()
@@ -82,8 +90,12 @@ func Import(env *envir.Env) *envir.Env {
 		}
 		// ключи потом обходим в порядке сортировки по алфавиту
 		sort.Strings(keys)
-		return keys
-	})
+		rs := make(VMSlice, len(keys))
+		for i := range keys {
+			rs[i] = VMString(keys[i])
+		}
+		return rs, nil
+	}))
 
 	env.DefineS("диапазон", func(args ...int64) []int64 {
 		if len(args) < 1 {

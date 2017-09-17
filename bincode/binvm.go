@@ -635,6 +635,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 		case *binstmt.BinCALL:
 
 			// TODO: сохранять все текущее состояние в стэке, включая набор меток перехода, т.к. в функциях модулей они могут повторяться
+			// А ТАК ЖЕ обрабатывать панику и превращать ее в ошибку для обработки в catch
 
 			var err error
 

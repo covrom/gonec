@@ -3,6 +3,7 @@ package core
 import (
 	"reflect"
 
+	"github.com/covrom/gonec/names"
 )
 
 // VMMetaObj корневая структура для системных функциональных структур Го, доступных из языка Гонец
@@ -40,7 +41,7 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 		meth := typ.Method(i)
 		// только экспортируемые
 		if meth.PkgPath == "" {
-			namtyp := env.UniqueNames.Set(meth.Name)
+			namtyp := names.UniqueNames.Set(meth.Name)
 			v.vmMetaCacheM[namtyp] = meth.Index
 		}
 	}
@@ -51,7 +52,7 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 		field := typ.Field(i)
 		// только экспортируемые неанонимные поля
 		if field.PkgPath == "" && !field.Anonymous {
-			namtyp := env.UniqueNames.Set(field.Name)
+			namtyp := names.UniqueNames.Set(field.Name)
 			v.vmMetaCacheF[namtyp] = field.Index
 		}
 	}
@@ -92,10 +93,10 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 
 // VMGetMethod генерит функцию,
 // которая возвращает либо одно значение и ошибку, либо массив значений интерпретатора VMSlice
-func (v *VMMetaObj) VMGetMethod(name int) VMMeth {
+func (v *VMMetaObj) VMGetMethod(name int) VMFunc {
 	vv := reflect.ValueOf(v.Interface()).Method(v.vmMetaCacheM[name])
-	return VMMeth(
-		func(args VMSlicer) (VMInterfacer, error) {
+	return VMFunc(
+		func(args VMSlicer) (VMValuer, error) {
 			a := args.Slice()
 			x := make([]reflect.Value, len(a))
 			for i := range a {
@@ -106,7 +107,7 @@ func (v *VMMetaObj) VMGetMethod(name int) VMMeth {
 			case 0:
 				return nil, nil
 			case 1:
-				if x, ok := r[0].Interface().(VMInterfacer); ok {
+				if x, ok := r[0].Interface().(VMValuer); ok {
 					return x, nil
 				}
 				return ReflectToVMValue(r[0]), nil
