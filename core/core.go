@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
-	"sort"
 	"strings"
 	"time"
 )
@@ -65,7 +64,7 @@ func Import(env *Env) *Env {
 			return nil, errors.New("Должен быть один параметр")
 		}
 		if rv, ok := as[0].(VMIndexer); ok {
-			return rv.Len(), nil
+			return rv.Length(), nil
 		}
 		return nil, errors.New("Аргумент должен иметь длину")
 	}))
@@ -78,59 +77,72 @@ func Import(env *Env) *Env {
 		if vv, ok := as[0].(VMStringMaper); ok {
 			rv := vv.StringMap()
 			keys := make(VMSlice, len(rv))
-			i:=0
-			for k, v := range rv {
-				keys[i]=VMString(k)
+			i := 0
+			for k := range rv {
+				keys[i] = VMString(k)
 				i++
 			}
-			return keys,nil
+			keys.SortDefault()
+			return keys, nil
 		}
-
 		return nil, errors.New("Аргумент должен быть структурой")
-		
-		keys := []string{}
-		mk := rv.MapKeys()
-		for _, key := range mk {
-			keys = append(keys, key.String())
-		}
-		// ключи потом обходим в порядке сортировки по алфавиту
-		sort.Strings(keys)
-		rs := make(VMSlice, len(keys))
-		for i := range keys {
-			rs[i] = VMString(keys[i])
-		}
-		return rs, nil
 	}))
 
-	env.DefineS("диапазон", func(args ...int64) []int64 {
-		if len(args) < 1 {
-			panic("Отсутствуют аргументы")
+	env.DefineS("диапазон", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		as := args.Slice()
+		if len(as) < 1 {
+			return nil, errors.New("Отсутствуют аргументы")
 		}
-		if len(args) > 2 {
-			panic("Должен быть только один аргумент")
+		if len(as) > 2 {
+			return nil, errors.New("Должна быть длина диапазона или начало и конец")
 		}
 		var min, max int64
-		if len(args) == 1 {
+		var arr VMSlice
+		if len(as) == 1 {
 			min = 0
-			max = args[0] - 1
+			maxvm, ok := as[0].(VMInt)
+			if !ok {
+				return nil, errors.New("Длина диапазона должна быть целым числом")
+			}
+			max = maxvm.Int() - 1
 		} else {
-			min = args[0]
-			max = args[1]
+			minvm, ok := as[0].(VMInt)
+			if !ok {
+				return nil, errors.New("Начало диапазона должно быть целым числом")
+			}
+			min = minvm.Int()
+			maxvm, ok := as[1].(VMInt)
+			if !ok {
+				return nil, errors.New("Конец диапазона должен быть целым числом")
+			}
+			max = maxvm.Int()
 		}
-		arr := []int64{}
+		if min > max {
+			return nil, errors.New("Длина диапазона должна быть больше нуля")
+		}
+		arr = make(VMSlice, max-min+1)
+
 		for i := min; i <= max; i++ {
-			arr = append(arr, i)
+			arr[i-min] = VMInt(i)
 		}
-		return arr
-	})
+		return arr, nil
+	}))
 
-	env.DefineS("текущаядата", func() VMTime {
-		return VMTime(time.Now())
-	})
+	env.DefineS("текущаядата", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		return VMTime(time.Now()), nil
+	}))
 
-	env.DefineS("прошловременис", func(t VMTime) time.Duration {
-		return time.Since(time.Time(t))
-	})
+	env.DefineS("прошловременис", VMFunc(func(args VMSlicer) (VMValuer, error) {
+		as := args.Slice()
+		if len(as) != 1 {
+			return nil, errors.New("Должен быть один параметр")
+		}
+		if rv, ok := as[0].(VMTime); ok {
+			return VMTimeDuration(time.Since(time.Time(rv.Time()))), nil
+		}
+		return nil, errors.New("Допустим только аргумент типа Дата")
+
+	}))
 
 	env.DefineS("пауза", time.Sleep)
 
@@ -142,8 +154,8 @@ func Import(env *Env) *Env {
 	env.DefineS("длительностьсекунды", time.Second)
 	env.DefineS("длительностьминуты", time.Minute)
 	env.DefineS("длительностьчаса", time.Hour)
-	env.DefineS("длительностьдня", time.Duration(time.Hour*24))
-	env.DefineS("длительность", func(s string) time.Duration {
+	env.DefineS("длительностьдня", VMTimeDuration(time.Hour*24))
+	env.DefineS("длительность", func(s string) VMTimeDuration {
 		d, err := time.ParseDuration(s)
 		if err != nil {
 			panic(err)

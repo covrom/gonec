@@ -146,10 +146,14 @@ func init() {
 	gob.Register(core.VMString(""))
 	gob.Register(core.VMBool(false))
 	gob.Register(core.VMTime{})
+	gob.Register(core.VMTimeDuration{})
 	gob.Register(core.VMSlice{})
 	gob.Register(core.VMStringMap{})
 	gob.Register(make(core.VMChan))
 	gob.Register(core.VMNullVar)
+	gob.Register(core.VMOperation)
+	gob.Register(core.VMNil)
+	
 
 	gob.Register(&BinLOAD{})
 	gob.Register(&BinMV{})

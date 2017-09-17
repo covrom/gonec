@@ -7,6 +7,19 @@ import (
 	"time"
 )
 
+// VMTimeDuration - диапазон между отметками времени
+type VMTimeDuration time.Duration
+
+func (v VMTimeDuration) vmval() {}
+
+func (v VMTimeDuration) Interface() interface{} {
+	return time.Duration(v)
+}
+
+func (v VMTimeDuration) String() string {
+	return time.Duration(v).String()
+}
+
 //VMTime дата и время
 
 type VMTime time.Time
@@ -419,12 +432,12 @@ func (t VMTime) Формат(fmtstr string) string {
 	return string(res)
 }
 
-func (t VMTime) Вычесть(t2 VMTime) time.Duration {
-	return time.Time(t).Sub(time.Time(t2))
+func (t VMTime) Вычесть(t2 VMTime) VMTimeDuration {
+	return VMTimeDuration(time.Time(t).Sub(time.Time(t2)))
 }
 
-func (t VMTime) Добавить(d time.Duration) VMTime {
-	return VMTime(time.Time(t).Add(d))
+func (t VMTime) Добавить(d VMTimeDuration) VMTime {
+	return VMTime(time.Time(t).Add(time.Duration(d)))
 }
 
 func (t VMTime) ДобавитьПериод(dy, dm, dd int) VMTime {

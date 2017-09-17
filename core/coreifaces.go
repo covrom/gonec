@@ -52,8 +52,8 @@ type (
 	// VMIndexer имеет длину и значение по индексу
 	VMIndexer interface{
 		VMInterfacer
-		Len() VMInt
-		Index(VMValuer) VMValuer
+		Length() VMInt
+		IndexVal(VMValuer) VMValuer
 	}
 	
 	// конкретные типы виртуальной машины
