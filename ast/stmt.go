@@ -14,7 +14,7 @@ type Stmt interface {
 	pos.Pos
 	stmt()
 	Simplify()
-	BinTo(*binstmt.BinStmts, int, *int)
+	BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int)
 }
 
 // StmtImpl provide commonly implementations for Stmt..
@@ -27,15 +27,16 @@ func (x *StmtImpl) stmt() {}
 
 type Stmts []Stmt
 
-func (x Stmts) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (x Stmts) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
+
 	for _, st := range x {
-		st.BinTo(bins, reg, lid)
+		st.BinTo(bins, reg, lid, maxreg)
 	}
 }
 
 func (x Stmts) BinaryCode(reg int, lid *int) (bcd binstmt.BinCode) {
 	bins := bcd.Code
-	x.BinTo(&bins, reg, lid)
+	x.BinTo(&bins, reg, lid, &bcd.MaxReg)
 	bcd.Code = bins
 	bcd.MapLabels(*lid)
 	return
@@ -46,8 +47,8 @@ type NoneStmt struct {
 	StmtImpl
 }
 
-func (x *NoneStmt) Simplify()                                       {}
-func (s *NoneStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {}
+func (x *NoneStmt) Simplify()                                                    {}
+func (s *NoneStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {}
 
 // ExprStmt provide expression statement.
 type ExprStmt struct {
@@ -59,8 +60,8 @@ func (x *ExprStmt) Simplify() {
 	x.Expr = x.Expr.Simplify()
 }
 
-func (s *ExprStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
-	s.Expr.BinTo(bins, reg, lid, true)
+func (s *ExprStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
+	s.Expr.BinTo(bins, reg, lid, true, maxreg)
 	// *bins = append(*bins, addBinExpr(s.Expr, reg, lid, true)...)
 }
 
@@ -86,12 +87,12 @@ func (x *IfStmt) Simplify() {
 	}
 }
 
-func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	*lid++
 	lend := *lid
 
 	// Если
-	s.If.BinTo(bins, reg, lid, false)
+	s.If.BinTo(bins, reg, lid, false, maxreg)
 
 	*lid++
 	lf := *lid
@@ -99,7 +100,7 @@ func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	bins.Append(binstmt.NewBinJFALSE(reg, lf, s))
 
 	// Тогда
-	s.Then.BinTo(bins, reg, lid)
+	s.Then.BinTo(bins, reg, lid, maxreg)
 
 	bins.Append(binstmt.NewBinJMP(lend, s))
 
@@ -109,7 +110,7 @@ func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	for _, elif := range s.ElseIf {
 		stmtif := elif.(*IfStmt)
 
-		stmtif.If.BinTo(bins, reg, lid, false)
+		stmtif.If.BinTo(bins, reg, lid, false, maxreg)
 
 		// если ложь, то перейдем на следующее условие
 		*lid++
@@ -117,7 +118,7 @@ func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 
 		bins.Append(binstmt.NewBinJFALSE(reg, li, stmtif))
 
-		stmtif.Then.BinTo(bins, reg, lid)
+		stmtif.Then.BinTo(bins, reg, lid, maxreg)
 
 		bins.Append(binstmt.NewBinJMP(lend, stmtif))
 
@@ -126,7 +127,7 @@ func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 
 	// Иначе
 	if len(s.Else) > 0 {
-		s.Else.BinTo(bins, reg, lid)
+		s.Else.BinTo(bins, reg, lid, maxreg)
 	}
 	// КонецЕсли
 	bins.Append(binstmt.NewBinLABEL(lend, s))
@@ -153,7 +154,7 @@ func (x *TryStmt) Simplify() {
 	}
 }
 
-func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	*lid++
 	lend := *lid
 	*lid++
@@ -162,7 +163,7 @@ func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	// по-умолчанию, ошибка в регистрах не отслеживается, а передается по уровням исполнения вирт. машины
 	bins.Append(binstmt.NewBinTRY(reg, li, s))
 
-	s.Try.BinTo(bins, reg+1, lid) // чтобы не затереть регистр с ошибкой, увеличиваем номер
+	s.Try.BinTo(bins, reg+1, lid, maxreg) // чтобы не затереть регистр с ошибкой, увеличиваем номер
 
 	// сюда переходим, если в блоке выше возникла ошибка
 	bins.Append(binstmt.NewBinLABEL(li, s))
@@ -171,7 +172,7 @@ func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	bins.Append(binstmt.NewBinCATCH(reg, lend, s))
 
 	// тело обработки ошибки
-	s.Catch.BinTo(bins, reg, lid) // регистр с ошибкой больше не нужен, текст определен функцией
+	s.Catch.BinTo(bins, reg, lid, maxreg) // регистр с ошибкой больше не нужен, текст определен функцией
 
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 	// КонецПопытки
@@ -198,9 +199,9 @@ func (x *ForStmt) Simplify() {
 	}
 }
 
-func (s *ForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *ForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	// для каждого
-	s.Value.BinTo(bins, reg, lid, false)
+	s.Value.BinTo(bins, reg, lid, false, maxreg)
 
 	*lid++
 	lend := *lid
@@ -222,7 +223,7 @@ func (s *ForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	// устанавливаем переменную-итератор
 	bins.Append(binstmt.NewBinSET(regval, s.Var, s))
 
-	s.Stmts.BinTo(bins, regsub, lid)
+	s.Stmts.BinTo(bins, regsub, lid, maxreg)
 
 	// повторяем итерацию
 	bins.Append(binstmt.NewBinJMP(li, s))
@@ -254,14 +255,14 @@ func (x *NumForStmt) Simplify() {
 	}
 }
 
-func (s *NumForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *NumForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	// для .. по ..
 	regfrom := reg + 1
 	regto := reg + 2
 	regsub := reg + 3
 
-	s.Expr1.BinTo(bins, regfrom, lid, false)
-	s.Expr2.BinTo(bins, regto, lid, false)
+	s.Expr1.BinTo(bins, regfrom, lid, false, maxreg)
+	s.Expr2.BinTo(bins, regto, lid, false, maxreg)
 
 	*lid++
 	lend := *lid
@@ -280,7 +281,7 @@ func (s *NumForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	// устанавливаем переменную-итератор
 	bins.Append(binstmt.NewBinSET(reg, s.Name, s))
 
-	s.Stmts.BinTo(bins, regsub, lid)
+	s.Stmts.BinTo(bins, regsub, lid, maxreg)
 	// повторяем итерацию
 	bins.Append(binstmt.NewBinJMP(li, s))
 
@@ -318,7 +319,7 @@ func (x *LoopStmt) Simplify() {
 	}
 }
 
-func (s *LoopStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *LoopStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	*lid++
 	lend := *lid
 	*lid++
@@ -329,12 +330,12 @@ func (s *LoopStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	// сюда же переходим по Продолжить
 	bins.Append(binstmt.NewBinLABEL(li, s))
 
-	s.Expr.BinTo(bins, reg, lid, false)
+	s.Expr.BinTo(bins, reg, lid, false, maxreg)
 
 	bins.Append(binstmt.NewBinJFALSE(reg, lend, s))
 
 	// тело цикла
-	s.Stmts.BinTo(bins, reg+1, lid)
+	s.Stmts.BinTo(bins, reg+1, lid, maxreg)
 
 	// повторяем итерацию
 	bins.Append(binstmt.NewBinJMP(li, s))
@@ -357,7 +358,7 @@ type BreakStmt struct {
 
 func (x *BreakStmt) Simplify() {}
 
-func (s *BreakStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *BreakStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinBREAK(s))
 }
 
@@ -368,7 +369,7 @@ type ContinueStmt struct {
 
 func (x *ContinueStmt) Simplify() {}
 
-func (s *ContinueStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *ContinueStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinCONTINUE(s))
 }
 
@@ -384,20 +385,20 @@ func (x *ReturnStmt) Simplify() {
 	}
 }
 
-func (s *ReturnStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *ReturnStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 
 	if len(s.Exprs) == 0 {
 		bins.Append(binstmt.NewBinLOAD(reg, nil, false, s))
 	}
 	if len(s.Exprs) == 1 {
 		// одиночное значение в reg
-		s.Exprs[0].BinTo(bins, reg, lid, false)
+		s.Exprs[0].BinTo(bins, reg, lid, false, maxreg)
 	} else {
 		// создание слайса в reg
 		bins.Append(binstmt.NewBinMAKESLICE(reg, len(s.Exprs), len(s.Exprs), s))
 
 		for i, ee := range s.Exprs {
-			ee.BinTo(bins, reg+1, lid, false)
+			ee.BinTo(bins, reg+1, lid, false, maxreg)
 			bins.Append(binstmt.NewBinSETIDX(reg, i, reg+1, ee))
 		}
 	}
@@ -416,8 +417,8 @@ func (x *ThrowStmt) Simplify() {
 	x.Expr = x.Expr.Simplify()
 }
 
-func (s *ThrowStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
-	s.Expr.BinTo(bins, reg, lid, false)
+func (s *ThrowStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
+	s.Expr.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinTHROW(reg, s))
 }
 
@@ -434,10 +435,10 @@ func (x *ModuleStmt) Simplify() {
 	}
 }
 
-func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	if s.Name == env.UniqueNames.Set("_") {
 		// добавляем все операторы в текущий контекст
-		s.Stmts.BinTo(bins, reg, lid)
+		s.Stmts.BinTo(bins, reg, lid, maxreg)
 	} else {
 		bins.Append(binstmt.NewBinMODULE(s.Name, s.Stmts.BinaryCode(0, lid), s))
 	}
@@ -457,8 +458,8 @@ func (x *SwitchStmt) Simplify() {
 	}
 }
 
-func (s *SwitchStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
-	s.Expr.BinTo(bins, reg, lid, true)
+func (s *SwitchStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
+	s.Expr.BinTo(bins, reg, lid, true, maxreg)
 	// сравниваем с каждым case
 	*lid++
 	lend := *lid
@@ -471,15 +472,15 @@ func (s *SwitchStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 		*lid++
 		li := *lid
 		case_stmt := ss.(*CaseStmt)
-		case_stmt.Expr.BinTo(bins, reg+1, lid, false)
+		case_stmt.Expr.BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinEQUAL(reg+2, reg, reg+1, case_stmt))
 		bins.Append(binstmt.NewBinJFALSE(reg+2, li, case_stmt))
-		case_stmt.Stmts.BinTo(bins, reg, lid)
+		case_stmt.Stmts.BinTo(bins, reg, lid, maxreg)
 		bins.Append(binstmt.NewBinJMP(lend, case_stmt))
 		bins.Append(binstmt.NewBinLABEL(li, case_stmt))
 	}
 	if default_stmt != nil {
-		default_stmt.Stmts.BinTo(bins, reg, lid)
+		default_stmt.Stmts.BinTo(bins, reg, lid, maxreg)
 	}
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 	// освобождаем память
@@ -498,7 +499,7 @@ func (x *SelectStmt) Simplify() {
 	}
 }
 
-func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	*lid++
 	lstart := *lid
 	bins.Append(binstmt.NewBinLABEL(lstart, s))
@@ -519,7 +520,7 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			panic(binstmt.NewStringError(case_stmt, "При выборе вариантов из каналов допустимы только выражения с каналами"))
 		}
 		// определяем значение справа
-		e.Rhs.BinTo(bins, reg, lid, false)
+		e.Rhs.BinTo(bins, reg, lid, false, maxreg)
 		if e.Lhs == nil {
 			// слева нет значения - это временное чтение из канала без сохранения значения в переменной
 			bins.Append(binstmt.NewBinTRYRECV(reg, reg+1, reg+2, reg+3, e.Rhs))
@@ -527,7 +528,7 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			bins.Append(binstmt.NewBinJFALSE(reg+2, li, s))
 		} else {
 			// значение слева
-			e.Lhs.BinTo(bins, reg+1, lid, false)
+			e.Lhs.BinTo(bins, reg+1, lid, false, maxreg)
 
 			// проверяем: слева канал?
 			bins.Append(binstmt.NewBinMV(reg+1, reg+3, e))
@@ -560,12 +561,12 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			bins.Append(binstmt.NewBinJFALSE(reg+2, li, s))
 
 			// устанавливаем переменную прочитанным значением
-			e.Lhs.(CanLetExpr).BinLetTo(bins, reg+1, lid)
+			e.Lhs.(CanLetExpr).BinLetTo(bins, reg+1, lid, maxreg)
 
 			bins.Append(binstmt.NewBinLABEL(li2, s))
 		}
 		// отправили или прочитали - выполняем ветку кода и выходим из цикла
-		case_stmt.Stmts.BinTo(bins, reg, lid)
+		case_stmt.Stmts.BinTo(bins, reg, lid, maxreg)
 
 		// выходим из цикла
 		bins.Append(binstmt.NewBinJMP(lend, case_stmt))
@@ -575,7 +576,7 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 	}
 	// если ни одна из веток не сработала - проверяем default
 	if default_stmt != nil {
-		default_stmt.Stmts.BinTo(bins, reg, lid)
+		default_stmt.Stmts.BinTo(bins, reg, lid, maxreg)
 	} else {
 		// допускаем обработку других горутин
 		bins.Append(binstmt.NewBinGOSHED(s))
@@ -600,7 +601,7 @@ func (x *CaseStmt) Simplify() {
 	}
 }
 
-func (s *CaseStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *CaseStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	//ничего не делаем, эти блоки обрабатываются в родительских контекстах
 }
 
@@ -616,7 +617,7 @@ func (x *DefaultStmt) Simplify() {
 	}
 }
 
-func (s *DefaultStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *DefaultStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	//ничего не делаем, эти блоки обрабатываются в родительских контекстах
 }
 
@@ -637,12 +638,12 @@ func (x *LetsStmt) Simplify() {
 	}
 }
 
-func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	// если справа одно выражение - присваиваем его всем левым
 	// и если там массив, то по очереди элементы, начиная с 0-го
 	// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 	if len(s.Rhss) == 1 && len(s.Lhss) > 1 {
-		s.Rhss[0].BinTo(bins, reg, lid, false)
+		s.Rhss[0].BinTo(bins, reg, lid, false, maxreg)
 		// проверяем на массив
 		*lid++
 		lend := *lid
@@ -658,7 +659,7 @@ func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			bins.Append(binstmt.NewBinMV(reg, reg+1, e))
 			bins.Append(binstmt.NewBinLOAD(reg+2, core.VMInt(i), false, e))
 			bins.Append(binstmt.NewBinGETIDX(reg+1, reg+2, e))
-			e.(CanLetExpr).BinLetTo(bins, reg+1, lid)
+			e.(CanLetExpr).BinLetTo(bins, reg+1, lid, maxreg)
 			i++
 		}
 		bins.Append(binstmt.NewBinJMP(lend, s))
@@ -666,7 +667,7 @@ func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 		// присваиваем одно и то же значение
 		bins.Append(binstmt.NewBinLABEL(li, s))
 		for _, e := range s.Lhss {
-			e.(CanLetExpr).BinLetTo(bins, reg, lid)
+			e.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
 		}
 		bins.Append(binstmt.NewBinLABEL(lend, s))
 	} else {
@@ -674,10 +675,10 @@ func (s *LetsStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
 			// сначала все вычисляем в разные регистры, затем все присваиваем
 			// так обеспечиваем взаимный обмен
 			for i := range s.Rhss {
-				s.Rhss[i].BinTo(bins, reg+i, lid, false)
+				s.Rhss[i].BinTo(bins, reg+i, lid, false, maxreg)
 			}
 			for i, e := range s.Lhss {
-				e.(CanLetExpr).BinLetTo(bins, reg+i, lid)
+				e.(CanLetExpr).BinLetTo(bins, reg+i, lid, maxreg)
 			}
 		} else {
 			// ошибка
@@ -699,18 +700,18 @@ func (x *VarStmt) Simplify() {
 	}
 }
 
-func (s *VarStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (s *VarStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	// если справа одно выражение - присваиваем его всем левым
 	// иначе с обеих сторон должно быть одинаковое число выражений, они попарно присваиваются
 	if len(s.Exprs) == 1 {
-		s.Exprs[0].BinTo(bins, reg, lid, false)
+		s.Exprs[0].BinTo(bins, reg, lid, false, maxreg)
 		for _, e := range s.Names {
 			bins.Append(binstmt.NewBinSET(reg, e, s))
 		}
 	} else {
 		if len(s.Exprs) == len(s.Names) {
 			for i, e := range s.Exprs {
-				e.BinTo(bins, reg, lid, false)
+				e.BinTo(bins, reg, lid, false, maxreg)
 				bins.Append(binstmt.NewBinSET(reg, s.Names[i], s))
 			}
 		} else {

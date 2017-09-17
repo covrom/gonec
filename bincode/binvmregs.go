@@ -21,12 +21,12 @@ type VMRegs struct {
 func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
 	return &VMRegs{
 		Env: env,
-		Reg:          make([]core.VMValuer, 0, 5),
+		Reg:          make([]core.VMValuer, 0, 16),
 		Labels:       stmts.Labels,
-		TryLabel:     make([]int, 0, 5),
-		TryRegErr:    make([]int, 0, 5),
-		ForBreaks:    make([]int, 0, 5),
-		ForContinues: make([]int, 0, 5),
+		TryLabel:     make([]int, 0, 8),
+		TryRegErr:    make([]int, 0, 8),
+		ForBreaks:    make([]int, 0, 8),
+		ForContinues: make([]int, 0, 8),
 	}
 }
 

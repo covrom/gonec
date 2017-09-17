@@ -35,6 +35,7 @@ func (x *BinStmts) Append(bs BinStmt) {
 
 type BinCode struct {
 	Code   BinStmts
+	MaxReg int
 	Labels []int //индекс - это номер метки, значение = индекс stmt в Code
 }
 

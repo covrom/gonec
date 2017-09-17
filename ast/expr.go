@@ -14,12 +14,12 @@ type Expr interface {
 	pos.Pos
 	expr()
 	Simplify() Expr
-	BinTo(*binstmt.BinStmts, int, *int, bool)
+	BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int)
 }
 
 type CanLetExpr interface {
 	Expr
-	BinLetTo(*binstmt.BinStmts, int, *int)
+	BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int)
 }
 
 // ExprImpl provide commonly implementations for Expr.
@@ -36,7 +36,7 @@ type NoneExpr struct {
 }
 
 func (x *NoneExpr) Simplify() Expr { return x }
-func (e *NoneExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *NoneExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinLOAD(reg, nil, false, e))
 }
 
@@ -64,7 +64,7 @@ func (x *NumberExpr) Simplify() Expr {
 	return &NativeExpr{Value: rv}
 }
 
-func (e *NumberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *NumberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	// команда на загрузку строки в регистр и ее преобразование в число, в регистр reg
 	bins.Append(binstmt.NewBinLOAD(reg, core.VMString(e.Lit), false, e))
 	bins.Append(binstmt.NewBinCASTNUM(reg, e))
@@ -80,7 +80,7 @@ func (x *StringExpr) Simplify() Expr {
 	return &NativeExpr{Value: core.VMString(x.Lit)}
 }
 
-func (e *StringExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *StringExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinLOAD(reg, core.VMString(e.Lit), false, e))
 }
 
@@ -108,13 +108,13 @@ func (x *ArrayExpr) Simplify() Expr {
 	}
 }
 
-func (e *ArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *ArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	// создание слайса
 	bins.Append(binstmt.NewBinMAKESLICE(reg, len(e.Exprs), len(e.Exprs), e))
 
 	for i, ee := range e.Exprs {
 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-		ee.BinTo(bins, reg+1, lid, false)
+		ee.BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinSETIDX(reg, i, reg+1, ee))
 	}
 }
@@ -131,7 +131,7 @@ func (x *PairExpr) Simplify() Expr {
 	return x
 }
 
-func (e *PairExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {}
+func (e *PairExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {}
 
 // MapExpr provide Map expression.
 type MapExpr struct {
@@ -158,13 +158,13 @@ func (x *MapExpr) Simplify() Expr {
 	}
 }
 
-func (e *MapExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *MapExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	// создание мапы
 	bins.Append(binstmt.NewBinMAKEMAP(reg, len(e.MapExpr), e))
 
 	for k, ee := range e.MapExpr {
 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-		ee.BinTo(bins, reg+1, lid, false)
+		ee.BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinSETKEY(reg, reg+1, k, ee))
 	}
 }
@@ -178,11 +178,11 @@ type IdentExpr struct {
 
 func (x *IdentExpr) Simplify() Expr { return x }
 
-func (e *IdentExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (e *IdentExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinSET(reg, e.Id, e))
 }
 
-func (e *IdentExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *IdentExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinGET(reg, e.Id, e))
 }
 
@@ -207,8 +207,8 @@ func (x *UnaryExpr) Simplify() Expr {
 	return x
 }
 
-func (e *UnaryExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.Expr.BinTo(bins, reg, lid, false)
+func (e *UnaryExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.Expr.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinUNARY(reg, rune(e.Operator[0]), e))
 }
 
@@ -223,12 +223,12 @@ func (x *AddrExpr) Simplify() Expr {
 	return x
 }
 
-func (e *AddrExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *AddrExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	switch ee := e.Expr.(type) {
 	case *IdentExpr:
 		bins.Append(binstmt.NewBinADDRID(reg, ee.Id, e))
 	case *MemberExpr:
-		ee.Expr.BinTo(bins, reg, lid, false)
+		ee.Expr.BinTo(bins, reg, lid, false, maxreg)
 		bins.Append(binstmt.NewBinADDRMBR(reg, ee.Name, e))
 	default:
 		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
@@ -246,12 +246,12 @@ func (x *DerefExpr) Simplify() Expr {
 	return x
 }
 
-func (e *DerefExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *DerefExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	switch ee := e.Expr.(type) {
 	case *IdentExpr:
 		bins.Append(binstmt.NewBinUNREFID(reg, ee.Id, e))
 	case *MemberExpr:
-		ee.Expr.BinTo(bins, reg, lid, false)
+		ee.Expr.BinTo(bins, reg, lid, false, maxreg)
 		bins.Append(binstmt.NewBinUNREFMBR(reg, ee.Name, e))
 	default:
 		panic(binstmt.NewStringError(e, "Неверная операция над значением"))
@@ -272,8 +272,8 @@ func (x *ParenExpr) Simplify() Expr {
 	return x
 }
 
-func (e *ParenExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.SubExpr.BinTo(bins, reg, lid, false)
+func (e *ParenExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.SubExpr.BinTo(bins, reg, lid, false, maxreg)
 }
 
 // BinOpExpr provide binary operator expression.
@@ -312,7 +312,7 @@ func (x *BinOpExpr) Simplify() Expr {
 	return x
 }
 
-func (e *BinOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *BinOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 
 	oper := core.OperMap[e.Operator]
 	// если это равенство в контексте исполнения блока кода, то это присваивание, а не вычисление выражения
@@ -321,31 +321,31 @@ func (e *BinOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 			Lhss:     e.Lhss,
 			Operator: "=",
 			Rhss:     e.Rhss,
-		}).BinTo(bins, reg, lid)
+		}).BinTo(bins, reg, lid, maxreg)
 		return
 	}
 	if len(e.Lhss) != 1 || len(e.Rhss) != 1 {
 		panic(binstmt.NewStringError(e, "С каждой стороны операции может быть только одно выражение"))
 	}
 	// сначала вычисляем левую часть
-	e.Lhss[0].BinTo(bins, reg, lid, false)
+	e.Lhss[0].BinTo(bins, reg, lid, false, maxreg)
 	switch oper {
 	case core.LOR:
 		*lid++
 		lab := *lid
 		// вставляем проверку на истину слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
 		bins.Append(binstmt.NewBinJTRUE(reg, lab, e))
-		e.Rhss[0].BinTo(bins, reg, lid, false)
+		e.Rhss[0].BinTo(bins, reg, lid, false, maxreg)
 		bins.Append(binstmt.NewBinLABEL(lab, e))
 	case core.LAND:
 		*lid++
 		lab := *lid
 		// вставляем проверку на ложь слева и возвращаем ее, не вычисляя правую часть, иначе возвращаем правую часть
 		bins.Append(binstmt.NewBinJFALSE(reg, lab, e))
-		e.Rhss[0].BinTo(bins, reg, lid, false)
+		e.Rhss[0].BinTo(bins, reg, lid, false, maxreg)
 		bins.Append(binstmt.NewBinLABEL(lab, e))
 	default:
-		e.Rhss[0].BinTo(bins, reg+1, lid, false)
+		e.Rhss[0].BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinOPER(reg, reg+1, oper, e))
 	}
 }
@@ -373,20 +373,20 @@ func (x *TernaryOpExpr) Simplify() Expr {
 	return x
 }
 
-func (e *TernaryOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.Expr.BinTo(bins, reg, lid, false)
+func (e *TernaryOpExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.Expr.BinTo(bins, reg, lid, false, maxreg)
 	*lid++
 	lab := *lid
 	bins.Append(binstmt.NewBinJFALSE(reg, lab, e))
 	// если истина - берем левое выражение
-	e.Lhs.BinTo(bins, reg, lid, false)
+	e.Lhs.BinTo(bins, reg, lid, false, maxreg)
 	// прыгаем в конец
 	*lid++
 	lend := *lid
 	bins.Append(binstmt.NewBinJMP(lend, e))
 	// правое выражение
 	bins.Append(binstmt.NewBinLABEL(lab, e))
-	e.Rhs.BinTo(bins, reg, lid, false)
+	e.Rhs.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
@@ -407,7 +407,7 @@ func (x *CallExpr) Simplify() Expr {
 	return x
 }
 
-func (e *CallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *CallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	// если это анонимный вызов, то в reg сама функция, значит, параметры записываем в reg+1, иначе в reg
 	var regoff int
 	if e.Name == 0 {
@@ -423,7 +423,7 @@ func (e *CallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool)
 
 	for i, ee := range e.SubExprs {
 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-		ee.BinTo(bins, reg+sliceoff+regoff, lid, false)
+		ee.BinTo(bins, reg+sliceoff+regoff, lid, false, maxreg)
 		if sliceoff == 1 {
 			bins.Append(binstmt.NewBinSETIDX(reg+regoff, i, reg+sliceoff+regoff, ee))
 		}
@@ -450,16 +450,16 @@ func (x *AnonCallExpr) Simplify() Expr {
 	return x
 }
 
-func (e *AnonCallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *AnonCallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	// помещаем в регистр значение функции (тип func, или ссылку на него, или интерфейс с ним)
-	e.Expr.BinTo(bins, reg, lid, false)
+	e.Expr.BinTo(bins, reg, lid, false, maxreg)
 	// далее аргументы, как при вызове обычной функции
 	(&CallExpr{
 		Name:     0,
 		SubExprs: e.SubExprs,
 		VarArg:   e.VarArg,
 		Go:       e.Go,
-	}).BinTo(bins, reg, lid, false) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
+	}).BinTo(bins, reg, lid, false, maxreg) // передаем именно reg, т.к. он для Name==0 означает функцию, которую надо вызвать в BinCALL
 }
 
 // MemberExpr provide expression to refer menber.
@@ -474,13 +474,13 @@ func (x *MemberExpr) Simplify() Expr {
 	return x
 }
 
-func (e *MemberExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
-	e.Expr.BinTo(bins, reg+1, lid, false)
+func (e *MemberExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
+	e.Expr.BinTo(bins, reg+1, lid, false, maxreg)
 	bins.Append(binstmt.NewBinSETMEMBER(reg+1, e.Name, reg, e))
 }
 
-func (e *MemberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.Expr.BinTo(bins, reg, lid, false)
+func (e *MemberExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.Expr.BinTo(bins, reg, lid, false, maxreg)
 	bins.Append(binstmt.NewBinGETMEMBER(reg, e.Name, e))
 }
 
@@ -511,22 +511,22 @@ func (x *ItemExpr) Simplify() Expr {
 	return x
 }
 
-func (e *ItemExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (e *ItemExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 
 	*lid++
 	lend := *lid
-	e.Value.BinTo(bins, reg+1, lid, false)
-	e.Index.BinTo(bins, reg+2, lid, false)
+	e.Value.BinTo(bins, reg+1, lid, false, maxreg)
+	e.Index.BinTo(bins, reg+2, lid, false, maxreg)
 	bins.Append(binstmt.NewBinSETITEM(reg+1, reg+2, reg, reg+3, e))
 	bins.Append(binstmt.NewBinJFALSE(reg+3, lend, e))
 	ee := e.Value.(CanLetExpr)
-	ee.BinLetTo(bins, reg+1, lid)
+	ee.BinLetTo(bins, reg+1, lid, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
-func (e *ItemExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.Value.BinTo(bins, reg, lid, false)
-	e.Index.BinTo(bins, reg+1, lid, false)
+func (e *ItemExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.Value.BinTo(bins, reg, lid, false, maxreg)
+	e.Index.BinTo(bins, reg+1, lid, false, maxreg)
 	bins.Append(binstmt.NewBinGETIDX(reg, reg+1, e))
 }
 
@@ -558,24 +558,24 @@ func (x *SliceExpr) Simplify() Expr {
 	return x
 }
 
-func (e *SliceExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int) {
+func (e *SliceExpr) BinLetTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	*lid++
 	lend := *lid
-	e.Value.BinTo(bins, reg+1, lid, false)
-	e.Begin.BinTo(bins, reg+2, lid, false)
-	e.End.BinTo(bins, reg+3, lid, false)
+	e.Value.BinTo(bins, reg+1, lid, false, maxreg)
+	e.Begin.BinTo(bins, reg+2, lid, false, maxreg)
+	e.End.BinTo(bins, reg+3, lid, false, maxreg)
 	bins.Append(binstmt.NewBinSETSLICE(reg+1, reg+2, reg+3, reg, reg+4, e))
 
 	bins.Append(binstmt.NewBinJFALSE(reg+4, lend, e))
 	ee := e.Value.(CanLetExpr)
-	ee.BinLetTo(bins, reg+1, lid)
+	ee.BinLetTo(bins, reg+1, lid, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
-func (e *SliceExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.Value.BinTo(bins, reg, lid, false)
-	e.Begin.BinTo(bins, reg+1, lid, false)
-	e.End.BinTo(bins, reg+2, lid, false)
+func (e *SliceExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.Value.BinTo(bins, reg, lid, false, maxreg)
+	e.Begin.BinTo(bins, reg+1, lid, false, maxreg)
+	e.End.BinTo(bins, reg+2, lid, false, maxreg)
 	bins.Append(binstmt.NewBinGETSUBSLICE(reg, reg+1, reg+2, e))
 }
 
@@ -595,14 +595,14 @@ func (x *FuncExpr) Simplify() Expr {
 	return x
 }
 
-func (e *FuncExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *FuncExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	*lid++
 	lstart := *lid
 	*lid++
 	lend := *lid
 	bins.Append(binstmt.NewBinFUNC(reg, e.Name, e.Args, e.VarArg, lstart, lend, e))
 	bins.Append(binstmt.NewBinLABEL(lstart, e))
-	e.Stmts.BinTo(bins, reg, lid)
+	e.Stmts.BinTo(bins, reg, lid, maxreg)
 	bins.Append(binstmt.NewBinLABEL(lend, e))
 }
 
@@ -619,9 +619,9 @@ func (x *LetExpr) Simplify() Expr {
 	return x
 }
 
-func (e *LetExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.Rhs.BinTo(bins, reg, lid, false)
-	e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
+func (e *LetExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.Rhs.BinTo(bins, reg, lid, false, maxreg)
+	e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
 }
 
 // LetsExpr provide multiple expression of let.
@@ -646,7 +646,7 @@ func (x *AssocExpr) Simplify() Expr {
 	return x
 }
 
-func (e *AssocExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *AssocExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	switch e.Operator {
 	case "++":
 		if alhs, ok := e.Lhs.(*IdentExpr); ok {
@@ -665,8 +665,8 @@ func (e *AssocExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool
 			panic(binstmt.NewStringError(alhs, "Декремент применим только к переменным"))
 		}
 	default:
-		(&BinOpExpr{Lhss: []Expr{e.Lhs}, Operator: e.Operator[0:1], Rhss: []Expr{e.Rhs}}).BinTo(bins, reg, lid, false)
-		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
+		(&BinOpExpr{Lhss: []Expr{e.Lhs}, Operator: e.Operator[0:1], Rhss: []Expr{e.Rhs}}).BinTo(bins, reg, lid, false, maxreg)
+		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
 	}
 }
 
@@ -694,7 +694,7 @@ func (x *ConstExpr) Simplify() Expr {
 	return x
 }
 
-func (e *ConstExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *ConstExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	var v core.VMValuer
 
 	switch strings.ToLower(e.Value) {
@@ -723,15 +723,15 @@ func (x *ChanExpr) Simplify() Expr {
 	return x
 }
 
-func (e *ChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *ChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	// определяем значение справа
-	e.Rhs.BinTo(bins, reg+1, lid, false)
+	e.Rhs.BinTo(bins, reg+1, lid, false, maxreg)
 	if e.Lhs == nil {
 		// слева нет значения - это временное чтение из канала без сохранения значения в переменной
 		bins.Append(binstmt.NewBinCHANRECV(reg+1, reg, e))
 	} else {
 		// значение слева
-		e.Lhs.BinTo(bins, reg+2, lid, false)
+		e.Lhs.BinTo(bins, reg+2, lid, false, maxreg)
 		bins.Append(binstmt.NewBinMV(reg+2, reg+3, e))
 		// слева канал - пишем в него правое
 		bins.Append(binstmt.NewBinISKIND(reg+3, reflect.Chan, e))
@@ -749,7 +749,7 @@ func (e *ChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool)
 		// иначе справа канал, а слева переменная (установим, если прочитали из канала)
 		bins.Append(binstmt.NewBinLABEL(li, e))
 		bins.Append(binstmt.NewBinCHANRECV(reg+1, reg, e))
-		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid)
+		e.Lhs.(CanLetExpr).BinLetTo(bins, reg, lid, maxreg)
 
 		bins.Append(binstmt.NewBinLABEL(li2, e))
 	}
@@ -772,12 +772,12 @@ func (x *TypeCast) Simplify() Expr {
 	return x
 }
 
-func (e *TypeCast) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.CastExpr.BinTo(bins, reg, lid, false)
+func (e *TypeCast) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.CastExpr.BinTo(bins, reg, lid, false, maxreg)
 	if e.TypeExpr == nil {
 		bins.Append(binstmt.NewBinLOAD(reg+1, core.VMInt(e.Type), true, e))
 	} else {
-		e.TypeExpr.BinTo(bins, reg+1, lid, false)
+		e.TypeExpr.BinTo(bins, reg+1, lid, false, maxreg)
 		bins.Append(binstmt.NewBinSETNAME(reg+1, e))
 	}
 	bins.Append(binstmt.NewBinCASTTYPE(reg, reg+1, e))
@@ -794,11 +794,11 @@ func (x *MakeExpr) Simplify() Expr {
 	return x
 }
 
-func (e *MakeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *MakeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	if e.TypeExpr == nil {
 		bins.Append(binstmt.NewBinLOAD(reg, core.VMInt(e.Type), true, e))
 	} else {
-		e.TypeExpr.BinTo(bins, reg, lid, false)
+		e.TypeExpr.BinTo(bins, reg, lid, false, maxreg)
 		bins.Append(binstmt.NewBinSETNAME(reg, e))
 	}
 	bins.Append(binstmt.NewBinMAKE(reg, e))
@@ -815,11 +815,11 @@ func (x *MakeChanExpr) Simplify() Expr {
 	return x
 }
 
-func (e *MakeChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *MakeChanExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	if e.SizeExpr == nil {
 		bins.Append(binstmt.NewBinLOAD(reg, core.VMInt(0), false, e))
 	} else {
-		e.SizeExpr.BinTo(bins, reg, lid, false)
+		e.SizeExpr.BinTo(bins, reg, lid, false, maxreg)
 	}
 	bins.Append(binstmt.NewBinMAKECHAN(reg, e))
 }
@@ -837,12 +837,12 @@ func (x *MakeArrayExpr) Simplify() Expr {
 	return x
 }
 
-func (e *MakeArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
-	e.LenExpr.BinTo(bins, reg, lid, false)
+func (e *MakeArrayExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
+	e.LenExpr.BinTo(bins, reg, lid, false, maxreg)
 	if e.CapExpr == nil {
 		bins.Append(binstmt.NewBinMV(reg, reg+1, e))
 	} else {
-		e.CapExpr.BinTo(bins, reg+1, lid, false)
+		e.CapExpr.BinTo(bins, reg+1, lid, false, maxreg)
 	}
 	bins.Append(binstmt.NewBinMAKEARR(reg, reg+1, e))
 }
@@ -857,6 +857,6 @@ func (x *NativeExpr) Simplify() Expr {
 	return x
 }
 
-func (e *NativeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool) {
+func (e *NativeExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	bins.Append(binstmt.NewBinLOAD(reg, e.Value, false, e))
 }
