@@ -20,6 +20,10 @@ func (x VMSlice) Slice() VMSlice {
 	return x
 }
 
+func (x *VMSlice) Append(a VMValuer) {
+	*x = append(*x, a)
+}
+
 func (x VMSlice) Length() VMInt {
 	return VMInt(len(x))
 }

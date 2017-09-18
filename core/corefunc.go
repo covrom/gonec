@@ -7,7 +7,7 @@ import "fmt"
 // функции такого типа создаются на языке Гонец,
 // их можно использовать в стандартной библиотеке, проверив на этот тип
 // в args передаются входные параметры, в rets передается ссылка на слайс возвращаемых значений - он заполняется в функции
-type VMFunc func(args VMSlicer, rets *VMSlicer) error
+type VMFunc func(args VMSlice, rets *VMSlice) error
 
 func (f VMFunc) vmval() {}
 

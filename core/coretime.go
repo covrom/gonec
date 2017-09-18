@@ -34,7 +34,117 @@ func (v VMTimeDuration) Duration() VMTimeDuration {
 }
 
 func (v VMTimeDuration) String() string {
-	return time.Duration(v).String()
+	u := uint64(v)
+	if u == 0 {
+		return "0с"
+	}
+	neg := v < 0
+	if neg {
+		u = -u
+	}
+
+	var buf [40]byte
+	w := len(buf)
+
+	if u < uint64(VMSecond) {
+		// Special case: if duration is smaller than a second,
+		// use smaller units, like 1.2ms
+		var prec int
+		w -= 2
+		copy(buf[w:], "с")
+		switch {
+		case u < uint64(VMMicrosecond):
+			// print nanoseconds
+			prec = 0
+			w -= 2 // Need room for two bytes.
+			copy(buf[w:], "н")
+		case u < uint64(VMMillisecond):
+			// print microseconds
+			prec = 3
+			w -= 4 // Need room for 4 bytes.
+			copy(buf[w:], "мк")
+		default:
+			// print milliseconds
+			prec = 6
+			w -= 2 // Need room for two bytes.
+			copy(buf[w:], "м")
+		}
+		w, u = fmtFrac(buf[:w], u, prec)
+		w = fmtInt(buf[:w], u)
+	} else {
+		w -= 2
+		copy(buf[w:], "с")
+
+		w, u = fmtFrac(buf[:w], u, 9)
+
+		// u is now integer seconds
+		w = fmtInt(buf[:w], u%60)
+		u /= 60
+
+		// u is now integer minutes
+		if u > 0 {
+			w -= 2
+			copy(buf[w:], "м")
+			w = fmtInt(buf[:w], u%60)
+			u /= 60
+
+			// u is now integer hours
+			if u > 0 {
+				w -= 2
+				copy(buf[w:], "ч")
+				w = fmtInt(buf[:w], u%24)
+				u /= 24
+
+				if u > 0 {
+					w -= 2
+					copy(buf[w:], "д")
+					w = fmtInt(buf[:w], u)
+				}
+			}
+		}
+	}
+
+	if neg {
+		w--
+		buf[w] = '-'
+	}
+
+	return string(buf[w:])
+}
+
+func fmtFrac(buf []byte, v uint64, prec int) (nw int, nv uint64) {
+	// Omit trailing zeros up to and including decimal point.
+	w := len(buf)
+	print := false
+	for i := 0; i < prec; i++ {
+		digit := v % 10
+		print = print || digit != 0
+		if print {
+			w--
+			buf[w] = byte(digit) + '0'
+		}
+		v /= 10
+	}
+	if print {
+		w--
+		buf[w] = '.'
+	}
+	return w, v
+}
+
+func fmtInt(buf []byte, v uint64) int {
+	w := len(buf)
+	if v == 0 {
+		w--
+		buf[w] = '0'
+	} else {
+		for v > 0 {
+			w--
+			buf[w] = byte(v%10) + '0'
+			v /= 10
+		}
+	}
+	return w
 }
 
 //VMTime дата и время
@@ -42,6 +152,10 @@ func (v VMTimeDuration) String() string {
 type VMTime time.Time
 
 var ReflectVMTime = reflect.TypeOf(VMTime{})
+
+func Now() VMTime {
+	return VMTime(time.Now())
+}
 
 func (v VMTime) vmval() {}
 

@@ -21,19 +21,18 @@ func LoadAllBuiltins(env *Env) {
 	// "strings":       gonec_strings.Import,
 	}
 
-	env.DefineS("импорт", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		as := args.Slice()
-		if len(as) != 1 {
-			return nil, errors.New("Должно быть одно название пакета")
+	env.DefineS("импорт", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должно быть одно название пакета")
 		}
-		if s, ok := as[0].(VMString); ok {
+		if s, ok := args[0].(VMString); ok {
 			if loader, ok := pkgs[strings.ToLower(string(s))]; ok {
-				m := loader(env)
-				return m, nil // возвращает окружение, инициализированное пакетом
+				rets.Append(loader(env)) // возвращает окружение, инициализированное пакетом
+				return nil
 			}
-			return nil, fmt.Errorf("Пакет '%s' не найден", s)
+			return fmt.Errorf("Пакет '%s' не найден", s)
 		} else {
-			return nil, errors.New("Название пакета должно быть строкой")
+			return errors.New("Название пакета должно быть строкой")
 		}
 	}))
 
@@ -60,23 +59,22 @@ func (tst *TttStructTest) ВСтроку() VMString {
 // Import общая стандартная бибилиотека
 func Import(env *Env) *Env {
 
-	env.DefineS("длина", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		as := args.Slice()
-		if len(as) != 1 {
-			return nil, errors.New("Должен быть один параметр")
+	env.DefineS("длина", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		if rv, ok := as[0].(VMIndexer); ok {
-			return rv.Length(), nil
+		if rv, ok := args[0].(VMIndexer); ok {
+			rets.Append(rv.Length())
+			return nil
 		}
-		return nil, errors.New("Аргумент должен иметь длину")
+		return errors.New("Аргумент должен иметь длину")
 	}))
 
-	env.DefineS("ключи", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		as := args.Slice()
-		if len(as) != 1 {
-			return nil, errors.New("Должен быть один параметр")
+	env.DefineS("ключи", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		if vv, ok := as[0].(VMStringMaper); ok {
+		if vv, ok := args[0].(VMStringMaper); ok {
 			rv := vv.StringMap()
 			keys := make(VMSlice, len(rv))
 			i := 0
@@ -85,80 +83,81 @@ func Import(env *Env) *Env {
 				i++
 			}
 			keys.SortDefault()
-			return keys, nil
+			rets.Append(keys)
+			return nil
 		}
-		return nil, errors.New("Аргумент должен быть структурой")
+		return errors.New("Аргумент должен быть структурой")
 	}))
 
-	env.DefineS("диапазон", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		as := args.Slice()
-		if len(as) < 1 {
-			return nil, errors.New("Отсутствуют аргументы")
+	env.DefineS("диапазон", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) < 1 {
+			return errors.New("Отсутствуют аргументы")
 		}
-		if len(as) > 2 {
-			return nil, errors.New("Должна быть длина диапазона или начало и конец")
+		if len(args) > 2 {
+			return errors.New("Должна быть длина диапазона или начало и конец")
 		}
 		var min, max int64
 		var arr VMSlice
-		if len(as) == 1 {
+		if len(args) == 1 {
 			min = 0
-			maxvm, ok := as[0].(VMInt)
+			maxvm, ok := args[0].(VMInt)
 			if !ok {
-				return nil, errors.New("Длина диапазона должна быть целым числом")
+				return errors.New("Длина диапазона должна быть целым числом")
 			}
 			max = maxvm.Int() - 1
 		} else {
-			minvm, ok := as[0].(VMInt)
+			minvm, ok := args[0].(VMInt)
 			if !ok {
-				return nil, errors.New("Начало диапазона должно быть целым числом")
+				return errors.New("Начало диапазона должно быть целым числом")
 			}
 			min = minvm.Int()
-			maxvm, ok := as[1].(VMInt)
+			maxvm, ok := args[1].(VMInt)
 			if !ok {
-				return nil, errors.New("Конец диапазона должен быть целым числом")
+				return errors.New("Конец диапазона должен быть целым числом")
 			}
 			max = maxvm.Int()
 		}
 		if min > max {
-			return nil, errors.New("Длина диапазона должна быть больше нуля")
+			return errors.New("Длина диапазона должна быть больше нуля")
 		}
 		arr = make(VMSlice, max-min+1)
 
 		for i := min; i <= max; i++ {
 			arr[i-min] = VMInt(i)
 		}
-		return arr, nil
+		rets.Append(arr)
+		return nil
 	}))
 
-	env.DefineS("текущаядата", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		return VMTime(time.Now()), nil
+	env.DefineS("текущаядата", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		rets.Append(Now())
+		return nil
 	}))
 
-	env.DefineS("прошловременис", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		as := args.Slice()
-		if len(as) != 1 {
-			return nil, errors.New("Должен быть один параметр")
+	env.DefineS("прошловременис", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		if rv, ok := as[0].(VMTime); ok {
-			// TODO: переделать на VMDurationer в VMTime
-			return VMTimeDuration(time.Since(time.Time(rv.Time()))), nil
+		if rv, ok := args[0].(VMDateTimer); ok {
+			rets.Append(Now().Вычесть(rv.Time()))
+			return nil
 		}
-		return nil, errors.New("Допустим только аргумент типа Дата")
-
+		return errors.New("Допустим только аргумент типа Дата или совместимый с ним")
 	}))
 
-	env.DefineS("пауза", VMFunc(func(args VMSlicer) (VMValuer, error) {
-		as := args.Slice()
-		if len(as) != 1 {
-			return nil, errors.New("Должен быть один параметр")
+	env.DefineS("пауза", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		if v, ok := as[0].(VMNumberer); ok {
-			sec1 := decimal.New(int64(time.Second), 0)
+		if v, ok := args[0].(VMNumberer); ok {
+			sec1 := decimal.New(int64(VMSecond), 0)
 			time.Sleep(time.Duration(v.Decimal().Mul(VMDecimal(sec1)).Int()))
-			return nil, nil
+			return nil
 		}
-		return nil, errors.New("Должно быть число секунд (с дробной частью)")
+		return errors.New("Должно быть число секунд (допустимо с дробной частью)")
 	}))
+
+	// TODO: добавить операции по умножению длительностей VMTimeDuration на числа VMNumberer.Decimal
 
 	env.DefineS("длительностьнаносекунды", VMNanosecond)
 	env.DefineS("длительностьмикросекунды", VMMicrosecond)
@@ -167,14 +166,6 @@ func Import(env *Env) *Env {
 	env.DefineS("длительностьминуты", VMMinute)
 	env.DefineS("длительностьчаса", VMHour)
 	env.DefineS("длительностьдня", VMDay)
-
-	env.DefineS("длительность", func(s string) VMTimeDuration {
-		d, err := time.ParseDuration(s)
-		if err != nil {
-			panic(err)
-		}
-		return d
-	})
 
 	env.DefineS("нрег", func(v interface{}) string {
 		if b, ok := v.([]byte); ok {
@@ -240,7 +231,7 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("массив", VMSlice{})
 	env.DefineTypeS("структура", VMStringMap{})
 	env.DefineTypeS("дата", VMTime{})
-	
+
 	//////////////////
 	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})
 	env.DefineS("__дамп__", env.Dump)
