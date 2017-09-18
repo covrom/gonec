@@ -121,7 +121,9 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
 	regs := NewVMRegs(stmts, env)
-
+	argsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс аргументов для вызова функций VMFunc
+	retsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс возвращаемых значений из функций VMFunc
+	
 	goschedidx := 0
 
 	var (
@@ -245,7 +247,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				break
 			}
 			if !v.IsValid() {
-				regs.Reg[s.Reg]= nil
+				regs.Reg[s.Reg] = nil
 			} else {
 				regs.Set(s.Reg, v.Interface())
 			}

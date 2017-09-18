@@ -7,6 +7,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// TODO: для слайса реализовать поведение массива при изменении размеров (т.е. изменение размера передается в переменную)
+
 type VMSlice []VMValuer
 
 func (x VMSlice) vmval() {}
