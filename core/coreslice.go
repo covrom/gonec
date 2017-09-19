@@ -16,8 +16,15 @@ func (x VMSlice) vmval() {}
 func (x VMSlice) Interface() interface{} {
 	return x
 }
+
 func (x VMSlice) Slice() VMSlice {
 	return x
+}
+
+func (x VMSlice) Args() []interface{} {
+	ai := make([]interface{}, len(x))
+	copy(ai, x)
+	return ai
 }
 
 func (x *VMSlice) Append(a VMValuer) {
@@ -55,7 +62,7 @@ func (x VMSlice) Скопировать() VMSlice {
 	return rv
 }
 
-// TODO: маршаллинг!!!
+// TODO: маршаллинг и String!!!
 
 type VMSliceDefaultSort VMSlice
 

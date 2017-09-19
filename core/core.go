@@ -167,28 +167,56 @@ func Import(env *Env) *Env {
 	env.DefineS("длительностьчаса", VMHour)
 	env.DefineS("длительностьдня", VMDay)
 
-	env.DefineS("нрег", func(v interface{}) string {
-		if b, ok := v.([]byte); ok {
-			return strings.ToLower(string(b))
+	env.DefineS("нрег", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		return strings.ToLower(fmt.Sprint(v))
-	})
-
-	env.DefineS("врег", func(v interface{}) string {
-		if b, ok := v.([]byte); ok {
-			return strings.ToUpper(string(b))
+		if v, ok := args[0].(VMStringer); ok {
+			rets.Append(VMString(strings.ToLower(string(v.String()))))
+			return nil
 		}
-		return strings.ToUpper(fmt.Sprint(v))
-	})
+		return errors.New("Должен быть параметр-строка")
+	}))
 
-	env.DefineS("формат", env.Sprintf)
-
-	env.DefineS("кодсимвола", func(s string) rune {
-		if len(s) == 0 {
-			return 0
+	env.DefineS("врег", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		return []rune(s)[0]
-	})
+		if v, ok := args[0].(VMStringer); ok {
+			rets.Append(VMString(strings.ToUpper(string(v.String()))))
+			return nil
+		}
+		return errors.New("Должен быть параметр-строка")
+	}))
+
+	env.DefineS("формат", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) < 2 {
+			return errors.New("Должны быть форматная строка и хотя бы один параметр")
+		}
+		if v, ok := args[0].(VMString); ok {
+			as := VMSlice(args[1:]).Args()
+			rets.Append(VMString(env.Sprintf(string(v), as...)))
+			return nil
+		}
+		return errors.New("Форматная строка должна быть строкой")
+	}))
+
+	env.DefineS("кодсимвола", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
+		}
+
+		if v, ok := args[0].(VMStringer); ok {
+			s := v.String()
+			if len(s) == 0 {
+				rets.Append(VMInt(0))
+			} else {
+				rets.Append(VMInt([]rune(s)[0]))
+			}
+			return nil
+		}
+		return errors.New("Должен быть параметр-строка")
+	}))
 
 	env.DefineS("вбайты", func(s string) []byte {
 		return []byte(s)
