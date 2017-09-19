@@ -10,7 +10,7 @@ import (
 // поля и методы должны отличаться друг от друга без учета регистра
 // например, Set и set - в вирт. машине будут считаться одинаковыми, будет использоваться последнее по индексу
 type VMMetaObj struct {
-	vmMetaCacheM map[int]int
+	vmMetaCacheM map[int]VMFunc
 	vmMetaCacheF map[int][]int
 	vmOriginal   VMMetaObject
 }
@@ -27,10 +27,11 @@ func (v *VMMetaObj) Interface() interface{} {
 // Вызывать эту функцию надо так:
 // v:=&struct{VMMetaObj, a int}{}; v.VMCacheMembers(v)
 func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
-	v.vmMetaCacheM = make(map[int]int)
+	v.vmMetaCacheM = make(map[int]VMFunc)
 	v.vmMetaCacheF = make(map[int][]int)
 	v.vmOriginal = vv
 
+	rv := reflect.ValueOf(vv)
 	typ := reflect.TypeOf(vv)
 
 	// пишем в кэш индексы полей и методов для структур
@@ -42,7 +43,40 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 		// только экспортируемые
 		if meth.PkgPath == "" {
 			namtyp := names.UniqueNames.Set(meth.Name)
-			v.vmMetaCacheM[namtyp] = meth.Index
+			v.vmMetaCacheM[namtyp] = func(vmeth reflect.Value) VMFunc {
+				// TODO: сделать бенчмарк вызова функций
+				return VMFunc(
+					func(args VMSlice, rets *VMSlice) error {
+						x := make([]reflect.Value, len(args))
+						for i := range args {
+							x[i] = reflect.ValueOf(args[i])
+						}
+						r := vmeth.Call(x)
+						switch len(r) {
+						case 0:
+							return nil
+						case 1:
+							if x, ok := r[0].Interface().(VMValuer); ok {
+								rets.Append(x)
+								return nil
+							}
+							rets.Append(ReflectToVMValue(r[0]))
+							return nil
+						case 2:
+							if e, ok := r[1].Interface().(error); ok {
+								rets.Append(ReflectToVMValue(r[0]))
+								return e
+							}
+							fallthrough
+						default:
+							*rets = make(VMSlice, len(r))
+							for i := range r {
+								(*rets)[i] = ReflectToVMValue(r[i])
+							}
+							return nil
+						}
+					})
+			}(rv.Method(meth.Index))
 		}
 	}
 
@@ -96,37 +130,5 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 // VMGetMethod генерит функцию,
 // которая возвращает либо одно значение и ошибку, либо массив значений интерпретатора VMSlice
 func (v *VMMetaObj) VMGetMethod(name int) VMFunc {
-	vv := reflect.ValueOf(v.Interface()).Method(v.vmMetaCacheM[name])
-	// методы вызываем через обертку
-	return VMFunc(
-		func(args VMSlice, rets *VMSlice) error {
-			x := make([]reflect.Value, len(args))
-			for i := range args {
-				x[i] = reflect.ValueOf(args[i])
-			}
-			r := vv.Call(x)
-			switch len(r) {
-			case 0:
-				return nil
-			case 1:
-				if x, ok := r[0].Interface().(VMValuer); ok {
-					rets.Append(x)
-					return nil
-				}
-				rets.Append(ReflectToVMValue(r[0]))
-				return nil
-			case 2:
-				if e, ok := r[1].Interface().(error); ok {
-					rets.Append(ReflectToVMValue(r[0]))
-					return e
-				}
-				fallthrough
-			default:
-				*rets = make(VMSlice, len(r))
-				for i := range r {
-					(*rets)[i] = ReflectToVMValue(r[i])
-				}
-				return nil
-			}
-		})
+	return v.vmMetaCacheM[name]
 }
