@@ -1,7 +1,6 @@
 package bincode
 
 import (
-	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
 )
 
@@ -15,18 +14,6 @@ type VMRegs struct {
 	TryRegErr    []int           // последний элемент - это регистр с ошибкой текущего обработчика
 	ForBreaks    []int           // последний элемент - это метка для break
 	ForContinues []int           // последний элемент - это метка для continue
-}
-
-func NewVMRegs(stmts binstmt.BinCode, env *core.Env) *VMRegs {
-	return &VMRegs{
-		Env:          env,
-		Reg:          make([]core.VMValuer, stmts.MaxReg+1),
-		Labels:       stmts.Labels,
-		TryLabel:     make([]int, 0, 8),
-		TryRegErr:    make([]int, 0, 8),
-		ForBreaks:    make([]int, 0, 8),
-		ForContinues: make([]int, 0, 8),
-	}
 }
 
 func (v *VMRegs) FreeFromReg(reg int) {

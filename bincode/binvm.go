@@ -129,7 +129,16 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
-	regs := NewVMRegs(stmts, env)
+	regs := &VMRegs{
+		Env:          env,
+		Reg:          make([]core.VMValuer, stmts.MaxReg+1),
+		Labels:       stmts.Labels,
+		TryLabel:     make([]int, 0, 8),
+		TryRegErr:    make([]int, 0, 8),
+		ForBreaks:    make([]int, 0, 8),
+		ForContinues: make([]int, 0, 8),
+	}
+
 	argsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс аргументов для вызова функций VMFunc
 	retsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс возвращаемых значений из функций VMFunc
 
