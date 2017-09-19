@@ -97,12 +97,7 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 // которая возвращает либо одно значение и ошибку, либо массив значений интерпретатора VMSlice
 func (v *VMMetaObj) VMGetMethod(name int) VMFunc {
 	vv := reflect.ValueOf(v.Interface()).Method(v.vmMetaCacheM[name])
-	// методы, соответсвующие VMFuncer интерфейсу, возвращаем сразу, без рефлексии
-	if vfun, ok := vv.Interface().(VMFuncer); ok {
-		return vfun.Func()
-	}
-
-	// другие методы вызываем через обертку
+	// методы вызываем через обертку
 	return VMFunc(
 		func(args VMSlice, rets *VMSlice) error {
 			x := make([]reflect.Value, len(args))
