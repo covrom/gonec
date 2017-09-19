@@ -13,10 +13,11 @@ import (
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
+	"github.com/covrom/gonec/names"
 	"github.com/covrom/gonec/parser"
 )
 
-func Interrupt(env *envir.Env) {
+func Interrupt(env *core.Env) {
 	env.Interrupt()
 }
 
@@ -57,7 +58,7 @@ func ParseSrc(src string) (prs ast.Stmts, bin binstmt.BinCode, err error) {
 	return prs, bin, err
 }
 
-func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr error) {
+func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -76,44 +77,52 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 	if !env.IsBuiltsLoaded() {
 		// эту функцию определяем тут, чтобы исключить циклические зависимости пакетов
-		env.DefineS("загрузитьивыполнить", func(s string) core.VMValuer {
-			body, err := ioutil.ReadFile(s)
-			if err != nil {
-				panic(err)
+		env.DefineS("загрузитьивыполнить", core.VMFunc(func(args core.VMSlice, rets *core.VMSlice) error {
+			if len(args) != 1 {
+				return errors.New("Должен быть один параметр")
 			}
-			isGNX := strings.HasSuffix(strings.ToLower(s), ".gnx")
-			if isGNX {
-				bbuf := bytes.NewBuffer(body)
-				bins, err := binstmt.ReadBinCode(bbuf)
+			if s, ok := args[0].(core.VMString); ok {
+				body, err := ioutil.ReadFile(string(s))
 				if err != nil {
 					panic(err)
 				}
-				// env.Dump()
-				rv, err := Run(bins, env)
-				// env.Dump()
-				if err != nil {
-					panic(err)
-				}
-				return rv
-			} else {
-				_, bins, err := ParseSrc(string(body))
-				if err != nil {
-					if pe, ok := err.(*parser.Error); ok {
-						pe.Filename = s
-						panic(pe)
+				isGNX := strings.HasSuffix(strings.ToLower(string(s)), ".gnx")
+				if isGNX {
+					bbuf := bytes.NewBuffer(body)
+					bins, err := binstmt.ReadBinCode(bbuf)
+					if err != nil {
+						panic(err)
 					}
-					panic(err)
+					// env.Dump()
+					rv, err := Run(bins, env)
+					// env.Dump()
+					if err != nil {
+						panic(err)
+					}
+					rets.Append(rv)
+					return nil
+				} else {
+					_, bins, err := ParseSrc(string(body))
+					if err != nil {
+						if pe, ok := err.(*parser.Error); ok {
+							pe.Filename = string(s)
+							panic(pe)
+						}
+						panic(err)
+					}
+					// env.Dump()
+					rv, err := Run(bins, env)
+					// env.Dump()
+					if err != nil {
+						panic(err)
+					}
+					rets.Append(rv)
+					return nil
 				}
-				// env.Dump()
-				rv, err := Run(bins, env)
-				// env.Dump()
-				if err != nil {
-					panic(err)
-				}
-				return rv
+				return nil
 			}
-			return nil
-		})
+			return errors.New("Должен быть параметр-строка")
+		}))
 
 		core.LoadAllBuiltins(env)
 	}
@@ -123,7 +132,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 	regs := NewVMRegs(stmts, env)
 	argsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс аргументов для вызова функций VMFunc
 	retsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс возвращаемых значений из функций VMFunc
-	
+
 	goschedidx := 0
 
 	var (
@@ -246,11 +255,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
 				break
 			}
-			if !v.IsValid() {
-				regs.Reg[s.Reg] = nil
-			} else {
-				regs.Set(s.Reg, v.Interface())
-			}
+			regs.Reg[s.Reg] = v
 
 		case *binstmt.BinSET:
 			env.Define(s.Id, regs.Reg[s.Reg])
@@ -278,7 +283,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				// }
 				// v.Set(rv)
 			case reflect.Map:
-				v.SetMapIndex(reflect.ValueOf(envir.UniqueNames.Get(s.Id)), rv)
+				v.SetMapIndex(reflect.ValueOf(names.UniqueNames.Get(s.Id)), rv)
 			default:
 				if !v.CanSet() {
 					catcherr = binstmt.NewStringError(stmt, "Невозможно установить значение")
@@ -293,15 +298,15 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				catcherr = binstmt.NewStringError(stmt, "Имя типа должно быть строкой")
 				break
 			}
-			eType := envir.UniqueNames.Set(v)
-			regs.Set(s.Reg, eType)
+			eType := names.UniqueNames.Set(string(v))
+			regs.Reg[s.Reg] = core.VMInt(eType)
 
 		case *binstmt.BinSETITEM:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
 			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
 			rv := refregs.Index(s.RegVal).Elem()
-			regs.Set(s.RegNeedLet, false)
+			regs.Reg[s.RegNeedLet] = core.VMBool(false)
 
 			switch v.Kind() {
 
@@ -351,8 +356,8 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				r[ii] = rvs[0]
 
 				// для строк здесь неадресуемое значение, поэтому, переприсваиваем
-				regs.Set(s.Reg, string(r))
-				regs.Set(s.RegNeedLet, true)
+				regs.Reg[s.Reg] = core.VMString(string(r))
+				regs.Reg[s.RegNeedLet] = core.VMBool(true)
 
 			case reflect.Map:
 				if i.Kind() != reflect.String {
@@ -372,7 +377,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
 			re := reflect.Indirect(refregs.Index(s.RegEnd).Elem())
 			rv := refregs.Index(s.RegVal).Elem()
-			regs.Set(s.RegNeedLet, false)
+			regs.Reg[s.RegNeedLet] = core.VMBool(false)
 
 			switch v.Kind() {
 			case reflect.Array, reflect.Slice:
@@ -408,8 +413,8 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 				// заменяем руны
 				copy(r[ii:ij], rvs)
 
-				regs.Set(s.Reg, string(r))
-				regs.Set(s.RegNeedLet, true)
+				regs.Reg[s.Reg] = core.VMString(string(r))
+				regs.Reg[s.RegNeedLet] = core.VMBool(true)
 
 			default:
 				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
@@ -456,7 +461,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 		case *binstmt.BinADDRMBR:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := refregs.Index(s.Reg).Elem()
-			if vme, ok := v.Interface().(*envir.Env); ok {
+			if vme, ok := v.Interface().(*core.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
 					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
@@ -495,7 +500,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 		case *binstmt.BinUNREFMBR:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := refregs.Index(s.Reg).Elem()
-			if vme, ok := v.Interface().(*envir.Env); ok {
+			if vme, ok := v.Interface().(*core.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
 					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
@@ -522,7 +527,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 		case *binstmt.BinGETMEMBER:
 			refregs := reflect.ValueOf(regs.Reg)
 			v := refregs.Index(s.Reg).Elem()
-			if vme, ok := v.Interface().(*envir.Env); ok {
+			if vme, ok := v.Interface().(*core.Env); ok {
 				m, err := vme.Get(s.Name)
 				if !m.IsValid() || err != nil {
 					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
@@ -743,7 +748,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 					}
 				}
 				if !arg.IsValid() {
-					arg = envir.NilValue
+					arg = core.VMNil
 				}
 				if s.VarArg && i == s.NumArgs-1 {
 					for j := 0; j < arg.Len(); j++ {
@@ -810,14 +815,14 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 			regs.Set(s.RegRets, ret)
 
 		case *binstmt.BinFUNC:
-			f := func(expr *BinFUNC, env *envir.Env) core.VMFunc {
+			f := func(expr *BinFUNC, env *core.Env) core.VMFunc {
 				return func(args ...interface{}) (interface{}, error) {
 					if !expr.VarArg {
 						if len(args) != len(expr.Args) {
 							return nil, binstmt.NewStringError(expr, "Неверное количество аргументов")
 						}
 					}
-					var newenv *envir.Env
+					var newenv *core.Env
 					if expr.Name == 0 {
 						// наследуем от окружения текущей функции
 						newenv = env.NewSubEnv()
@@ -1074,7 +1079,7 @@ func Run(stmts binstmt.BinCode, env *envir.Env) (retval core.VMValuer, reterr er
 
 		case *binstmt.BinMODULE:
 			// модуль регистрируется в глобальном контексте
-			newenv := env.NewModule(envir.UniqueNames.Get(s.Name))
+			newenv := env.NewModule(names.UniqueNames.Get(s.Name))
 			_, err := Run(s.Code, newenv) // инициируем модуль
 			if err != nil {
 				catcherr = NewError(stmt, err)

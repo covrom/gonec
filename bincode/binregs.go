@@ -19,7 +19,7 @@ type VMRegs struct {
 
 func NewVMRegs(stmts binstmt.BinCode, env *core.Env) *VMRegs {
 	return &VMRegs{
-		Env: env,
+		Env:          env,
 		Reg:          make([]core.VMValuer, stmts.MaxReg+1),
 		Labels:       stmts.Labels,
 		TryLabel:     make([]int, 0, 8),
@@ -32,9 +32,9 @@ func NewVMRegs(stmts binstmt.BinCode, env *core.Env) *VMRegs {
 func (v *VMRegs) FreeFromReg(reg int) {
 	// освобождаем память, начиная с reg, для сборщика мусора
 	// v.Reg = v.Reg[:reg]
-	if reg<len(v.Reg){
-		cl:=[len(v.Reg)-reg]core.VMValuer
-		copy(v.Reg[reg:],cl)
+	if reg < len(v.Reg) {
+		cl := make([]core.VMValuer, len(v.Reg)-reg)
+		copy(v.Reg[reg:], cl)
 	}
 
 	// for i := reg; i < len(v.Reg); i++ {

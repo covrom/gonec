@@ -364,19 +364,19 @@ func EvalBinOp(op core.VMOperation, lhsV, rhsV reflect.Value) (interface{}, erro
 	case core.OR:
 		return ToInt64(lvi) | ToInt64(rvi), nil
 	case core.LOR:
-		if x := ToBool(lvi); x {
-			return x, nil
-		} else {
-			return ToBool(rvi), nil
-		}
+		// if x := ToBool(lvi); x {
+		// 	return x, nil
+		// } else {
+		// 	return ToBool(rvi), nil
+		// }
 	case core.AND:
 		return ToInt64(lvi) & ToInt64(rvi), nil
 	case core.LAND:
-		if x := ToBool(lvi); x {
-			return ToBool(rvi), nil
-		} else {
-			return x, nil
-		}
+		// if x := ToBool(lvi); x {
+		// 	return ToBool(rvi), nil
+		// } else {
+		// 	return x, nil
+		// }
 	case core.POW:
 		if lk == reflect.Float64 {
 			return math.Pow(ToFloat64(lvi), ToFloat64(rvi)), nil
@@ -386,9 +386,8 @@ func EvalBinOp(op core.VMOperation, lhsV, rhsV reflect.Value) (interface{}, erro
 		return ToInt64(lvi) >> uint64(ToInt64(rvi)), nil
 	case core.SHL:
 		return ToInt64(lvi) << uint64(ToInt64(rvi)), nil
-	default:
-		return nil, fmt.Errorf("Неизвестный оператор")
 	}
+	return nil, fmt.Errorf("Неизвестный оператор")
 }
 
 func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (interface{}, error) {
@@ -555,23 +554,23 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 	case reflect.Bool:
 		switch nt.Kind() {
 		case reflect.String:
-			if ToBool(v) {
-				return "true", nil // для совместимости с другими платформами
-			} else {
-				return "false", nil // для совместимости с другими платформами
-			}
+			// if ToBool(v) {
+			// 	return "true", nil // для совместимости с другими платформами
+			// } else {
+			// 	return "false", nil // для совместимости с другими платформами
+			// }
 		case reflect.Int64:
-			if ToBool(v) {
-				return int64(1), nil
-			} else {
-				return int64(0), nil
-			}
+			// if ToBool(v) {
+			// 	return int64(1), nil
+			// } else {
+			// 	return int64(0), nil
+			// }
 		case reflect.Float64:
-			if ToBool(v) {
-				return float64(1.0), nil
-			} else {
-				return float64(0.0), nil
-			}
+			// if ToBool(v) {
+			// 	return float64(1.0), nil
+			// } else {
+			// 	return float64(0.0), nil
+			// }
 		}
 	case reflect.Float32, reflect.Float64,
 		reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -592,7 +591,7 @@ func TypeCastConvert(v interface{}, nt reflect.Type, skipCollections bool) (inte
 		// числа конвертируются стандартно
 		switch nt.Kind() {
 		case reflect.Bool:
-			return ToBool(v), nil
+			// return ToBool(v), nil
 		default:
 			if rv.Type().ConvertibleTo(nt) {
 				return rv.Convert(nt).Interface(), nil
