@@ -23,7 +23,9 @@ func (x VMSlice) Slice() VMSlice {
 
 func (x VMSlice) Args() []interface{} {
 	ai := make([]interface{}, len(x))
-	copy(ai, x)
+	for i := range x {
+		ai[i] = x[i]
+	}
 	return ai
 }
 
@@ -117,7 +119,10 @@ func (x VMSliceDefaultSort) Less(i, j int) bool {
 
 	if vi, ok := x[i].(VMOperationer); ok {
 		if vj, ok := x[j].(VMOperationer); ok {
-			return vi.EvalBinOp(LSS, vj).(VMBool).Bool()
+			b, err := vi.EvalBinOp(LSS, vj)
+			if err == nil {
+				return b.(VMBool).Bool()
+			}
 		}
 	}
 

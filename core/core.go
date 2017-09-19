@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/covrom/gonec/names"
 	"github.com/shopspring/decimal"
 )
 
@@ -218,51 +219,60 @@ func Import(env *Env) *Env {
 		return errors.New("Должен быть параметр-строка")
 	}))
 
-	env.DefineS("вбайты", func(s string) []byte {
-		return []byte(s)
-	})
-
-	env.DefineS("вруны", func(s string) []rune {
-		return []rune(s)
-	})
-
-	env.DefineS("типзнч", func(v interface{}) string {
-		if v == nil {
-			return "Неопределено"
+	env.DefineS("типзнч", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
 		}
-		return envir.UniqueNames.Get(env.TypeName(reflect.TypeOf(v)))
-	})
+		if args[0] == nil || args[0] == VMNil {
+			rets.Append(VMString("Неопределено"))
+			return nil
+		}
+		rets.Append(VMString(names.UniqueNames.Get(env.TypeName(reflect.TypeOf(args[0])))))
+		return nil
+	}))
 
-	env.DefineS("присвоенозначение", func(s string) bool {
-		_, err := env.Get(envir.UniqueNames.Set(s))
-		return err == nil
-	})
+	env.DefineS("сообщить", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) == 0 {
+			env.Println()
+			return nil
+		}
+		as := args.Args()
+		env.Println(as...)
+		return nil
+	}))
 
-	env.DefineS("паника", func(e interface{}) {
-		// os.Setenv("GONEC_DEBUG", "1")
-		panic(e)
-	})
+	env.DefineS("сообщитьф", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) < 2 {
+			return errors.New("Должны быть форматная строка и хотя бы один параметр")
+		}
+		if v, ok := args[0].(VMString); ok {
+			as := VMSlice(args[1:]).Args()
+			env.Printf(string(v), as...)
+			return nil
+		}
+		return errors.New("Форматная строка должна быть строкой")
 
-	env.DefineS("вывести", env.Print)
-	env.DefineS("сообщить", env.Println)
-	env.DefineS("сообщитьф", env.Printf)
-	env.DefineS("stdout", env.StdOut())
-	env.DefineS("закрыть", func(e interface{}) {
-		reflect.ValueOf(e).Close()
-	})
-	env.DefineS("обработатьгорутины", runtime.Gosched)
+	}))
 
-	env.DefineTypeS("целоечисло", int64(0))
-	env.DefineTypeS("число", float64(0.0))
-	env.DefineTypeS("булево", true)
-	env.DefineTypeS("строка", "")
+	env.DefineS("обработатьгорутины", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		runtime.Gosched()
+		return nil
+	}))
+
+	env.DefineTypeS("целоечисло", VMInt(0))
+	env.DefineTypeS("число", VMDecimal(decimal.New(0, 0)))
+	env.DefineTypeS("булево", VMBool(true))
+	env.DefineTypeS("строка", VMString(""))
 	env.DefineTypeS("массив", VMSlice{})
 	env.DefineTypeS("структура", VMStringMap{})
 	env.DefineTypeS("дата", VMTime{})
 
 	//////////////////
 	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})
-	env.DefineS("__дамп__", env.Dump)
+	env.DefineS("__дамп__", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		env.Dump()
+		return nil
+	}))
 	/////////////////////
 
 	return env

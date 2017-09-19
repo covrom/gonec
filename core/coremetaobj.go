@@ -65,6 +65,7 @@ func (v *VMMetaObj) VMIsField(name int) bool {
 
 func (v *VMMetaObj) VMGetField(name int) VMInterfacer {
 	vv := reflect.ValueOf(v.Interface()).FieldByIndex(v.vmMetaCacheF[name])
+	// поля с типом вирт. машины вернем сразу
 	if x, ok := vv.Interface().(VMInterfacer); ok {
 		return x
 	}
@@ -76,6 +77,7 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 	if !vv.CanSet() {
 		panic("Невозможно установить значение поля только для чтения")
 	}
+	// поля с типом вирт. машины присваиваем без конверсии
 	if _, ok := vv.Interface().(VMInterfacer); ok {
 		vv.Set(reflect.ValueOf(val))
 		return
@@ -95,33 +97,41 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 // которая возвращает либо одно значение и ошибку, либо массив значений интерпретатора VMSlice
 func (v *VMMetaObj) VMGetMethod(name int) VMFunc {
 	vv := reflect.ValueOf(v.Interface()).Method(v.vmMetaCacheM[name])
+	// методы, соответсвующие VMFuncer интерфейсу, возвращаем сразу, без рефлексии
+	if vfun, ok := vv.Interface().(VMFuncer); ok {
+		return vfun.Func()
+	}
+
+	// другие методы вызываем через обертку
 	return VMFunc(
-		func(args VMSlicer) (VMValuer, error) {
-			a := args.Slice()
-			x := make([]reflect.Value, len(a))
-			for i := range a {
-				x[i] = reflect.ValueOf(a[i])
+		func(args VMSlice, rets *VMSlice) error {
+			x := make([]reflect.Value, len(args))
+			for i := range args {
+				x[i] = reflect.ValueOf(args[i])
 			}
 			r := vv.Call(x)
 			switch len(r) {
 			case 0:
-				return nil, nil
+				return nil
 			case 1:
 				if x, ok := r[0].Interface().(VMValuer); ok {
-					return x, nil
+					rets.Append(x)
+					return nil
 				}
-				return ReflectToVMValue(r[0]), nil
+				rets.Append(ReflectToVMValue(r[0]))
+				return nil
 			case 2:
 				if e, ok := r[1].Interface().(error); ok {
-					return ReflectToVMValue(r[0]), e
+					rets.Append(ReflectToVMValue(r[0]))
+					return e
 				}
 				fallthrough
 			default:
-				rvm := make(VMSlice, len(r))
+				*rets = make(VMSlice, len(r))
 				for i := range r {
-					rvm[i] = ReflectToVMValue(r[i])
+					(*rets)[i] = ReflectToVMValue(r[i])
 				}
-				return rvm, nil
+				return nil
 			}
 		})
 }

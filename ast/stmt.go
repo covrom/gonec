@@ -5,6 +5,7 @@ import (
 
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
+	"github.com/covrom/gonec/names"
 	"github.com/covrom/gonec/pos"
 )
 
@@ -472,7 +473,7 @@ func (x *ModuleStmt) Simplify() {
 }
 
 func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
-	if s.Name == env.UniqueNames.Set("_") {
+	if s.Name == names.UniqueNames.Set("_") {
 		// добавляем все операторы в текущий контекст
 		s.Stmts.BinTo(bins, reg, lid, maxreg)
 	} else {

@@ -8,7 +8,7 @@ import (
 // Регистры виртуальной машины
 
 type VMRegs struct {
-	Env *envir.Env
+	Env          *core.Env
 	Reg          []core.VMValuer // регистры значений
 	Labels       []int           // [label]=index в BinCode
 	TryLabel     []int           // последний элемент - это метка на текущий обработчик CATCH
@@ -17,7 +17,7 @@ type VMRegs struct {
 	ForContinues []int           // последний элемент - это метка для continue
 }
 
-func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
+func NewVMRegs(stmts binstmt.BinCode, env *core.Env) *VMRegs {
 	return &VMRegs{
 		Env: env,
 		Reg:          make([]core.VMValuer, stmts.MaxReg+1),
@@ -28,17 +28,6 @@ func NewVMRegs(stmts binstmt.BinCode, env *envir.Env) *VMRegs {
 		ForContinues: make([]int, 0, 8),
 	}
 }
-
-// func (v *VMRegs) Set(reg int, val core.VMValuer) {
-// 	if reg < len(v.Reg) {
-// 		v.Reg[reg] = val
-// 	} else {
-// 		for reg >= len(v.Reg) {
-// 			v.Reg = append(v.Reg, nil)
-// 		}
-// 		v.Reg[reg] = val
-// 	}
-// }
 
 func (v *VMRegs) FreeFromReg(reg int) {
 	// освобождаем память, начиная с reg, для сборщика мусора

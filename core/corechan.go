@@ -36,3 +36,7 @@ func (x VMChan) TryRecv() (v VMValuer, ok bool) {
 	}
 	return
 }
+
+func (x VMChan) Close() { close(x) }
+
+func (x VMChan) Закрыть() { close(x) }

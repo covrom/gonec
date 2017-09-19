@@ -155,10 +155,10 @@ func GetMember(v reflect.Value, name int, stmt posit.Pos) (reflect.Value, error)
 	// 		var err error
 	// 		m, err = ast.FieldByNameCI(v, name)
 	// 		if err != nil || !m.IsValid() {
-	// 			return envir.NilValue, NewStringError(stmt, "Метод или поле не найдено: "+env.UniqueNames.Get(name))
+	// 			return envir.NilValue, NewStringError(stmt, "Метод или поле не найдено: "+names.UniqueNames.Get(name))
 	// 		}
 	// 	} else if v.Kind() == reflect.Map {
-	// 		m = v.MapIndex(reflect.ValueOf(env.UniqueNames.Get(name)))
+	// 		m = v.MapIndex(reflect.ValueOf(names.UniqueNames.Get(name)))
 	// 		if !m.IsValid() {
 	// 			return envir.NilValue, NewStringError(stmt, "Значение по ключу не найдено")
 	// 		}
