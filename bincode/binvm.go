@@ -21,7 +21,7 @@ func Interrupt(env *core.Env) {
 	env.Interrupt()
 }
 
-// ParserSrc provides way to parse the code from source.
+// ParseSrc provides way to parse the code from source.
 func ParseSrc(src string) (prs ast.Stmts, bin binstmt.BinCode, err error) {
 	defer func() {
 		// если это не паника из кода языка
@@ -58,6 +58,7 @@ func ParseSrc(src string) (prs ast.Stmts, bin binstmt.BinCode, err error) {
 	return prs, bin, err
 }
 
+// Run запускает код на исполнение, например, после загрузки из файла
 func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
@@ -127,12 +128,31 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 		core.LoadAllBuiltins(env)
 	}
 
+	return RunWorker(stmts.Code, stmts.Labels, stmts.MaxReg, env, 0)
+}
+
+// RunWorker исполняет кусок кода, начиная с инструкции idx
+func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, idx int) (retval core.VMValuer, reterr error) {
+	defer func() {
+		// если это не паника из кода языка
+		// if os.Getenv("GONEC_DEBUG") == "" {
+		// обрабатываем панику, которая могла возникнуть в вызванной функции
+		if ex := recover(); ex != nil {
+			if e, ok := ex.(error); ok {
+				reterr = e
+			} else {
+				reterr = errors.New(fmt.Sprint(ex))
+			}
+		}
+		// }
+	}()
+
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
 	regs := &VMRegs{
 		Env:          env,
-		Reg:          make([]core.VMValuer, stmts.MaxReg+1),
-		Labels:       stmts.Labels,
+		Reg:          make([]core.VMValuer, maxreg+1),
+		Labels:       labels,
 		TryLabel:     make([]int, 0, 8),
 		TryRegErr:    make([]int, 0, 8),
 		ForBreaks:    make([]int, 0, 8),
@@ -142,27 +162,18 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 	argsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс аргументов для вызова функций VMFunc
 	retsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс возвращаемых значений из функций VMFunc
 
-	goschedidx := 0
-
 	var (
 		catcherr error
-		idx      int
 	)
 
-	for idx < len(stmts.Code) {
-		goschedidx++
-		if goschedidx == 1000 {
-			// даем воздуха другим горутинам каждые 1000 инструкций
-			runtime.Gosched()
-			goschedidx = 0
-		}
+	for idx < len(stmts) {
 
 		if regs.Env.CheckInterrupt() {
 			// проверяем, был ли прерван интерпретатор
 			return nil, binstmt.InterruptError
 		}
 
-		stmt := stmts.Code[idx]
+		stmt := stmts[idx]
 		switch s := stmt.(type) {
 
 		case *binstmt.BinJMP:
@@ -270,35 +281,16 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 			env.Define(s.Id, regs.Reg[s.Reg])
 
 		case *binstmt.BinSETMEMBER:
-
-			refregs := reflect.ValueOf(regs.Reg)
-			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
-			rv := refregs.Index(s.RegVal).Elem()
-
-			switch v.Kind() {
-			case reflect.Struct:
-
-				////////////////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-				// TODO:
-
-				// v, err := ast.FieldByNameCI(v, s.Id)
-				// if err != nil {
-				// 	catcherr = NewError(stmt, err)
-				// 	break
-				// }
-				// if !v.CanSet() {
-				// 	catcherr = NewStringError(stmt, "Невозможно установить значение")
-				// 	break
-				// }
-				// v.Set(rv)
-			case reflect.Map:
-				v.SetMapIndex(reflect.ValueOf(names.UniqueNames.Get(s.Id)), rv)
+			m := regs.Reg[s.Reg]
+			mv := regs.Reg[s.RegVal]
+			switch mm := m.(type) {
+			case core.VMMetaObject:
+				mm.VMSetField(s.Id, mv.(core.VMInterfacer))
+			case core.VMStringMap:
+				mm[names.UniqueNames.Get(s.Id)] = mv
 			default:
-				if !v.CanSet() {
-					catcherr = binstmt.NewStringError(stmt, "Невозможно установить значение")
-					break
-				}
-				v.Set(rv)
+				catcherr = binstmt.NewStringError(stmt, "Невозможно установить поле у значения")
+				goto catching
 			}
 
 		case *binstmt.BinSETNAME:
@@ -311,123 +303,84 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 			regs.Reg[s.Reg] = core.VMInt(eType)
 
 		case *binstmt.BinSETITEM:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
-			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
-			rv := refregs.Index(s.RegVal).Elem()
+			v := regs.Reg[s.Reg]
+			i := regs.Reg[s.RegIndex]
+			rv := regs.Reg[s.RegVal]
 			regs.Reg[s.RegNeedLet] = core.VMBool(false)
 
-			switch v.Kind() {
-
-			case reflect.Array, reflect.Slice:
-				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
-					break
+			switch vv := v.(type) {
+			case core.VMSlice:
+				var ii int
+				if iiv, ok := i.(core.VMInt); ok {
+					ii = int(iiv)
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть числом")
+					goto catching
 				}
-				ii := int(i.Int())
 				if ii < 0 {
-					ii += v.Len()
+					ii += len(vv)
 				}
-				if ii < 0 || ii >= v.Len() {
+				if ii < 0 || ii >= len(vv) {
 					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
-					break
+					goto catching
 				}
-
-				// для элементов массивов и слайсов это работает, а для строк - нет
-				vv := v.Index(ii)
-				if !vv.CanSet() {
-					catcherr = binstmt.NewStringError(stmt, "Невозможно установить значение")
-					break
+				vv[ii] = rv
+			case core.VMStringMap:
+				if s, ok := i.(core.VMString); ok {
+					vv[string(s)] = rv
 				}
-				vv.Set(rv)
-
-			case reflect.String:
-				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
-					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
-					break
-				}
-				rvs := []rune(rv.String())
-				if len(rvs) != 1 {
-					catcherr = binstmt.NewStringError(stmt, "Длина присваиваемой строки должна быть ровно один символ")
-					break
-				}
-				r := []rune(v.String())
-				vlen := len(r)
-				ii := int(i.Int())
-				if ii < 0 {
-					ii += vlen
-				}
-				if ii < 0 || ii >= vlen {
-					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
-					break
-				}
-				// заменяем руну
-				r[ii] = rvs[0]
-
-				// для строк здесь неадресуемое значение, поэтому, переприсваиваем
-				regs.Reg[s.Reg] = core.VMString(string(r))
-				regs.Reg[s.RegNeedLet] = core.VMBool(true)
-
-			case reflect.Map:
-				if i.Kind() != reflect.String {
-					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
-					break
-				}
-				v.SetMapIndex(i, rv)
-
 			default:
 				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
-				break
+				goto catching
 			}
 
 		case *binstmt.BinSETSLICE:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
-			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
-			re := reflect.Indirect(refregs.Index(s.RegEnd).Elem())
-			rv := refregs.Index(s.RegVal).Elem()
-			regs.Reg[s.RegNeedLet] = core.VMBool(false)
+			if vv, ok := regs.Reg[s.Reg].(core.VMSlice); ok {
+				if rv, ok := regs.Reg[s.RegVal].(core.VMSlice); ok {
 
-			switch v.Kind() {
-			case reflect.Array, reflect.Slice:
-				vlen := v.Len()
-				ii, ij, err := LeftRightBounds(rb, re, vlen)
-				if err != nil {
-					catcherr = binstmt.NewError(stmt, err)
-					break
-				}
-				if ij < ii {
-					catcherr = binstmt.NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
-					break
-				}
-				vv := v.Slice(ii, ij)
-				if vv.Len() != rv.Len() {
-					catcherr = binstmt.NewStringError(stmt, "Размер массива должен быть равен ширине диапазона")
-					break
-				}
-				reflect.Copy(vv, rv)
-			case reflect.String:
-				r, ii, ij, err := StringToRuneSliceAt(v, rb, re)
-				if err != nil {
-					catcherr = binstmt.NewError(stmt, err)
-					break
-				}
+					vlen := len(vv)
 
-				rvs := []rune(rv.String())
-				if len(rvs) != len(r[ii:ij]) {
-					catcherr = binstmt.NewStringError(stmt, "Длина строки должна быть равна длине диапазона")
-					break
+					var rb int
+					if regs.Reg[s.RegBegin] == nil {
+						rb = 0
+					} else if rbv, ok := regs.Reg[s.RegBegin].(core.VMInt); ok {
+						rb = int(rbv)
+					} else {
+						catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+						goto catching
+					}
+
+					var re int
+					if regs.Reg[s.RegEnd] == nil {
+						re = vlen
+					} else if rev, ok := regs.Reg[s.RegEnd].(core.VMInt); ok {
+						re = int(rev)
+					} else {
+						catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+						goto catching
+					}
+
+					regs.Reg[s.RegNeedLet] = core.VMBool(false)
+
+					ii, ij := LeftRightBounds(rb, re, vlen)
+					if ij < ii {
+						catcherr = binstmt.NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
+						goto catching
+					}
+
+					if len(vv[ii:ij]) != len(rv) {
+						catcherr = binstmt.NewStringError(stmt, "Размер массива должен быть равен ширине диапазона")
+						goto catching
+					}
+					copy(vv[ii:ij], rv)
+
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Правая часть выражения должна быть массивом")
+					goto catching
 				}
-
-				// заменяем руны
-				copy(r[ii:ij], rvs)
-
-				regs.Reg[s.Reg] = core.VMString(string(r))
-				regs.Reg[s.RegNeedLet] = core.VMBool(true)
-
-			default:
-				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
-				break
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Операция возможна только над массивом")
+				goto catching
 			}
 
 		case *binstmt.BinUNARY:
@@ -1154,6 +1107,7 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 			return nil, binstmt.NewStringError(stmt, "Неизвестная инструкция")
 		}
 
+	catching:
 		if catcherr != nil {
 			nerr := binstmt.NewError(stmt, catcherr)
 			catcherr = nil

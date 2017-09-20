@@ -170,7 +170,7 @@ func GetMember(v reflect.Value, name int, stmt posit.Pos) (reflect.Value, error)
 	panic("TODO")
 }
 
-func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
+func LeftRightBounds(rb, re int, vlen int) (ii, ij int) {
 	// границы как в python:
 	// положительный - имеет максимум до длины (len)
 	// отрицательный - считается с конца с минимумом -длина
@@ -180,14 +180,7 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
 	// правая граница как в python - исключается
 
 	// левая граница включая
-	if !rb.IsValid() {
-		ii = 0
-	} else {
-		if rb.Kind() != reflect.Int && rb.Kind() != reflect.Int64 {
-			return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
-		}
-		ii = int(rb.Int())
-	}
+	ii = rb
 
 	switch {
 	case ii > 0:
@@ -200,15 +193,8 @@ func LeftRightBounds(rb, re reflect.Value, vlen int) (ii, ij int, err error) {
 			ii = 0
 		}
 	}
-	// правая граница не включая
-	if !re.IsValid() {
-		ij = vlen
-	} else {
-		if re.Kind() != reflect.Int && re.Kind() != reflect.Int64 {
-			return 0, 0, fmt.Errorf("Индекс должен быть целым числом")
-		}
-		ij = int(re.Int())
-	}
+
+	ij = re
 
 	switch {
 	case ij > 0:
