@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/core"
-	posit "github.com/covrom/gonec/pos"
 )
 
 func InvokeNumber(lit string) (interface{}, error) {
