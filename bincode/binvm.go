@@ -417,83 +417,84 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 			// case '!':
 			// 	regs.Set(s.Reg, !ToBool(regs.Reg[s.Reg]))
 
-		case *binstmt.BinADDRID:
-			v, err := env.Get(s.Name)
-			if err != nil {
-				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
-				break
-			}
-			if !v.CanAddr() {
-				catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
-				break
-			}
-			regs.Set(s.Reg, v.Addr().Interface())
+		// варианты ниже - не используются
+		// case *binstmt.BinADDRID:
+		// 	v, err := env.Get(s.Name)
+		// 	if err != nil {
+		// 		catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
+		// 		break
+		// 	}
+		// 	if !v.CanAddr() {
+		// 		catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
+		// 		break
+		// 	}
+		// 	regs.Set(s.Reg, v.Addr().Interface())
 
-		case *binstmt.BinADDRMBR:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			if vme, ok := v.Interface().(*core.Env); ok {
-				m, err := vme.Get(s.Name)
-				if !m.IsValid() || err != nil {
-					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
-					break
-				}
-				if !m.CanAddr() {
-					catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
-					break
-				}
-				regs.Set(s.Reg, m.Addr().Interface())
-				break
-			}
-			m, err := GetMember(v, s.Name, s)
-			if err != nil {
-				catcherr = binstmt.NewError(stmt, err)
-				break
-			}
-			if !m.CanAddr() {
-				catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
-				break
-			}
-			regs.Set(s.Reg, m.Addr().Interface())
+		// case *binstmt.BinADDRMBR:
+		// 	refregs := reflect.ValueOf(regs.Reg)
+		// 	v := refregs.Index(s.Reg).Elem()
+		// 	if vme, ok := v.Interface().(*core.Env); ok {
+		// 		m, err := vme.Get(s.Name)
+		// 		if !m.IsValid() || err != nil {
+		// 			catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
+		// 			break
+		// 		}
+		// 		if !m.CanAddr() {
+		// 			catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
+		// 			break
+		// 		}
+		// 		regs.Set(s.Reg, m.Addr().Interface())
+		// 		break
+		// 	}
+		// 	m, err := GetMember(v, s.Name, s)
+		// 	if err != nil {
+		// 		catcherr = binstmt.NewError(stmt, err)
+		// 		break
+		// 	}
+		// 	if !m.CanAddr() {
+		// 		catcherr = binstmt.NewStringError(stmt, "Невозможно получить адрес значения")
+		// 		break
+		// 	}
+		// 	regs.Set(s.Reg, m.Addr().Interface())
 
-		case *binstmt.BinUNREFID:
-			v, err := env.Get(s.Name)
-			if err != nil {
-				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
-				break
-			}
-			if v.Kind() != reflect.Ptr {
-				catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
-				break
-			}
-			regs.Set(s.Reg, v.Elem().Interface())
+		// case *binstmt.BinUNREFID:
+		// 	v, err := env.Get(s.Name)
+		// 	if err != nil {
+		// 		catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
+		// 		break
+		// 	}
+		// 	if v.Kind() != reflect.Ptr {
+		// 		catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
+		// 		break
+		// 	}
+		// 	regs.Set(s.Reg, v.Elem().Interface())
 
-		case *binstmt.BinUNREFMBR:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			if vme, ok := v.Interface().(*core.Env); ok {
-				m, err := vme.Get(s.Name)
-				if !m.IsValid() || err != nil {
-					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
-					break
-				}
-				if m.Kind() != reflect.Ptr {
-					catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
-					break
-				}
-				regs.Set(s.Reg, m.Elem().Interface())
-				break
-			}
-			m, err := GetMember(v, s.Name, s)
-			if err != nil {
-				catcherr = binstmt.NewError(stmt, err)
-				break
-			}
-			if m.Kind() != reflect.Ptr {
-				catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
-				break
-			}
-			regs.Set(s.Reg, m.Elem().Interface())
+		// case *binstmt.BinUNREFMBR:
+		// 	refregs := reflect.ValueOf(regs.Reg)
+		// 	v := refregs.Index(s.Reg).Elem()
+		// 	if vme, ok := v.Interface().(*core.Env); ok {
+		// 		m, err := vme.Get(s.Name)
+		// 		if !m.IsValid() || err != nil {
+		// 			catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
+		// 			break
+		// 		}
+		// 		if m.Kind() != reflect.Ptr {
+		// 			catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
+		// 			break
+		// 		}
+		// 		regs.Set(s.Reg, m.Elem().Interface())
+		// 		break
+		// 	}
+		// 	m, err := GetMember(v, s.Name, s)
+		// 	if err != nil {
+		// 		catcherr = binstmt.NewError(stmt, err)
+		// 		break
+		// 	}
+		// 	if m.Kind() != reflect.Ptr {
+		// 		catcherr = binstmt.NewStringError(stmt, "Отсутствует ссылка на значение")
+		// 		break
+		// 	}
+		// 	regs.Set(s.Reg, m.Elem().Interface())
 
 		case *binstmt.BinGETMEMBER:
 			refregs := reflect.ValueOf(regs.Reg)
