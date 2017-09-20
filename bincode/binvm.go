@@ -384,29 +384,38 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 			}
 
 		case *binstmt.BinUNARY:
-			switch s.Op {
-			case '-':
-				if x, ok := regs.Reg[s.Reg].(float64); ok {
-					regs.Set(s.Reg, -x)
-				} else if x, ok := regs.Reg[s.Reg].(int64); ok {
-					regs.Set(s.Reg, -x)
+			if vv, ok := regs.Reg[s.Reg].(core.VMUnarer); ok {
+				rv, err := vv.EvalUnOp(s.Op)
+				if err == nil {
+					regs.Reg[s.Reg] = rv
 				} else {
-					catcherr = binstmt.NewStringError(stmt, "Операция применима только к числам")
+					catcherr = err
 					break
 				}
-			case '^':
-				if x, ok := regs.Reg[s.Reg].(int64); ok {
-					regs.Set(s.Reg, ^x)
-				} else {
-					catcherr = binstmt.NewStringError(stmt, "Операция применима только к целым числам")
-					break
-				}
-			case '!':
-				regs.Set(s.Reg, !ToBool(regs.Reg[s.Reg]))
-			default:
-				catcherr = binstmt.NewStringError(stmt, "Неизвестный оператор")
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Невозможна унарная операция над данным значением")
 				break
 			}
+
+			// switch s.Op {
+			// case '-':
+			// 	if x, ok := regs.Reg[s.Reg].(core.VMInt); ok {
+			// 		regs.Reg[s.Reg]= core.VMInt(-int64(x))
+			// 	} else if x, ok := regs.Reg[s.Reg].(int64); ok {
+			// 		regs.Set(s.Reg, -x)
+			// 	} else {
+			// 		catcherr = binstmt.NewStringError(stmt, "Операция применима только к числам")
+			// 		break
+			// 	}
+			// case '^':
+			// 	if x, ok := regs.Reg[s.Reg].(int64); ok {
+			// 		regs.Set(s.Reg, ^x)
+			// 	} else {
+			// 		catcherr = binstmt.NewStringError(stmt, "Операция применима только к целым числам")
+			// 		break
+			// 	}
+			// case '!':
+			// 	regs.Set(s.Reg, !ToBool(regs.Reg[s.Reg]))
 
 		case *binstmt.BinADDRID:
 			v, err := env.Get(s.Name)

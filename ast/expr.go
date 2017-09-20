@@ -217,7 +217,7 @@ type UnaryExpr struct {
 func (x *UnaryExpr) Simplify() Expr {
 	x.Expr = x.Expr.Simplify()
 	if v, ok := x.Expr.(*NativeExpr); ok {
-		if vv := v.Value.(core.VMUnarer); ok {
+		if vv, ok := v.Value.(core.VMUnarer); ok {
 			oper := rune(x.Operator[0])
 			rv, err := vv.EvalUnOp(oper)
 			if err == nil {
