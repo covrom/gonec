@@ -129,6 +129,7 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 
 // VMGetMethod генерит функцию,
 // которая возвращает либо одно значение и ошибку, либо массив значений интерпретатора VMSlice
-func (v *VMMetaObj) VMGetMethod(name int) VMFunc {
-	return v.vmMetaCacheM[name]
+func (v *VMMetaObj) VMGetMethod(name int) (VMFunc, bool) {
+	rv, ok := v.vmMetaCacheM[name]
+	return rv, ok
 }

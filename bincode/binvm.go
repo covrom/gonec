@@ -497,23 +497,38 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 		// 	regs.Set(s.Reg, m.Elem().Interface())
 
 		case *binstmt.BinGETMEMBER:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := refregs.Index(s.Reg).Elem()
-			if vme, ok := v.Interface().(*core.Env); ok {
-				m, err := vme.Get(s.Name)
-				if !m.IsValid() || err != nil {
-					catcherr = binstmt.NewStringError(stmt, "Значение не найдено")
-					break
+			v := regs.Reg[s.Reg]
+			switch vv := v.(type) {
+			case *core.Env:
+				// это идентификатор из модуля или окружения
+				m, err := vv.Get(s.Name)
+				if m == nil || err != nil {
+					catcherr = binstmt.NewStringError(stmt, "Имя не найдено")
+					goto catching
 				}
-				regs.Set(s.Reg, m.Interface())
-				break
+				regs.Reg[s.Reg] = m
+				goto catching
+			case core.VMStringMap:
+				if rv, ok := vv[names.UniqueNames.Get(s.Name)]; ok {
+					regs.Reg[s.Reg] = rv
+				} else {
+					regs.Reg[s.Reg] = core.VMNil
+				}
+			case core.VMMetaObject:
+				if vv.VMIsField(s.Name) {
+					regs.Reg[s.Reg] = vv.VMGetField(s.Name)
+				} else {
+					if ff, ok := vv.VMGetMethod(s.Name); ok {
+						regs.Reg[s.Reg] = ff
+					} else {
+						catcherr = binstmt.NewStringError(stmt, "Нет поля или метода с таким именем")
+						goto catching
+					}
+				}
+			default:
+				catcherr = binstmt.NewStringError(stmt, "У значения не бывает полей или методов")
+				goto catching
 			}
-			m, err := GetMember(v, s.Name, s)
-			if err != nil {
-				catcherr = binstmt.NewError(stmt, err)
-				break
-			}
-			regs.Set(s.Reg, m.Interface())
 
 		case *binstmt.BinGETIDX:
 			refregs := reflect.ValueOf(regs.Reg)

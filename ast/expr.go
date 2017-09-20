@@ -761,6 +761,8 @@ func (x *ConstExpr) Simplify() Expr {
 		return &NativeExpr{Value: core.VMBool(true)}
 	case "ложь", "false":
 		return &NativeExpr{Value: core.VMBool(false)}
+	case "неопределено":
+		return &NativeExpr{Value: core.VMNil}
 	case "null":
 		return &NativeExpr{Value: core.VMNullVar}
 	}

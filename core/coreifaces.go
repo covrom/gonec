@@ -50,12 +50,12 @@ type (
 	}
 
 	// VMIndexer имеет длину и значение по индексу
-	VMIndexer interface{
+	VMIndexer interface {
 		VMInterfacer
 		Length() VMInt
 		IndexVal(VMValuer) VMValuer
 	}
-	
+
 	// конкретные типы виртуальной машины
 
 	// VMStringer строка
@@ -108,8 +108,7 @@ type (
 		VMInterfacer
 		Duration() VMTimeDuration
 	}
-	
-	
+
 	// VMChanMaker может создать новый канал
 	VMChanMaker interface {
 		VMInterfacer
@@ -127,7 +126,7 @@ type (
 		VMIsField(int) bool
 		VMGetField(int) VMInterfacer
 		VMSetField(int, VMInterfacer)
-		VMGetMethod(int) VMFunc // получает обертку метода
+		VMGetMethod(int) (VMFunc, bool) // получает обертку метода
 	}
 
 	// VMNullable означает значение null
