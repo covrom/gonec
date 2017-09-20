@@ -143,33 +143,6 @@ func Equal(lhsV, rhsV interface{}) bool {
 	return reflect.DeepEqual(lhsV, rhsV)
 }
 
-func GetMember(v reflect.Value, name int, stmt posit.Pos) (reflect.Value, error) {
-
-	// m, _ := ast.MethodByNameCI(v, name)
-	// // ошибку не обрабатываем, т.к. ищем поле
-	// if !m.IsValid() {
-	// 	if v.Kind() == reflect.Ptr {
-	// 		v = v.Elem()
-	// 	}
-	// 	if v.Kind() == reflect.Struct {
-	// 		var err error
-	// 		m, err = ast.FieldByNameCI(v, name)
-	// 		if err != nil || !m.IsValid() {
-	// 			return envir.NilValue, NewStringError(stmt, "Метод или поле не найдено: "+names.UniqueNames.Get(name))
-	// 		}
-	// 	} else if v.Kind() == reflect.Map {
-	// 		m = v.MapIndex(reflect.ValueOf(names.UniqueNames.Get(name)))
-	// 		if !m.IsValid() {
-	// 			return envir.NilValue, NewStringError(stmt, "Значение по ключу не найдено")
-	// 		}
-	// 	} else {
-	// 		return envir.NilValue, NewStringError(stmt, "У значения нет полей")
-	// 	}
-	// }
-	// return m, nil
-	panic("TODO")
-}
-
 func LeftRightBounds(rb, re int, vlen int) (ii, ij int) {
 	// границы как в python:
 	// положительный - имеет максимум до длины (len)
