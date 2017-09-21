@@ -642,22 +642,24 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 			}
 
 		case *binstmt.BinOPER:
-			refregs := reflect.ValueOf(regs.Reg)
-			lhsV := refregs.Index(s.RegL).Elem()
-			rhsV := refregs.Index(s.RegR).Elem()
-
-			// log.Println("lhsV", lhsV)
-			// log.Println("rhsV", rhsV)
-
-			r, err := EvalBinOp(s.Op, lhsV, rhsV)
-
-			// log.Println("r", r)
-
-			if err != nil {
-				catcherr = binstmt.NewError(stmt, err)
-				break
+			v1 := regs.Reg[s.RegL]
+			v2 := regs.Reg[s.RegR]
+			if vv1, ok := v1.(core.VMOperationer); ok {
+				if vv2, ok := v2.(core.VMOperationer); ok {
+					if rv, err := vv1.EvalBinOp(s.Op, vv2); err == nil {
+						regs.Reg[s.RegL] = rv
+					} else {
+						catcherr = binstmt.NewError(stmt, err)
+						goto catching
+					}
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
+					goto catching
+				}
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
+				goto catching
 			}
-			regs.Set(s.RegL, r)
 
 		case *binstmt.BinCALL:
 
