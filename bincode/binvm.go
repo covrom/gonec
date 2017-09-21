@@ -669,13 +669,12 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 			var err error
 
 			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
-			var fgnc, argssl interface{}
+			var fgnc, argssl core.VMValuer
 			if s.Name == 0 {
 				fgnc = regs.Reg[s.RegArgs]
 				argssl = regs.Reg[s.RegArgs+1]
 			} else {
-				var fgncv reflect.Value
-				fgncv, err = env.Get(s.Name)
+				fgnc, err = env.Get(s.Name)
 				if err != nil {
 					catcherr = binstmt.NewError(stmt, err)
 					break
