@@ -531,78 +531,111 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 			}
 
 		case *binstmt.BinGETIDX:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
-			i := reflect.Indirect(refregs.Index(s.RegIndex).Elem())
-
-			switch v.Kind() {
-
-			case reflect.Array, reflect.Slice:
-				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+			v := regs.Reg[s.Reg]
+			i := regs.Reg[s.RegIndex]
+			switch vv := v.(type) {
+			case core.VMSlice:
+				if iv, ok := i.(core.VMInt); ok {
+					ii := int(iv)
+					if ii < 0 {
+						ii += len(vv)
+					}
+					if ii < 0 || ii >= len(vv) {
+						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
+						goto catching
+					}
+					regs.Reg[s.Reg] = vv[ii]
+				} else {
 					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
-					break
+					goto catching
 				}
-				ii := int(i.Int())
-				if ii < 0 {
-					ii += v.Len()
-				}
-				if ii < 0 || ii >= v.Len() {
-					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
-					break
-				}
-
-				regs.Set(s.Reg, v.Index(ii).Interface())
-
-			case reflect.String:
-				if i.Kind() != reflect.Int && i.Kind() != reflect.Int64 {
+			case core.VMString:
+				if iv, ok := i.(core.VMInt); ok {
+					ii := int(iv)
+					r := []rune(string(vv))
+					if ii < 0 {
+						ii += len(r)
+					}
+					if ii < 0 || ii >= len(r) {
+						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
+						goto catching
+					}
+					regs.Reg[s.Reg] = core.VMString(string(r[ii]))
+				} else {
 					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
-					break
+					goto catching
 				}
-				r := []rune(v.String())
-				vlen := len(r)
-				ii := int(i.Int())
-				if ii < 0 {
-					ii += vlen
-				}
-				if ii < 0 || ii >= vlen {
-					catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
-					break
-				}
-				regs.Set(s.Reg, string(r[ii]))
-
-			case reflect.Map:
-				if i.Kind() != reflect.String {
+			case core.VMStringMap:
+				if k, ok := i.(core.VMString); ok {
+					regs.Reg[s.Reg] = vv[string(k)]
+				} else {
 					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
-					break
+					goto catching
 				}
-				regs.Set(s.Reg, v.MapIndex(i))
-
 			default:
 				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
-				break
+				goto catching
 			}
 
 		case *binstmt.BinGETSUBSLICE:
-			refregs := reflect.ValueOf(regs.Reg)
-			v := reflect.Indirect(refregs.Index(s.Reg).Elem())
-			rb := reflect.Indirect(refregs.Index(s.RegBegin).Elem())
-			re := reflect.Indirect(refregs.Index(s.RegEnd).Elem())
 
-			switch v.Kind() {
-			case reflect.Array, reflect.Slice:
-				rv, err := SliceAt(v, rb, re)
-				if err != nil {
-					catcherr = binstmt.NewError(stmt, err)
-					break
+			var rb int
+			if regs.Reg[s.RegBegin] == nil {
+				rb = 0
+			} else if rbv, ok := regs.Reg[s.RegBegin].(core.VMInt); ok {
+				rb = int(rbv)
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+				goto catching
+			}
+
+			switch vv := regs.Reg[s.Reg].(type) {
+			case core.VMSlice:
+				vlen := len(vv)
+
+				var re int
+				if regs.Reg[s.RegEnd] == nil {
+					re = vlen
+				} else if rev, ok := regs.Reg[s.RegEnd].(core.VMInt); ok {
+					re = int(rev)
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+					goto catching
 				}
-				regs.Set(s.Reg, rv)
-			case reflect.String:
-				rv, err := StringAt(v, rb, re)
-				if err != nil {
-					catcherr = binstmt.NewError(stmt, err)
-					break
+
+				ii, ij := LeftRightBounds(rb, re, vlen)
+
+				if ij < ii {
+					catcherr = binstmt.NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
+					goto catching
 				}
-				regs.Set(s.Reg, rv)
+
+				regs.Reg[s.Reg] = vv[ii:ij]
+
+			case core.VMString:
+				r := []rune(string(vv))
+
+				vlen := len(r)
+
+				var re int
+				if regs.Reg[s.RegEnd] == nil {
+					re = vlen
+				} else if rev, ok := regs.Reg[s.RegEnd].(core.VMInt); ok {
+					re = int(rev)
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+					goto catching
+				}
+
+				ii, ij := LeftRightBounds(rb, re, vlen)
+
+				if ij < ii {
+					catcherr = binstmt.NewStringError(stmt, "Окончание диапазона не может быть раньше его начала")
+					goto catching
+				}
+
+				regs.Reg[s.Reg] = core.VMString(string(r[ii:ij]))
+
 			default:
 				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break

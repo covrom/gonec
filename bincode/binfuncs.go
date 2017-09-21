@@ -182,50 +182,6 @@ func LeftRightBounds(rb, re int, vlen int) (ii, ij int) {
 	return
 }
 
-func SliceAt(v, rb, re reflect.Value) (interface{}, error) {
-
-	vlen := v.Len()
-
-	ii, ij, err := LeftRightBounds(rb, re, vlen)
-	if err != nil {
-		return nil, err
-	}
-
-	if ij < ii {
-		return nil, fmt.Errorf("Окончание диапазона не может быть раньше его начала")
-	}
-
-	return v.Slice(ii, ij).Interface(), nil
-}
-
-func StringToRuneSliceAt(v, rb, re reflect.Value) (fullrune []rune, ii, ij int, err error) {
-
-	r := []rune(v.String())
-	vlen := len(r)
-
-	ii, ij, err = LeftRightBounds(rb, re, vlen)
-	if err != nil {
-		return
-	}
-
-	if ij < ii {
-		err = fmt.Errorf("Окончание диапазона не может быть раньше его начала")
-		return
-	}
-
-	return r, ii, ij, nil
-}
-
-func StringAt(v, rb, re reflect.Value) (interface{}, error) {
-
-	r, ii, ij, err := StringToRuneSliceAt(v, rb, re)
-	if err != nil {
-		return nil, err
-	}
-
-	return string(r[ii:ij]), nil
-}
-
 func EvalBinOp(op core.VMOperation, lhsV, rhsV reflect.Value) (interface{}, error) {
 	// log.Println(OperMapR[op])
 	if !lhsV.IsValid() || !rhsV.IsValid() {
