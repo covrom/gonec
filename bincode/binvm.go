@@ -757,24 +757,28 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив
-			eType, ok := regs.Reg[s.TypeReg].(int)
+			eType, ok := regs.Reg[s.TypeReg].(core.VMInt)
 			if !ok {
-				catcherr = NewStringError(stmt, "Неизвестный тип")
+				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
 				break
 			}
-			nt, err := env.Type(eType)
+			nt, err := env.Type(int(eType))
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			rv := regs.Reg[s.Reg]
-			v, err := TypeCastConvert(rv, nt, false)
-			if err != nil {
-				catcherr = NewError(stmt, err)
+			if cv, ok := rv.(core.VMConverter); ok {
+				v, err := cv.ConvertToType(nt, false)
+				if err != nil {
+					catcherr = binstmt.NewError(stmt, err)
+					break
+				}
+				regs.Reg[s.Reg] = v
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Значение не может быть преобразовано")
 				break
 			}
-
-			regs.Set(s.Reg, v)
 
 		case *binstmt.BinMAKE:
 			eType, ok := regs.Reg[s.Reg].(int)

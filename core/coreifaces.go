@@ -1,5 +1,9 @@
 package core
 
+import (
+	"reflect"
+)
+
 // иерархия базовых типов вирт. машины
 type (
 	// VMValuer корневой тип всех значений, доступных вирт. машине
@@ -30,6 +34,16 @@ type (
 	VMUnarer interface {
 		VMValuer
 		EvalUnOp(rune) (VMValuer, error) // возвращает результат выражения с другим значением
+	}
+
+	// TODO: реализовать VMConverter во всех типах, кроме функций
+
+	// VMConvertible может конвертироваться в тип reflect.Type
+	VMConverter interface {
+		VMValuer
+		ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error)
+		// если skipCollections=true и вызов идет для значения-коллекции, нужно вернуть значение без преобразования
+		// это требуется для рекурсивного преобразования коллекций
 	}
 
 	// TODO: реализовать VMOperationer и VMUnarer во всех типах
