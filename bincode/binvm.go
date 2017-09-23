@@ -669,171 +669,174 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 			var err error
 
 			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
-			var fgnc, argssl core.VMValuer
+			var fgnc core.VMValuer
+			var argsl core.VMSlice
 			if s.Name == 0 {
 				fgnc = regs.Reg[s.RegArgs]
-				argssl = regs.Reg[s.RegArgs+1]
+				argsl = regs.Reg[s.RegArgs+1].(core.VMSlice)
 			} else {
 				fgnc, err = env.Get(s.Name)
 				if err != nil {
 					catcherr = binstmt.NewError(stmt, err)
-					break
+					goto catching
 				}
-				fgnc = fgncv.Interface()
-				argssl = regs.Reg[s.RegArgs]
+				argsl = regs.Reg[s.RegArgs].(core.VMSlice)
 			}
+			rets := make(core.VMSlice, 0)
 			if fnc, ok := fgnc.(core.VMFunc); ok {
 				// если ее надо вызвать в горутине - вызываем
 				if s.Go {
 					env.SetGoRunned(true)
-					go fnc(argssl.(core.VMSlice)...)
-					regs.Set(s.RegRets, nil)
+					go fnc(argsl, &rets)
+					regs.Reg[s.RegRets] = rets
 					break
 				}
 
 				// не в горутине
-				ret, err := fnc(argssl.(core.VMSlice)...)
+				err := fnc(argsl, &rets)
 
 				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
-				// и аналогично проверить значения в переданных указателях
 
 				if err != nil {
 					// ошибку передаем в блок обработки исключений
 					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
-				regs.Set(s.RegRets, ret)
+				regs.Reg[s.RegRets] = rets
 				break
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Неверный тип функции")
+				goto catching
 			}
 
-			// получаем функцию на языке Го
-			f := reflect.ValueOf(fgnc)
-			vargs := reflect.ValueOf(argssl)
-			// это не функция - тогда ошибка
-			if f.Kind() != reflect.Func {
-				catcherr = binstmt.NewStringError(stmt, "Не является функцией")
-				break
-			}
-			ftype := f.Type()
+			// // получаем функцию на языке Го
+			// f := reflect.ValueOf(fgnc)
+			// vargs := reflect.ValueOf(argssl)
+			// // это не функция - тогда ошибка
+			// if f.Kind() != reflect.Func {
+			// 	catcherr = binstmt.NewStringError(stmt, "Не является функцией")
+			// 	break
+			// }
+			// ftype := f.Type()
 
-			// готовим аргументы для вызываемой функции
-			args := make([]reflect.Value, 0, s.NumArgs)
+			// // готовим аргументы для вызываемой функции
+			// args := make([]reflect.Value, 0, s.NumArgs)
 
-			for i := 0; i < s.NumArgs; i++ {
-				// очередной аргумент
-				arg := vargs.Index(i).Elem()
-				// if arg.Kind() == reflect.Interface || arg.Kind() == reflect.Ptr {
-				// 		arg = arg.Elem()
-				// }
-				// конвертируем параметр в целевой тип
-				if i < ftype.NumIn() {
-					// это функция с постоянным числом аргументов
-					if !ftype.IsVariadic() {
-						// целевой тип аргумента
-						it := ftype.In(i)
-						if arg.Kind().String() == "unsafe.Pointer" {
-							arg = reflect.New(it).Elem()
-						}
-						if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
-							// типы не равны - пытаемся конвертировать
-							arg = arg.Convert(it)
+			// for i := 0; i < s.NumArgs; i++ {
+			// 	// очередной аргумент
+			// 	arg := vargs.Index(i).Elem()
+			// 	// if arg.Kind() == reflect.Interface || arg.Kind() == reflect.Ptr {
+			// 	// 		arg = arg.Elem()
+			// 	// }
+			// 	// конвертируем параметр в целевой тип
+			// 	if i < ftype.NumIn() {
+			// 		// это функция с постоянным числом аргументов
+			// 		if !ftype.IsVariadic() {
+			// 			// целевой тип аргумента
+			// 			it := ftype.In(i)
+			// 			if arg.Kind().String() == "unsafe.Pointer" {
+			// 				arg = reflect.New(it).Elem()
+			// 			}
+			// 			if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
+			// 				// типы не равны - пытаемся конвертировать
+			// 				arg = arg.Convert(it)
 
-						} else if arg.Kind() == reflect.Func {
-							if _, isFunc := arg.Interface().(core.VMFunc); isFunc {
-								// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
-								rfunc := arg
-								if s.Go {
-									env.SetGoRunned(true)
-								}
-								arg = reflect.MakeFunc(it, func(args []reflect.Value) []reflect.Value {
-									// for i := range args {
-									// 	args[i] = reflect.ValueOf(args[i])
-									// }
-									if s.Go {
-										go func() {
-											rfunc.Call(args)
-										}()
-										return []reflect.Value{}
-									}
-									// var rets []reflect.Value
-									// for _, v := range rfunc.Call(args)[:it.NumOut()] {
-									// 	rets = append(rets, v.Interface().(reflect.Value))
-									// }
-									// return rets
-									return rfunc.Call(args)[:it.NumOut()]
-								})
-							}
-						} else if !arg.IsValid() {
-							arg = reflect.Zero(it)
-						}
-					}
-				}
-				if !arg.IsValid() {
-					arg = core.VMNil
-				}
-				if s.VarArg && i == s.NumArgs-1 {
-					for j := 0; j < arg.Len(); j++ {
-						args = append(args, arg.Index(j))
-					}
-				} else {
-					args = append(args, arg)
-				}
-			}
+			// 			} else if arg.Kind() == reflect.Func {
+			// 				if _, isFunc := arg.Interface().(core.VMFunc); isFunc {
+			// 					// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
+			// 					rfunc := arg
+			// 					if s.Go {
+			// 						env.SetGoRunned(true)
+			// 					}
+			// 					arg = reflect.MakeFunc(it, func(args []reflect.Value) []reflect.Value {
+			// 						// for i := range args {
+			// 						// 	args[i] = reflect.ValueOf(args[i])
+			// 						// }
+			// 						if s.Go {
+			// 							go func() {
+			// 								rfunc.Call(args)
+			// 							}()
+			// 							return []reflect.Value{}
+			// 						}
+			// 						// var rets []reflect.Value
+			// 						// for _, v := range rfunc.Call(args)[:it.NumOut()] {
+			// 						// 	rets = append(rets, v.Interface().(reflect.Value))
+			// 						// }
+			// 						// return rets
+			// 						return rfunc.Call(args)[:it.NumOut()]
+			// 					})
+			// 				}
+			// 			} else if !arg.IsValid() {
+			// 				arg = reflect.Zero(it)
+			// 			}
+			// 		}
+			// 	}
+			// 	if !arg.IsValid() {
+			// 		arg = core.VMNil
+			// 	}
+			// 	if s.VarArg && i == s.NumArgs-1 {
+			// 		for j := 0; j < arg.Len(); j++ {
+			// 			args = append(args, arg.Index(j))
+			// 		}
+			// 	} else {
+			// 		args = append(args, arg)
+			// 	}
+			// }
 
 			// вызываем функцию
 
-			fnc := func() (ret interface{}, err error) {
-				defer func() {
-					// если не было прерывания Interrupt()
-					// if os.Getenv("GONEC_DEBUG") == "" {
-					// обрабатываем панику, которая могла возникнуть в вызванной функции
-					if ex := recover(); ex != nil {
-						if e, ok := ex.(error); ok {
-							err = e
-						} else {
-							err = errors.New(fmt.Sprint(ex))
-						}
-					}
-					// }
-				}()
-				// if f.Kind() == reflect.Interface {
-				// 	f = f.Elem()
-				// }
-				rets := f.Call(args)
+			// fnc := func() (ret interface{}, err error) {
+			// 	defer func() {
+			// 		// если не было прерывания Interrupt()
+			// 		// if os.Getenv("GONEC_DEBUG") == "" {
+			// 		// обрабатываем панику, которая могла возникнуть в вызванной функции
+			// 		if ex := recover(); ex != nil {
+			// 			if e, ok := ex.(error); ok {
+			// 				err = e
+			// 			} else {
+			// 				err = errors.New(fmt.Sprint(ex))
+			// 			}
+			// 		}
+			// 		// }
+			// 	}()
+			// 	// if f.Kind() == reflect.Interface {
+			// 	// 	f = f.Elem()
+			// 	// }
+			// 	rets := f.Call(args)
 
-				// возврат из функций на языке Го
+			// 	// возврат из функций на языке Го
 
-				if f.Type().NumOut() == 1 {
-					return rets[0].Interface(), nil // одно значение
-				} else {
-					var result []interface{}
-					for _, r := range rets {
-						result = append(result, r.Interface())
-					}
-					return core.VMSlice(result), nil // массив возвращаемых значений
-				}
-			}
+			// 	if f.Type().NumOut() == 1 {
+			// 		return rets[0].Interface(), nil // одно значение
+			// 	} else {
+			// 		var result []interface{}
+			// 		for _, r := range rets {
+			// 			result = append(result, r.Interface())
+			// 		}
+			// 		return core.VMSlice(result), nil // массив возвращаемых значений
+			// 	}
+			// }
 
-			// если ее надо вызвать в горутине - вызываем
-			if s.Go {
-				env.SetGoRunned(true)
-				go fnc()
-				regs.Set(s.RegRets, nil)
-				break
-			}
+			// // если ее надо вызвать в горутине - вызываем
+			// if s.Go {
+			// 	env.SetGoRunned(true)
+			// 	go fnc()
+			// 	regs.Set(s.RegRets, nil)
+			// 	break
+			// }
 
-			// не в горутине
-			ret, err := fnc()
+			// // не в горутине
+			// ret, err := fnc()
 
-			// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
-			// и аналогично проверить значения в переданных указателях
+			// // TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
+			// // и аналогично проверить значения в переданных указателях
 
-			if err != nil {
-				// ошибку передаем в блок обработки исключений
-				catcherr = binstmt.NewError(stmt, err)
-				break
-			}
-			regs.Set(s.RegRets, ret)
+			// if err != nil {
+			// 	// ошибку передаем в блок обработки исключений
+			// 	catcherr = binstmt.NewError(stmt, err)
+			// 	break
+			// }
+			// regs.Set(s.RegRets, ret)
 
 		case *binstmt.BinFUNC:
 			f := func(expr *BinFUNC, env *core.Env) core.VMFunc {

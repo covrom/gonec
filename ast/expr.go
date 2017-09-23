@@ -453,19 +453,14 @@ func (e *CallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 		regoff = 1
 	}
 
-	// помещаем аргументы в массив аргументов в reg, если их >1
-	var sliceoff int
-	if len(e.SubExprs) > 1 {
-		bins.Append(binstmt.NewBinMAKESLICE(reg+regoff, len(e.SubExprs), len(e.SubExprs), e))
-		sliceoff = 1
-	}
+	// помещаем аргументы в массив аргументов
+	bins.Append(binstmt.NewBinMAKESLICE(reg+regoff, len(e.SubExprs), len(e.SubExprs), e))
+	sliceoff := 1
 
 	for i, ee := range e.SubExprs {
 		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
 		ee.BinTo(bins, reg+sliceoff+regoff, lid, false, maxreg)
-		if sliceoff == 1 {
-			bins.Append(binstmt.NewBinSETIDX(reg+regoff, i, reg+sliceoff+regoff, ee))
-		}
+		bins.Append(binstmt.NewBinSETIDX(reg+regoff, i, reg+sliceoff+regoff, ee))
 	}
 
 	// для анонимных (Name==0) - в reg будет функция, иначе первый аргумент (см. выше) или слайс аргументов
