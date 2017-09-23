@@ -781,14 +781,14 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinMAKE:
-			eType, ok := regs.Reg[s.Reg].(int)
+			eType, ok := regs.Reg[s.Reg].(core.VMInt)
 			if !ok {
-				catcherr = NewStringError(stmt, "Неизвестный тип")
+				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
 				break
 			}
-			rt, err := env.Type(eType)
+			rt, err := env.Type(int(eType))
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 			var v reflect.Value
@@ -796,12 +796,16 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				v = reflect.MakeMap(reflect.MapOf(rt.Key(), rt.Elem())).Convert(rt)
 			} else if rt.Kind() == reflect.Struct {
 				// структуру создаем всегда ссылочной
-				// иначе не работает присвоение полей через рефлексию
 				v = reflect.New(rt)
 			} else {
 				v = reflect.Zero(rt)
 			}
-			regs.Set(s.Reg, v.Interface())
+			if vv, ok := v.Interface().(core.VMValuer); ok {
+				regs.Reg[s.Reg] = vv
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
+				break
+			}
 
 		case *binstmt.BinMAKECHAN:
 			size, ok := regs.Reg[s.Reg].(int64)
