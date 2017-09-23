@@ -751,6 +751,10 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			env.Define(s.Name, f)
 			regs.Reg[s.Reg] = f
 
+		case *binstmt.BinRET:
+			retval = regs.Reg[s.Reg]
+			return retval, ReturnError
+
 		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив
 			eType, ok := regs.Reg[s.TypeReg].(int)
@@ -970,10 +974,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 		case *binstmt.BinWHILE:
 			regs.PushBreak(s.BreakLabel)
 			regs.PushContinue(s.ContinueLabel)
-
-		case *binstmt.BinRET:
-			retval = regs.Reg[s.Reg]
-			return retval, ReturnError
 
 		case *binstmt.BinTHROW:
 			catcherr = NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
