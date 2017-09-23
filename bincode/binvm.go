@@ -15,6 +15,7 @@ import (
 	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/names"
 	"github.com/covrom/gonec/parser"
+	"github.com/shopspring/decimal"
 )
 
 func Interrupt(env *core.Env) {
@@ -808,69 +809,78 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinMAKECHAN:
-			size, ok := regs.Reg[s.Reg].(int64)
+			size, ok := regs.Reg[s.Reg].(core.VMInt)
 			if !ok {
-				catcherr = NewStringError(stmt, "Размер должен быть целым числом")
+				catcherr = binstmt.NewStringError(stmt, "Размер должен быть целым числом")
 				break
 			}
-			v := make(core.VMChannel, size)
-			regs.Set(s.Reg, v)
+			v := make(core.VMChan, int(size))
+			regs.Reg[s.Reg] = v
 
 		case *binstmt.BinMAKEARR:
-			alen := int(ToInt64(regs.Reg[s.Reg]))
-			acap := int(ToInt64(regs.Reg[s.RegCap]))
-			v := make(core.VMSlice, alen, acap)
-			regs.Set(s.Reg, v)
-
-		case *binstmt.BinCHANRECV:
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			if ch.Kind() != reflect.Chan {
-				catcherr = NewStringError(stmt, "Не является каналом")
+			alen, ok := regs.Reg[s.Reg].(core.VMInt)
+			if !ok {
+				catcherr = binstmt.NewStringError(stmt, "Длина должна быть целым числом")
 				break
 			}
-			v, _ := ch.Recv()
-			regs.Set(s.RegVal, v.Interface())
+			acap, ok := regs.Reg[s.RegCap].(core.VMInt)
+			if !ok {
+				catcherr = binstmt.NewStringError(stmt, "Размер должен быть целым числом")
+				break
+			}
+
+			v := make(core.VMSlice, int(alen), int(acap))
+			regs.Reg[s.Reg] = v
+
+		case *binstmt.BinCHANRECV:
+			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			if !ok {
+				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
+				break
+			}
+			v := ch.Recv()
+			regs.Reg[s.RegVal] = v
 
 		case *binstmt.BinCHANSEND:
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			if ch.Kind() != reflect.Chan {
-				catcherr = NewStringError(stmt, "Не является каналом")
+			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			if !ok {
+				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
 			v := regs.Reg[s.RegVal]
-			ch.Send(reflect.ValueOf(v))
+			ch.Send(v)
 
 		case *binstmt.BinISKIND:
 			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			regs.Set(s.Reg, v.Kind() == s.Kind)
+			regs.Reg[s.Reg] = core.VMBool(v.Kind() == s.Kind)
 
 		case *binstmt.BinISSLICE:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			regs.Set(s.RegBool, v.Kind() == reflect.Array || v.Kind() == reflect.Slice)
+			_, ok := regs.Reg[s.Reg].(core.VMSlice)
+			regs.Reg[s.RegBool] = core.VMBool(ok)
 
 		case *binstmt.BinINC:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			var x interface{}
-			if v.Kind() == reflect.Float64 {
-				x = ToFloat64(v.Interface()) + 1.0
-			} else {
-				x = ToInt64(v.Interface()) + 1
+			v := regs.Reg[s.Reg]
+			var x core.VMValuer
+			if vv, ok := v.(core.VMInt); ok {
+				x = core.VMInt(int64(vv) + 1)
+			} else if vv, ok := v.(core.VMDecimal); ok {
+				x = vv.Add(core.VMDecimal(decimal.New(1, 0)))
 			}
-			regs.Set(s.Reg, x)
+			regs.Reg[s.Reg] = x
 
 		case *binstmt.BinDEC:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			var x interface{}
-			if v.Kind() == reflect.Float64 {
-				x = ToFloat64(v.Interface()) - 1.0
-			} else {
-				x = ToInt64(v.Interface()) - 1
+			v := regs.Reg[s.Reg]
+			var x core.VMValuer
+			if vv, ok := v.(core.VMInt); ok {
+				x = core.VMInt(int64(vv) - 1)
+			} else if vv, ok := v.(core.VMDecimal); ok {
+				x = vv.Add(core.VMDecimal(decimal.New(-1, 0)))
 			}
-			regs.Set(s.Reg, x)
+			regs.Reg[s.Reg] = x
 
 		case *binstmt.BinTRY:
 			regs.PushTry(s.Reg, s.JumpTo)
-			regs.Set(s.Reg, nil) // изначально ошибки нет
+			regs.Reg[s.Reg] = nil // изначально ошибки нет
 
 		case *binstmt.BinCATCH:
 			// получаем ошибку, и если ее нет, переходим на метку, иначе, выполняем дальше
