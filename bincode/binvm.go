@@ -753,7 +753,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 		case *binstmt.BinRET:
 			retval = regs.Reg[s.Reg]
-			return retval, ReturnError
+			return retval, binstmt.ReturnError
 
 		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив
