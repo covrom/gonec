@@ -659,13 +659,16 @@ func (e *FuncExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 	lstart := *lid
 	*lid++
 	lend := *lid
+	ii := len(*bins)
 	bins.Append(binstmt.NewBinFUNC(reg, e.Name, e.Args, e.VarArg, lstart, lend, e))
 	bins.Append(binstmt.NewBinLABEL(lstart, e))
 	e.Stmts.BinTo(bins, reg, lid, maxreg)
+	bins.Append(binstmt.NewBinRET(reg, e))
 	bins.Append(binstmt.NewBinLABEL(lend, e))
 	if reg > *maxreg {
 		*maxreg = reg
 	}
+	(*bins)[ii].(*binstmt.BinFUNC).MaxReg = *maxreg
 }
 
 // LetExpr provide expression to let variable.

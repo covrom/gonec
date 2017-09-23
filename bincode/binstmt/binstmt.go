@@ -900,6 +900,7 @@ type BinFUNC struct {
 	Args       []int // идентификаторы параметров
 	VarArg     bool
 	// ReturnTo int //метка инструкции возврата из функции
+	MaxReg int // максимальный регистр, достигаемый внутри функции, без учета вызова вложенных функций
 }
 
 func (v *BinFUNC) SwapId(m map[int]int) {

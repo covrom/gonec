@@ -14,6 +14,7 @@ type VMRegs struct {
 	TryRegErr    []int           // последний элемент - это регистр с ошибкой текущего обработчика
 	ForBreaks    []int           // последний элемент - это метка для break
 	ForContinues []int           // последний элемент - это метка для continue
+	// ReturnTo     []int           // стек возвратов по RET
 }
 
 func (v *VMRegs) FreeFromReg(reg int) {

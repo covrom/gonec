@@ -128,11 +128,12 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 		core.LoadAllBuiltins(env)
 	}
 
-	return RunWorker(stmts.Code, stmts.Labels, stmts.MaxReg, env, 0)
+	registers := make([]core.VMValuer, stmts.MaxReg+1)
+	return RunWorker(stmts.Code, stmts.Labels, registers, env, 0)
 }
 
 // RunWorker исполняет кусок кода, начиная с инструкции idx
-func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, idx int) (retval core.VMValuer, reterr error) {
+func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, env *core.Env, idx int) (retval core.VMValuer, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -151,7 +152,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 
 	regs := &VMRegs{
 		Env:          env,
-		Reg:          make([]core.VMValuer, maxreg+1),
+		Reg:          registers,
 		Labels:       labels,
 		TryLabel:     make([]int, 0, 8),
 		TryRegErr:    make([]int, 0, 8),
@@ -159,7 +160,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 		ForContinues: make([]int, 0, 8),
 	}
 
-	argsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс аргументов для вызова функций VMFunc
 	retsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс возвращаемых значений из функций VMFunc
 
 	var (
@@ -663,9 +663,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 
 		case *binstmt.BinCALL:
 
-			// TODO: сохранять все текущее состояние в стэке, включая набор меток перехода, т.к. в функциях модулей они могут повторяться
-			// А ТАК ЖЕ обрабатывать панику и превращать ее в ошибку для обработки в catch
-
 			var err error
 
 			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
@@ -682,18 +679,19 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 				}
 				argsl = regs.Reg[s.RegArgs].(core.VMSlice)
 			}
-			rets := make(core.VMSlice, 0)
+			rets := retsSlice[:0]
 			if fnc, ok := fgnc.(core.VMFunc); ok {
 				// если ее надо вызвать в горутине - вызываем
 				if s.Go {
 					env.SetGoRunned(true)
+					rets = make(core.VMSlice, 0) // для каждой горутины отдельный массив возвратов, который потом не используется
 					go fnc(argsl, &rets)
 					regs.Reg[s.RegRets] = rets
 					break
 				}
 
 				// не в горутине
-				err := fnc(argsl, &rets)
+				err = fnc(argsl, &rets)
 
 				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
 
@@ -709,150 +707,22 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 				goto catching
 			}
 
-			// // получаем функцию на языке Го
-			// f := reflect.ValueOf(fgnc)
-			// vargs := reflect.ValueOf(argssl)
-			// // это не функция - тогда ошибка
-			// if f.Kind() != reflect.Func {
-			// 	catcherr = binstmt.NewStringError(stmt, "Не является функцией")
-			// 	break
-			// }
-			// ftype := f.Type()
-
-			// // готовим аргументы для вызываемой функции
-			// args := make([]reflect.Value, 0, s.NumArgs)
-
-			// for i := 0; i < s.NumArgs; i++ {
-			// 	// очередной аргумент
-			// 	arg := vargs.Index(i).Elem()
-			// 	// if arg.Kind() == reflect.Interface || arg.Kind() == reflect.Ptr {
-			// 	// 		arg = arg.Elem()
-			// 	// }
-			// 	// конвертируем параметр в целевой тип
-			// 	if i < ftype.NumIn() {
-			// 		// это функция с постоянным числом аргументов
-			// 		if !ftype.IsVariadic() {
-			// 			// целевой тип аргумента
-			// 			it := ftype.In(i)
-			// 			if arg.Kind().String() == "unsafe.Pointer" {
-			// 				arg = reflect.New(it).Elem()
-			// 			}
-			// 			if arg.Kind() != it.Kind() && arg.IsValid() && arg.Type().ConvertibleTo(it) {
-			// 				// типы не равны - пытаемся конвертировать
-			// 				arg = arg.Convert(it)
-
-			// 			} else if arg.Kind() == reflect.Func {
-			// 				if _, isFunc := arg.Interface().(core.VMFunc); isFunc {
-			// 					// это функция на языке Гонец (т.е. обработчик) - делаем обертку в целевую функцию типа it
-			// 					rfunc := arg
-			// 					if s.Go {
-			// 						env.SetGoRunned(true)
-			// 					}
-			// 					arg = reflect.MakeFunc(it, func(args []reflect.Value) []reflect.Value {
-			// 						// for i := range args {
-			// 						// 	args[i] = reflect.ValueOf(args[i])
-			// 						// }
-			// 						if s.Go {
-			// 							go func() {
-			// 								rfunc.Call(args)
-			// 							}()
-			// 							return []reflect.Value{}
-			// 						}
-			// 						// var rets []reflect.Value
-			// 						// for _, v := range rfunc.Call(args)[:it.NumOut()] {
-			// 						// 	rets = append(rets, v.Interface().(reflect.Value))
-			// 						// }
-			// 						// return rets
-			// 						return rfunc.Call(args)[:it.NumOut()]
-			// 					})
-			// 				}
-			// 			} else if !arg.IsValid() {
-			// 				arg = reflect.Zero(it)
-			// 			}
-			// 		}
-			// 	}
-			// 	if !arg.IsValid() {
-			// 		arg = core.VMNil
-			// 	}
-			// 	if s.VarArg && i == s.NumArgs-1 {
-			// 		for j := 0; j < arg.Len(); j++ {
-			// 			args = append(args, arg.Index(j))
-			// 		}
-			// 	} else {
-			// 		args = append(args, arg)
-			// 	}
-			// }
-
-			// вызываем функцию
-
-			// fnc := func() (ret interface{}, err error) {
-			// 	defer func() {
-			// 		// если не было прерывания Interrupt()
-			// 		// if os.Getenv("GONEC_DEBUG") == "" {
-			// 		// обрабатываем панику, которая могла возникнуть в вызванной функции
-			// 		if ex := recover(); ex != nil {
-			// 			if e, ok := ex.(error); ok {
-			// 				err = e
-			// 			} else {
-			// 				err = errors.New(fmt.Sprint(ex))
-			// 			}
-			// 		}
-			// 		// }
-			// 	}()
-			// 	// if f.Kind() == reflect.Interface {
-			// 	// 	f = f.Elem()
-			// 	// }
-			// 	rets := f.Call(args)
-
-			// 	// возврат из функций на языке Го
-
-			// 	if f.Type().NumOut() == 1 {
-			// 		return rets[0].Interface(), nil // одно значение
-			// 	} else {
-			// 		var result []interface{}
-			// 		for _, r := range rets {
-			// 			result = append(result, r.Interface())
-			// 		}
-			// 		return core.VMSlice(result), nil // массив возвращаемых значений
-			// 	}
-			// }
-
-			// // если ее надо вызвать в горутине - вызываем
-			// if s.Go {
-			// 	env.SetGoRunned(true)
-			// 	go fnc()
-			// 	regs.Set(s.RegRets, nil)
-			// 	break
-			// }
-
-			// // не в горутине
-			// ret, err := fnc()
-
-			// // TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
-			// // и аналогично проверить значения в переданных указателях
-
-			// if err != nil {
-			// 	// ошибку передаем в блок обработки исключений
-			// 	catcherr = binstmt.NewError(stmt, err)
-			// 	break
-			// }
-			// regs.Set(s.RegRets, ret)
-
 		case *binstmt.BinFUNC:
-			f := func(expr *BinFUNC, env *core.Env) core.VMFunc {
-				return func(args ...interface{}) (interface{}, error) {
+
+			f := func(expr *binstmt.BinFUNC, fstmts binstmt.BinStmts, flabels []int, fenv *core.Env) core.VMFunc {
+				return func(args core.VMSlice, rets *core.VMSlice) error {
 					if !expr.VarArg {
 						if len(args) != len(expr.Args) {
-							return nil, binstmt.NewStringError(expr, "Неверное количество аргументов")
+							return binstmt.NewStringError(expr, "Неверное количество аргументов")
 						}
 					}
 					var newenv *core.Env
 					if expr.Name == 0 {
 						// наследуем от окружения текущей функции
-						newenv = env.NewSubEnv()
+						newenv = fenv.NewSubEnv()
 					} else {
 						// наследуем от модуля или глобального окружения
-						newenv = env.NewEnv()
+						newenv = fenv.NewEnv()
 					}
 
 					if expr.VarArg {
@@ -862,16 +732,24 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, maxreg int, env *core.Env, 
 							newenv.Define(arg, args[i])
 						}
 					}
-					rr, err := Run(expr.Code, newenv)
+					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
+					callregs := make([]core.VMValuer, expr.MaxReg+1)
+					rr, err := RunWorker(fstmts, flabels, callregs, newenv, expr.LabelStart)
 					if err == binstmt.ReturnError {
 						err = nil
 					}
-					// TODO: проверить при единичном и множественном возврате, при "..." аргументах
-					return rr, err
+					// возврат массива возвращается сразу, иначе добавляется
+					if vsl, ok := rr.(core.VMSlice); ok {
+						*rets = vsl
+					} else {
+						rets.Append(rr)
+					}
+					return err
 				}
-			}(s, env)
+			}(s, stmts, labels, env)
+
 			env.Define(s.Name, f)
-			regs.Set(s.Reg, f)
+			regs.Reg[s.Reg] = f
 
 		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив

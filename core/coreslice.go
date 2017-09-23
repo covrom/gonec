@@ -29,8 +29,8 @@ func (x VMSlice) Args() []interface{} {
 	return ai
 }
 
-func (x *VMSlice) Append(a VMValuer) {
-	*x = append(*x, a)
+func (x *VMSlice) Append(a ...VMValuer) {
+	*x = append(*x, a...)
 }
 
 func (x VMSlice) Length() VMInt {
