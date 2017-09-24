@@ -24,11 +24,15 @@ type (
 		ParseGoType(interface{}) // используется для указателей, т.к. парсит в их значения
 	}
 
+	// TODO: реализовать VMOperationer во всех типах с возможностью операции с другим операндом
+
 	// VMOperationer может выполнить операцию с другим значением, операцию сравнения или математическую
 	VMOperationer interface {
 		VMValuer
 		EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) // возвращает результат выражения с другим значением
 	}
+
+	// TODO: реализовать VMUnarer во всех типах с унарными операциями
 
 	// VMUnarer может выполнить унарную операцию над свои значением
 	VMUnarer interface {
@@ -38,7 +42,7 @@ type (
 
 	// TODO: реализовать VMConverter во всех типах, кроме функций
 
-	// VMConvertible может конвертироваться в тип reflect.Type
+	// VMConverter может конвертироваться в тип reflect.Type
 	VMConverter interface {
 		VMValuer
 		ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error)
@@ -46,11 +50,9 @@ type (
 		// это требуется для рекурсивного преобразования коллекций
 	}
 
-	// TODO: реализовать VMOperationer и VMUnarer во всех типах
-
 	// VMParser может парсить из строки
 	VMParser interface {
-		VMValuer
+		VMInterfacer
 		Parse(string) error // используется для указателей, т.к. парсит в их значения
 	}
 
@@ -80,7 +82,7 @@ type (
 
 	// VMNumberer число, внутреннее хранение в int64 или decimal формате
 	VMNumberer interface {
-		VMInterfacer
+		VMParser
 		Int() int64
 		Float() float64
 		Decimal() VMDecimal
@@ -88,20 +90,20 @@ type (
 	}
 
 	// VMBooler сообщает значение булево
-	VMBooler interface {
-		VMInterfacer
+	VMBooler interface {	
+		VMParser
 		Bool() bool
 	}
 
 	// VMSlicer может быть представлен в виде слайса Гонец
 	VMSlicer interface {
-		VMInterfacer
+		VMParser
 		Slice() VMSlice
 	}
 
 	// VMStringMaper может быть представлен в виде структуры Гонец
 	VMStringMaper interface {
-		VMInterfacer
+		VMParser
 		StringMap() VMStringMap
 	}
 
@@ -113,13 +115,13 @@ type (
 
 	// VMDateTimer это дата/время
 	VMDateTimer interface {
-		VMInterfacer
+		VMParser
 		Time() VMTime
 	}
 
 	// VMDurationer это промежуток времени (time.Duration)
 	VMDurationer interface {
-		VMInterfacer
+		VMParser
 		Duration() VMTimeDuration
 	}
 

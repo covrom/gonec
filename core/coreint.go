@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
@@ -91,4 +92,27 @@ func (x *VMInt) Parse(s string) error {
 	return nil
 }
 
-// TODO: реализовать VMDurationer
+func (x VMInt) EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) {
+
+}
+
+func (x VMInt) EvalUnOp(op rune) (VMValuer, error) {
+	switch op {
+	case '-':
+		return VMInt(-int64(x)), nil
+	case '^':
+		return VMInt(^int64(x)), nil
+	case '!':
+		return VMBool(!x.Bool()), nil
+	default:
+		return VMNil, fmt.Errorf("Неизвестный оператор")
+	}
+}
+
+func (x VMInt) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
+
+}
+
+func (x VMInt) Duration() VMTimeDuration {
+
+}
