@@ -951,8 +951,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinFORNUM:
-			if rb, ok := regs.Reg[s.RegFrom].(core.VMInt); ok {
-				if re, ok := regs.Reg[s.RegTo].(core.VMInt); ok {
+			if _, ok := regs.Reg[s.RegFrom].(core.VMInt); ok {
+				if _, ok := regs.Reg[s.RegTo].(core.VMInt); ok {
 					regs.Reg[s.Reg] = nil
 					regs.PushBreak(s.BreakLabel)
 					regs.PushContinue(s.ContinueLabel)
@@ -1032,30 +1032,30 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 		case *binstmt.BinTRYRECV:
 
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			if ch.Kind() != reflect.Chan {
-				catcherr = NewStringError(stmt, "Не является каналом")
-				break
-			}
-			v, ok := ch.TryRecv()
-			if !v.IsValid() {
-				regs.Set(s.RegVal, nil)
-				regs.Set(s.RegOk, ok)
-				regs.Set(s.RegClosed, true)
-			} else {
-				regs.Set(s.RegVal, v.Interface())
-				regs.Set(s.RegOk, ok)
-				regs.Set(s.RegClosed, false)
-			}
-
-		case *binstmt.BinTRYSEND:
-			ch := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			if ch.Kind() != reflect.Chan {
+			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
-			ok := ch.TrySend(reflect.ValueOf(regs.Reg).Index(s.RegVal).Elem())
-			regs.Set(s.RegOk, ok)
+			v, ok, notready := ch.TryRecv()
+			if !ok {
+				regs.Reg[s.RegVal] = core.VMNil
+				regs.Reg[s.RegOk] = core.VMBool(ok)
+				regs.Reg[s.RegClosed] = core.VMBool(!notready)
+			} else {
+				regs.Reg[s.RegVal] = v
+				regs.Reg[s.RegOk] = core.VMBool(ok)
+				regs.Reg[s.RegClosed] = core.VMBool(false)
+			}
+
+		case *binstmt.BinTRYSEND:
+			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			if !ok {
+				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
+				break
+			}
+			ok = ch.TrySend(regs.Reg[s.RegVal])
+			regs.Reg[s.RegOk] = core.VMBool(ok)
 
 		case *binstmt.BinGOSHED:
 			runtime.Gosched()
@@ -1075,12 +1075,18 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			if regs.TopTryLabel() == -1 {
 				return nil, nerr
 			} else {
-				env.DefineS("описаниеошибки", func(s string) CatchFunc {
-					return func() string { return s }
+				env.DefineS("описаниеошибки", func(s string) core.VMFunc {
+					return func(args core.VMSlice, rets *core.VMSlice) error {
+						if len(args) != 0 {
+							return errors.New("Данная функция не требует параметров")
+						}
+						rets.Append(core.VMString(s))
+						return nil
+					}
 				}(nerr.Error()))
 
 				r, idxl := regs.PopTry()
-				regs.Set(r, nerr)
+				regs.Reg[r] = core.VMString(nerr.Error())
 				idx = regs.Labels[idxl] // переходим в catch блок, функция с описанием ошибки определена
 				continue
 			}

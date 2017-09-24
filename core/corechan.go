@@ -28,13 +28,13 @@ func (x VMChan) TrySend(v VMValuer) (ok bool) {
 	return
 }
 
-func (x VMChan) TryRecv() (v VMValuer, ok bool) {
-	// TODO: проверить на закрытие канала
+func (x VMChan) TryRecv() (v VMValuer, ok bool, notready bool) {
 	select {
-	case v = <-x:
-		ok = true
+	case v, ok = <-x:
+		notready = false
 	default:
 		ok = false
+		notready = true
 	}
 	return
 }

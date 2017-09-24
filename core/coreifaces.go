@@ -60,7 +60,7 @@ type (
 		Send(VMValuer)
 		Recv() (VMValuer, bool)
 		TrySend(VMValuer) bool
-		TryRecv() (VMValuer, bool)
+		TryRecv() (VMValuer, bool, bool)
 	}
 
 	// VMIndexer имеет длину и значение по индексу

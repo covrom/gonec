@@ -63,4 +63,3 @@ func (e *Error) String() string {
 	return e.Message
 }
 
-type CatchFunc func() string
