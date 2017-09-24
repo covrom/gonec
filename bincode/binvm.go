@@ -897,35 +897,31 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinFOREACH:
-			val := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
+			val := regs.Reg[s.Reg]
 
-			switch val.Kind() {
-			case reflect.Array, reflect.Slice:
-				regs.Set(s.RegIter, int(-1))
-			case reflect.Chan:
-				regs.Set(s.RegIter, nil)
+			switch val.(type) {
+			case core.VMSlice:
+				regs.Reg[s.RegIter] = core.VMInt(-1)
+			case core.VMChan:
+				regs.Reg[s.RegIter] = nil
 			default:
-				catcherr = NewStringError(stmt, "Не является коллекцией или каналом")
-				break
-			}
-			if catcherr != nil {
-				break
+				catcherr = binstmt.NewStringError(stmt, "Не является коллекцией или каналом")
+				goto catching
 			}
 
 			regs.PushBreak(s.BreakLabel)
 			regs.PushContinue(s.ContinueLabel)
 
 		case *binstmt.BinNEXT:
-			val := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
+			val := regs.Reg[s.Reg]
 
-			switch val.Kind() {
-			case reflect.Array, reflect.Slice:
-				iter := ToInt64(regs.Reg[s.RegIter])
+			switch vv := val.(type) {
+			case core.VMSlice:
+				iter := int(regs.Reg[s.RegIter].(core.VMInt))
 				iter++
-				if iter < int64(val.Len()) {
-					regs.Set(s.RegIter, iter)
-					iv := val.Index(int(iter))
-					regs.Set(s.RegVal, iv)
+				if iter < len(vv) {
+					regs.Reg[s.RegIter] = core.VMInt(iter)
+					regs.Reg[s.RegVal] = vv[iter]
 				} else {
 					idx = regs.Labels[s.JumpTo]
 					continue
