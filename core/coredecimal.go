@@ -106,8 +106,16 @@ func (x VMDecimal) Add(d2 VMDecimal) VMDecimal {
 	return VMDecimal(decimal.Decimal(x).Add(decimal.Decimal(d2)))
 }
 
+func (x VMDecimal) Sub(d2 VMDecimal) VMDecimal {
+	return VMDecimal(decimal.Decimal(x).Sub(decimal.Decimal(d2)))
+}
+
 func (x VMDecimal) Mul(d2 VMDecimal) VMDecimal {
 	return VMDecimal(decimal.Decimal(x).Mul(decimal.Decimal(d2)))
+}
+
+func (x VMDecimal) Div(d2 VMDecimal) VMDecimal {
+	return VMDecimal(decimal.Decimal(x).Div(decimal.Decimal(d2)))
 }
 
 func NewVMDecimalFromInt64(x int64) VMDecimal {

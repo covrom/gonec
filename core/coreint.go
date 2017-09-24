@@ -116,13 +116,33 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMInt:
 			return VMInt(int64(x) + int64(yy)), nil
 		case VMDecimal:
-			return yy.Add(NewVMDecimalFromInt64(int64(x))), nil
+			return NewVMDecimalFromInt64(int64(x)).Add(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между этими типами невозможна")
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
 	case SUB:
-
+		switch yy := y.(type) {
+		case VMInt:
+			return VMInt(int64(x) - int64(yy)), nil
+		case VMDecimal:
+			return NewVMDecimalFromInt64(int64(x)).Sub(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
 	case MUL:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMInt(int64(x) * int64(yy)), nil
+		case VMDecimal:
+			return NewVMDecimalFromInt64(int64(x)).Mul(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
 	case QUO:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMInt(int64(x) / int64(yy)), nil
+		case VMDecimal:
+			return NewVMDecimalFromInt64(int64(x)).Div(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
 	case REM:
 	case EQL:
 	case NEQ:
