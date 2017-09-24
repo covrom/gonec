@@ -838,8 +838,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
-			v := ch.Recv()
-			regs.Reg[s.RegVal] = v
+			v, ok := ch.Recv()
+			if !ok {
+				// если закрыт, то пишем nil
+				regs.Reg[s.RegVal] = nil
+			} else {
+				regs.Reg[s.RegVal] = v
+			}
 
 		case *binstmt.BinCHANSEND:
 			ch, ok := regs.Reg[s.Reg].(core.VMChan)
@@ -926,16 +931,17 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					idx = regs.Labels[s.JumpTo]
 					continue
 				}
-			case reflect.Chan:
-				iv, ok := val.Recv()
+			case core.VMChan:
+				iv, ok := vv.Recv()
 				if !ok {
-					catcherr = NewStringError(stmt, "Канал был закрыт")
-					break
+					regs.Reg[s.RegVal] = nil
+				} else {
+					regs.Reg[s.RegVal] = iv
 				}
-				regs.Set(s.RegVal, iv.Interface())
+
 			default:
-				catcherr = NewStringError(stmt, "Не является коллекцией или каналом")
-				break
+				catcherr = binstmt.NewStringError(stmt, "Не является коллекцией или каналом")
+				goto catching
 			}
 
 		case *binstmt.BinPOPFOR:

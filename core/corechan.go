@@ -13,8 +13,9 @@ func (x VMChan) Send(v VMValuer) {
 	x <- v
 }
 
-func (x VMChan) Recv() VMValuer {
-	return <-x
+func (x VMChan) Recv() (VMValuer, bool) {
+	rv, ok := <-x
+	return rv, ok
 }
 
 func (x VMChan) TrySend(v VMValuer) (ok bool) {
@@ -28,6 +29,7 @@ func (x VMChan) TrySend(v VMValuer) (ok bool) {
 }
 
 func (x VMChan) TryRecv() (v VMValuer, ok bool) {
+	// TODO: проверить на закрытие канала
 	select {
 	case v = <-x:
 		ok = true

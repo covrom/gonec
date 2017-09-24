@@ -58,7 +58,7 @@ type (
 	VMChaner interface {
 		VMInterfacer
 		Send(VMValuer)
-		Recv() VMValuer
+		Recv() (VMValuer, bool)
 		TrySend(VMValuer) bool
 		TryRecv() (VMValuer, bool)
 	}
