@@ -109,10 +109,40 @@ func (x VMInt) Duration() VMTimeDuration {
 	return VMTimeDuration(time.Duration(int64(x) * int64(VMSecond)))
 }
 
-func (x VMInt) EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) {
+func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMInt(int64(x) + int64(yy)), nil
+		case VMDecimal:
+			return yy.Add(NewVMDecimalFromInt64(int64(x))), nil
+		}
+		return VMNil, fmt.Errorf("Операция между этими типами невозможна")
+	case SUB:
 
+	case MUL:
+	case QUO:
+	case REM:
+	case EQL:
+	case NEQ:
+	case GTR:
+	case GEQ:
+	case LSS:
+	case LEQ:
+	case OR:
+	case LOR:
+	case AND:
+	case LAND:
+	case POW:
+	case SHR:
+	case SHL:
+	}
+	return VMNil, fmt.Errorf("Неизвестная операция")
 }
 
+// TODO:
 func (x VMInt) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
+	return VMNil, fmt.Errorf("Не реализовано")
 
 }

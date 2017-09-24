@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -107,4 +108,30 @@ func (x VMDecimal) Add(d2 VMDecimal) VMDecimal {
 
 func (x VMDecimal) Mul(d2 VMDecimal) VMDecimal {
 	return VMDecimal(decimal.Decimal(x).Mul(decimal.Decimal(d2)))
+}
+
+func NewVMDecimalFromInt64(x int64) VMDecimal {
+	return VMDecimal(decimal.New(x, 0))
+}
+
+func (x VMDecimal) EvalUnOp(op rune) (VMValuer, error) {
+	switch op {
+	case '-':
+		return VMDecimal(decimal.Decimal(x).Neg()), nil
+	case '!':
+		return VMBool(!x.Bool()), nil
+	default:
+		return VMNil, fmt.Errorf("Неизвестный оператор")
+	}
+}
+
+// TODO: 
+func (x VMDecimal) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	return VMNil, fmt.Errorf("Не реализовано")
+	
+}
+
+func (x VMDecimal) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
+	return VMNil, fmt.Errorf("Не реализовано")
+	
 }
