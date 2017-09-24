@@ -841,7 +841,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			v, ok := ch.Recv()
 			if !ok {
 				// если закрыт, то пишем nil
-				regs.Reg[s.RegVal] = nil
+				regs.Reg[s.RegVal] = core.VMNil
 			} else {
 				regs.Reg[s.RegVal] = v
 			}
@@ -934,7 +934,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			case core.VMChan:
 				iv, ok := vv.Recv()
 				if !ok {
-					regs.Reg[s.RegVal] = nil
+					regs.Reg[s.RegVal] = core.VMNil
 				} else {
 					regs.Reg[s.RegVal] = iv
 				}
@@ -951,23 +951,23 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinFORNUM:
-
-			if !IsNum(regs.Reg[s.RegFrom]) {
-				catcherr = NewStringError(stmt, "Начальное значение должно быть целым числом")
+			if rb, ok := regs.Reg[s.RegFrom].(core.VMInt); ok {
+				if re, ok := regs.Reg[s.RegTo].(core.VMInt); ok {
+					regs.Reg[s.Reg] = nil
+					regs.PushBreak(s.BreakLabel)
+					regs.PushContinue(s.ContinueLabel)
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Конечное значение должно быть целым числом")
+					break
+				}
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Начальное значение должно быть целым числом")
 				break
 			}
-			if !IsNum(regs.Reg[s.RegTo]) {
-				catcherr = NewStringError(stmt, "Конечное значение должно быть целым числом")
-				break
-			}
-
-			regs.Set(s.Reg, nil)
-			regs.PushBreak(s.BreakLabel)
-			regs.PushContinue(s.ContinueLabel)
 
 		case *binstmt.BinNEXTNUM:
-			afrom := ToInt64(regs.Reg[s.RegFrom])
-			ato := ToInt64(regs.Reg[s.RegTo])
+			afrom := int64(regs.Reg[s.RegFrom].(core.VMInt))
+			ato := int64(regs.Reg[s.RegTo].(core.VMInt))
 			fviadd := int64(1)
 			if afrom > ato {
 				fviadd = int64(-1) // если конечное значение меньше первого, идем в обратном порядке
@@ -977,7 +977,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			if vv == nil {
 				iter = afrom
 			} else {
-				iter = ToInt64(vv)
+				iter = int64(vv.(core.VMInt))
 				iter += fviadd
 			}
 			inrange := iter <= ato
@@ -985,7 +985,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				inrange = iter >= ato
 			}
 			if inrange {
-				regs.Set(s.Reg, iter)
+				regs.Reg[s.Reg] = core.VMInt(iter)
 			} else {
 				idx = regs.Labels[s.JumpTo]
 				continue
@@ -996,7 +996,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			regs.PushContinue(s.ContinueLabel)
 
 		case *binstmt.BinTHROW:
-			catcherr = NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
+			catcherr = binstmt.NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
 			break
 
 		case *binstmt.BinMODULE:
@@ -1004,13 +1004,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			newenv := env.NewModule(names.UniqueNames.Get(s.Name))
 			_, err := Run(s.Code, newenv) // инициируем модуль
 			if err != nil {
-				catcherr = NewError(stmt, err)
+				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
 
 		case *binstmt.BinERROR:
 			// необрабатываемая в попытке ошибка
-			return retval, NewStringError(s, s.Error)
+			return retval, binstmt.NewStringError(s, s.Error)
 
 		case *binstmt.BinBREAK:
 			label := regs.PopBreak()
@@ -1019,7 +1019,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				idx = regs.Labels[label]
 				continue
 			}
-			return nil, BreakError
+			return nil, binstmt.BreakError
 
 		case *binstmt.BinCONTINUE:
 			label := regs.PopContinue()
@@ -1028,7 +1028,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				idx = regs.Labels[label]
 				continue
 			}
-			return nil, ContinueError
+			return nil, binstmt.ContinueError
 
 		case *binstmt.BinTRYRECV:
 
