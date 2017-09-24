@@ -118,6 +118,10 @@ func (x VMDecimal) Div(d2 VMDecimal) VMDecimal {
 	return VMDecimal(decimal.Decimal(x).Div(decimal.Decimal(d2)))
 }
 
+func (x VMDecimal) Mod(d2 VMDecimal) VMDecimal {
+	return VMDecimal(decimal.Decimal(x).Mod(decimal.Decimal(d2)))
+}
+
 func NewVMDecimalFromInt64(x int64) VMDecimal {
 	return VMDecimal(decimal.New(x, 0))
 }
@@ -133,13 +137,13 @@ func (x VMDecimal) EvalUnOp(op rune) (VMValuer, error) {
 	}
 }
 
-// TODO: 
+// TODO:
 func (x VMDecimal) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	return VMNil, fmt.Errorf("Не реализовано")
-	
+
 }
 
 func (x VMDecimal) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
 	return VMNil, fmt.Errorf("Не реализовано")
-	
+
 }
