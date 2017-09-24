@@ -794,7 +794,9 @@ type ChanExpr struct {
 }
 
 func (x *ChanExpr) Simplify() Expr {
-	x.Lhs = x.Lhs.Simplify()
+	if x.Lhs != nil {
+		x.Lhs = x.Lhs.Simplify()
+	}
 	x.Rhs = x.Rhs.Simplify()
 	return x
 }
@@ -846,7 +848,9 @@ type TypeCast struct {
 }
 
 func (x *TypeCast) Simplify() Expr {
-	x.TypeExpr = x.TypeExpr.Simplify()
+	if x.TypeExpr != nil {
+		x.TypeExpr = x.TypeExpr.Simplify()
+	}
 	x.CastExpr = x.CastExpr.Simplify()
 	return x
 }
@@ -872,7 +876,9 @@ type MakeExpr struct {
 }
 
 func (x *MakeExpr) Simplify() Expr {
-	x.TypeExpr = x.TypeExpr.Simplify()
+	if x.TypeExpr != nil {
+		x.TypeExpr = x.TypeExpr.Simplify()
+	}
 	return x
 }
 
@@ -896,7 +902,9 @@ type MakeChanExpr struct {
 }
 
 func (x *MakeChanExpr) Simplify() Expr {
-	x.SizeExpr = x.SizeExpr.Simplify()
+	if x.SizeExpr != nil {
+		x.SizeExpr = x.SizeExpr.Simplify()
+	}
 	return x
 }
 
@@ -921,7 +929,9 @@ type MakeArrayExpr struct {
 
 func (x *MakeArrayExpr) Simplify() Expr {
 	x.LenExpr = x.LenExpr.Simplify()
-	x.CapExpr = x.CapExpr.Simplify()
+	if x.CapExpr != nil {
+		x.CapExpr = x.CapExpr.Simplify()
+	}
 	return x
 }
 
