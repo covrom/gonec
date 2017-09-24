@@ -128,3 +128,10 @@ func (x VMSliceDefaultSort) Less(i, j int) bool {
 
 	return false
 }
+
+func NewVMSliceFromStrings(ss []string) (rv VMSlice) {
+	for i := range ss {
+		rv = append(rv, VMString(ss[i]))
+	}
+	return
+}

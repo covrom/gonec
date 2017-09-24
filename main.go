@@ -20,7 +20,8 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/bincode"
-
+	"github.com/covrom/gonec/bincode/binstmt"
+	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/parser"
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
@@ -45,7 +46,7 @@ var (
 
 	fsArgs []string
 
-	sessions     = map[string]*envir.Env{}
+	sessions     = map[string]*core.Env{}
 	lastAccess   = map[string]time.Time{}
 	lockSessions = sync.RWMutex{}
 )
@@ -115,8 +116,8 @@ func main() {
 		os.Args = fs.Args()
 	}
 
-	env := envir.NewEnv()
-	env.DefineS("аргументызапуска", fsArgs)
+	env := core.NewEnv()
+	env.DefineS("аргументызапуска", core.NewVMSliceFromStrings(fsArgs))
 
 	for {
 		if interactive {
@@ -146,7 +147,7 @@ func main() {
 		parser.EnableErrorVerbose()
 
 		var (
-			bins bincode.BinCode
+			bins binstmt.BinCode
 			// stmts          ast.Stmts
 			err            error
 			tstart         time.Time
@@ -160,7 +161,7 @@ func main() {
 		if isGNX {
 			bbuf := bytes.NewBuffer(b)
 			// stmts = nil
-			bins, err = bincode.ReadBinCode(bbuf)
+			bins, err = binstmt.ReadBinCode(bbuf)
 			tsParse = time.Since(tstart)
 			if err != nil {
 				log.Fatal(err)
@@ -219,7 +220,7 @@ func main() {
 						log.Fatal(err)
 					}
 				}()
-				if err := bincode.WriteBinCode(fo, bins); err != nil {
+				if err := binstmt.WriteBinCode(fo, bins); err != nil {
 					log.Fatal(err)
 				}
 			} else {
@@ -257,7 +258,7 @@ func main() {
 
 		if err != nil {
 			colortext(ct.Red, false, func() {
-				if e, ok := err.(*bincode.Error); ok {
+				if e, ok := err.(*binstmt.Error); ok {
 					fmt.Fprintf(os.Stderr, "%s:%d:%d %s\n", source, e.Pos.Line, e.Pos.Column, err)
 				} else if e, ok := err.(*parser.Error); ok {
 					if e.Filename != "" {
@@ -339,8 +340,8 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 
 			//создаем новое окружение
-			env = envir.NewEnv()
-			env.DefineS("аргументызапуска", fsArgs)
+			env = core.NewEnv()
+			env.DefineS("аргументызапуска", core.NewVMSliceFromStrings(fsArgs))
 
 			lockSessions.Lock()
 			sessions[sid] = env
@@ -400,7 +401,7 @@ func Run(srv string) {
 	log.Fatal(http.ListenAndServe(":"+srv, nil))
 }
 
-func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
+func ParseAndRun(r io.Reader, w io.Writer, env *core.Env) (err error) {
 	b, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
@@ -438,7 +439,7 @@ func ParseAndRun(r io.Reader, w io.Writer, env *envir.Env) (err error) {
 	tsRun := time.Since(tstart)
 
 	if err != nil {
-		if e, ok := err.(*bincode.Error); ok {
+		if e, ok := err.(*binstmt.Error); ok {
 			env.Printf("Ошибка исполнения: %s\n", e.Pos.Line, e.Pos.Column, err)
 		} else if e, ok := err.(*parser.Error); ok {
 			env.Printf("Ошибка в коде: %s\n", e.Pos.Line, e.Pos.Column, err)
