@@ -92,10 +92,6 @@ func (x *VMInt) Parse(s string) error {
 	return nil
 }
 
-func (x VMInt) EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) {
-
-}
-
 func (x VMInt) EvalUnOp(op rune) (VMValuer, error) {
 	switch op {
 	case '-':
@@ -109,10 +105,14 @@ func (x VMInt) EvalUnOp(op rune) (VMValuer, error) {
 	}
 }
 
-func (x VMInt) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
+func (x VMInt) Duration() VMTimeDuration {
+	return VMTimeDuration(time.Duration(int64(x) * int64(VMSecond)))
+}
+
+func (x VMInt) EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) {
 
 }
 
-func (x VMInt) Duration() VMTimeDuration {
+func (x VMInt) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
 
 }
