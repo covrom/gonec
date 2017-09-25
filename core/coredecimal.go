@@ -91,8 +91,12 @@ func (x VMDecimal) MakeChan(size int) VMChaner {
 
 func (x VMDecimal) Time() VMTime {
 	intpart := decimal.Decimal(x).IntPart()
-	nanopart := decimal.Decimal(x).Sub(decimal.New(intpart, 0)).Mul(decimal.New(1e9, 0)).IntPart()
+	nanopart := decimal.Decimal(x).Sub(decimal.New(intpart, 0)).Mul(decimal.New(int64(VMSecond), 0)).IntPart()
 	return VMTime(time.Unix(intpart, nanopart))
+}
+
+func (x VMDecimal) Duration() VMTimeDuration {
+	return VMTimeDuration(time.Duration(decimal.New(int64(x), 0).Mul(decimal.New(int64(VMSecond), 0)).IntPart()))
 }
 
 func (x *VMDecimal) Parse(s string) error {
@@ -158,13 +162,138 @@ func (x VMDecimal) EvalUnOp(op rune) (VMValuer, error) {
 	}
 }
 
-// TODO:
 func (x VMDecimal) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
-	return VMNil, fmt.Errorf("Не реализовано")
-
+	switch op {
+	case ADD:
+		switch yy := y.(type) {
+		case VMInt:
+			return x.Add(NewVMDecimalFromInt64(int64(yy))), nil
+		case VMDecimal:
+			return x.Add(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case SUB:
+		switch yy := y.(type) {
+		case VMInt:
+			return x.Sub(NewVMDecimalFromInt64(int64(yy))), nil
+		case VMDecimal:
+			return x.Sub(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case MUL:
+		switch yy := y.(type) {
+		case VMInt:
+			return x.Mul(NewVMDecimalFromInt64(int64(yy))), nil
+		case VMDecimal:
+			return x.Mul(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case QUO:
+		switch yy := y.(type) {
+		case VMInt:
+			return x.Div(NewVMDecimalFromInt64(int64(yy))), nil
+		case VMDecimal:
+			return x.Div(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case REM:
+		switch yy := y.(type) {
+		case VMInt:
+			return x.Mod(NewVMDecimalFromInt64(int64(yy))), nil
+		case VMDecimal:
+			return x.Mod(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMBool(x.Equal(NewVMDecimalFromInt64(int64(yy)))), nil
+		case VMDecimal:
+			return x.Equal(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMBool(x.NotEqual(NewVMDecimalFromInt64(int64(yy)))), nil
+		case VMDecimal:
+			return x.NotEqual(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case GTR:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMBool(x.Cmp(NewVMDecimalFromInt64(int64(yy))) == 1), nil
+		case VMDecimal:
+			return VMBool(x.Cmp(yy) == 1), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case GEQ:
+		switch yy := y.(type) {
+		case VMInt:
+			cmp := x.Cmp(NewVMDecimalFromInt64(int64(yy)))
+			return VMBool(cmp == 1 || cmp == 0), nil
+		case VMDecimal:
+			cmp := x.Cmp(yy)
+			return VMBool(cmp == 1 || cmp == 0), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case LSS:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMBool(x.Cmp(NewVMDecimalFromInt64(int64(yy))) == -1), nil
+		case VMDecimal:
+			return VMBool(x.Cmp(yy) == -1), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case LEQ:
+		switch yy := y.(type) {
+		case VMInt:
+			cmp := x.Cmp(NewVMDecimalFromInt64(int64(yy)))
+			return VMBool(cmp == -1 || cmp == 0), nil
+		case VMDecimal:
+			cmp := x.Cmp(yy)
+			return VMBool(cmp == -1 || cmp == 0), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case OR:
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case AND:
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case POW:
+		switch yy := y.(type) {
+		case VMInt:
+			return x.Pow(NewVMDecimalFromInt64(int64(yy))), nil
+		case VMDecimal:
+			return x.Pow(yy), nil
+		}
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+	}
+	return VMNil, fmt.Errorf("Неизвестная операция")
 }
 
-func (x VMDecimal) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
-	return VMNil, fmt.Errorf("Не реализовано")
-
+func (x VMDecimal) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+	switch nt {
+	case ReflectVMDecimal:
+		return x, nil
+	case ReflectVMTime:
+		return x.Time(), nil
+	case ReflectVMTimeDuration:
+		return x.Duration(), nil
+	case ReflectVMBool:
+		return VMBool(x.Bool()), nil
+	case ReflectVMString:
+		return VMString(x.String()), nil
+	case ReflectVMInt:
+		return VMInt(x.Int()), nil
+	}
+	return VMNil, fmt.Errorf("Приведение к типу невозможно")
 }

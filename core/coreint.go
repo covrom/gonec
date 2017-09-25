@@ -140,7 +140,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	case QUO:
 		switch yy := y.(type) {
 		case VMInt:
-			return VMInt(int64(x) / int64(yy)), nil
+			return NewVMDecimalFromInt64(int64(x)).Div(NewVMDecimalFromInt64(int64(yy))), nil
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Div(yy), nil
 		}
