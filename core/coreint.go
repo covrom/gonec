@@ -244,11 +244,11 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 }
 
 func (x VMInt) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
-	// приведение к дате - исходное число в секундах
 	switch nt {
 	case ReflectVMInt:
 		return x, nil
 	case ReflectVMTime:
+		// приведение к дате - исходное число в секундах
 		return x.Time(), nil
 	case ReflectVMTimeDuration:
 		return x.Duration(), nil
