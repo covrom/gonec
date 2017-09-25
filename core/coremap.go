@@ -1,6 +1,10 @@
 package core
 
+import "reflect"
+
 type VMStringMap map[string]VMValuer
+
+var ReflectVMStringMap = reflect.TypeOf(make(VMStringMap, 0))
 
 func (x VMStringMap) vmval() {}
 

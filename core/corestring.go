@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 
 // VMString строки
 type VMString string
+
+var ReflectVMString = reflect.TypeOf(VMString(""))
 
 func (x VMString) vmval() {}
 

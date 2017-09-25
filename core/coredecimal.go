@@ -11,6 +11,8 @@ import (
 // VMDecimal с плавающей токой, для финансовых расчетов высокой точности (decimal)
 type VMDecimal decimal.Decimal
 
+var ReflectVMDecimal = reflect.TypeOf(VMDecimal{})
+
 func (x VMDecimal) vmval() {}
 
 func (x VMDecimal) Interface() interface{} {

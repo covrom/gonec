@@ -259,16 +259,17 @@ func Import(env *Env) *Env {
 		return nil
 	}))
 
-	env.DefineTypeS("целоечисло", VMInt(0))
-	env.DefineTypeS("число", VMDecimal(decimal.New(0, 0)))
-	env.DefineTypeS("булево", VMBool(true))
-	env.DefineTypeS("строка", VMString(""))
-	env.DefineTypeS("массив", VMSlice{})
-	env.DefineTypeS("структура", VMStringMap{})
-	env.DefineTypeS("дата", VMTime{})
+	env.DefineTypeS("целоечисло", ReflectVMInt)
+	env.DefineTypeS("число", ReflectVMDecimal)
+	env.DefineTypeS("булево", ReflectVMBool)
+	env.DefineTypeS("строка", ReflectVMString)
+	env.DefineTypeS("массив", ReflectVMSlice)
+	env.DefineTypeS("структура", ReflectVMStringMap)
+	env.DefineTypeS("дата", ReflectVMTime)
+	env.DefineTypeS("длительность", ReflectVMTimeDuration)
 
 	//////////////////
-	env.DefineTypeS("__функциональнаяструктуратест__", TttStructTest{})
+	env.DefineTypeS("__функциональнаяструктуратест__", reflect.TypeOf(TttStructTest{}))
 	env.DefineS("__дамп__", VMFunc(func(args VMSlice, rets *VMSlice) error {
 		env.Dump()
 		return nil

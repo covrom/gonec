@@ -12,6 +12,8 @@ import (
 // VMInt для ускорения работы храним целочисленное представление отдельно от decimal
 type VMInt int64
 
+var ReflectVMInt = reflect.TypeOf(VMInt(0))
+
 func (x VMInt) vmval() {}
 
 func (x VMInt) Interface() interface{} {
@@ -83,6 +85,10 @@ func (x VMInt) Time() VMTime {
 	return VMTime(time.Unix(int64(x), 0))
 }
 
+func (x VMInt) Duration() VMTimeDuration {
+	return VMTimeDuration(time.Duration(int64(x) * int64(VMSecond)))
+}
+
 func (x *VMInt) Parse(s string) error {
 	i64, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
@@ -103,10 +109,6 @@ func (x VMInt) EvalUnOp(op rune) (VMValuer, error) {
 	default:
 		return VMNil, fmt.Errorf("Неизвестный оператор")
 	}
-}
-
-func (x VMInt) Duration() VMTimeDuration {
-	return VMTimeDuration(time.Duration(int64(x) * int64(VMSecond)))
 }
 
 func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
@@ -241,8 +243,21 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	return VMNil, fmt.Errorf("Неизвестная операция")
 }
 
-// TODO:
-func (x VMInt) ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error) {
-	return VMNil, fmt.Errorf("Не реализовано")
-
+func (x VMInt) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+	// приведение к дате - исходное число в секундах
+	switch nt {
+	case ReflectVMInt:
+		return x, nil
+	case ReflectVMTime:
+		return x.Time(), nil
+	case ReflectVMTimeDuration:
+		return x.Duration(), nil
+	case ReflectVMBool:
+		return VMBool(x.Bool()), nil
+	case ReflectVMString:
+		return VMString(x.String()), nil
+	case ReflectVMDecimal:
+		return x.Decimal(), nil
+	}
+	return VMNil, fmt.Errorf("Приведение к типу невозможно")
 }

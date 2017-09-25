@@ -11,6 +11,8 @@ import (
 // VMInt для ускорения работы храним целочисленное представление отдельно от decimal
 type VMBool bool
 
+var ReflectVMBool = reflect.TypeOf(VMBool(true))
+
 func (x VMBool) vmval() {}
 
 func (x VMBool) Interface() interface{} {

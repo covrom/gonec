@@ -1,6 +1,7 @@
 package core
 
 import (
+	"reflect"
 	"sort"
 	"strings"
 
@@ -10,6 +11,8 @@ import (
 // TODO: для слайса реализовать поведение массива при изменении размеров (т.е. изменение размера передается в переменную)
 
 type VMSlice []VMValuer
+
+var ReflectVMSlice = reflect.TypeOf(make(VMSlice, 0))
 
 func (x VMSlice) vmval() {}
 

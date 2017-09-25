@@ -285,18 +285,14 @@ func (e *Env) DefineGlobal(k int, v VMValuer) error {
 }
 
 // DefineType defines type which specifis symbol in global scope.
-func (e *Env) DefineType(k int, t interface{}) error {
+func (e *Env) DefineType(k int, t reflect.Type) error {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
-			typ, ok := t.(reflect.Type)
-			if !ok {
-				typ = reflect.TypeOf(t)
-			}
 			if ee.goRunned {
 				ee.Lock()
 				defer ee.Unlock()
 			}
-			ee.typ[k] = typ
+			ee.typ[k] = t
 			// // пишем в кэш индексы полей и методов для структур
 			// // для работы со структурами нам нужен конкретный тип
 			// if typ.Kind() == reflect.Ptr {
@@ -348,7 +344,7 @@ func (e *Env) DefineType(k int, t interface{}) error {
 	return fmt.Errorf("Отсутствует глобальный контекст!")
 }
 
-func (e *Env) DefineTypeS(k string, t interface{}) error {
+func (e *Env) DefineTypeS(k string, t reflect.Type) error {
 	return e.DefineType(names.UniqueNames.Set(k), t)
 }
 

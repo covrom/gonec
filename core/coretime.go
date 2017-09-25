@@ -23,6 +23,8 @@ const (
 
 type VMTimeDuration time.Duration
 
+var ReflectVMTimeDuration = reflect.TypeOf(VMTimeDuration(0))
+
 func (v VMTimeDuration) vmval() {}
 
 func (v VMTimeDuration) Interface() interface{} {
