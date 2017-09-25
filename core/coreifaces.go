@@ -50,12 +50,6 @@ type (
 		// это требуется для рекурсивного преобразования коллекций
 	}
 
-	// VMParser может парсить из строки
-	VMParser interface {
-		VMInterfacer
-		Parse(string) error // используется для указателей, т.к. парсит в их значения
-	}
-
 	// VMChaner реализует поведение канала
 	VMChaner interface {
 		VMInterfacer
@@ -82,7 +76,7 @@ type (
 
 	// VMNumberer число, внутреннее хранение в int64 или decimal формате
 	VMNumberer interface {
-		VMParser
+		VMInterfacer
 		Int() int64
 		Float() float64
 		Decimal() VMDecimal
@@ -91,19 +85,19 @@ type (
 
 	// VMBooler сообщает значение булево
 	VMBooler interface {	
-		VMParser
+		VMInterfacer
 		Bool() bool
 	}
 
 	// VMSlicer может быть представлен в виде слайса Гонец
 	VMSlicer interface {
-		VMParser
+		VMInterfacer
 		Slice() VMSlice
 	}
 
 	// VMStringMaper может быть представлен в виде структуры Гонец
 	VMStringMaper interface {
-		VMParser
+		VMInterfacer
 		StringMap() VMStringMap
 	}
 
@@ -115,13 +109,13 @@ type (
 
 	// VMDateTimer это дата/время
 	VMDateTimer interface {
-		VMParser
+		VMInterfacer
 		Time() VMTime
 	}
 
 	// VMDurationer это промежуток времени (time.Duration)
 	VMDurationer interface {
-		VMParser
+		VMInterfacer
 		Duration() VMTimeDuration
 	}
 

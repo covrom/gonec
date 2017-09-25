@@ -50,19 +50,9 @@ type NumberExpr struct {
 }
 
 func (x *NumberExpr) Simplify() Expr {
-	var rv core.VMValuer
-	if strings.ContainsAny(x.Lit, ".eE") {
-		v := &core.VMDecimal{}
-		if err := v.Parse(x.Lit); err != nil {
-			return x
-		}
-		rv = *v
-	} else {
-		v := new(core.VMInt)
-		if err := v.Parse(x.Lit); err != nil {
-			return x
-		}
-		rv = *v
+	rv, err := core.VMString(x.Lit).InvokeNumber()
+	if err != nil {
+		return x
 	}
 	return &NativeExpr{Value: rv}
 }

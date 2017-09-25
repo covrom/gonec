@@ -51,6 +51,15 @@ func (x VMString) Decimal() VMDecimal {
 	return VMDecimal(d)
 }
 
+func (x VMString) InvokeNumber() (v VMNumberer, err error) {
+	if strings.ContainsAny(string(x), ".eE") {
+		v, err = ParseVMDecimal(string(x))
+	} else {
+		v, err = ParseVMInt(string(x))
+	}
+	return
+}
+
 func (x VMString) MakeChan(size int) VMChaner {
 	return make(VMChan, size)
 }
@@ -87,17 +96,9 @@ func (x VMString) Time() VMTime {
 	panic("Неверный формат даты и времени")
 }
 
-func (x *VMString) Parse(s string) error {
-	*x = VMString(s)
-	return nil
-}
-
 func (x VMString) Bool() bool {
-	switch strings.ToLower(string(x)) {
-	case "истина", "true":
-		return true
-	}
-	return false
+	r, _ := ParseVMBool(string(x))
+	return r.Bool()
 }
 
 func (x VMString) Slice() VMSlice {
@@ -208,7 +209,7 @@ func (x VMString) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer
 		return VMBool(x.Bool()), nil
 	case ReflectVMDecimal:
 		return x.Decimal(), nil
-	// TODO: остальные преобразования - в слайс, структуру и т.п.
+		// TODO: остальные преобразования - в слайс, структуру и т.п.
 	}
 	return VMNil, fmt.Errorf("Приведение к типу невозможно")
 }

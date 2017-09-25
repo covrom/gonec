@@ -72,14 +72,12 @@ func (x VMBool) MakeChan(size int) VMChaner {
 	return make(VMChan, size)
 }
 
-func (x *VMBool) Parse(s string) error {
+func ParseVMBool(s string) (VMBool, error) {
 	switch strings.ToLower(s) {
 	case "true", "истина":
-		*x = true
+		return true, nil
 	case "false", "ложь":
-		*x = false
-	default:
-		return fmt.Errorf("Неверное значение для преобразования в булево")
+		return false, nil
 	}
-	return nil
+	return false, fmt.Errorf("Неверное значение для преобразования в булево")
 }

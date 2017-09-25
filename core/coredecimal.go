@@ -80,6 +80,10 @@ func (x VMDecimal) Decimal() VMDecimal {
 	return x
 }
 
+func (x VMDecimal) InvokeNumber() (VMNumberer, error) {
+	return x, nil
+}
+
 func (x VMDecimal) Bool() bool {
 	return decimal.Decimal(x).GreaterThan(decimal.Zero)
 }
@@ -99,13 +103,12 @@ func (x VMDecimal) Duration() VMTimeDuration {
 	return VMTimeDuration(time.Duration(decimal.Decimal(x).Mul(decimal.New(int64(VMSecond), 0)).IntPart()))
 }
 
-func (x *VMDecimal) Parse(s string) error {
+func ParseVMDecimal(s string) (VMDecimal, error) {
 	d, err := decimal.NewFromString(s)
 	if err != nil {
-		return err
+		return VMDecimal{}, err
 	}
-	*x = VMDecimal(d)
-	return nil
+	return VMDecimal(d), nil
 }
 
 func (x VMDecimal) Add(d2 VMDecimal) VMDecimal {

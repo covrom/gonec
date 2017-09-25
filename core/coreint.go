@@ -73,6 +73,10 @@ func (x VMInt) Decimal() VMDecimal {
 	return VMDecimal(decimal.New(int64(x), 0))
 }
 
+func (x VMInt) InvokeNumber() (VMNumberer, error) {
+	return x, nil
+}
+
 func (x VMInt) Bool() bool {
 	return x > 0
 }
@@ -89,13 +93,12 @@ func (x VMInt) Duration() VMTimeDuration {
 	return VMTimeDuration(time.Duration(int64(x) * int64(VMSecond)))
 }
 
-func (x *VMInt) Parse(s string) error {
+func ParseVMInt(s string) (VMInt, error) {
 	i64, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		return err
+		return VMInt(0), err
 	}
-	*x = VMInt(i64)
-	return nil
+	return VMInt(i64), nil
 }
 
 func (x VMInt) EvalUnOp(op rune) (VMValuer, error) {
