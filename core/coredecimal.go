@@ -122,6 +122,25 @@ func (x VMDecimal) Mod(d2 VMDecimal) VMDecimal {
 	return VMDecimal(decimal.Decimal(x).Mod(decimal.Decimal(d2)))
 }
 
+func (x VMDecimal) Pow(d2 VMDecimal) VMDecimal {
+	return VMDecimal(decimal.Decimal(x).Pow(decimal.Decimal(d2)))
+}
+
+func (x VMDecimal) Equal(d2 VMDecimal) VMBool {
+	return VMBool(decimal.Decimal(x).Equal(decimal.Decimal(d2)))
+}
+
+func (x VMDecimal) NotEqual(d2 VMDecimal) VMBool {
+	return VMBool(!decimal.Decimal(x).Equal(decimal.Decimal(d2)))
+}
+
+func (x VMDecimal) Cmp(d2 VMDecimal) int {
+	//     -1 if x <  d2
+	//      0 if x == d2
+	//     +1 if x >  d2
+	return decimal.Decimal(x).Cmp(decimal.Decimal(d2))
+}
+
 func NewVMDecimalFromInt64(x int64) VMDecimal {
 	return VMDecimal(decimal.New(x, 0))
 }
