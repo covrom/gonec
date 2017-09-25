@@ -96,7 +96,7 @@ func (x VMDecimal) Time() VMTime {
 }
 
 func (x VMDecimal) Duration() VMTimeDuration {
-	return VMTimeDuration(time.Duration(decimal.New(int64(x), 0).Mul(decimal.New(int64(VMSecond), 0)).IntPart()))
+	return VMTimeDuration(time.Duration(decimal.Decimal(x).Mul(decimal.New(int64(VMSecond), 0)).IntPart()))
 }
 
 func (x *VMDecimal) Parse(s string) error {
