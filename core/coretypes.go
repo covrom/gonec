@@ -1,6 +1,8 @@
 package core
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"reflect"
 	"strings"
@@ -112,6 +114,12 @@ var VMNullVar = VMNullType{}
 
 func HashBytes(buf []byte) uint64 {
 	return siphash.Hash(0xdda7806a4847ec61, 0xb5940c2623a5aabd, buf)
+}
+
+func MustGenerateRandomString(n int) string {
+	b := make([]byte, n)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
 }
 
 // ReflectToVMValue преобразовывает значение Го в наиболее подходящий тип значения для вирт. машшины

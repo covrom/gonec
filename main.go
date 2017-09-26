@@ -5,8 +5,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"crypto/rand"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"io"
@@ -297,21 +295,6 @@ func main() {
 	}
 }
 
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
-
-func mustGenerateRandomString(s int) string {
-	b, _ := generateRandomBytes(s)
-	return base64.URLEncoding.EncodeToString(b)
-}
-
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 	if r.ContentLength > 1<<26 {
@@ -331,7 +314,7 @@ func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 		sid := r.Header.Get("Sid")
 		if sid == "" {
-			sid = mustGenerateRandomString(32)
+			sid = core.MustGenerateRandomString(22)
 		}
 
 		lockSessions.RLock()

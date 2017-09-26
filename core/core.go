@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/covrom/gonec/names"
+	"github.com/satori/go.uuid"
 	"github.com/shopspring/decimal"
 )
 
@@ -177,6 +178,25 @@ func Import(env *Env) *Env {
 			return nil
 		}
 		return errors.New("Параметр не может быть хэширован")
+	}))
+
+	env.DefineS("уникальныйидентификатор", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 0 {
+			return errors.New("Параметры не требуются")
+		}
+		rets.Append(VMString(uuid.NewV1().String()))
+		return nil
+	}))
+
+	env.DefineS("случайнаястрока", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
+		}
+		if v, ok := args[0].(VMInt); ok {
+			rets.Append(VMString(MustGenerateRandomString(int(v))))
+			return nil
+		}
+		return errors.New("Параметр должен быть целым числом")
 	}))
 
 	env.DefineS("нрег", VMFunc(func(args VMSlice, rets *VMSlice) error {

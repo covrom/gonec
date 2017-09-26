@@ -24,6 +24,12 @@
 			"revisionTime": "2017-03-22T23:44:13Z"
 		},
 		{
+			"checksumSHA1": "HUXE+Nrcau8FSaVEvPYHMvDjxOE=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+			"revisionTime": "2017-03-21T23:07:31Z"
+		},
+		{
 			"checksumSHA1": "hU4FCpvSz/eV4G0cqnXEs9mFLh8=",
 			"path": "github.com/shopspring/decimal",
 			"revision": "730de27aa507d979cb5a8a17b11c82f361c3d4a3",
