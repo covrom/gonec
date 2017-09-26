@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"reflect"
 	"sort"
 	"strings"
@@ -59,11 +61,15 @@ func (x VMSlice) Hash() VMString {
 }
 
 func (x VMSlice) SortDefault() {
-	sort.Sort(VMSliceDefaultSort(x))
+	sort.Sort(VMSliceUpSort(x))
 }
 
 func (x VMSlice) Сортировать() {
 	x.SortDefault()
+}
+
+func (x VMSlice) СортироватьУбыв() {
+	sort.Sort(VMSliceDownSort(x))
 }
 
 func (x VMSlice) Обратить() {
@@ -78,15 +84,222 @@ func (x VMSlice) Скопировать() VMSlice {
 	return rv
 }
 
-// TODO: маршаллинг и String!!!
+func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		// добавляем второй слайс в конец первого
+		switch yy := y.(type) {
+		case VMSlice:
+			return append(x, yy...), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		// удаляем из первого слайса любые элементы второго слайса, встречающиеся в первом
+		switch yy := y.(type) {
+		case VMSlice:
+			// проходим слайс и переставляем ненайденные в вычитаемом слайсе элементы
+			il := 0
+			for i := range x {
+				fnd := false
+				for j := range yy {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if bool(rcmp) {
+										fnd = true
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+				if !fnd {
+					if il < i {
+						x[il] = x[i]
+						il++
+					}
+				}
+			}
+			return x[:il], nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case VMSlice:
+			eq := true
+			for i := range x {
+				for j := range yy {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if !bool(rcmp) {
+										eq = false
+										goto eqlret
+									}
+								} else {
+									eq = false
+									goto eqlret
+								}
+							} else {
+								eq = false
+								goto eqlret
+							}
+						}
+					}
+				}
+			}
+		eqlret:
+			return VMBool(eq), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case VMSlice:
+			eq := true
+			for i := range x {
+				for j := range yy {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if !bool(rcmp) {
+										eq = false
+										goto neqlret
+									}
+								} else {
+									eq = false
+									goto neqlret
+								}
+							} else {
+								eq = false
+								goto neqlret
+							}
+						}
+					}
+				}
+			}
+		neqlret:
+			return VMBool(!eq), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		// добавляем в конец первого слайса только те элементы второго слайса, которые не встречаются в первом
+		switch yy := y.(type) {
+		case VMSlice:
+			rv := x[:]
+			for j := range yy {
+				fnd := false
+				for i := range x {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if bool(rcmp) {
+										fnd = true
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+				if !fnd {
+					rv = append(rv, yy[j])
+				}
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		// оставляем только те элементы, которые есть в обоих слайсах
+		switch yy := y.(type) {
+		case VMSlice:
+			rv := x[:0]
+			for i := range x {
+				fnd := false
+				for j := range yy {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if bool(rcmp) {
+										fnd = true
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+				if fnd {
+					rv = append(rv, x[i])
+				}
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
 
-type VMSliceDefaultSort VMSlice
+func (x VMSlice) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+	switch nt {
+	case ReflectVMString:
+		// сериализуем в json
+		b, err := json.Marshal(x)
+		if err != nil {
+			return VMNil, err
+		}
+		return VMString(string(b)), nil
+		// case ReflectVMInt:
+		// case ReflectVMTime:
+		// case ReflectVMBool:
+		// case ReflectVMDecimal:
+		// case ReflectVMSlice:
+		// case ReflectVMStringMap:
+	}
 
-func (x VMSliceDefaultSort) Len() int { return len(x) }
+	return VMNil, errors.New("Приведение к типу невозможно")
+}
 
-func (x VMSliceDefaultSort) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
+// VMSliceUpSort - обертка для сортировки слайса по возрастанию
+type VMSliceUpSort VMSlice
 
-func (x VMSliceDefaultSort) Less(i, j int) bool {
+func (x VMSliceUpSort) Len() int      { return len(x) }
+func (x VMSliceUpSort) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
+func (x VMSliceUpSort) Less(i, j int) bool {
 
 	// числа
 	if vi, ok := x[i].(VMInt); ok {
@@ -98,6 +311,7 @@ func (x VMSliceDefaultSort) Less(i, j int) bool {
 			return vii.LessThan(decimal.Decimal(vj))
 		}
 	}
+
 	if vi, ok := x[i].(VMDecimal); ok {
 		if vj, ok := x[j].(VMInt); ok {
 			vjj := decimal.New(int64(vj), 0)
@@ -129,6 +343,21 @@ func (x VMSliceDefaultSort) Less(i, j int) bool {
 		}
 	}
 
+	// дата
+
+	if vi, ok := x[i].(VMTime); ok {
+		if vj, ok := x[j].(VMTime); ok {
+			return vi.Раньше(vj)
+		}
+	}
+
+	// длительность
+	if vi, ok := x[i].(VMTimeDuration); ok {
+		if vj, ok := x[j].(VMTimeDuration); ok {
+			return int64(vi) < int64(vj)
+		}
+	}
+
 	// прочее
 
 	if vi, ok := x[i].(VMOperationer); ok {
@@ -143,6 +372,85 @@ func (x VMSliceDefaultSort) Less(i, j int) bool {
 	return false
 }
 
+// VMSliceDownSort по убыванию
+type VMSliceDownSort VMSlice
+
+func (x VMSliceDownSort) Len() int      { return len(x) }
+func (x VMSliceDownSort) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
+func (x VMSliceDownSort) Less(i, j int) bool {
+
+	// числа
+	if vi, ok := x[i].(VMInt); ok {
+		if vj, ok := x[j].(VMInt); ok {
+			return vi.Int() > vj.Int()
+		}
+		if vj, ok := x[j].(VMDecimal); ok {
+			vii := decimal.New(int64(vi), 0)
+			return vii.GreaterThan(decimal.Decimal(vj))
+		}
+	}
+
+	if vi, ok := x[i].(VMDecimal); ok {
+		if vj, ok := x[j].(VMInt); ok {
+			vjj := decimal.New(int64(vj), 0)
+			return decimal.Decimal(vi).GreaterThan(vjj)
+		}
+		if vj, ok := x[j].(VMDecimal); ok {
+			return decimal.Decimal(vi).GreaterThan(decimal.Decimal(vj))
+		}
+	}
+
+	// строки
+	if vi, ok := x[i].(VMString); ok {
+		if vj, ok := x[j].(VMString); ok {
+			return strings.Compare(vi.String(), vj.String()) == 1
+		}
+		if vj, ok := x[j].(VMInt); ok {
+			return strings.Compare(vi.String(), vj.String()) == 1
+		}
+		if vj, ok := x[j].(VMDecimal); ok {
+			return strings.Compare(vi.String(), vj.String()) == 1
+		}
+	}
+
+	// булево
+
+	if vi, ok := x[i].(VMBool); ok {
+		if vj, ok := x[j].(VMBool); ok {
+			return !(!vi.Bool() && vj.Bool())
+		}
+	}
+
+	// дата
+
+	if vi, ok := x[i].(VMTime); ok {
+		if vj, ok := x[j].(VMTime); ok {
+			return vi.Позже(vj)
+		}
+	}
+
+	// длительность
+	if vi, ok := x[i].(VMTimeDuration); ok {
+		if vj, ok := x[j].(VMTimeDuration); ok {
+			return int64(vi) > int64(vj)
+		}
+	}
+
+	// прочее
+
+	if vi, ok := x[i].(VMOperationer); ok {
+		if vj, ok := x[j].(VMOperationer); ok {
+			b, err := vi.EvalBinOp(GTR, vj)
+			if err == nil {
+				return b.(VMBool).Bool()
+			}
+		}
+	}
+
+	return false
+}
+
+// NewVMSliceFromStrings создает слайс вирт. машины []VMString из слайса строк []string на языке Го
 func NewVMSliceFromStrings(ss []string) (rv VMSlice) {
 	for i := range ss {
 		rv = append(rv, VMString(ss[i]))
