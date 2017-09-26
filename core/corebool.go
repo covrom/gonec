@@ -1,6 +1,9 @@
 package core
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -80,4 +83,90 @@ func ParseVMBool(s string) (VMBool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("Неверное значение для преобразования в булево")
+}
+
+func (x VMBool) EvalUnOp(op rune) (VMValuer, error) {
+	switch op {
+	// case '-':
+	// case '^':
+	case '!':
+		return VMBool(!bool(x)), nil
+	}
+	return VMNil, fmt.Errorf("Неизвестный оператор")
+}
+
+func (x VMBool) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case VMBool:
+			return VMBool(bool(x) == bool(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case VMBool:
+			return VMBool(bool(x) != bool(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		switch yy := y.(type) {
+		case VMBool:
+			return VMBool(bool(x) || bool(yy)), nil
+		}		
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		switch yy := y.(type) {
+		case VMBool:
+			return VMBool(bool(x) && bool(yy)), nil
+		}		
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
+
+func (x VMBool) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+	switch nt {
+	case ReflectVMBool:
+		return x, nil
+	case ReflectVMString:
+		return VMString(x.String()), nil
+	case ReflectVMInt:
+		return VMInt(x.Int()), nil
+	// case ReflectVMTime:
+	case ReflectVMDecimal:
+		return x.Decimal(), nil
+	// case ReflectVMSlice:
+	// case ReflectVMStringMap:
+	}
+
+	return VMNil, errors.New("Приведение к типу невозможно")
 }

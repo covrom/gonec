@@ -3,7 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -124,77 +124,77 @@ func (x VMString) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMString:
 			return VMString(string(x) + string(yy)), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case SUB:
 		switch yy := y.(type) {
 		case VMString:
 			return VMString(strings.Replace(string(x), string(yy), "", -1)), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case MUL:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMString(strings.Repeat(string(x), int(yy))), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case QUO:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case REM:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case EQL:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(bytes.Equal([]byte(x), []byte(yy))), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case NEQ:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(!bytes.Equal([]byte(x), []byte(yy))), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case GTR:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(bytes.Compare([]byte(x), []byte(yy)) == 1), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case GEQ:
 		switch yy := y.(type) {
 		case VMString:
 			cmp := bytes.Compare([]byte(x), []byte(yy))
 			return VMBool(cmp == 1 || cmp == 0), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case LSS:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(bytes.Compare([]byte(x), []byte(yy)) == -1), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case LEQ:
 		switch yy := y.(type) {
 		case VMString:
 			cmp := bytes.Compare([]byte(x), []byte(yy))
 			return VMBool(cmp == -1 || cmp == 0), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case OR:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case LOR:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case AND:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case LAND:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case POW:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case SHR:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	case SHL:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, errors.New("Операция между значениями невозможна")
 	}
-	return VMNil, fmt.Errorf("Неизвестная операция")
+	return VMNil, errors.New("Неизвестная операция")
 }
 
 func (x VMString) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
@@ -209,7 +209,33 @@ func (x VMString) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer
 		return VMBool(x.Bool()), nil
 	case ReflectVMDecimal:
 		return x.Decimal(), nil
-		// TODO: остальные преобразования - в слайс, структуру и т.п.
+	case ReflectVMSlice:
+		//парсим json из строки и пытаемся получить массив
+		var rm VMSlice
+		if err := json.Unmarshal([]byte(x), &rm); err != nil {
+			return VMNil, err
+		}
+		return rm, nil
+	case ReflectVMStringMap:
+		//парсим json из строки и пытаемся получить мапу
+		var rm VMStringMap
+		if err := json.Unmarshal([]byte(x), rm); err != nil {
+			return VMNil, err
+		}
+		return rm, nil
 	}
-	return VMNil, fmt.Errorf("Приведение к типу невозможно")
+
+	// попробуем десериализировать структуру из json
+	if nt.Kind() == reflect.Struct {
+		//парсим json из строки и пытаемся получить указатель на структуру
+		rm := reflect.New(nt).Interface()
+		if err := json.Unmarshal([]byte(x), rm); err != nil {
+			return VMNil, err
+		}
+		if rv, ok := rm.(VMValuer); ok {
+			return rv, nil
+		}
+		return VMNil, errors.New("Объект несовместим с типами интерпретатора")
+	}
+	return VMNil, errors.New("Приведение к типу невозможно")
 }

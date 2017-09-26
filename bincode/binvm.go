@@ -398,26 +398,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				break
 			}
 
-			// switch s.Op {
-			// case '-':
-			// 	if x, ok := regs.Reg[s.Reg].(core.VMInt); ok {
-			// 		regs.Reg[s.Reg]= core.VMInt(-int64(x))
-			// 	} else if x, ok := regs.Reg[s.Reg].(int64); ok {
-			// 		regs.Set(s.Reg, -x)
-			// 	} else {
-			// 		catcherr = binstmt.NewStringError(stmt, "Операция применима только к числам")
-			// 		break
-			// 	}
-			// case '^':
-			// 	if x, ok := regs.Reg[s.Reg].(int64); ok {
-			// 		regs.Set(s.Reg, ^x)
-			// 	} else {
-			// 		catcherr = binstmt.NewStringError(stmt, "Операция применима только к целым числам")
-			// 		break
-			// 	}
-			// case '!':
-			// 	regs.Set(s.Reg, !ToBool(regs.Reg[s.Reg]))
-
 		// варианты ниже - не используются
 		// case *binstmt.BinADDRID:
 		// 	v, err := env.Get(s.Name)
