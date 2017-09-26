@@ -1,8 +1,6 @@
 package core
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -133,7 +131,7 @@ func (x VMBool) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		switch yy := y.(type) {
 		case VMBool:
 			return VMBool(bool(x) || bool(yy)), nil
-		}		
+		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case AND:
 		return VMNil, errors.New("Операция между значениями невозможна")
@@ -141,7 +139,7 @@ func (x VMBool) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		switch yy := y.(type) {
 		case VMBool:
 			return VMBool(bool(x) && bool(yy)), nil
-		}		
+		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case POW:
 		return VMNil, errors.New("Операция между значениями невозможна")
@@ -164,8 +162,8 @@ func (x VMBool) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, 
 	// case ReflectVMTime:
 	case ReflectVMDecimal:
 		return x.Decimal(), nil
-	// case ReflectVMSlice:
-	// case ReflectVMStringMap:
+		// case ReflectVMSlice:
+		// case ReflectVMStringMap:
 	}
 
 	return VMNil, errors.New("Приведение к типу невозможно")

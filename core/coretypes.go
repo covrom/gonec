@@ -163,6 +163,4 @@ func ReflectToVMValue(rv reflect.Value) VMInterfacer {
 	panic("Невозможно привести к типу интерпретатора")
 }
 
-// старые типы
 
-type VMChannel chan interface{}
