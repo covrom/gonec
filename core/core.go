@@ -259,6 +259,7 @@ func Import(env *Env) *Env {
 		return nil
 	}))
 
+	// при изменении состава типов не забывать изменять их и в lexer.go
 	env.DefineTypeS("целоечисло", ReflectVMInt)
 	env.DefineTypeS("число", ReflectVMDecimal)
 	env.DefineTypeS("булево", ReflectVMBool)

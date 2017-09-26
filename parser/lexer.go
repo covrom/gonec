@@ -85,13 +85,14 @@ var opName = map[string]int{
 	"пока":         WHILE,
 	"иначеесли":    ELSIF,
 
-	"строка":     TYPECAST,
-	"число":      TYPECAST,
-	"булево":     TYPECAST,
-	"целоечисло": TYPECAST,
-	"массив":     TYPECAST,
-	"структура":  TYPECAST,
-	"дата":       TYPECAST,
+	"строка":       TYPECAST,
+	"число":        TYPECAST,
+	"булево":       TYPECAST,
+	"целоечисло":   TYPECAST,
+	"массив":       TYPECAST,
+	"структура":    TYPECAST,
+	"дата":         TYPECAST,
+	"длительность": TYPECAST,
 }
 
 var opCanEqual = map[int]bool{
