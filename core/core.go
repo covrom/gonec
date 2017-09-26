@@ -168,6 +168,17 @@ func Import(env *Env) *Env {
 	env.DefineS("длительностьчаса", VMHour)
 	env.DefineS("длительностьдня", VMDay)
 
+	env.DefineS("хэш", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Должен быть один параметр")
+		}
+		if v, ok := args[0].(VMHasher); ok {
+			rets.Append(v.Hash())
+			return nil
+		}
+		return errors.New("Параметр не может быть хэширован")
+	}))
+
 	env.DefineS("нрег", VMFunc(func(args VMSlice, rets *VMSlice) error {
 		if len(args) != 1 {
 			return errors.New("Должен быть один параметр")

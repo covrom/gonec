@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dchest/siphash"
 	"github.com/shopspring/decimal"
 )
 
@@ -107,6 +108,12 @@ func (x VMNullType) Interface() interface{} { return x }
 
 var VMNullVar = VMNullType{}
 
+// HashBytes хэширует байты по алгоритму SipHash-2-4
+
+func HashBytes(buf []byte) uint64 {
+	return siphash.Hash(0xdda7806a4847ec61, 0xb5940c2623a5aabd, buf)
+}
+
 // ReflectToVMValue преобразовывает значение Го в наиболее подходящий тип значения для вирт. машшины
 func ReflectToVMValue(rv reflect.Value) VMInterfacer {
 	if !rv.IsValid() {
@@ -162,5 +169,3 @@ func ReflectToVMValue(rv reflect.Value) VMInterfacer {
 	}
 	panic("Невозможно привести к типу интерпретатора")
 }
-
-

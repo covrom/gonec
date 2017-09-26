@@ -2,6 +2,8 @@ package core
 
 import (
 	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"reflect"
@@ -64,12 +66,26 @@ func (x VMString) MakeChan(size int) VMChaner {
 	return make(VMChan, size)
 }
 
+func (x VMString) Hash() VMString {
+	h := make([]byte, 8)
+	binary.LittleEndian.PutUint64(h, HashBytes([]byte(x)))
+	return VMString(hex.EncodeToString(h))
+}
+
 func (x VMString) Time() VMTime {
-	t, err := time.ParseInLocation("2006-01-02T15:04:05", string(x), time.Local)
+	t, err := time.Parse(time.RFC3339, string(x))
 	if err == nil {
 		return VMTime(t)
 	}
-	t, err = time.Parse(time.RFC3339, string(x))
+	t, err = time.ParseInLocation("2006-01-02T15:04:05", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.ParseInLocation("2006-01-02 15:04:05", string(x), time.Local)
+	if err == nil {
+		return VMTime(t)
+	}
+	t, err = time.ParseInLocation("02.01.2006 15:04:05", string(x), time.Local)
 	if err == nil {
 		return VMTime(t)
 	}
@@ -82,10 +98,6 @@ func (x VMString) Time() VMTime {
 		return VMTime(t)
 	}
 	t, err = time.ParseInLocation("02.01.2006", string(x), time.Local)
-	if err == nil {
-		return VMTime(t)
-	}
-	t, err = time.ParseInLocation("02.01.2006 15:04:05", string(x), time.Local)
 	if err == nil {
 		return VMTime(t)
 	}

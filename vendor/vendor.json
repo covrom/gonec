@@ -12,6 +12,12 @@
 			"revisionTime": "2016-12-24T03:39:00Z"
 		},
 		{
+			"checksumSHA1": "4AFnjWtOL1nR8QqR8/AykX5O7z8=",
+			"path": "github.com/dchest/siphash",
+			"revision": "4ebf1de738443ea7f45f02dc394c4df1942a126d",
+			"revisionTime": "2016-08-31T15:17:26Z"
+		},
+		{
 			"checksumSHA1": "rCNfFpeYqd2Tpi5qOFX8ckaQcMU=",
 			"path": "github.com/mattn/go-isatty",
 			"revision": "fc9e8d8ef48496124e79ae0df75490096eccf6fe",

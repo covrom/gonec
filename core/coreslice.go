@@ -1,6 +1,9 @@
 package core
 
 import (
+	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"reflect"
 	"sort"
 	"strings"
@@ -45,6 +48,14 @@ func (x VMSlice) IndexVal(i VMValuer) VMValuer {
 		return x[int(ii)]
 	}
 	panic("Индекс должен быть целым числом")
+}
+
+func (x VMSlice) Hash() VMString {
+	var binbuf bytes.Buffer
+	binary.Write(&binbuf, binary.BigEndian, x)
+	h := make([]byte, 8)
+	binary.LittleEndian.PutUint64(h, HashBytes(binbuf.Bytes()))
+	return VMString(hex.EncodeToString(h))
 }
 
 func (x VMSlice) SortDefault() {

@@ -84,7 +84,7 @@ type (
 	}
 
 	// VMBooler сообщает значение булево
-	VMBooler interface {	
+	VMBooler interface {
 		VMInterfacer
 		Bool() bool
 	}
@@ -111,6 +111,12 @@ type (
 	VMDateTimer interface {
 		VMInterfacer
 		Time() VMTime
+	}
+
+	// VMHasher возвращает хэш значения по алгоритму SipHash-2-4 в виде hex-строки 
+	VMHasher interface {
+		VMInterfacer
+		Hash() VMString
 	}
 
 	// VMDurationer это промежуток времени (time.Duration)
