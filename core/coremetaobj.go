@@ -2,6 +2,7 @@ package core
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/covrom/gonec/names"
 )
@@ -23,7 +24,8 @@ func (v *VMMetaObj) Interface() interface{} {
 	return v.vmOriginal
 }
 
-// VMCacheMembers кэширует все поля и методы ссылки на объединенную структуру в VMMetaObject
+// VMCacheMembers кэширует все русскоязычные поля и методы для ссылки на объединенную структуру, переданную в VMMetaObject
+// Поля и методы объектных структур на английском языке недоступны в коде на языке Гонец, что обеспечивает защиту внутренней реализации
 // Вызывать эту функцию надо так:
 // v:=&struct{VMMetaObj, a int}{}; v.VMCacheMembers(v)
 func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
@@ -36,12 +38,14 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 
 	// пишем в кэш индексы полей и методов для структур
 
+	ruslang := "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+
 	// методы
 	nm := typ.NumMethod()
 	for i := 0; i < nm; i++ {
 		meth := typ.Method(i)
-		// только экспортируемые
-		if meth.PkgPath == "" {
+		// только экспортируемые методы с русскими буквами
+		if meth.PkgPath == "" && strings.ContainsAny(meth.Name, ruslang) {
 			namtyp := names.UniqueNames.Set(meth.Name)
 			v.vmMetaCacheM[namtyp] = func(vmeth reflect.Value) VMFunc {
 				// TODO: сделать бенчмарк вызова функций
@@ -84,8 +88,8 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 	nm = typ.NumField()
 	for i := 0; i < nm; i++ {
 		field := typ.Field(i)
-		// только экспортируемые неанонимные поля
-		if field.PkgPath == "" && !field.Anonymous {
+		// только экспортируемые неанонимные поля с русскими буквами
+		if field.PkgPath == "" && !field.Anonymous && strings.ContainsAny(field.Name, ruslang) {
 			namtyp := names.UniqueNames.Set(field.Name)
 			v.vmMetaCacheF[namtyp] = field.Index
 		}
