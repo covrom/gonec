@@ -42,22 +42,6 @@ func LoadAllBuiltins(env *Env) {
 	env.SetBuiltsIsLoaded()
 }
 
-/////////////////
-// TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
-type TttStructTest struct {
-	VMMetaObj
-
-	ПолеЦелоеЧисло VMInt
-	ПолеСтрока     VMString
-}
-
-// обратите внимание - русскоязычное название метода для структуры
-func (tst *TttStructTest) ВСтроку() VMString {
-	return VMString(fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока))
-}
-
-/////////////////
-
 // Import общая стандартная бибилиотека
 func Import(env *Env) *Env {
 
@@ -310,3 +294,26 @@ func Import(env *Env) *Env {
 
 	return env
 }
+
+/////////////////
+// TttStructTest - тестовая структура для отладки работы с системными функциональными структурами
+type TttStructTest struct {
+	VMMetaObj
+
+	ПолеЦелоеЧисло VMInt
+	ПолеСтрока     VMString
+}
+
+func (tst *TttStructTest) VMRegister() {
+	tst.VMRegisterMethod("ВСтроку", tst.ВСтроку)
+	tst.VMRegisterField("ПолеЦелоеЧисло", &tst.ПолеЦелоеЧисло)
+	tst.VMRegisterField("ПолеСтрока", &tst.ПолеСтрока)
+}
+
+// обратите внимание - русскоязычное название метода для структуры и формат для быстрого вызова
+func (tst *TttStructTest) ВСтроку(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMString(fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)))
+	return nil
+}
+
+/////////////////

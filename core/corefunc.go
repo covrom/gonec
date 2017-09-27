@@ -22,3 +22,5 @@ func (f VMFunc) String() string {
 func (f VMFunc) Func() VMFunc {
 	return f
 }
+
+type VMMethod = func(VMSlice, *VMSlice) error

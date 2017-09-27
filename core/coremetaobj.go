@@ -1,9 +1,6 @@
 package core
 
 import (
-	"reflect"
-	"strings"
-
 	"github.com/covrom/gonec/names"
 )
 
@@ -12,99 +9,47 @@ import (
 // например, Set и set - в вирт. машине будут считаться одинаковыми, будет использоваться последнее по индексу
 type VMMetaObj struct {
 	vmMetaCacheM map[int]VMFunc
-	vmMetaCacheF map[int][]int
-	vmOriginal   VMMetaObject
+	vmMetaCacheF map[int]VMValuer
+
+	vmOriginal VMMetaObject
 }
 
 func (v *VMMetaObj) vmval() {}
 
+func (v *VMMetaObj) VMInit(m VMMetaObject) {
+	// исходная структура
+	v.vmOriginal = m
+}
+
 func (v *VMMetaObj) Interface() interface{} {
-	// возвращает ссылку на структуру, от которой был вызван метод VMCacheMembers
+	// возвращает ссылку на структуру, от которой был вызван метод VMInit
 	//rv:=*(*VMMetaObject)(v.vmOriginal)
 	return v.vmOriginal
 }
 
-// VMCacheMembers кэширует все русскоязычные поля и методы для ссылки на объединенную структуру, переданную в VMMetaObject
-// Поля и методы объектных структур на английском языке недоступны в коде на языке Гонец, что обеспечивает защиту внутренней реализации
-// Вызывать эту функцию надо так:
-// v:=&struct{VMMetaObj, a int}{}; v.VMCacheMembers(v)
-func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
-	v.vmMetaCacheM = make(map[int]VMFunc)
-	v.vmMetaCacheF = make(map[int][]int)
-	v.vmOriginal = vv
-
-	// rv := reflect.ValueOf(v.vmOriginal)
-	typ := reflect.TypeOf(v.vmOriginal)
-
-	// пишем в кэш индексы полей и методов для структур
-
-	ruslang := "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-
-	// методы
-	nm := typ.NumMethod()
-	for i := 0; i < nm; i++ {
-		meth := typ.Method(i)
-
-		// только экспортируемые методы с русскими буквами
-		if meth.PkgPath == "" && strings.ContainsAny(meth.Name, ruslang) {
-			namtyp := names.UniqueNames.Set(meth.Name)
-
-			// fmt.Println(i, meth.Name, namtyp, meth.Func)
-
-			v.vmMetaCacheM[namtyp] = func(vfunc reflect.Value) VMFunc {
-				return VMFunc(
-					func(args VMSlice, rets *VMSlice) error {
-						x := make([]reflect.Value, len(args)+1)
-
-						// receiver
-						x[0] = reflect.ValueOf(v.vmOriginal)
-
-						for i := range args {
-							x[i+1] = reflect.ValueOf(args[i])
-						}
-
-						r := vfunc.Call(x)
-						switch len(r) {
-						case 0:
-							return nil
-						case 1:
-							if x, ok := r[0].Interface().(VMValuer); ok {
-								rets.Append(x)
-								return nil
-							}
-							rets.Append(ReflectToVMValue(r[0]))
-							return nil
-						case 2:
-							if e, ok := r[1].Interface().(error); ok {
-								rets.Append(ReflectToVMValue(r[0]))
-								return e
-							}
-							fallthrough
-						default:
-							*rets = make(VMSlice, len(r))
-							for i := range r {
-								(*rets)[i] = ReflectToVMValue(r[i])
-							}
-							return nil
-						}
-					})
-			}(meth.Func)
-		}
+func (v *VMMetaObj) VMRegisterMethod(name string, m VMMethod) {
+	if v.vmMetaCacheM == nil {
+		v.vmMetaCacheM = make(map[int]VMFunc)
 	}
+	namtyp := names.UniqueNames.Set(name)
+	v.vmMetaCacheM[namtyp] = func(meth VMMethod) VMFunc {
+		return VMFunc(meth)
+	}(m)
+}
 
-	// поля
-	ityp := typ.Elem()
-	nm = ityp.NumField()
-	for i := 0; i < nm; i++ {
-		field := ityp.Field(i)
-		// только экспортируемые неанонимные поля с русскими буквами
-		if field.PkgPath == "" && !field.Anonymous && strings.ContainsAny(field.Name, ruslang) {
+func (v *VMMetaObj) VMRegisterField(name string, m VMValuer) {
+	if v.vmMetaCacheF == nil {
+		v.vmMetaCacheF = make(map[int]VMValuer)
+	}
+	switch m.(type) {
+	case *VMInt, *VMString, *VMBool,
+		*VMChan, *VMDecimal, *VMStringMap,
+		*VMSlice, *VMTime, *VMTimeDuration:
 
-			// fmt.Println(field.Name)
-
-			namtyp := names.UniqueNames.Set(field.Name)
-			v.vmMetaCacheF[namtyp] = field.Index
-		}
+		namtyp := names.UniqueNames.Set(name)
+		v.vmMetaCacheF[namtyp] = m
+	default:
+		panic("Поле не может быть зарегистрировано")
 	}
 }
 
@@ -113,48 +58,66 @@ func (v *VMMetaObj) VMIsField(name int) bool {
 	return ok
 }
 
-func (v *VMMetaObj) VMGetField(name int) VMInterfacer {
-
-	// fmt.Println("GET " + names.UniqueNames.Get(name))
-
-	rv := reflect.ValueOf(v.Interface()).Elem()
-
-	// fmt.Println(rv.Type())
-
-	vv := rv.FieldByIndex(v.vmMetaCacheF[name])
-
-	// поля с типом вирт. машины вернем сразу
-	if x, ok := vv.Interface().(VMInterfacer); ok {
-		return x
+func (v *VMMetaObj) VMGetField(name int) VMValuer {
+	if r, ok := v.vmMetaCacheF[name]; ok {
+		switch rv := r.(type) {
+		case *VMInt:
+			return *rv
+		case *VMString:
+			return *rv
+		case *VMBool:
+			return *rv
+		case *VMChan:
+			return *rv
+		case *VMDecimal:
+			return *rv
+		case *VMStringMap:
+			return *rv
+		case *VMSlice:
+			return *rv
+		case *VMTime:
+			return *rv
+		case *VMTimeDuration:
+			return *rv
+		}
 	}
-	return ReflectToVMValue(vv)
+	panic("Невозможно получить значение поля")
 }
 
-func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
+func (v *VMMetaObj) VMSetField(name int, val VMValuer) {
 
-	// fmt.Println("SET " + names.UniqueNames.Get(name))
+	if r, ok := v.vmMetaCacheF[name]; ok {
+		switch rv := r.(type) {
+		case *VMInt:
+			*rv = VMInt(val.(VMNumberer).Int())
+			return
+		case *VMString:
+			*rv = VMString(val.(VMStringer).String())
+			return
+		case *VMBool:
+			*rv = VMBool(val.(VMBooler).Bool())
+			return
+		case *VMChan:
+			*rv = val.(VMChan)
+			return
+		case *VMDecimal:
+			*rv = val.(VMNumberer).Decimal()
+			return
+		case *VMStringMap:
+			*rv = val.(VMStringMaper).StringMap()
+			return
+		case *VMSlice:
+			*rv = val.(VMSlicer).Slice()
+			return
+		case *VMTime:
+			*rv = val.(VMDateTimer).Time()
+			return
+		case *VMTimeDuration:
+			*rv = val.(VMDurationer).Duration()
+			return
+		}
+	}
 
-	rv := reflect.ValueOf(v.Interface()).Elem()
-
-	// fmt.Println(rv.Type())
-
-	vv := rv.FieldByIndex(v.vmMetaCacheF[name])
-	if !vv.CanSet() {
-		panic("Невозможно установить значение поля только для чтения")
-	}
-	// поля с типом вирт. машины присваиваем без конверсии
-	if _, ok := vv.Interface().(VMInterfacer); ok {
-		vv.Set(reflect.ValueOf(val))
-		return
-	}
-	if reflect.TypeOf(val).AssignableTo(vv.Type()) {
-		vv.Set(reflect.ValueOf(val.Interface()))
-		return
-	}
-	if reflect.TypeOf(val).ConvertibleTo(vv.Type()) {
-		vv.Set(reflect.ValueOf(val).Convert(vv.Type()))
-		return
-	}
 	panic("Невозможно установить значение поля")
 }
 

@@ -113,7 +113,7 @@ type (
 		Time() VMTime
 	}
 
-	// VMHasher возвращает хэш значения по алгоритму SipHash-2-4 в виде hex-строки 
+	// VMHasher возвращает хэш значения по алгоритму SipHash-2-4 в виде hex-строки
 	VMHasher interface {
 		VMInterfacer
 		Hash() VMString
@@ -135,14 +135,19 @@ type (
 	// реализация должна быть в виде обертки над структурным типом на языке Го
 	// обертка получается через встраивание базовой структуры VMMetaObj
 	VMMetaObject interface {
-		VMInterfacer
-		VMCacheMembers(VMMetaObject) // создает внутренние хранилища полей и методов,
-		// содержащие id строки с именем (независимое от регистра букв)
-		// и индекс среди полей или методов, для получения через рефлексию
-		VMIsField(int) bool
-		VMGetField(int) VMInterfacer
-		VMSetField(int, VMInterfacer)
-		VMGetMethod(int) (VMFunc, bool) // получает обертку метода
+		VMInterfacer // реализовано в VMMetaObj
+		VMInit(VMMetaObject) // реализовано в VMMetaObj
+		
+		// !!!эта функция должна быть обязательно реализована в конечном объекте!!!
+		VMRegister()
+
+		VMRegisterMethod(string, VMMethod) // реализовано в VMMetaObj
+		VMRegisterField(string, VMValuer) // реализовано в VMMetaObj
+
+		VMIsField(int) bool // реализовано в VMMetaObj
+		VMGetField(int) VMValuer // реализовано в VMMetaObj
+		VMSetField(int, VMValuer) // реализовано в VMMetaObj
+		VMGetMethod(int) (VMFunc, bool) // реализовано в VMMetaObj
 	}
 
 	// VMNullable означает значение null

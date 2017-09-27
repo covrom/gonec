@@ -790,7 +790,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 			if vv, ok := v.Interface().(core.VMValuer); ok {
 				if vobj, ok := vv.(core.VMMetaObject); ok {
-					vobj.VMCacheMembers(vobj)
+					vobj.VMInit(vobj)
+					vobj.VMRegister()
 					regs.Reg[s.Reg] = vobj
 				} else {
 					regs.Reg[s.Reg] = vv

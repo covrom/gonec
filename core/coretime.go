@@ -19,8 +19,6 @@ const (
 
 // VMTimeDuration - диапазон между отметками времени
 
-// TODO: переделать на тип VMInt (наносекунды) и обрабатывать его в VMTime диапазонах
-
 type VMTimeDuration time.Duration
 
 var ReflectVMTimeDuration = reflect.TypeOf(VMTimeDuration(0))
