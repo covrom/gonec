@@ -13,8 +13,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// TODO: для слайса реализовать поведение массива при изменении размеров (т.е. изменение размера передается в переменную)
-
 type VMSlice []VMValuer
 
 var ReflectVMSlice = reflect.TypeOf(make(VMSlice, 0))
@@ -293,6 +291,8 @@ func (x VMSlice) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer,
 
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
+
+// TODO: маршаллинг json и т.п.!!!
 
 // VMSliceUpSort - обертка для сортировки слайса по возрастанию
 type VMSliceUpSort VMSlice
