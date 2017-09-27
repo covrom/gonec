@@ -782,7 +782,12 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				v = reflect.Zero(rt)
 			}
 			if vv, ok := v.Interface().(core.VMValuer); ok {
-				regs.Reg[s.Reg] = vv
+				if vobj, ok := vv.(core.VMMetaObject); ok {
+					vobj.VMCacheMembers(vobj)
+					regs.Reg[s.Reg] = vobj
+				} else {
+					regs.Reg[s.Reg] = vv
+				}
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
 				break
