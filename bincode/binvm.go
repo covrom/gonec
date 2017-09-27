@@ -667,7 +667,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					env.SetGoRunned(true)
 					rets = make(core.VMSlice, 0) // для каждой горутины отдельный массив возвратов, который потом не используется
 					go fnc(argsl, &rets)
-					regs.Reg[s.RegRets] = rets
+					regs.Reg[s.RegRets] = make(core.VMSlice, 0) // для такого вызова - всегда пустой массив возвратов
 					break
 				}
 
@@ -681,7 +681,14 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
-				regs.Reg[s.RegRets] = rets
+				switch len(rets) {
+				case 0:
+					regs.Reg[s.RegRets] = core.VMNil
+				case 1:
+					regs.Reg[s.RegRets] = rets[0]
+				default:
+					regs.Reg[s.RegRets] = rets
+				}
 				break
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Неверный тип функции")

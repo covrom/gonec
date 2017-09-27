@@ -33,8 +33,8 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 	v.vmMetaCacheF = make(map[int][]int)
 	v.vmOriginal = vv
 
-	rv := reflect.ValueOf(vv)
-	typ := reflect.TypeOf(vv)
+	// rv := reflect.ValueOf(v.vmOriginal)
+	typ := reflect.TypeOf(v.vmOriginal)
 
 	// пишем в кэш индексы полей и методов для структур
 
@@ -44,18 +44,26 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 	nm := typ.NumMethod()
 	for i := 0; i < nm; i++ {
 		meth := typ.Method(i)
+
 		// только экспортируемые методы с русскими буквами
 		if meth.PkgPath == "" && strings.ContainsAny(meth.Name, ruslang) {
 			namtyp := names.UniqueNames.Set(meth.Name)
-			v.vmMetaCacheM[namtyp] = func(vmeth reflect.Value) VMFunc {
-				// TODO: сделать бенчмарк вызова функций
+
+			// fmt.Println(i, meth.Name, namtyp, meth.Func)
+
+			v.vmMetaCacheM[namtyp] = func(vfunc reflect.Value) VMFunc {
 				return VMFunc(
 					func(args VMSlice, rets *VMSlice) error {
-						x := make([]reflect.Value, len(args))
+						x := make([]reflect.Value, len(args)+1)
+
+						// receiver
+						x[0] = reflect.ValueOf(v.vmOriginal)
+
 						for i := range args {
-							x[i] = reflect.ValueOf(args[i])
+							x[i+1] = reflect.ValueOf(args[i])
 						}
-						r := vmeth.Call(x)
+
+						r := vfunc.Call(x)
 						switch len(r) {
 						case 0:
 							return nil
@@ -80,16 +88,20 @@ func (v *VMMetaObj) VMCacheMembers(vv VMMetaObject) {
 							return nil
 						}
 					})
-			}(rv.Method(meth.Index))
+			}(meth.Func)
 		}
 	}
 
 	// поля
-	nm = typ.NumField()
+	ityp := typ.Elem()
+	nm = ityp.NumField()
 	for i := 0; i < nm; i++ {
-		field := typ.Field(i)
+		field := ityp.Field(i)
 		// только экспортируемые неанонимные поля с русскими буквами
 		if field.PkgPath == "" && !field.Anonymous && strings.ContainsAny(field.Name, ruslang) {
+
+			// fmt.Println(field.Name)
+
 			namtyp := names.UniqueNames.Set(field.Name)
 			v.vmMetaCacheF[namtyp] = field.Index
 		}
@@ -102,7 +114,15 @@ func (v *VMMetaObj) VMIsField(name int) bool {
 }
 
 func (v *VMMetaObj) VMGetField(name int) VMInterfacer {
-	vv := reflect.ValueOf(v.Interface()).FieldByIndex(v.vmMetaCacheF[name])
+
+	// fmt.Println("GET " + names.UniqueNames.Get(name))
+
+	rv := reflect.ValueOf(v.Interface()).Elem()
+
+	// fmt.Println(rv.Type())
+
+	vv := rv.FieldByIndex(v.vmMetaCacheF[name])
+
 	// поля с типом вирт. машины вернем сразу
 	if x, ok := vv.Interface().(VMInterfacer); ok {
 		return x
@@ -111,7 +131,14 @@ func (v *VMMetaObj) VMGetField(name int) VMInterfacer {
 }
 
 func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
-	vv := reflect.ValueOf(v.Interface()).FieldByIndex(v.vmMetaCacheF[name])
+
+	// fmt.Println("SET " + names.UniqueNames.Get(name))
+
+	rv := reflect.ValueOf(v.Interface()).Elem()
+
+	// fmt.Println(rv.Type())
+
+	vv := rv.FieldByIndex(v.vmMetaCacheF[name])
 	if !vv.CanSet() {
 		panic("Невозможно установить значение поля только для чтения")
 	}
@@ -134,6 +161,9 @@ func (v *VMMetaObj) VMSetField(name int, val VMInterfacer) {
 // VMGetMethod генерит функцию,
 // которая возвращает либо одно значение и ошибку, либо массив значений интерпретатора VMSlice
 func (v *VMMetaObj) VMGetMethod(name int) (VMFunc, bool) {
+
+	// fmt.Println(name)
+
 	rv, ok := v.vmMetaCacheM[name]
 	return rv, ok
 }

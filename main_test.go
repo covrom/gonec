@@ -13,6 +13,7 @@ func TestRun(t *testing.T) {
 	env := core.NewEnv()
 
 	script := `
+	дтнач = ТекущаяДата()
 	а = [](0,1000000)
 	для н=1 по 1000000 цикл
 	  а=а+[н]+[н*10]
@@ -21,7 +22,7 @@ func TestRun(t *testing.T) {
 	для каждого н из а цикл
 	  к=к+н
 	конеццикла
-	сообщить(к)
+	сообщить(к, ПрошлоВремениС(дтнач))
 	
 	#gonec.exe -web -t
 	#go tool pprof -svg ./gonec.exe http://localhost:5000/debug/pprof/profile?seconds=10 > cpu.svg
