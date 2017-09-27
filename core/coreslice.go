@@ -294,7 +294,42 @@ func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
 
-// TODO: маршаллинг json и т.п., по аналогии с VMTime!!!
+// func (t VMSlice) MarshalBinary() ([]byte, error) {
+// 	var enc bytes.Buffer
+// 	binary.Write(&enc, binary.LittleEndian, uint64(len(t)))
+// 	binary.Write(&enc, binary.LittleEndian, uint64(cap(t)))
+// 	for i := range t {
+// 		switch v := t[i].(type) {
+// 		case VMSlice:
+// 			bb, _ := v.MarshalBinary()
+// 			enc.Write(bb)
+
+// 		}
+// 	}
+
+// 	return enc.Bytes(), nil
+// }
+
+// func (t *VMSlice) UnmarshalBinary(data []byte) error {
+// }
+
+// func (t VMSlice) GobEncode() ([]byte, error) {
+// }
+
+// func (t *VMSlice) GobDecode(data []byte) error {
+// }
+
+// func (t VMSlice) MarshalJSON() ([]byte, error) {
+// }
+
+// func (t *VMSlice) UnmarshalJSON(data []byte) error {
+// }
+
+// func (t VMSlice) MarshalText() ([]byte, error) {
+// }
+
+// func (t *VMSlice) UnmarshalText(data []byte) error {
+// }
 
 // VMSliceUpSort - обертка для сортировки слайса по возрастанию
 type VMSliceUpSort VMSlice
