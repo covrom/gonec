@@ -292,7 +292,7 @@ func (x VMSlice) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer,
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
 
-// TODO: маршаллинг json и т.п.!!!
+// TODO: маршаллинг json и т.п., по аналогии с VMTime!!!
 
 // VMSliceUpSort - обертка для сортировки слайса по возрастанию
 type VMSliceUpSort VMSlice

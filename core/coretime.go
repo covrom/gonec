@@ -613,3 +613,5 @@ func (t VMTime) ВЛокации(name string) VMTime {
 	}
 	return VMTime(time.Time(t).In(loc))
 }
+
+// TODO: equal, convert

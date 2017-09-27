@@ -27,4 +27,6 @@ func (x VMStringMap) Index(i VMValuer) VMValuer {
 	panic("Индекс должен быть строкой")
 }
 
-// TODO: маршаллинг!!!
+// TODO: equal, convert
+
+// TODO: маршаллинг по аналогии с VMSlice!!!

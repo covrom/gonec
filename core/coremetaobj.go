@@ -167,3 +167,7 @@ func (v *VMMetaObj) VMGetMethod(name int) (VMFunc, bool) {
 	rv, ok := v.vmMetaCacheM[name]
 	return rv, ok
 }
+
+// TODO: equal, convert
+
+// TODO: маршаллинг исходной структуры, как у VMTime!!!

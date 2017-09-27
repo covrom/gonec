@@ -255,3 +255,5 @@ func (x VMString) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer
 	}
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
+
+// TODO: маршаллинг json и т.п., по аналогии с VMTime!!!
