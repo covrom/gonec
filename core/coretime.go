@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -612,4 +614,99 @@ func (t VMTime) ВЛокации(name string) VMTime {
 	return VMTime(time.Time(t).In(loc))
 }
 
-// TODO: equal, convert
+func (x VMTime) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		switch yy := y.(type) {
+		case VMDurationer:
+			return x.Добавить(yy.Duration()), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		switch yy := y.(type) {
+		case VMDurationer:
+			return x.Добавить(VMTimeDuration(-int64(yy.Duration()))), nil
+		case VMTime:
+			return x.Вычесть(yy), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case VMDateTimer:
+			return VMBool(x.Равно(yy.Time())), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case VMDateTimer:
+			return VMBool(!x.Равно(yy.Time())), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		switch yy := y.(type) {
+		case VMDateTimer:
+			return VMBool(x.Позже(yy.Time())), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		switch yy := y.(type) {
+		case VMDateTimer:
+			return VMBool(x.Равно(yy.Time()) || x.Позже(yy.Time())), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		switch yy := y.(type) {
+		case VMDateTimer:
+			return VMBool(x.Раньше(yy.Time())), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		switch yy := y.(type) {
+		case VMDateTimer:
+			return VMBool(x.Равно(yy.Time()) || x.Раньше(yy.Time())), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
+
+func (x VMTime) ConvertToType(nt reflect.Type) (VMValuer, error) {
+	switch nt {
+	case ReflectVMString:
+		// сериализуем в json
+		b, err := json.Marshal(x)
+		if err != nil {
+			return VMNil, err
+		}
+		return VMString(string(b)), nil
+		// case ReflectVMInt:
+	case ReflectVMTime:
+		return x, nil
+		// case ReflectVMBool:
+		// case ReflectVMDecimal:
+		// case ReflectVMSlice:
+		// case ReflectVMStringMap:
+	}
+
+	return VMNil, errors.New("Приведение к типу невозможно")
+}

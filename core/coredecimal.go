@@ -283,7 +283,7 @@ func (x VMDecimal) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) 
 	return VMNil, fmt.Errorf("Неизвестная операция")
 }
 
-func (x VMDecimal) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+func (x VMDecimal) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	switch nt {
 	case ReflectVMDecimal:
 		return x, nil

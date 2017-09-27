@@ -757,7 +757,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 			rv := regs.Reg[s.Reg]
 			if cv, ok := rv.(core.VMConverter); ok {
-				v, err := cv.ConvertToType(nt, false)
+				v, err := cv.ConvertToType(nt)
 				if err != nil {
 					catcherr = binstmt.NewError(stmt, err)
 					break

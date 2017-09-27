@@ -45,9 +45,7 @@ type (
 	// VMConverter может конвертироваться в тип reflect.Type
 	VMConverter interface {
 		VMValuer
-		ConvertToType(t reflect.Type, skipCollections bool) (VMValuer, error)
-		// если skipCollections=true и вызов идет для значения-коллекции, нужно вернуть значение без преобразования
-		// это требуется для рекурсивного преобразования коллекций
+		ConvertToType(t reflect.Type) (VMValuer, error)
 	}
 
 	// VMChaner реализует поведение канала

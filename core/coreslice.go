@@ -90,7 +90,8 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMSlice:
 			return append(x, yy...), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return append(x, y), nil
+		// return VMNil, errors.New("Операция между значениями невозможна")
 	case SUB:
 		// удаляем из первого слайса любые элементы второго слайса, встречающиеся в первом
 		switch yy := y.(type) {
@@ -272,7 +273,7 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	return VMNil, errors.New("Неизвестная операция")
 }
 
-func (x VMSlice) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	switch nt {
 	case ReflectVMString:
 		// сериализуем в json
@@ -285,7 +286,8 @@ func (x VMSlice) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer,
 		// case ReflectVMTime:
 		// case ReflectVMBool:
 		// case ReflectVMDecimal:
-		// case ReflectVMSlice:
+	case ReflectVMSlice:
+		return x, nil
 		// case ReflectVMStringMap:
 	}
 

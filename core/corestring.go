@@ -213,7 +213,7 @@ func (x VMString) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	return VMNil, errors.New("Неизвестная операция")
 }
 
-func (x VMString) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+func (x VMString) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	switch nt {
 	case ReflectVMString:
 		return x, nil

@@ -246,7 +246,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	return VMNil, fmt.Errorf("Неизвестная операция")
 }
 
-func (x VMInt) ConvertToType(nt reflect.Type, skipCollections bool) (VMValuer, error) {
+func (x VMInt) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	switch nt {
 	case ReflectVMInt:
 		return x, nil
