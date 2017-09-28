@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -263,4 +265,52 @@ func (x VMInt) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		return x.Decimal(), nil
 	}
 	return VMNil, fmt.Errorf("Приведение к типу невозможно")
+}
+
+// маршаллинг нужен для того, чтобы encoding не использовал рефлексию
+
+func (x VMInt) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, int64(x))
+	return buf.Bytes(), nil
+}
+
+func (x *VMInt) UnmarshalBinary(data []byte) error {
+	var i int64
+	if err := binary.Read(bytes.NewReader(data), binary.LittleEndian, &i); err != nil {
+		return err
+	}
+	*x = VMInt(i)
+	return nil
+}
+
+func (x VMInt) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
+}
+
+func (x *VMInt) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+func (x VMInt) MarshalText() ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteString(x.String())
+	return buf.Bytes(), nil
+}
+
+func (x *VMInt) UnmarshalText(data []byte) error {
+	i64, err := strconv.ParseInt(string(data), 10, 64)
+	if err != nil {
+		return err
+	}
+	*x = VMInt(i64)
+	return nil
+}
+
+func (x VMInt) MarshalJSON() ([]byte, error) {
+	return x.MarshalText()
+}
+
+func (x *VMInt) UnmarshalJSON(data []byte) error {
+	return x.UnmarshalText(data)
 }

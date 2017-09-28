@@ -97,6 +97,8 @@ func (x VMNilType) Parse(s string) error {
 	return nil
 }
 
+// TODO: маршалинг Nil,NULL и сравнение их со значениями
+
 var VMNil = VMNilType{}
 
 // тип NULL
