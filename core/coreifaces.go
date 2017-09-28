@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding"
 	"reflect"
 )
 
@@ -62,6 +63,14 @@ type (
 		VMInterfacer
 		Length() VMInt
 		IndexVal(VMValuer) VMValuer
+	}
+
+	// VMBinaryTyper может сериализовываться в бинарные данные внутри слайсов и структур
+	VMBinaryTyper interface {
+		VMValuer
+		encoding.BinaryMarshaler
+		encoding.BinaryUnmarshaler
+		BinaryType() VMBinaryType
 	}
 
 	// конкретные типы виртуальной машины
@@ -133,18 +142,18 @@ type (
 	// реализация должна быть в виде обертки над структурным типом на языке Го
 	// обертка получается через встраивание базовой структуры VMMetaObj
 	VMMetaObject interface {
-		VMInterfacer // реализовано в VMMetaObj
+		VMInterfacer         // реализовано в VMMetaObj
 		VMInit(VMMetaObject) // реализовано в VMMetaObj
-		
+
 		// !!!эта функция должна быть обязательно реализована в конечном объекте!!!
 		VMRegister()
 
 		VMRegisterMethod(string, VMMethod) // реализовано в VMMetaObj
-		VMRegisterField(string, VMValuer) // реализовано в VMMetaObj
+		VMRegisterField(string, VMValuer)  // реализовано в VMMetaObj
 
-		VMIsField(int) bool // реализовано в VMMetaObj
-		VMGetField(int) VMValuer // реализовано в VMMetaObj
-		VMSetField(int, VMValuer) // реализовано в VMMetaObj
+		VMIsField(int) bool             // реализовано в VMMetaObj
+		VMGetField(int) VMValuer        // реализовано в VMMetaObj
+		VMSetField(int, VMValuer)       // реализовано в VMMetaObj
 		VMGetMethod(int) (VMFunc, bool) // реализовано в VMMetaObj
 	}
 

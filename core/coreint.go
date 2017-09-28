@@ -84,6 +84,10 @@ func (x VMInt) Bool() bool {
 	return x > 0
 }
 
+func (x VMInt) BinaryType() VMBinaryType{
+	return VMINT
+}
+
 func (x VMInt) MakeChan(size int) VMChaner {
 	return make(VMChan, size)
 }
@@ -319,5 +323,8 @@ func (x VMInt) MarshalJSON() ([]byte, error) {
 }
 
 func (x *VMInt) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
 	return x.UnmarshalText(data)
 }

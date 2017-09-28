@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -67,6 +68,10 @@ func (x VMBool) Decimal() VMDecimal {
 
 func (x VMBool) Bool() bool {
 	return bool(x)
+}
+
+func (x VMBool) BinaryType() VMBinaryType {
+	return VMBOOL
 }
 
 func (x VMBool) MakeChan(size int) VMChaner {
@@ -168,3 +173,49 @@ func (x VMBool) ConvertToType(nt reflect.Type) (VMValuer, error) {
 
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
+
+func (x VMBool) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	if bool(x) {
+		buf.WriteByte(byte(0))
+	} else {
+		buf.WriteByte(byte(1))
+	}
+	return buf.Bytes(), nil
+}
+
+func (x *VMBool) UnmarshalBinary(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	if v, err := buf.ReadByte(); err != nil {
+		return err
+	} else {
+		if v == 0 {
+			*x = VMBool(false)
+		} else {
+			*x = VMBool(true)
+		}
+	}
+	return nil
+}
+
+func (x VMBool) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
+}
+
+func (x *VMBool) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+// TODO:
+
+// func (x VMBool) MarshalJSON() ([]byte, error) {
+// }
+
+// func (x *VMBool) UnmarshalJSON(data []byte) error {
+// }
+
+// func (x VMBool) MarshalText() ([]byte, error) {
+// }
+
+// func (x *VMBool) UnmarshalText(data []byte) error {
+// }

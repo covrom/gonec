@@ -88,6 +88,10 @@ func (x VMDecimal) Bool() bool {
 	return decimal.Decimal(x).GreaterThan(decimal.Zero)
 }
 
+func (x VMDecimal) BinaryType() VMBinaryType {
+	return VMDECIMAL
+}
+
 func (x VMDecimal) MakeChan(size int) VMChaner {
 
 	return make(VMChan, size)
@@ -300,3 +304,45 @@ func (x VMDecimal) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	}
 	return VMNil, fmt.Errorf("Приведение к типу невозможно")
 }
+
+func (x VMDecimal) MarshalBinary() ([]byte, error) {
+	return decimal.Decimal(x).MarshalBinary()
+}
+
+func (x *VMDecimal) UnmarshalBinary(data []byte) error {
+	var d decimal.Decimal
+	err := (&d).UnmarshalBinary(data)
+	if err != nil {
+		return err
+	}
+	*x = VMDecimal(d)
+	return nil
+}
+
+func (x VMDecimal) GobEncode() ([]byte, error) {
+	return decimal.Decimal(x).GobEncode()
+}
+
+func (x *VMDecimal) GobDecode(data []byte) error {
+	var d decimal.Decimal
+	err := (&d).GobDecode(data)
+	if err != nil {
+		return err
+	}
+	*x = VMDecimal(d)
+	return nil
+}
+
+// TODO:
+
+// func (x VMDecimal) MarshalJSON() ([]byte, error) {
+// }
+
+// func (x *VMDecimal) UnmarshalJSON(data []byte) error {
+// }
+
+// func (x VMDecimal) MarshalText() ([]byte, error) {
+// }
+
+// func (x *VMDecimal) UnmarshalText(data []byte) error {
+// }

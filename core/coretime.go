@@ -1,6 +1,8 @@
 package core
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"reflect"
@@ -33,6 +35,10 @@ func (v VMTimeDuration) Interface() interface{} {
 
 func (v VMTimeDuration) Duration() VMTimeDuration {
 	return v
+}
+
+func (x VMTimeDuration) BinaryType() VMBinaryType {
+	return VMDURATION
 }
 
 func (v VMTimeDuration) String() string {
@@ -149,6 +155,62 @@ func fmtInt(buf []byte, v uint64) int {
 	return w
 }
 
+func (x VMTimeDuration) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, int64(x))
+	return buf.Bytes(), nil
+}
+
+func (x *VMTimeDuration) UnmarshalBinary(data []byte) error {
+	var i int64
+	if err := binary.Read(bytes.NewReader(data), binary.LittleEndian, &i); err != nil {
+		return err
+	}
+	*x = VMTimeDuration(i)
+	return nil
+}
+
+func (x VMTimeDuration) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
+}
+
+func (x *VMTimeDuration) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+func (x VMTimeDuration) MarshalText() ([]byte, error) {
+	var buf bytes.Buffer
+	buf.WriteString(time.Duration(x).String())
+	return buf.Bytes(), nil
+}
+
+func (x *VMTimeDuration) UnmarshalText(data []byte) error {
+	d, err := time.ParseDuration(string(data))
+	if err != nil {
+		return err
+	}
+	*x = VMTimeDuration(d)
+	return nil
+}
+
+func (x VMTimeDuration) MarshalJSON() ([]byte, error) {
+	b, err := x.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+	return []byte("\"" + string(b) + "\""), nil
+}
+
+func (x *VMTimeDuration) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	if len(data) > 2 && data[0] == '"' && data[len(data)-1] == '"' {
+		data = data[1 : len(data)-1]
+	}
+	return x.UnmarshalText(data)
+}
+
 //VMTime дата и время
 
 type VMTime time.Time
@@ -167,6 +229,10 @@ func (v VMTime) Interface() interface{} {
 
 func (t VMTime) Time() VMTime {
 	return t
+}
+
+func (x VMTime) BinaryType() VMBinaryType {
+	return VMTIME
 }
 
 func (t VMTime) MarshalBinary() ([]byte, error) {

@@ -68,6 +68,10 @@ func (x VMString) InvokeNumber() (v VMNumberer, err error) {
 	return
 }
 
+func (x VMString) BinaryType() VMBinaryType {
+	return VMSTRING
+}
+
 func (x VMString) MakeChan(size int) VMChaner {
 	return make(VMChan, size)
 }
@@ -252,81 +256,33 @@ func (x VMString) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
 
-func VMValuerFromJSON(s string) (VMValuer, error) {
-	var i64 int64
-	var err error
-	if strings.HasPrefix(s, "0x") {
-		i64, err = strconv.ParseInt(s[2:], 16, 64)
-	} else {
-		i64, err = strconv.ParseInt(s, 10, 64)
-	}
-	if err == nil {
-		return VMInt(i64), nil
-	}
-	d, err := decimal.NewFromString(s)
-	if err == nil {
-		return VMDecimal(d), nil
-	}
-	var rwi interface{}
-	if err = json.Unmarshal([]byte(s), &rwi); err != nil {
-		return nil, err
-	}
-	// bool, for JSON booleans
-	// float64, for JSON numbers
-	// string, for JSON strings
-	// []interface{}, for JSON arrays
-	// map[string]interface{}, for JSON objects
-	// nil for JSON null
-	switch w := rwi.(type) {
-	case string:
-		return VMString(w), nil
-	case bool:
-		return VMBool(w), nil
-	case float64:
-		return VMDecimal(decimal.NewFromFloat(w)), nil
-	case []interface{}:
-		return VMSliceFromJson(s)
-	case map[string]interface{}:
-		return VMStringMapFromJson(s)
-	default:
-		return VMNil, errors.New("Невозможно определить значение")
-	}
+func (x VMString) MarshalBinary() ([]byte, error) {
+	return []byte(string(x)), nil
 }
 
-func VMSliceFromJson(x string) (VMSlice, error) {
-	//парсим json из строки и пытаемся получить массив
-	var rvms VMSlice
-	var rm []json.RawMessage
-	var err error
-	if err = json.Unmarshal([]byte(x), &rm); err != nil {
-		return rvms, err
-	}
-	rvms = make(VMSlice, len(rm))
-	for i, raw := range rm {
-		rvms[i], err = VMValuerFromJSON(string(raw))
-		if err != nil {
-			return rvms, err
-		}
-	}
-	return rvms, nil
+func (x *VMString) UnmarshalBinary(data []byte) error {
+	*x = VMString(string(data))
+	return nil
 }
 
-func VMStringMapFromJson(x string) (VMStringMap, error) {
-	//парсим json из строки и пытаемся получить массив
-	var rvms VMStringMap
-	var rm map[string]json.RawMessage
-	var err error
-	if err = json.Unmarshal([]byte(x), &rm); err != nil {
-		return rvms, err
-	}
-	rvms = make(VMStringMap, len(rm))
-	for i, raw := range rm {
-		rvms[i], err = VMValuerFromJSON(string(raw))
-		if err != nil {
-			return rvms, err
-		}
-	}
-	return rvms, nil
+func (x VMString) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
 }
 
-// TODO: маршаллинг json и т.п., по аналогии с VMTime!!!
+func (x *VMString) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+// TODO:
+
+// func (x VMString) MarshalJSON() ([]byte, error) {
+// }
+
+// func (x *VMString) UnmarshalJSON(data []byte) error {
+// }
+
+// func (x VMString) MarshalText() ([]byte, error) {
+// }
+
+// func (x *VMString) UnmarshalText(data []byte) error {
+// }

@@ -27,6 +27,10 @@ func (x VMSlice) Slice() VMSlice {
 	return x
 }
 
+func (x VMSlice) BinaryType() VMBinaryType {
+	return VMSLICE
+}
+
 func (x VMSlice) Args() []interface{} {
 	ai := make([]interface{}, len(x))
 	for i := range x {
@@ -294,41 +298,98 @@ func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
 
-// func (t VMSlice) MarshalBinary() ([]byte, error) {
-// 	var enc bytes.Buffer
-// 	binary.Write(&enc, binary.LittleEndian, uint64(len(t)))
-// 	binary.Write(&enc, binary.LittleEndian, uint64(cap(t)))
-// 	for i := range t {
-// 		switch v := t[i].(type) {
-// 		case VMSlice:
-// 			bb, _ := v.MarshalBinary()
-// 			enc.Write(bb)
+func (x VMSlice) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	binary.Write(&buf, binary.LittleEndian, uint64(len(x)))
+	for i := range x {
+		if v, ok := x[i].(VMBinaryTyper); ok {
+			bb, err := v.MarshalBinary()
+			if err != nil {
+				return nil, err
+			}
+			buf.WriteByte(byte(v.BinaryType()))
+			binary.Write(&buf, binary.LittleEndian, uint64(len(bb)))
+			buf.Write(bb)
+		} else {
+			return nil, errors.New("Значение не может быть преобразовано в бинарный формат")
+		}
+	}
+	return buf.Bytes(), nil
+}
 
-// 		}
+func (x *VMSlice) UnmarshalBinary(data []byte) error {
+	buf := bytes.NewBuffer(data)
+	var l, lv uint64
+	if err := binary.Read(buf, binary.LittleEndian, &l); err != nil {
+		return err
+	}
+	var rv VMSlice
+	if x == nil || len(*x) < int(l) {
+		rv = make(VMSlice, int(l))
+	} else {
+		rv = (*x)[:int(l)]
+	}
+
+	for i := 0; i < int(l); i++ {
+		if err := binary.Read(buf, binary.LittleEndian, &lv); err != nil {
+			return err
+		}
+		if tt, err := buf.ReadByte(); err != nil {
+			return err
+		} else {
+			bb := buf.Next(int(lv))
+			vv, err := VMBinaryType(tt).ParseBinary(bb)
+			if err != nil {
+				return err
+			}
+			rv[i] = vv
+		}
+	}
+	*x = rv
+	return nil
+}
+
+func (x VMSlice) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
+}
+
+func (x *VMSlice) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+// TODO:
+
+// func (x VMTimeDuration) MarshalText() ([]byte, error) {
+// 	var buf bytes.Buffer
+// 	buf.WriteString(time.Duration(x).String())
+// 	return buf.Bytes(), nil
+// }
+
+// func (x *VMTimeDuration) UnmarshalText(data []byte) error {
+// 	d, err := time.ParseDuration(string(data))
+// 	if err != nil {
+// 		return err
 // 	}
-
-// 	return enc.Bytes(), nil
+// 	*x = VMTimeDuration(d)
+// 	return nil
 // }
 
-// func (t *VMSlice) UnmarshalBinary(data []byte) error {
+// func (x VMTimeDuration) MarshalJSON() ([]byte, error) {
+// 	b, err := x.MarshalText()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return []byte("\"" + string(b) + "\""), nil
 // }
 
-// func (t VMSlice) GobEncode() ([]byte, error) {
-// }
-
-// func (t *VMSlice) GobDecode(data []byte) error {
-// }
-
-// func (t VMSlice) MarshalJSON() ([]byte, error) {
-// }
-
-// func (t *VMSlice) UnmarshalJSON(data []byte) error {
-// }
-
-// func (t VMSlice) MarshalText() ([]byte, error) {
-// }
-
-// func (t *VMSlice) UnmarshalText(data []byte) error {
+// func (x *VMTimeDuration) UnmarshalJSON(data []byte) error {
+// 	if string(data) == "null" {
+// 		return nil
+// 	}
+// 	if len(data) > 2 && data[0] == '"' && data[len(data)-1] == '"' {
+// 		data = data[1 : len(data)-1]
+// 	}
+// 	return x.UnmarshalText(data)
 // }
 
 // VMSliceUpSort - обертка для сортировки слайса по возрастанию
