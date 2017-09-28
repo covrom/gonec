@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -96,7 +97,13 @@ func (x VMInt) Duration() VMTimeDuration {
 }
 
 func ParseVMInt(s string) (VMInt, error) {
-	i64, err := strconv.ParseInt(s, 10, 64)
+	var i64 int64
+	var err error
+	if strings.HasPrefix(s, "0x") {
+		i64, err = strconv.ParseInt(s[2:], 16, 64)
+	} else {
+		i64, err = strconv.ParseInt(s, 10, 64)
+	}
 	if err != nil {
 		return VMInt(0), err
 	}
