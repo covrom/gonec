@@ -273,16 +273,28 @@ func (x *VMString) GobDecode(data []byte) error {
 	return x.UnmarshalBinary(data)
 }
 
-// TODO:
+func (x VMString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(x))
+}
 
-// func (x VMString) MarshalJSON() ([]byte, error) {
-// }
+func (x *VMString) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	var us string
+	err := json.Unmarshal(data, &us)
+	if err != nil {
+		return err
+	}
+	*x = VMString(us)
+	return nil
+}
 
-// func (x *VMString) UnmarshalJSON(data []byte) error {
-// }
+func (x VMString) MarshalText() ([]byte, error) {
+	return []byte(x), nil
+}
 
-// func (x VMString) MarshalText() ([]byte, error) {
-// }
-
-// func (x *VMString) UnmarshalText(data []byte) error {
-// }
+func (x *VMString) UnmarshalText(data []byte) error {
+	*x = VMString(data)
+	return nil
+}
