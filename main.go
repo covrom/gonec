@@ -27,7 +27,7 @@ import (
 	_ "net/http/pprof"
 )
 
-const version = "3.0a"
+const version = "3.1a"
 const APIPath = "/gonec"
 
 var (
