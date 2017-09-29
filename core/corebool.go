@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -206,16 +207,35 @@ func (x *VMBool) GobDecode(data []byte) error {
 	return x.UnmarshalBinary(data)
 }
 
-// TODO:
+func (x VMBool) MarshalJSON() ([]byte, error) {
+	return json.Marshal(bool(x))
+}
 
-// func (x VMBool) MarshalJSON() ([]byte, error) {
-// }
+func (x *VMBool) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	var b bool
+	err := json.Unmarshal(data, &b)
+	if err != nil {
+		return err
+	}
+	*x = VMBool(b)
+	return nil
+}
 
-// func (x *VMBool) UnmarshalJSON(data []byte) error {
-// }
+func (x VMBool) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
 
-// func (x VMBool) MarshalText() ([]byte, error) {
-// }
-
-// func (x *VMBool) UnmarshalText(data []byte) error {
-// }
+func (x *VMBool) UnmarshalText(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	b, err := ParseVMBool(string(data))
+	if err != nil {
+		return err
+	}
+	*x = b
+	return nil
+}

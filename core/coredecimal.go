@@ -333,16 +333,29 @@ func (x *VMDecimal) GobDecode(data []byte) error {
 	return nil
 }
 
-// TODO:
+func (x VMDecimal) MarshalJSON() ([]byte, error) {
+	return decimal.Decimal(x).MarshalJSON()
+}
 
-// func (x VMDecimal) MarshalJSON() ([]byte, error) {
-// }
+func (x *VMDecimal) UnmarshalJSON(data []byte) error {
+	var d decimal.Decimal
+	err := (&d).UnmarshalJSON(data)
+	if err != nil {
+		return nil
+	}
+	*x = VMDecimal(d)
+	return nil
+}
 
-// func (x *VMDecimal) UnmarshalJSON(data []byte) error {
-// }
+func (x VMDecimal) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
 
-// func (x VMDecimal) MarshalText() ([]byte, error) {
-// }
-
-// func (x *VMDecimal) UnmarshalText(data []byte) error {
-// }
+func (x *VMDecimal) UnmarshalText(data []byte) error {
+	d, err := decimal.NewFromString(string(data))
+	if err != nil {
+		return err
+	}
+	*x = VMDecimal(d)
+	return nil
+}
