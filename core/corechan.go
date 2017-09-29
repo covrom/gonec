@@ -42,3 +42,5 @@ func (x VMChan) TryRecv() (v VMValuer, ok bool, notready bool) {
 func (x VMChan) Close() { close(x) }
 
 func (x VMChan) Закрыть() { close(x) }
+
+func (x VMChan) Size() int { return cap(x) }
