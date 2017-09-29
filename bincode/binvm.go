@@ -513,9 +513,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						goto catching
 					}
 				}
-
-			// TODO: вызов методов у встроенных типов
-
+			case core.VMMethodImplementer:
+				if ff, ok := vv.MethodMember(s.Name); ok {
+					regs.Reg[s.Reg] = ff
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Нет метода с таким именем")
+					goto catching
+				}
 			default:
 				catcherr = binstmt.NewStringError(stmt, "У значения не бывает полей или методов")
 				goto catching
