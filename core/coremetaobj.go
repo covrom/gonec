@@ -1,6 +1,12 @@
 package core
 
 import (
+	"encoding/binary"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"reflect"
+
 	"github.com/covrom/gonec/names"
 )
 
@@ -25,6 +31,21 @@ func (v *VMMetaObj) Interface() interface{} {
 	// возвращает ссылку на структуру, от которой был вызван метод VMInit
 	//rv:=*(*VMMetaObject)(v.vmOriginal)
 	return v.vmOriginal
+}
+
+func (v *VMMetaObj) String() string {
+	b, err := json.Marshal(v.vmOriginal)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+func (x *VMMetaObj) Hash() VMString {
+	b := []byte(x.String())
+	h := make([]byte, 8)
+	binary.LittleEndian.PutUint64(h, HashBytes(b))
+	return VMString(hex.EncodeToString(h))
 }
 
 func (v *VMMetaObj) VMRegisterMethod(name string, m VMMethod) {
@@ -131,6 +152,26 @@ func (v *VMMetaObj) VMGetMethod(name int) (VMFunc, bool) {
 	return rv, ok
 }
 
-// TODO: equal, convert
+func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
+	switch nt {
+	case ReflectVMString:
+		// сериализуем в json
+		b, err := json.Marshal(v.vmOriginal)
+		if err != nil {
+			return VMNil, err
+		}
+		return VMString(string(b)), nil
+		// case ReflectVMInt:
+		// case ReflectVMTime:
+		// case ReflectVMBool:
+		// case ReflectVMDecimal:
+		// case ReflectVMSlice:
+		// case ReflectVMStringMap: // получится только через Структура(Строка(объект))
+	}
+
+	return VMNil, errors.New("Приведение к типу невозможно")
+}
+
+// TODO: equal, равенство по хэшу
 
 // TODO: маршаллинг исходной структуры, как у VMTime!!!

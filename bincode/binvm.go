@@ -167,11 +167,18 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 		catcherr error
 	)
 
+	cntInterrupt := 0
+
 	for idx < len(stmts) {
 
-		if regs.Env.CheckInterrupt() {
-			// проверяем, был ли прерван интерпретатор
-			return nil, binstmt.InterruptError
+		// проверка прерывания каждые 10 команд
+		cntInterrupt++
+		if cntInterrupt == 10 {
+			cntInterrupt = 0
+			if regs.Env.CheckInterrupt() {
+				// проверяем, был ли прерван интерпретатор
+				return nil, binstmt.InterruptError
+			}
 		}
 
 		stmt := stmts[idx]
@@ -713,6 +720,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						newenv = fenv.NewEnv()
 					}
 
+					// переменное число аргументов передается как один параметр-слайс
 					if expr.VarArg {
 						newenv.Define(expr.Args[0], args)
 					} else {
@@ -722,7 +730,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					}
 					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
 					callregs := make([]core.VMValuer, expr.MaxReg+1)
-					rr, err := RunWorker(fstmts, flabels, callregs, newenv, expr.LabelStart)
+					rr, err := RunWorker(fstmts, flabels, callregs, newenv, flabels[expr.LabelStart])
 					if err == binstmt.ReturnError {
 						err = nil
 					}
@@ -738,6 +746,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 			env.Define(s.Name, f)
 			regs.Reg[s.Reg] = f
+			idx = regs.Labels[s.LabelEnd]
 
 		case *binstmt.BinRET:
 			retval = regs.Reg[s.Reg]

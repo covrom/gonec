@@ -3,8 +3,10 @@ package core
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -37,7 +39,17 @@ func (x VMStringMap) BinaryType() VMBinaryType {
 	return VMSTRINGMAP
 }
 
-// TODO:
+func (x VMStringMap) Hash() VMString {
+	b, err := x.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
+	h := make([]byte, 8)
+	binary.LittleEndian.PutUint64(h, HashBytes(b))
+	return VMString(hex.EncodeToString(h))
+}
+
+// TODO: равенство по равенству набора ключей, затем их значений
 
 // func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 // 	switch op {
@@ -231,6 +243,9 @@ func (x VMStringMap) BinaryType() VMBinaryType {
 // }
 
 func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
+
+	// fmt.Println(nt)
+
 	switch nt {
 	case ReflectVMString:
 		// сериализуем в json
@@ -246,6 +261,45 @@ func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	// case ReflectVMSlice:
 	case ReflectVMStringMap:
 		return x, nil
+	}
+
+	if nt.Kind() == reflect.Struct {
+		rv := reflect.ValueOf(x)
+		// для приведения в структурные типы - можно использовать мапу для заполнения полей
+		rs := reflect.New(nt) // указатель на новую структуру
+		//заполняем экспортируемые неанонимные поля, если их находим в мапе
+		for i := 0; i < nt.NumField(); i++ {
+			f := nt.Field(i)
+			if f.PkgPath == "" && !f.Anonymous {
+				setv := reflect.Indirect(rv.MapIndex(reflect.ValueOf(f.Name)))
+				if setv.Kind() == reflect.Interface {
+					setv = setv.Elem()
+				}
+				fv := rs.Elem().FieldByName(f.Name)
+				if setv.IsValid() && fv.IsValid() && fv.CanSet() {
+					if fv.Kind() != setv.Kind() {
+						if setv.Type().ConvertibleTo(fv.Type()) {
+							setv = setv.Convert(fv.Type())
+						} else {
+							return nil, fmt.Errorf("Поле структуры имеет другой тип")
+						}
+					}
+					fv.Set(setv)
+				}
+			}
+		}
+		if vv, ok := rs.Interface().(VMValuer); ok {
+			if vobj, ok := vv.(VMMetaObject); ok {
+				vobj.VMInit(vobj)
+				vobj.VMRegister()
+				return vobj, nil
+			} else {
+				return vv, nil
+			}
+		} else {
+			return nil, errors.New("Невозможно использовать данный тип в интерпретаторе")
+		}
+
 	}
 
 	return VMNil, errors.New("Приведение к типу невозможно")

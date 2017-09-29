@@ -55,10 +55,12 @@ func (x VMSlice) IndexVal(i VMValuer) VMValuer {
 }
 
 func (x VMSlice) Hash() VMString {
-	var binbuf bytes.Buffer
-	binary.Write(&binbuf, binary.BigEndian, x)
+	b,err:=x.MarshalBinary()
+	if err!=nil{
+		panic(err)
+	}
 	h := make([]byte, 8)
-	binary.LittleEndian.PutUint64(h, HashBytes(binbuf.Bytes()))
+	binary.LittleEndian.PutUint64(h, HashBytes(b))
 	return VMString(hex.EncodeToString(h))
 }
 
@@ -136,6 +138,7 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	case REM:
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case EQL:
+		// равенство по полному равенству элементов
 		switch yy := y.(type) {
 		case VMSlice:
 			eq := true
