@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -84,7 +85,7 @@ func (x VMInt) Bool() bool {
 	return x > 0
 }
 
-func (x VMInt) BinaryType() VMBinaryType{
+func (x VMInt) BinaryType() VMBinaryType {
 	return VMINT
 }
 
@@ -319,12 +320,18 @@ func (x *VMInt) UnmarshalText(data []byte) error {
 }
 
 func (x VMInt) MarshalJSON() ([]byte, error) {
-	return x.MarshalText()
+	return json.Marshal(int64(x))
 }
 
 func (x *VMInt) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		return nil
 	}
-	return x.UnmarshalText(data)
+	var i64 int64
+	err := json.Unmarshal(data, &i64)
+	if err != nil {
+		return err
+	}
+	*x = VMInt(i64)
+	return nil
 }
