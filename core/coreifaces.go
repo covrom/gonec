@@ -157,6 +157,11 @@ type (
 		VMGetMethod(int) (VMFunc, bool) // реализовано в VMMetaObj
 	}
 
+	VMMethodImplementer interface{
+		VMValuer
+		MethodMember(int) (VMFunc, bool) // возвращает метод в нужном формате		
+	}
+
 	// VMNullable означает значение null
 	VMNullable interface {
 		VMStringer

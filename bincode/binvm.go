@@ -513,7 +513,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						goto catching
 					}
 				}
-			
+
 			// TODO: вызов методов у встроенных типов
 
 			default:

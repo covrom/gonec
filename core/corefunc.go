@@ -1,6 +1,9 @@
 package core
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // VMFunc вызывается как обертка метода объекта метаданных или обертка функции библиотеки
 // возвращаемое из обертки значение должно быть приведено к типу вирт. машины
@@ -24,3 +27,18 @@ func (f VMFunc) Func() VMFunc {
 }
 
 type VMMethod = func(VMSlice, *VMSlice) error
+
+func VMFuncMustParams(n int, f VMMethod) VMFunc {
+	return VMFunc(
+		func(args VMSlice, rets *VMSlice) error {
+			if len(args) != n {
+				switch n {
+				case 0:
+					return errors.New("Параметры не требуются")
+				default:
+					return fmt.Errorf("Неверное количество параметров (требуется %d)", n)
+				}
+			}
+			return f(args, rets)
+		})
+}

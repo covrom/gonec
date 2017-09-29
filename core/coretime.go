@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/covrom/gonec/names"
 )
 
 const (
@@ -310,16 +312,41 @@ func (t VMTime) Format(layout string) string {
 	return string(b)
 }
 
-func (t VMTime) Год() int64 {
-	return int64(time.Time(t).Year())
+func (t VMTime) MethodMember(name int) (VMFunc, bool) {
+
+	// только эти методы будут доступны из кода на языке Гонец!
+
+	switch names.UniqueNames.GetLowerCase(name) {
+	case "год":
+		return VMFuncMustParams(0, t.Год), true
+	case "месяц":
+		return VMFuncMustParams(0, t.Месяц), true
+	case "день":
+		return VMFuncMustParams(0, t.День), true
+	case "неделя":
+		return VMFuncMustParams(0, t.Неделя), true
+	case "деньнедели":
+		return VMFuncMustParams(0, t.ДеньНедели), true
+
+		// TODO: остальные методы!!!
+	}
+
+	return nil, false
 }
 
-func (t VMTime) Месяц() int64 {
-	return int64(time.Time(t).Month())
+func (t VMTime) Год(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMInt(time.Time(t).Year()))
+	return nil
 }
 
-func (t VMTime) День() int64 {
-	return int64(time.Time(t).Day())
+func (t VMTime) Месяц(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMInt(time.Time(t).Month()))
+	return nil
+}
+
+func (t VMTime) День(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMInt(time.Time(t).Day()))
+	return nil
 }
 
 func (t VMTime) Weekday() int64 {
@@ -327,27 +354,31 @@ func (t VMTime) Weekday() int64 {
 	return int64(time.Time(t).Weekday())
 }
 
-func (t VMTime) Неделя() (w int64, y_aligned int64) {
+func (t VMTime) Неделя(args VMSlice, rets *VMSlice) error {
 	// по ISO 8601
 	// 1-53, выровнены по годам,
 	// т.е. конец декабря (три дня) попадает в следующий год,
 	// или первые три дня января попадают в предыдущий год
 	yy, ww := time.Time(t).ISOWeek()
-	return int64(ww), int64(yy)
+	rets.Append(VMInt(ww))
+	rets.Append(VMInt(yy))
+	return nil
 }
 
-func (t VMTime) ДеньНедели() int64 {
+func (t VMTime) ДеньНедели(args VMSlice, rets *VMSlice) error {
 	//1=понедельник, 7=воскресенье ...
 	wd := int64(time.Time(t).Weekday())
 	if wd == 0 {
-		return 7
+		rets.Append(VMInt(7))
+	} else {
+		rets.Append(VMInt(wd))
 	}
-	return wd
+	return nil
 }
 
 func (t VMTime) Квартал() int64 {
 	//1-4
-	return t.Месяц()/4 + 1
+	return int64(time.Time(t).Month())/4 + 1
 }
 
 func (t VMTime) ДеньГода() int64 {
