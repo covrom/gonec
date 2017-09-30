@@ -95,6 +95,10 @@ func (x VMString) Time() VMTime {
 	if err == nil {
 		return VMTime(t)
 	}
+	t, err = time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", string(x))
+	if err == nil {
+		return VMTime(t)
+	}
 	t, err = time.ParseInLocation("02.01.2006 15:04:05", string(x), time.Local)
 	if err == nil {
 		return VMTime(t)

@@ -125,7 +125,7 @@ func Import(env *Env) *Env {
 			return errors.New("Должен быть один параметр")
 		}
 		if rv, ok := args[0].(VMDateTimer); ok {
-			rets.Append(Now().Вычесть(rv.Time()))
+			rets.Append(Now().Sub(rv.Time()))
 			return nil
 		}
 		return errors.New("Допустим только аргумент типа Дата или совместимый с ним")

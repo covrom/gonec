@@ -448,7 +448,7 @@ func (x VMSliceUpSort) Less(i, j int) bool {
 
 	if vi, ok := x[i].(VMTime); ok {
 		if vj, ok := x[j].(VMTime); ok {
-			return vi.Раньше(vj)
+			return vi.Before(vj)
 		}
 	}
 
@@ -526,7 +526,7 @@ func (x VMSliceDownSort) Less(i, j int) bool {
 
 	if vi, ok := x[i].(VMTime); ok {
 		if vj, ok := x[j].(VMTime); ok {
-			return vi.Позже(vj)
+			return vi.After(vj)
 		}
 	}
 

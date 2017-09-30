@@ -223,17 +223,17 @@ func Now() VMTime {
 	return VMTime(time.Now())
 }
 
-func (v VMTime) vmval() {}
+func (t VMTime) vmval() {}
 
-func (v VMTime) Interface() interface{} {
-	return time.Time(v)
+func (t VMTime) Interface() interface{} {
+	return time.Time(t)
 }
 
 func (t VMTime) Time() VMTime {
 	return t
 }
 
-func (x VMTime) BinaryType() VMBinaryType {
+func (t VMTime) BinaryType() VMBinaryType {
 	return VMTIME
 }
 
@@ -293,12 +293,19 @@ func (t *VMTime) UnmarshalText(data []byte) error {
 	return nil
 }
 
+// String аналогичен представлению Го
+// "2006-01-02 15:04:05.999999999 -0700 MST m=±ddd.nnnnnnnnn"
 func (t VMTime) String() string {
 	return time.Time(t).String()
 }
 
+// GolangTime возвращает time.Time
+func (t VMTime) GolangTime() time.Time {
+	return time.Time(t)
+}
+
+// Format формат в стиле Го
 func (t VMTime) Format(layout string) string {
-	// формат в стиле Го
 	const bufSize = 64
 	var b []byte
 	max := len(layout) + 10
@@ -327,47 +334,106 @@ func (t VMTime) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, t.Неделя), true
 	case "деньнедели":
 		return VMFuncMustParams(0, t.ДеньНедели), true
-
-		// TODO: остальные методы!!!
+	case "квартал":
+		return VMFuncMustParams(0, t.Квартал), true
+	case "деньгода":
+		return VMFuncMustParams(0, t.ДеньГода), true
+	case "час":
+		return VMFuncMustParams(0, t.Час), true
+	case "минута":
+		return VMFuncMustParams(0, t.Минута), true
+	case "секунда":
+		return VMFuncMustParams(0, t.Секунда), true
+	case "миллисекунда":
+		return VMFuncMustParams(0, t.Миллисекунда), true
+	case "микросекунда":
+		return VMFuncMustParams(0, t.Микросекунда), true
+	case "наносекунда":
+		return VMFuncMustParams(0, t.Наносекунда), true
+	case "unixnano":
+		return VMFuncMustParams(0, t.ЮниксНано), true
+	case "unix":
+		return VMFuncMustParams(0, t.Юникс), true
+	case "формат":
+		return VMFuncMustParams(1, t.Формат), true
+	case "вычесть":
+		return VMFuncMustParams(1, t.Вычесть), true
+	case "добавить":
+		return VMFuncMustParams(1, t.Добавить), true
+	case "добавитьпериод":
+		return VMFuncMustParams(3, t.ДобавитьПериод), true
+	case "раньше":
+		return VMFuncMustParams(1, t.Раньше), true
+	case "позже":
+		return VMFuncMustParams(1, t.Позже), true
+	case "равно":
+		return VMFuncMustParams(1, t.Равно), true
+	case "пустая":
+		return VMFuncMustParams(0, t.Пустая), true
+	case "местное":
+		return VMFuncMustParams(0, t.Местное), true
+	case "utc":
+		return VMFuncMustParams(0, t.ВремяUTC), true
+	case "локация":
+		return VMFuncMustParams(0, t.Локация), true
+	case "влокации":
+		return VMFuncMustParams(1, t.ВЛокации), true
 	}
 
 	return nil, false
 }
 
+func (t VMTime) Year() VMInt {
+	return VMInt(time.Time(t).Year())
+}
+
 func (t VMTime) Год(args VMSlice, rets *VMSlice) error {
-	rets.Append(VMInt(time.Time(t).Year()))
+	rets.Append(t.Year())
 	return nil
+}
+
+func (t VMTime) Month() VMInt {
+	return VMInt(time.Time(t).Month())
 }
 
 func (t VMTime) Месяц(args VMSlice, rets *VMSlice) error {
-	rets.Append(VMInt(time.Time(t).Month()))
+	rets.Append(t.Month())
 	return nil
+}
+
+func (t VMTime) Day() VMInt {
+	return VMInt(time.Time(t).Day())
 }
 
 func (t VMTime) День(args VMSlice, rets *VMSlice) error {
-	rets.Append(VMInt(time.Time(t).Day()))
+	rets.Append(t.Day())
 	return nil
 }
 
+// Weekday 0=воскресенье, 1=понедельник ...
 func (t VMTime) Weekday() int64 {
-	//0=воскресенье, 1=понедельник ...
 	return int64(time.Time(t).Weekday())
 }
 
-func (t VMTime) Неделя(args VMSlice, rets *VMSlice) error {
-	// по ISO 8601
-	// 1-53, выровнены по годам,
-	// т.е. конец декабря (три дня) попадает в следующий год,
-	// или первые три дня января попадают в предыдущий год
+func (t VMTime) ISOWeek() (year, week VMInt) {
 	yy, ww := time.Time(t).ISOWeek()
-	rets.Append(VMInt(ww))
-	rets.Append(VMInt(yy))
+	return VMInt(yy), VMInt(ww)
+}
+
+// Неделя по ISO 8601
+// 1-53, выровнены по годам,
+// т.е. конец декабря (три дня) попадает в следующий год,
+// или первые три дня января попадают в предыдущий год
+func (t VMTime) Неделя(args VMSlice, rets *VMSlice) error {
+	yy, ww := t.ISOWeek()
+	rets.Append(ww)
+	rets.Append(yy)
 	return nil
 }
 
 func (t VMTime) ДеньНедели(args VMSlice, rets *VMSlice) error {
 	//1=понедельник, 7=воскресенье ...
-	wd := int64(time.Time(t).Weekday())
+	wd := t.Weekday()
 	if wd == 0 {
 		rets.Append(VMInt(7))
 	} else {
@@ -376,53 +442,107 @@ func (t VMTime) ДеньНедели(args VMSlice, rets *VMSlice) error {
 	return nil
 }
 
-func (t VMTime) Квартал() int64 {
+func (t VMTime) Quarter() VMInt {
 	//1-4
-	return int64(time.Time(t).Month())/4 + 1
+	return VMInt(int64(time.Time(t).Month())/4 + 1)
 }
 
-func (t VMTime) ДеньГода() int64 {
+func (t VMTime) Квартал(args VMSlice, rets *VMSlice) error {
+	//1-4
+	rets.Append(t.Quarter())
+	return nil
+}
+
+func (t VMTime) YearDay() VMInt {
 	//1-366
-	return int64(time.Time(t).YearDay())
+	return VMInt(time.Time(t).YearDay())
 }
 
-func (t VMTime) Час() int64 {
-	return int64(time.Time(t).Hour())
+func (t VMTime) ДеньГода(args VMSlice, rets *VMSlice) error {
+	//1-366
+	rets.Append(t.YearDay())
+	return nil
 }
 
-func (t VMTime) Минута() int64 {
-	return int64(time.Time(t).Minute())
+func (t VMTime) Hour() VMInt {
+	return VMInt(time.Time(t).Hour())
 }
 
-func (t VMTime) Секунда() int64 {
-	return int64(time.Time(t).Second())
+func (t VMTime) Час(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Hour())
+	return nil
 }
 
-func (t VMTime) Миллисекунда() int64 {
-	return int64(time.Time(t).Nanosecond()) / 1e6
+func (t VMTime) Minute() VMInt {
+	return VMInt(time.Time(t).Minute())
 }
 
-func (t VMTime) Микросекунда() int64 {
-	return int64(time.Time(t).Nanosecond()) / 1e3
+func (t VMTime) Минута(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Minute())
+	return nil
 }
 
-func (t VMTime) Наносекунда() int64 {
-	return int64(time.Time(t).Nanosecond())
+func (t VMTime) Second() VMInt {
+	return VMInt(time.Time(t).Second())
 }
 
-func (t VMTime) UnixNano() int64 {
-	return time.Time(t).UnixNano()
+func (t VMTime) Секунда(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Second())
+	return nil
 }
 
-func (t VMTime) Unix() int64 {
-	return time.Time(t).Unix()
+func (t VMTime) Millisecond() VMInt {
+	return VMInt(int64(time.Time(t).Nanosecond()) / 1e6)
 }
 
-func (t VMTime) GolangTime() time.Time {
-	return time.Time(t)
+func (t VMTime) Миллисекунда(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Millisecond())
+	return nil
 }
 
-func (t VMTime) Формат(fmtstr string) string {
+func (t VMTime) Microsecond() VMInt {
+	return VMInt(int64(time.Time(t).Nanosecond()) / 1e3)
+}
+
+func (t VMTime) Микросекунда(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Microsecond())
+	return nil
+}
+
+func (t VMTime) Nanosecond() VMInt {
+	return VMInt(time.Time(t).Nanosecond())
+}
+
+func (t VMTime) Наносекунда(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Nanosecond())
+	return nil
+}
+
+func (t VMTime) UnixNano() VMInt {
+	return VMInt(time.Time(t).UnixNano())
+}
+
+func (t VMTime) ЮниксНано(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.UnixNano())
+	return nil
+}
+
+func (t VMTime) Unix() VMInt {
+	return VMInt(time.Time(t).Unix())
+}
+
+func (t VMTime) Юникс(args VMSlice, rets *VMSlice) error {
+	rets.Append(t.Unix())
+	return nil
+}
+
+func (t VMTime) Формат(args VMSlice, rets *VMSlice) error {
+
+	// аргумент - форматная строка
+	fmtstr, ok := args[0].(VMString)
+	if !ok {
+		return errors.New("Требуется форматная строка")
+	}
 
 	// д (d) - день месяца (цифрами) без лидирующего нуля;
 	// дд (dd) - день месяца (цифрами) с лидирующим нулем;
@@ -450,14 +570,23 @@ func (t VMTime) Формат(fmtstr string) string {
 	// ссс (sss) - миллисекунда с лидирующим нулем
 
 	days := [...]string{
-		"", //0-го не бывает
+		"воскресенье",
 		"понедельник",
 		"вторник",
 		"среда",
 		"четверг",
 		"пятница",
 		"суббота",
-		"воскресенье",
+	}
+
+	dayssm := [...]string{
+		"вс",
+		"пн",
+		"вт",
+		"ср",
+		"чт",
+		"пт",
+		"сб",
 	}
 
 	months1 := [...]string{
@@ -492,17 +621,7 @@ func (t VMTime) Формат(fmtstr string) string {
 		"декабря",
 	}
 
-	dayssm := [...]string{
-		"пн",
-		"вт",
-		"ср",
-		"чт",
-		"пт",
-		"сб",
-		"вс",
-	}
-
-	src := []rune(fmtstr)
+	src := []rune(string(fmtstr))
 	res := make([]rune, 0, len(src)*2)
 	wasday := false
 	hour, min, sec := time.Time(t).Clock()
@@ -516,19 +635,19 @@ func (t VMTime) Формат(fmtstr string) string {
 			s = src[i : i+4]
 			switch string(s) {
 			case "дддд", "dddd":
-				res = append(res, []rune(days[t.ДеньНедели()])...)
+				res = append(res, []rune(days[t.Weekday()])...)
 				i += 4
 				continue
 			case "ММММ", "MMMM":
 				if wasday {
-					res = append(res, []rune(months2[t.Месяц()])...)
+					res = append(res, []rune(months2[t.Month()])...)
 				} else {
-					res = append(res, []rune(months1[t.Месяц()])...)
+					res = append(res, []rune(months1[t.Month()])...)
 				}
 				i += 4
 				continue
 			case "гггг", "yyyy":
-				res = append(res, []rune(strconv.FormatInt(t.Год(), 10))...)
+				res = append(res, []rune(strconv.FormatInt(int64(t.Year()), 10))...)
 				i += 4
 				continue
 
@@ -539,19 +658,19 @@ func (t VMTime) Формат(fmtstr string) string {
 			s = src[i : i+3]
 			switch string(s) {
 			case "ддд", "ddd":
-				res = append(res, []rune(dayssm[t.ДеньНедели()])...)
+				res = append(res, []rune(dayssm[t.Weekday()])...)
 				i += 3
 				continue
 			case "МММ", "MMM":
 				if wasday {
-					res = append(res, []rune(months2[t.Месяц()])[:3]...)
+					res = append(res, []rune(months2[t.Month()])[:3]...)
 				} else {
-					res = append(res, []rune(months1[t.Месяц()])[:3]...)
+					res = append(res, []rune(months1[t.Month()])[:3]...)
 				}
 				i += 3
 				continue
 			case "ссс", "sss":
-				sm := strconv.FormatInt(t.Миллисекунда(), 10)
+				sm := strconv.FormatInt(int64(t.Millisecond()), 10)
 				if len(sm) < 3 {
 					sm = strings.Repeat("0", 3-len(sm)) + sm
 				}
@@ -650,7 +769,7 @@ func (t VMTime) Формат(fmtstr string) string {
 			i++
 			continue
 		case 'К', 'Q':
-			sm := strconv.FormatInt(t.Квартал(), 10)
+			sm := strconv.FormatInt(int64(t.Quarter()), 10)
 			res = append(res, []rune(sm)...)
 			i++
 			continue
@@ -659,51 +778,131 @@ func (t VMTime) Формат(fmtstr string) string {
 		i++
 	}
 
-	return string(res)
+	rets.Append(VMString(string(res)))
+	return nil
 }
 
-func (t VMTime) Вычесть(t2 VMTime) VMTimeDuration {
+func (t VMTime) Sub(t2 VMTime) VMTimeDuration {
 	return VMTimeDuration(time.Time(t).Sub(time.Time(t2)))
 }
 
-func (t VMTime) Добавить(d VMTimeDuration) VMTime {
+func (t VMTime) Вычесть(args VMSlice, rets *VMSlice) error {
+	t2, ok := args[0].(VMTime)
+	if !ok {
+		return errors.New("Требуется значение типа Дата")
+	}
+	rets.Append(t.Sub(t2))
+	return nil
+}
+
+func (t VMTime) Add(d VMTimeDuration) VMTime {
 	return VMTime(time.Time(t).Add(time.Duration(d)))
 }
 
-func (t VMTime) ДобавитьПериод(dy, dm, dd int) VMTime {
-	return VMTime(time.Time(t).AddDate(dy, dm, dd))
+func (t VMTime) Добавить(args VMSlice, rets *VMSlice) error {
+	d, ok := args[0].(VMTimeDuration)
+	if !ok {
+		return errors.New("Требуется значение типа Длительность")
+	}
+	rets.Append(t.Add(d))
+	return nil
 }
 
-func (t VMTime) Раньше(d VMTime) bool {
+func (t VMTime) ДобавитьПериод(args VMSlice, rets *VMSlice) error { //(dy, dm, dd int) VMTime {
+	dy, ok := args[0].(VMInt)
+	if !ok {
+		return errors.New("Требуется значение типа ЦелоеЧисло")
+	}
+	dm, ok := args[1].(VMInt)
+	if !ok {
+		return errors.New("Требуется значение типа ЦелоеЧисло")
+	}
+	dd, ok := args[2].(VMInt)
+	if !ok {
+		return errors.New("Требуется значение типа ЦелоеЧисло")
+	}
+	rets.Append(VMTime(time.Time(t).AddDate(int(dy), int(dm), int(dd))))
+	return nil
+}
+
+func (t VMTime) Before(d VMTime) bool {
 	return time.Time(t).Before(time.Time(d))
 }
 
-func (t VMTime) Позже(d VMTime) bool {
+func (t VMTime) Раньше(args VMSlice, rets *VMSlice) error { //(d VMTime) bool {
+	t2, ok := args[0].(VMTime)
+	if !ok {
+		return errors.New("Требуется значение типа Дата")
+	}
+	rets.Append(VMBool(t.Before(t2)))
+	return nil
+}
+
+func (t VMTime) After(d VMTime) bool {
 	return time.Time(t).After(time.Time(d))
 }
 
-func (t VMTime) Равно(d VMTime) bool {
+func (t VMTime) Позже(args VMSlice, rets *VMSlice) error { //(d VMTime) bool {
+	t2, ok := args[0].(VMTime)
+	if !ok {
+		return errors.New("Требуется значение типа Дата")
+	}
+	rets.Append(VMBool(t.After(t2)))
+	return nil
+}
+
+func (t VMTime) Equal(d VMTime) bool {
 	// для разных локаций тоже работает, в отличие от =
 	return time.Time(t).Equal(time.Time(d))
 }
 
-func (t VMTime) Пустая() bool {
+func (t VMTime) Равно(args VMSlice, rets *VMSlice) error { //(d VMTime) bool {
+	// для разных локаций тоже работает, в отличие от =
+	t2, ok := args[0].(VMTime)
+	if !ok {
+		return errors.New("Требуется значение типа Дата")
+	}
+	rets.Append(VMBool(t.Equal(t2)))
+	return nil
+}
+
+func (t VMTime) IsZero() bool {
 	return time.Time(t).IsZero()
 }
 
-func (t VMTime) Местное() VMTime {
+func (t VMTime) Пустая(args VMSlice, rets *VMSlice) error { //() bool {
+	rets.Append(VMBool(t.IsZero()))
+	return nil
+}
+
+func (t VMTime) Local() VMTime {
 	return VMTime(time.Time(t).Local())
+}
+
+func (t VMTime) Местное(args VMSlice, rets *VMSlice) error { //() VMTime {
+	rets.Append(t.Local())
+	return nil
 }
 
 func (t VMTime) UTC() VMTime {
 	return VMTime(time.Time(t).UTC())
 }
 
-func (t VMTime) Локация() string {
+func (t VMTime) ВремяUTC(args VMSlice, rets *VMSlice) error { //() VMTime {
+	rets.Append(t.UTC())
+	return nil
+}
+
+func (t VMTime) LocationString() string {
 	return time.Time(t).Location().String()
 }
 
-func (t VMTime) ВЛокации(name string) VMTime {
+func (t VMTime) Локация(args VMSlice, rets *VMSlice) error { //() string {
+	rets.Append(VMString(t.LocationString()))
+	return nil
+}
+
+func (t VMTime) InLocation(name string) VMTime {
 	loc, err := time.LoadLocation(name)
 	if err != nil {
 		panic(err)
@@ -711,20 +910,34 @@ func (t VMTime) ВЛокации(name string) VMTime {
 	return VMTime(time.Time(t).In(loc))
 }
 
+func (t VMTime) ВЛокации(args VMSlice, rets *VMSlice) error { //(name string) VMTime {
+	name, ok := args[0].(VMString)
+	if !ok {
+		return errors.New("Требуется значение типа Строка")
+	}
+	loc, err := time.LoadLocation(string(name))
+	if err != nil {
+		return err
+	}
+	rets.Append(VMTime(time.Time(t).In(loc)))
+	return nil
+}
+
+// EvalBinOp сравнивает два значения или выполняет бинарную операцию
 func (x VMTime) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	switch op {
 	case ADD:
 		switch yy := y.(type) {
 		case VMDurationer:
-			return x.Добавить(yy.Duration()), nil
+			return x.Add(yy.Duration()), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case SUB:
 		switch yy := y.(type) {
 		case VMDurationer:
-			return x.Добавить(VMTimeDuration(-int64(yy.Duration()))), nil
+			return x.Add(VMTimeDuration(-int64(yy.Duration()))), nil
 		case VMTime:
-			return x.Вычесть(yy), nil
+			return x.Sub(yy), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case MUL:
@@ -736,37 +949,37 @@ func (x VMTime) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	case EQL:
 		switch yy := y.(type) {
 		case VMDateTimer:
-			return VMBool(x.Равно(yy.Time())), nil
+			return VMBool(x.Equal(yy.Time())), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case NEQ:
 		switch yy := y.(type) {
 		case VMDateTimer:
-			return VMBool(!x.Равно(yy.Time())), nil
+			return VMBool(!x.Equal(yy.Time())), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case GTR:
 		switch yy := y.(type) {
 		case VMDateTimer:
-			return VMBool(x.Позже(yy.Time())), nil
+			return VMBool(x.After(yy.Time())), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case GEQ:
 		switch yy := y.(type) {
 		case VMDateTimer:
-			return VMBool(x.Равно(yy.Time()) || x.Позже(yy.Time())), nil
+			return VMBool(x.Equal(yy.Time()) || x.After(yy.Time())), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case LSS:
 		switch yy := y.(type) {
 		case VMDateTimer:
-			return VMBool(x.Раньше(yy.Time())), nil
+			return VMBool(x.Before(yy.Time())), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case LEQ:
 		switch yy := y.(type) {
 		case VMDateTimer:
-			return VMBool(x.Равно(yy.Time()) || x.Раньше(yy.Time())), nil
+			return VMBool(x.Equal(yy.Time()) || x.Before(yy.Time())), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case OR:
