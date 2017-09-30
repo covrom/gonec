@@ -152,6 +152,58 @@ func (v *VMMetaObj) VMGetMethod(name int) (VMFunc, bool) {
 	return rv, ok
 }
 
+func (v *VMMetaObj) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case *VMMetaObj:
+			eq := v.Hash() == yy.Hash()
+			return VMBool(eq), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case *VMMetaObj:
+			eq := v.Hash() != yy.Hash()
+			return VMBool(eq), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
+
 func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	switch nt {
 	case ReflectVMString:
@@ -171,7 +223,5 @@ func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
 
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
-
-// TODO: equal, равенство по хэшу
 
 // TODO: маршаллинг исходной структуры, как у VMTime!!!
