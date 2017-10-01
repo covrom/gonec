@@ -8,6 +8,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+func init() {
+	decimal.MarshalJSONWithoutQuotes = true
+}
+
 // VMDecimal с плавающей токой, для финансовых расчетов высокой точности (decimal)
 type VMDecimal decimal.Decimal
 

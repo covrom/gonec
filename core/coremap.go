@@ -310,37 +310,51 @@ func (x *VMStringMap) GobDecode(data []byte) error {
 	return x.UnmarshalBinary(data)
 }
 
-// TODO:
+func (x VMStringMap) String() string {
+	b, err := json.Marshal(x)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
-// func (x VMStringMap) MarshalText() ([]byte, error) {
-// 	var buf bytes.Buffer
-// 	buf.WriteString(time.Duration(x).String())
-// 	return buf.Bytes(), nil
-// }
+func (x VMStringMap) MarshalText() ([]byte, error) {
+	b, err := json.Marshal(x)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
 
-// func (x *VMStringMap) UnmarshalText(data []byte) error {
-// 	d, err := time.ParseDuration(string(data))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	*x = VMTimeDuration(d)
-// 	return nil
-// }
+func (x *VMStringMap) UnmarshalText(data []byte) error {
+	sm, err := VMStringMapFromJson(string(data))
+	if err != nil {
+		return err
+	}
+	*x = sm
+	return nil
+}
 
-// func (x VMStringMap) MarshalJSON() ([]byte, error) {
-// 	b, err := x.MarshalText()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return []byte("\"" + string(b) + "\""), nil
-// }
+func (x VMStringMap) MarshalJSON() ([]byte, error) {
+	var err error
+	rm := make(map[string]json.RawMessage, len(x))
+	for k, v := range x {
+		rm[k], err = json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return json.Marshal(rm)
+}
 
-// func (x *VMStringMap) UnmarshalJSON(data []byte) error {
-// 	if string(data) == "null" {
-// 		return nil
-// 	}
-// 	if len(data) > 2 && data[0] == '"' && data[len(data)-1] == '"' {
-// 		data = data[1 : len(data)-1]
-// 	}
-// 	return x.UnmarshalText(data)
-// }
+func (x *VMStringMap) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	sm, err := VMStringMapFromJson(string(data))
+	if err != nil {
+		return err
+	}
+	*x = sm
+	return nil
+}
