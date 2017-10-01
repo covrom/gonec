@@ -157,6 +157,113 @@ func fmtInt(buf []byte, v uint64) int {
 	return w
 }
 
+// EvalBinOp сравнивает два значения или выполняет бинарную операцию
+func (x VMTimeDuration) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMTimeDuration(int64(x) + int64(yy)), nil
+		case VMTime:
+			return yy.Add(x), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMTimeDuration(int64(x) - int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		switch yy := y.(type) {
+		case VMInt:
+			return VMTimeDuration(int64(x) * int64(yy)), nil
+		case VMDecimal:
+			return VMTimeDuration(yy.Mul(NewVMDecimalFromInt64(int64(x))).Int()), nil
+		case VMTimeDuration:
+			return VMTimeDuration(int64(x) * int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMTimeDuration(int64(x) / int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMTimeDuration(int64(x) % int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMBool(int64(x) == int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMBool(int64(x) != int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMBool(int64(x) > int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMBool(int64(x) >= int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMBool(int64(x) < int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		switch yy := y.(type) {
+		case VMTimeDuration:
+			return VMBool(int64(x) <= int64(yy)), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
+
+func (x VMTimeDuration) ConvertToType(nt reflect.Type) (VMValuer, error) {
+	switch nt {
+	case ReflectVMString:
+		return VMString(x.String()), nil
+	case ReflectVMInt:
+		return VMInt(int64(x)), nil
+	case ReflectVMTimeDuration:
+		return x, nil
+	case ReflectVMDecimal:
+		return NewVMDecimalFromInt64(int64(x)), nil
+	}
+	return VMNil, errors.New("Приведение к типу невозможно")
+}
+
 func (x VMTimeDuration) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 	binary.Write(&buf, binary.LittleEndian, int64(x))

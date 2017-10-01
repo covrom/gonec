@@ -143,8 +143,6 @@ func Import(env *Env) *Env {
 		return errors.New("Должно быть число секунд (допустимо с дробной частью)")
 	}))
 
-	// TODO: добавить операции по умножению длительностей VMTimeDuration на числа VMNumberer.Decimal
-
 	env.DefineS("длительностьнаносекунды", VMNanosecond)
 	env.DefineS("длительностьмикросекунды", VMMicrosecond)
 	env.DefineS("длительностьмиллисекунды", VMMillisecond)
