@@ -207,9 +207,6 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		return append(x, y), nil
 		// return VMNil, errors.New("Операция между значениями невозможна")
 	case SUB:
-
-		// TODO: оптимизировать для сортированных слайсов VMSliceUpSort, VMSliceDownSort
-
 		// удаляем из первого слайса любые элементы второго слайса, встречающиеся в первом
 		switch yy := y.(type) {
 		case VMSlice:
