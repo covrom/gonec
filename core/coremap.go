@@ -49,198 +49,143 @@ func (x VMStringMap) Hash() VMString {
 	return VMString(hex.EncodeToString(h))
 }
 
-// TODO: равенство по равенству набора ключей, затем их значений
-
-// func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
-// 	switch op {
-// 	case ADD:
-// 		// добавляем второй слайс в конец первого
-// 		switch yy := y.(type) {
-// 		case VMSlice:
-// 			return append(x, yy...), nil
-// 		}
-// 		return append(x, y), nil
-// 		// return VMNil, errors.New("Операция между значениями невозможна")
-// 	case SUB:
-// 		// удаляем из первого слайса любые элементы второго слайса, встречающиеся в первом
-// 		switch yy := y.(type) {
-// 		case VMSlice:
-// 			// проходим слайс и переставляем ненайденные в вычитаемом слайсе элементы
-// 			il := 0
-// 			for i := range x {
-// 				fnd := false
-// 				for j := range yy {
-// 					if xop, ok := x[i].(VMOperationer); ok {
-// 						if yop, ok := yy[j].(VMOperationer); ok {
-// 							cmp, err := xop.EvalBinOp(EQL, yop)
-// 							if err == nil {
-// 								if rcmp, ok := cmp.(VMBool); ok {
-// 									if bool(rcmp) {
-// 										fnd = true
-// 										break
-// 									}
-// 								}
-// 							}
-// 						}
-// 					}
-// 				}
-// 				if !fnd {
-// 					if il < i {
-// 						x[il] = x[i]
-// 						il++
-// 					}
-// 				}
-// 			}
-// 			return x[:il], nil
-// 		}
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case MUL:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case QUO:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case REM:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case EQL:
-// 		switch yy := y.(type) {
-// 		case VMSlice:
-// 			eq := true
-// 			for i := range x {
-// 				for j := range yy {
-// 					if xop, ok := x[i].(VMOperationer); ok {
-// 						if yop, ok := yy[j].(VMOperationer); ok {
-// 							cmp, err := xop.EvalBinOp(EQL, yop)
-// 							if err == nil {
-// 								if rcmp, ok := cmp.(VMBool); ok {
-// 									if !bool(rcmp) {
-// 										eq = false
-// 										goto eqlret
-// 									}
-// 								} else {
-// 									eq = false
-// 									goto eqlret
-// 								}
-// 							} else {
-// 								eq = false
-// 								goto eqlret
-// 							}
-// 						}
-// 					}
-// 				}
-// 			}
-// 		eqlret:
-// 			return VMBool(eq), nil
-// 		}
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case NEQ:
-// 		switch yy := y.(type) {
-// 		case VMSlice:
-// 			eq := true
-// 			for i := range x {
-// 				for j := range yy {
-// 					if xop, ok := x[i].(VMOperationer); ok {
-// 						if yop, ok := yy[j].(VMOperationer); ok {
-// 							cmp, err := xop.EvalBinOp(EQL, yop)
-// 							if err == nil {
-// 								if rcmp, ok := cmp.(VMBool); ok {
-// 									if !bool(rcmp) {
-// 										eq = false
-// 										goto neqlret
-// 									}
-// 								} else {
-// 									eq = false
-// 									goto neqlret
-// 								}
-// 							} else {
-// 								eq = false
-// 								goto neqlret
-// 							}
-// 						}
-// 					}
-// 				}
-// 			}
-// 		neqlret:
-// 			return VMBool(!eq), nil
-// 		}
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case GTR:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case GEQ:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case LSS:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case LEQ:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case OR:
-// 		// добавляем в конец первого слайса только те элементы второго слайса, которые не встречаются в первом
-// 		switch yy := y.(type) {
-// 		case VMSlice:
-// 			rv := x[:]
-// 			for j := range yy {
-// 				fnd := false
-// 				for i := range x {
-// 					if xop, ok := x[i].(VMOperationer); ok {
-// 						if yop, ok := yy[j].(VMOperationer); ok {
-// 							cmp, err := xop.EvalBinOp(EQL, yop)
-// 							if err == nil {
-// 								if rcmp, ok := cmp.(VMBool); ok {
-// 									if bool(rcmp) {
-// 										fnd = true
-// 										break
-// 									}
-// 								}
-// 							}
-// 						}
-// 					}
-// 				}
-// 				if !fnd {
-// 					rv = append(rv, yy[j])
-// 				}
-// 			}
-// 			return rv, nil
-// 		}
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case LOR:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case AND:
-// 		// оставляем только те элементы, которые есть в обоих слайсах
-// 		switch yy := y.(type) {
-// 		case VMSlice:
-// 			rv := x[:0]
-// 			for i := range x {
-// 				fnd := false
-// 				for j := range yy {
-// 					if xop, ok := x[i].(VMOperationer); ok {
-// 						if yop, ok := yy[j].(VMOperationer); ok {
-// 							cmp, err := xop.EvalBinOp(EQL, yop)
-// 							if err == nil {
-// 								if rcmp, ok := cmp.(VMBool); ok {
-// 									if bool(rcmp) {
-// 										fnd = true
-// 										break
-// 									}
-// 								}
-// 							}
-// 						}
-// 					}
-// 				}
-// 				if fnd {
-// 					rv = append(rv, x[i])
-// 				}
-// 			}
-// 			return rv, nil
-// 		}
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case LAND:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case POW:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case SHR:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	case SHL:
-// 		return VMNil, errors.New("Операция между значениями невозможна")
-// 	}
-// 	return VMNil, errors.New("Неизвестная операция")
-// }
+func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		// новые добавляются, а существующие обновляются
+		switch yy := y.(type) {
+		case VMStringMap:
+			rv := make(VMStringMap)
+			for k, v := range x {
+				if _, ok := yy[k]; !ok {
+					rv[k] = v
+				}
+			}
+			for k, v := range yy {
+				rv[k] = v
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		switch yy := y.(type) {
+		case VMStringMap:
+			rv := make(VMStringMap)
+			for k, v := range x {
+				if _, ok := yy[k]; !ok {
+					rv[k] = v
+				}
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		switch yy := y.(type) {
+		case VMStringMap:
+			rv := make(VMStringMap)
+			for k, v := range x {
+				if _, ok := yy[k]; !ok {
+					rv[k] = v
+				}
+			}
+			for k := range yy {
+				// if _, ok := rv[k]; ok {
+				delete(rv, k)
+				// }
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch yy := y.(type) {
+		case VMStringMap:
+			if len(x) != len(yy) {
+				return VMBool(false), nil
+			}
+			for k, v := range x {
+				if yv, ok := yy[k]; ok {
+					if EqualVMValues(v, yv) {
+						return VMBool(false), nil
+					}
+				} else {
+					return VMBool(false), nil
+				}
+			}
+			return VMBool(true), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch yy := y.(type) {
+		case VMStringMap:
+			if len(x) != len(yy) {
+				return VMBool(true), nil
+			}
+			for k, v := range x {
+				if yv, ok := yy[k]; ok {
+					if EqualVMValues(v, yv) {
+						return VMBool(true), nil
+					}
+				} else {
+					return VMBool(true), nil
+				}
+			}
+			return VMBool(false), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		// только добавляем только те, которых еще нет, в отличие от ADD, где существующие обновляются
+		switch yy := y.(type) {
+		case VMStringMap:
+			rv := make(VMStringMap)
+			for k, v := range x {
+				rv[k] = v
+			}
+			for k, v := range yy {
+				if _, ok := rv[k]; !ok {
+					rv[k] = v
+				}
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		// оставляем только те элементы, которые есть в обоих структурах
+		switch yy := y.(type) {
+		case VMStringMap:
+			rv := make(VMStringMap)
+			for k, v := range x {
+				if _, ok := yy[k]; ok {
+					rv[k] = v
+				}
+			}
+			return rv, nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
 
 func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 

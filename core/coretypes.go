@@ -322,3 +322,17 @@ func VMStringMapFromJson(x string) (VMStringMap, error) {
 	}
 	return rvms, nil
 }
+
+func EqualVMValues(v1, v2 VMValuer) bool {
+	if xop, ok := v1.(VMOperationer); ok {
+		if yop, ok := v2.(VMOperationer); ok {
+			cmp, err := xop.EvalBinOp(EQL, yop)
+			if err == nil {
+				if rcmp, ok := cmp.(VMBool); ok {
+					return bool(rcmp)
+				}
+			}
+		}
+	}
+	return false
+}

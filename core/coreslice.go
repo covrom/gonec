@@ -114,10 +114,12 @@ func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //V
 func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	switch op {
 	case ADD:
-		// добавляем второй слайс в конец первого
 		switch yy := y.(type) {
 		case VMSlice:
+			// добавляем второй слайс в конец первого
 			return append(x, yy...), nil
+		case VMValuer:
+			return append(x, yy), nil
 		}
 		return append(x, y), nil
 		// return VMNil, errors.New("Операция между значениями невозможна")
@@ -129,32 +131,22 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		switch yy := y.(type) {
 		case VMSlice:
 			// проходим слайс и переставляем ненайденные в вычитаемом слайсе элементы
+			rv := make(VMSlice, len(x))
 			il := 0
 			for i := range x {
 				fnd := false
 				for j := range yy {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if bool(rcmp) {
-										fnd = true
-										break
-									}
-								}
-							}
-						}
+					if EqualVMValues(x[i], yy[j]) {
+						fnd = true
+						break
 					}
 				}
 				if !fnd {
-					if il < i {
-						x[il] = x[i]
-					}
+					rv[il] = x[i]
 					il++
 				}
 			}
-			return x[:il], nil
+			return rv[:il], nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case MUL:
@@ -163,71 +155,51 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case REM:
 		// оставляем только элементы, которые есть в первом и нет во втором и есть во втором но нет в первом
-		// эквивалентно (С1 | С2) - (С1 & С2), или (С1-С2)|(С2-С1), внешнее соединение
+		// эквивалентно (С1 | С2) - (С1 & С2), или (С1-С2)|(С2-С1), или С2-(С1-С2), внешнее соединение
 
 		switch yy := y.(type) {
 		case VMSlice:
+			rvx := make(VMSlice, len(x))
+			rvy := make(VMSlice, len(yy))
 			// С1-С2
 			il := 0
 			for i := range x {
 				fnd := false
 				for j := range yy {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if bool(rcmp) {
-										fnd = true
-										break
-									}
-								}
-							}
-						}
+					if EqualVMValues(x[i], yy[j]) {
+						fnd = true
+						break
 					}
 				}
 				if !fnd {
 					// оставляем
-					if il < i {
-						x[il] = x[i]
-					}
+					rvx[il] = x[i]
 					il++
 				}
 			}
 
-			x = x[:il]
+			rvx = rvx[:il]
 
 			// С2-(С1-C2)
 			il = 0
 			for j := range yy {
 				fnd := false
 				for i := range x {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if bool(rcmp) {
-										fnd = true
-										break
-									}
-								}
-							}
-						}
+					if EqualVMValues(x[i], yy[j]) {
+						fnd = true
+						break
 					}
 				}
 				if !fnd {
 					// оставляем
-					if il < j {
-						yy[il] = yy[j]
-					}
+					rvy[il] = yy[j]
 					il++
 				}
 			}
 
-			yy = yy[:il]
+			rvy = rvy[:il]
 
-			return append(x, yy...), nil
+			return append(rvx, rvy...), nil
 		}
 
 		return VMNil, errors.New("Операция между значениями невозможна")
@@ -235,63 +207,33 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		// равенство по глубокому равенству элементов
 		switch yy := y.(type) {
 		case VMSlice:
-			eq := true
+			if len(x) != len(yy) {
+				return VMBool(false), nil
+			}
 			for i := range x {
 				for j := range yy {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if !bool(rcmp) {
-										eq = false
-										goto eqlret
-									}
-								} else {
-									eq = false
-									goto eqlret
-								}
-							} else {
-								eq = false
-								goto eqlret
-							}
-						}
+					if !EqualVMValues(x[i], yy[j]) {
+						return VMBool(false), nil
 					}
 				}
 			}
-		eqlret:
-			return VMBool(eq), nil
+			return VMBool(true), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case NEQ:
 		switch yy := y.(type) {
 		case VMSlice:
-			eq := true
+			if len(x) != len(yy) {
+				return VMBool(true), nil
+			}
 			for i := range x {
 				for j := range yy {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if !bool(rcmp) {
-										eq = false
-										goto neqlret
-									}
-								} else {
-									eq = false
-									goto neqlret
-								}
-							} else {
-								eq = false
-								goto neqlret
-							}
-						}
+					if !EqualVMValues(x[i], yy[j]) {
+						return VMBool(true), nil
 					}
 				}
 			}
-		neqlret:
-			return VMBool(!eq), nil
+			return VMBool(false), nil
 		}
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case GTR:
@@ -310,18 +252,9 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			for j := range yy {
 				fnd := false
 				for i := range x {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if bool(rcmp) {
-										fnd = true
-										break
-									}
-								}
-							}
-						}
+					if EqualVMValues(x[i], yy[j]) {
+						fnd = true
+						break
 					}
 				}
 				if !fnd {
@@ -337,22 +270,13 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		// оставляем только те элементы, которые есть в обоих слайсах
 		switch yy := y.(type) {
 		case VMSlice:
-			rv := x[:0]
+			rv := make(VMSlice, 0, len(x))
 			for i := range x {
 				fnd := false
 				for j := range yy {
-					if xop, ok := x[i].(VMOperationer); ok {
-						if yop, ok := yy[j].(VMOperationer); ok {
-							cmp, err := xop.EvalBinOp(EQL, yop)
-							if err == nil {
-								if rcmp, ok := cmp.(VMBool); ok {
-									if bool(rcmp) {
-										fnd = true
-										break
-									}
-								}
-							}
-						}
+					if EqualVMValues(x[i], yy[j]) {
+						fnd = true
+						break
 					}
 				}
 				if fnd {
