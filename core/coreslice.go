@@ -8,10 +8,8 @@ import (
 	"errors"
 	"reflect"
 	"sort"
-	"strings"
 
 	"github.com/covrom/gonec/names"
-	"github.com/shopspring/decimal"
 )
 
 type VMSlice []VMValuer
@@ -82,6 +80,12 @@ func (x VMSlice) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, x.Обратить), true
 	case "скопировать":
 		return VMFuncMustParams(0, x.Скопировать), true
+	case "найти":
+		return VMFuncMustParams(1, x.Найти), true
+	case "найтисорт":
+		return VMFuncMustParams(1, x.НайтиСорт), true
+	case "вставить":
+		return VMFuncMustParams(2, (&x).Вставить), true
 	}
 
 	return nil, false
@@ -92,8 +96,63 @@ func (x VMSlice) Сортировать(args VMSlice, rets *VMSlice) error {
 	return nil
 }
 
+// Найти (значение) (индекс, найдено) - находит индекс значения или места для его вставки (конец списка), если его еще нет
+// возврат унифицирован с возвратом функции НайтиСорт
+func (x VMSlice) Найти(args VMSlice, rets *VMSlice) error {
+	y := args[0]
+	p := 0
+	fnd := false
+	for p < len(x) {
+		if EqualVMValues(x[p], y) {
+			fnd = true
+			break
+		}
+		p++
+	}
+	rets.Append(VMInt(p))
+	rets.Append(VMBool(fnd))
+	return nil
+}
+
+// НайтиСорт (значение) (индекс, найдено) - находит индекс значения или места для его вставки, если его еще нет
+// поиск осуществляется в отсортированном по возрастанию массиве
+// иначе будет непредсказуемый ответ
+func (x VMSlice) НайтиСорт(args VMSlice, rets *VMSlice) error {
+	y := args[0]
+	p := sort.Search(len(x), func(i int) bool { return !SortLessVMValues(x[i], y) }) //data[i] >= x
+	if p < len(x) && EqualVMValues(x[p], y) {
+		// y is present at x[p]
+		rets.Append(VMInt(p))
+		rets.Append(VMBool(true))
+	} else {
+		// y is not present in x,
+		// but p is the index where it would be inserted.
+		rets.Append(VMInt(p))
+		rets.Append(VMBool(false))
+	}
+	return nil
+}
+
+// Вставить (индекс, значение) - вставляет значение по индексу.
+// Индекс может быть равен длине, тогда вставка происходит в последний элемент.
+// Обычно используется в связке с НайтиСорт, т.к. позволяет вставлять значения с сохранением сортировки по возрастанию
+func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice) error {
+	p, ok := args[0].(VMInt)
+	if !ok {
+		return errors.New("Первый аргумент должен быть целым числом")
+	}
+	if int(p) < 0 || int(p) > len(*x) {
+		return errors.New("Индекс находится за пределами массива")
+	}
+	y := args[1]
+	*x = append(*x, VMNil)
+	copy((*x)[p+1:], (*x)[p:])
+	(*x)[p] = y
+	return nil
+}
+
 func (x VMSlice) СортироватьУбыв(args VMSlice, rets *VMSlice) error {
-	sort.Sort(VMSliceDownSort(x))
+	sort.Sort(sort.Reverse(VMSliceUpSort(x)))
 	return nil
 }
 
@@ -109,26 +168,27 @@ func (x VMSlice) CopyRecursive() VMSlice {
 	for i, v := range x {
 		switch vv := v.(type) {
 		case VMSlice:
-			rv[i]=vv.CopyRecursive()
+			rv[i] = vv.CopyRecursive()
 		case VMStringMap:
-			rv[i]=vv.CopyRecursive()
+			rv[i] = vv.CopyRecursive()
 		default:
-			rv[i]=v
+			rv[i] = v
 		}
 	}
 	return rv
 }
 
+// Скопировать - помимо обычного копирования еще и рекурсивно копирует и слайсы/структуры, находящиеся в элементах
 func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	copy(rv, x)
-	for i,v:=range rv{
+	for i, v := range rv {
 		switch vv := v.(type) {
 		case VMSlice:
-			rv[i]=vv.CopyRecursive()
+			rv[i] = vv.CopyRecursive()
 		case VMStringMap:
-			rv[i]=vv.CopyRecursive()
-		}		
+			rv[i] = vv.CopyRecursive()
+		}
 	}
 	rets.Append(rv)
 	return nil
@@ -453,158 +513,9 @@ func (x *VMSlice) UnmarshalJSON(data []byte) error {
 // VMSliceUpSort - обертка для сортировки слайса по возрастанию
 type VMSliceUpSort VMSlice
 
-func (x VMSliceUpSort) Len() int      { return len(x) }
-func (x VMSliceUpSort) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
-func (x VMSliceUpSort) Less(i, j int) bool {
-
-	// числа
-	if vi, ok := x[i].(VMInt); ok {
-		if vj, ok := x[j].(VMInt); ok {
-			return vi.Int() < vj.Int()
-		}
-		if vj, ok := x[j].(VMDecimal); ok {
-			vii := decimal.New(int64(vi), 0)
-			return vii.LessThan(decimal.Decimal(vj))
-		}
-	}
-
-	if vi, ok := x[i].(VMDecimal); ok {
-		if vj, ok := x[j].(VMInt); ok {
-			vjj := decimal.New(int64(vj), 0)
-			return decimal.Decimal(vi).LessThan(vjj)
-		}
-		if vj, ok := x[j].(VMDecimal); ok {
-			return decimal.Decimal(vi).LessThan(decimal.Decimal(vj))
-		}
-	}
-
-	// строки
-	if vi, ok := x[i].(VMString); ok {
-		if vj, ok := x[j].(VMString); ok {
-			return strings.Compare(vi.String(), vj.String()) == -1
-		}
-		if vj, ok := x[j].(VMInt); ok {
-			return strings.Compare(vi.String(), vj.String()) == -1
-		}
-		if vj, ok := x[j].(VMDecimal); ok {
-			return strings.Compare(vi.String(), vj.String()) == -1
-		}
-	}
-
-	// булево
-
-	if vi, ok := x[i].(VMBool); ok {
-		if vj, ok := x[j].(VMBool); ok {
-			return !vi.Bool() && vj.Bool()
-		}
-	}
-
-	// дата
-
-	if vi, ok := x[i].(VMTime); ok {
-		if vj, ok := x[j].(VMTime); ok {
-			return vi.Before(vj)
-		}
-	}
-
-	// длительность
-	if vi, ok := x[i].(VMTimeDuration); ok {
-		if vj, ok := x[j].(VMTimeDuration); ok {
-			return int64(vi) < int64(vj)
-		}
-	}
-
-	// прочее
-
-	if vi, ok := x[i].(VMOperationer); ok {
-		if vj, ok := x[j].(VMOperationer); ok {
-			b, err := vi.EvalBinOp(LSS, vj)
-			if err == nil {
-				return b.(VMBool).Bool()
-			}
-		}
-	}
-
-	return false
-}
-
-// VMSliceDownSort по убыванию
-type VMSliceDownSort VMSlice
-
-func (x VMSliceDownSort) Len() int      { return len(x) }
-func (x VMSliceDownSort) Swap(i, j int) { x[i], x[j] = x[j], x[i] }
-func (x VMSliceDownSort) Less(i, j int) bool {
-
-	// числа
-	if vi, ok := x[i].(VMInt); ok {
-		if vj, ok := x[j].(VMInt); ok {
-			return vi.Int() > vj.Int()
-		}
-		if vj, ok := x[j].(VMDecimal); ok {
-			vii := decimal.New(int64(vi), 0)
-			return vii.GreaterThan(decimal.Decimal(vj))
-		}
-	}
-
-	if vi, ok := x[i].(VMDecimal); ok {
-		if vj, ok := x[j].(VMInt); ok {
-			vjj := decimal.New(int64(vj), 0)
-			return decimal.Decimal(vi).GreaterThan(vjj)
-		}
-		if vj, ok := x[j].(VMDecimal); ok {
-			return decimal.Decimal(vi).GreaterThan(decimal.Decimal(vj))
-		}
-	}
-
-	// строки
-	if vi, ok := x[i].(VMString); ok {
-		if vj, ok := x[j].(VMString); ok {
-			return strings.Compare(vi.String(), vj.String()) == 1
-		}
-		if vj, ok := x[j].(VMInt); ok {
-			return strings.Compare(vi.String(), vj.String()) == 1
-		}
-		if vj, ok := x[j].(VMDecimal); ok {
-			return strings.Compare(vi.String(), vj.String()) == 1
-		}
-	}
-
-	// булево
-
-	if vi, ok := x[i].(VMBool); ok {
-		if vj, ok := x[j].(VMBool); ok {
-			return !(!vi.Bool() && vj.Bool())
-		}
-	}
-
-	// дата
-
-	if vi, ok := x[i].(VMTime); ok {
-		if vj, ok := x[j].(VMTime); ok {
-			return vi.After(vj)
-		}
-	}
-
-	// длительность
-	if vi, ok := x[i].(VMTimeDuration); ok {
-		if vj, ok := x[j].(VMTimeDuration); ok {
-			return int64(vi) > int64(vj)
-		}
-	}
-
-	// прочее
-
-	if vi, ok := x[i].(VMOperationer); ok {
-		if vj, ok := x[j].(VMOperationer); ok {
-			b, err := vi.EvalBinOp(GTR, vj)
-			if err == nil {
-				return b.(VMBool).Bool()
-			}
-		}
-	}
-
-	return false
-}
+func (x VMSliceUpSort) Len() int           { return len(x) }
+func (x VMSliceUpSort) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+func (x VMSliceUpSort) Less(i, j int) bool { return SortLessVMValues(x[i], x[j]) }
 
 // NewVMSliceFromStrings создает слайс вирт. машины []VMString из слайса строк []string на языке Го
 func NewVMSliceFromStrings(ss []string) (rv VMSlice) {

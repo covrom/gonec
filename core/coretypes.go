@@ -496,9 +496,13 @@ func VMStringMapFromJson(x string) (VMStringMap, error) {
 }
 
 func EqualVMValues(v1, v2 VMValuer) bool {
+	return BoolOperVMValues(v1, v2, EQL)
+}
+
+func BoolOperVMValues(v1, v2 VMValuer, op VMOperation) bool {
 	if xop, ok := v1.(VMOperationer); ok {
 		if yop, ok := v2.(VMOperationer); ok {
-			cmp, err := xop.EvalBinOp(EQL, yop)
+			cmp, err := xop.EvalBinOp(op, yop)
 			if err == nil {
 				if rcmp, ok := cmp.(VMBool); ok {
 					return bool(rcmp)
@@ -507,4 +511,66 @@ func EqualVMValues(v1, v2 VMValuer) bool {
 		}
 	}
 	return false
+}
+
+func SortLessVMValues(v1, v2 VMValuer) bool {
+	// числа
+	if vi, ok := v1.(VMInt); ok {
+		if vj, ok := v2.(VMInt); ok {
+			return vi.Int() < vj.Int()
+		}
+		if vj, ok := v2.(VMDecimal); ok {
+			vii := decimal.New(int64(vi), 0)
+			return vii.LessThan(decimal.Decimal(vj))
+		}
+	}
+
+	if vi, ok := v1.(VMDecimal); ok {
+		if vj, ok := v2.(VMInt); ok {
+			vjj := decimal.New(int64(vj), 0)
+			return decimal.Decimal(vi).LessThan(vjj)
+		}
+		if vj, ok := v2.(VMDecimal); ok {
+			return decimal.Decimal(vi).LessThan(decimal.Decimal(vj))
+		}
+	}
+
+	// строки
+	if vi, ok := v1.(VMString); ok {
+		if vj, ok := v2.(VMString); ok {
+			return strings.Compare(vi.String(), vj.String()) == -1
+		}
+		if vj, ok := v2.(VMInt); ok {
+			return strings.Compare(vi.String(), vj.String()) == -1
+		}
+		if vj, ok := v2.(VMDecimal); ok {
+			return strings.Compare(vi.String(), vj.String()) == -1
+		}
+	}
+
+	// булево
+
+	if vi, ok := v1.(VMBool); ok {
+		if vj, ok := v2.(VMBool); ok {
+			return !vi.Bool() && vj.Bool()
+		}
+	}
+
+	// дата
+
+	if vi, ok := v1.(VMTime); ok {
+		if vj, ok := v2.(VMTime); ok {
+			return vi.Before(vj)
+		}
+	}
+
+	// длительность
+	if vi, ok := v1.(VMTimeDuration); ok {
+		if vj, ok := v2.(VMTimeDuration); ok {
+			return int64(vi) < int64(vj)
+		}
+	}
+
+	// прочее
+	return BoolOperVMValues(v1, v2, LSS)
 }
