@@ -55,8 +55,8 @@ func (x VMSlice) IndexVal(i VMValuer) VMValuer {
 }
 
 func (x VMSlice) Hash() VMString {
-	b,err:=x.MarshalBinary()
-	if err!=nil{
+	b, err := x.MarshalBinary()
+	if err != nil {
 		panic(err)
 	}
 	h := make([]byte, 8)
@@ -99,6 +99,9 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		return append(x, y), nil
 		// return VMNil, errors.New("Операция между значениями невозможна")
 	case SUB:
+
+		// TODO: оптимизировать для сортированных слайсов VMSliceUpSort, VMSliceDownSort
+
 		// удаляем из первого слайса любые элементы второго слайса, встречающиеся в первом
 		switch yy := y.(type) {
 		case VMSlice:
@@ -124,8 +127,8 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 				if !fnd {
 					if il < i {
 						x[il] = x[i]
-						il++
 					}
+					il++
 				}
 			}
 			return x[:il], nil
@@ -136,9 +139,77 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	case QUO:
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case REM:
+		// оставляем только элементы, которые есть в первом и нет во втором и есть во втором но нет в первом
+		// эквивалентно (С1 | С2) - (С1 & С2), или (С1-С2)|(С2-С1), внешнее соединение
+
+		switch yy := y.(type) {
+		case VMSlice:
+			// С1-С2
+			il := 0
+			for i := range x {
+				fnd := false
+				for j := range yy {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if bool(rcmp) {
+										fnd = true
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+				if !fnd {
+					// оставляем
+					if il < i {
+						x[il] = x[i]
+					}
+					il++
+				}
+			}
+
+			x = x[:il]
+
+			// С2-(С1-C2)
+			il = 0
+			for j := range yy {
+				fnd := false
+				for i := range x {
+					if xop, ok := x[i].(VMOperationer); ok {
+						if yop, ok := yy[j].(VMOperationer); ok {
+							cmp, err := xop.EvalBinOp(EQL, yop)
+							if err == nil {
+								if rcmp, ok := cmp.(VMBool); ok {
+									if bool(rcmp) {
+										fnd = true
+										break
+									}
+								}
+							}
+						}
+					}
+				}
+				if !fnd {
+					// оставляем
+					if il < j {
+						yy[il] = yy[j]
+					}
+					il++
+				}
+			}
+
+			yy = yy[:il]
+
+			return append(x, yy...), nil
+		}
+
 		return VMNil, errors.New("Операция между значениями невозможна")
 	case EQL:
-		// равенство по полному равенству элементов
+		// равенство по глубокому равенству элементов
 		switch yy := y.(type) {
 		case VMSlice:
 			eq := true
@@ -360,40 +431,54 @@ func (x *VMSlice) GobDecode(data []byte) error {
 	return x.UnmarshalBinary(data)
 }
 
-// TODO:
+func (x VMSlice) String() string {
+	b, err := json.Marshal(x)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
-// func (x VMTimeDuration) MarshalText() ([]byte, error) {
-// 	var buf bytes.Buffer
-// 	buf.WriteString(time.Duration(x).String())
-// 	return buf.Bytes(), nil
-// }
+func (x VMSlice) MarshalText() ([]byte, error) {
+	b, err := json.Marshal(x)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
 
-// func (x *VMTimeDuration) UnmarshalText(data []byte) error {
-// 	d, err := time.ParseDuration(string(data))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	*x = VMTimeDuration(d)
-// 	return nil
-// }
+func (x *VMSlice) UnmarshalText(data []byte) error {
+	sl, err := VMSliceFromJson(string(data))
+	if err != nil {
+		return err
+	}
+	*x = sl
+	return nil
+}
 
-// func (x VMTimeDuration) MarshalJSON() ([]byte, error) {
-// 	b, err := x.MarshalText()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return []byte("\"" + string(b) + "\""), nil
-// }
+func (x VMSlice) MarshalJSON() ([]byte, error) {
+	var err error
+	rm := make([]json.RawMessage, len(x))
+	for i, v := range x {
+		rm[i], err = json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return json.Marshal(rm)
+}
 
-// func (x *VMTimeDuration) UnmarshalJSON(data []byte) error {
-// 	if string(data) == "null" {
-// 		return nil
-// 	}
-// 	if len(data) > 2 && data[0] == '"' && data[len(data)-1] == '"' {
-// 		data = data[1 : len(data)-1]
-// 	}
-// 	return x.UnmarshalText(data)
-// }
+func (x *VMSlice) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		return nil
+	}
+	sl, err := VMSliceFromJson(string(data))
+	if err != nil {
+		return err
+	}
+	*x = sl
+	return nil
+}
 
 // VMSliceUpSort - обертка для сортировки слайса по возрастанию
 type VMSliceUpSort VMSlice
