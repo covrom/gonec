@@ -253,7 +253,14 @@ func (x VMString) ConvertToType(nt reflect.Type) (VMValuer, error) {
 			return VMNil, err
 		}
 		if rv, ok := rm.(VMValuer); ok {
-			return rv, nil
+			if vobj, ok := rv.(VMMetaObject); ok {
+				vobj.VMInit(vobj)
+				vobj.VMRegister()
+				return vobj, nil
+			} else {
+				return nil, errors.New("Невозможно использовать данный тип структуры")
+				//return rv, nil
+			}
 		}
 		return VMNil, errors.New("Объект несовместим с типами интерпретатора")
 	}

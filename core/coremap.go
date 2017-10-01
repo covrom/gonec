@@ -294,7 +294,8 @@ func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 				vobj.VMRegister()
 				return vobj, nil
 			} else {
-				return vv, nil
+				return nil, errors.New("Невозможно использовать данный тип структуры")
+				//return vv, nil
 			}
 		} else {
 			return nil, errors.New("Невозможно использовать данный тип в интерпретаторе")

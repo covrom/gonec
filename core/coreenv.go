@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/gob"
 	"fmt"
 	"io"
 	"os"
@@ -346,6 +347,12 @@ func (e *Env) DefineType(k int, t reflect.Type) error {
 
 func (e *Env) DefineTypeS(k string, t reflect.Type) error {
 	return e.DefineType(names.UniqueNames.Set(k), t)
+}
+
+// DefineTypeStruct регистрирует системную функциональную структуру, переданную в виде указателя!
+func (e *Env) DefineTypeStruct(k string, t interface{}) error {
+	gob.Register(t)
+	return e.DefineType(names.UniqueNames.Set(k), reflect.Indirect(reflect.ValueOf(t)).Type())
 }
 
 // Define defines symbol in current scope.

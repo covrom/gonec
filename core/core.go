@@ -285,7 +285,8 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("длительность", ReflectVMTimeDuration)
 
 	//////////////////
-	env.DefineTypeS("__функциональнаяструктуратест__", reflect.TypeOf(TttStructTest{}))
+	env.DefineTypeStruct("__функциональнаяструктуратест__", &TttStructTest{})
+
 	env.DefineS("__дамп__", VMFunc(func(args VMSlice, rets *VMSlice) error {
 		env.Dump()
 		return nil

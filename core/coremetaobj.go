@@ -1,7 +1,9 @@
 package core
 
 import (
+	"bytes"
 	"encoding/binary"
+	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -32,6 +34,8 @@ func (v *VMMetaObj) Interface() interface{} {
 	//rv:=*(*VMMetaObject)(v.vmOriginal)
 	return v.vmOriginal
 }
+
+func (v *VMMetaObj) VMRegister() {} // не забывать реализовывать этот метод в содержащих VMMetaObj структурах!
 
 func (v *VMMetaObj) String() string {
 	b, err := json.Marshal(v.vmOriginal)
@@ -224,4 +228,32 @@ func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	return VMNil, errors.New("Приведение к типу невозможно")
 }
 
-// TODO: маршаллинг исходной структуры, как у VMTime!!!
+func (v *VMMetaObj) MarshalBinary() ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(v.vmOriginal); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (v *VMMetaObj) UnmarshalBinary(data []byte) error {
+	r := bytes.NewReader(data)
+	dec := gob.NewDecoder(r)
+	var obj VMMetaObject
+	if err := dec.Decode(obj); err != nil {
+		return err
+	}
+	obj.VMInit(obj)
+	obj.VMRegister()
+	*v = *(obj.(*VMMetaObj))
+	return nil
+}
+
+func (v *VMMetaObj) GobEncode() ([]byte, error) {
+	return v.MarshalBinary()
+}
+
+func (v *VMMetaObj) GobDecode(data []byte) error {
+	return v.UnmarshalBinary(data)
+}
