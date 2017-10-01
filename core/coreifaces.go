@@ -25,23 +25,17 @@ type (
 		ParseGoType(interface{}) // используется для указателей, т.к. парсит в их значения
 	}
 
-	// TODO: реализовать VMOperationer во всех типах с возможностью операции с другим операндом
-
 	// VMOperationer может выполнить операцию с другим значением, операцию сравнения или математическую
 	VMOperationer interface {
 		VMValuer
 		EvalBinOp(VMOperation, VMOperationer) (VMValuer, error) // возвращает результат выражения с другим значением
 	}
 
-	// TODO: реализовать VMUnarer во всех типах с унарными операциями
-
 	// VMUnarer может выполнить унарную операцию над свои значением
 	VMUnarer interface {
 		VMValuer
 		EvalUnOp(rune) (VMValuer, error) // возвращает результат выражения с другим значением
 	}
-
-	// TODO: реализовать VMConverter во всех типах, кроме функций
 
 	// VMConverter может конвертироваться в тип reflect.Type
 	VMConverter interface {

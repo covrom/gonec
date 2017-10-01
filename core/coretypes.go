@@ -160,9 +160,93 @@ func (x VMNilType) BinaryType() VMBinaryType {
 	return VMNIL
 }
 
-// TODO: маршалинг Nil,NULL и сравнение их со значениями
-
 var VMNil = VMNilType{}
+
+// EvalBinOp сравнивает два значения или выполняет бинарную операцию
+func (x VMNilType) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch y.(type) {
+		case VMNullType, VMNilType:
+			return VMBool(true), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch y.(type) {
+		case VMNullType, VMNilType:
+			return VMBool(false), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
+
+func (x VMNilType) MarshalBinary() ([]byte, error) {
+	return []byte{}, nil
+}
+
+func (x *VMNilType) UnmarshalBinary(data []byte) error {
+	*x = VMNil
+	return nil
+}
+
+func (x VMNilType) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
+}
+
+func (x *VMNilType) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+func (x VMNilType) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
+
+func (x *VMNilType) UnmarshalText(data []byte) error {
+	*x = VMNil
+	return nil
+}
+
+func (x VMNilType) MarshalJSON() ([]byte, error) {
+	return []byte("null"), nil
+}
+
+func (x *VMNilType) UnmarshalJSON(data []byte) error {
+	*x = VMNil
+	return nil
+}
 
 // тип NULL
 
@@ -177,6 +261,92 @@ func (x VMNullType) BinaryType() VMBinaryType {
 }
 
 var VMNullVar = VMNullType{}
+
+// EvalBinOp сравнивает два значения или выполняет бинарную операцию
+func (x VMNullType) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
+	switch op {
+	case ADD:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SUB:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case MUL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case QUO:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case REM:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case EQL:
+		switch y.(type) {
+		case VMNullType, VMNilType:
+			return VMBool(true), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case NEQ:
+		switch y.(type) {
+		case VMNullType, VMNilType:
+			return VMBool(false), nil
+		}
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GTR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case GEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LSS:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LEQ:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case OR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LOR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case AND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case LAND:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case POW:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHR:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	case SHL:
+		return VMNil, errors.New("Операция между значениями невозможна")
+	}
+	return VMNil, errors.New("Неизвестная операция")
+}
+
+func (x VMNullType) MarshalBinary() ([]byte, error) {
+	return []byte{}, nil
+}
+
+func (x *VMNullType) UnmarshalBinary(data []byte) error {
+	*x = VMNullVar
+	return nil
+}
+
+func (x VMNullType) GobEncode() ([]byte, error) {
+	return x.MarshalBinary()
+}
+
+func (x *VMNullType) GobDecode(data []byte) error {
+	return x.UnmarshalBinary(data)
+}
+
+func (x VMNullType) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
+
+func (x *VMNullType) UnmarshalText(data []byte) error {
+	*x = VMNullVar
+	return nil
+}
+
+func (x VMNullType) MarshalJSON() ([]byte, error) {
+	return []byte("null"), nil
+}
+
+func (x *VMNullType) UnmarshalJSON(data []byte) error {
+	*x = VMNullVar
+	return nil
+}
 
 // HashBytes хэширует байты по алгоритму SipHash-2-4
 
@@ -282,6 +452,8 @@ func VMValuerFromJSON(s string) (VMValuer, error) {
 		return VMSliceFromJson(s)
 	case map[string]interface{}:
 		return VMStringMapFromJson(s)
+	case nil:
+		return VMNil, nil
 	default:
 		return VMNil, errors.New("Невозможно определить значение")
 	}
