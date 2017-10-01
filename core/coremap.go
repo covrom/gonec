@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+
+	"github.com/covrom/gonec/names"
 )
 
 type VMStringMap map[string]VMValuer
@@ -47,6 +49,39 @@ func (x VMStringMap) Hash() VMString {
 	h := make([]byte, 8)
 	binary.LittleEndian.PutUint64(h, HashBytes(b))
 	return VMString(hex.EncodeToString(h))
+}
+
+func (x VMStringMap) MethodMember(name int) (VMFunc, bool) {
+
+	// только эти методы будут доступны из кода на языке Гонец!
+
+	switch names.UniqueNames.GetLowerCase(name) {
+	case "скопировать":
+		return VMFuncMustParams(0, x.Скопировать), true
+	}
+
+	return nil, false
+}
+
+func (x VMStringMap) CopyRecursive() VMStringMap {
+	rv := make(VMStringMap, len(x))
+	for k, v := range x {
+		switch vv := v.(type) {
+		case VMSlice:
+			rv[k]=vv.CopyRecursive()
+		case VMStringMap:
+			rv[k]=vv.CopyRecursive()
+		default:
+			rv[k]=v
+		}
+	}
+	return rv
+}
+
+func (x VMStringMap) Скопировать(args VMSlice, rets *VMSlice) error { //VMSlice {
+	rv := x.CopyRecursive()
+	rets.Append(rv)
+	return nil
 }
 
 func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {

@@ -69,19 +69,19 @@ func (x VMSlice) SortDefault() {
 	sort.Sort(VMSliceUpSort(x))
 }
 
-func (t VMSlice) MethodMember(name int) (VMFunc, bool) {
+func (x VMSlice) MethodMember(name int) (VMFunc, bool) {
 
 	// только эти методы будут доступны из кода на языке Гонец!
 
 	switch names.UniqueNames.GetLowerCase(name) {
 	case "сортировать":
-		return VMFuncMustParams(0, t.Сортировать), true
+		return VMFuncMustParams(0, x.Сортировать), true
 	case "сортироватьубыв":
-		return VMFuncMustParams(0, t.СортироватьУбыв), true
+		return VMFuncMustParams(0, x.СортироватьУбыв), true
 	case "обратить":
-		return VMFuncMustParams(0, t.Обратить), true
+		return VMFuncMustParams(0, x.Обратить), true
 	case "скопировать":
-		return VMFuncMustParams(0, t.Скопировать), true
+		return VMFuncMustParams(0, x.Скопировать), true
 	}
 
 	return nil, false
@@ -104,9 +104,32 @@ func (x VMSlice) Обратить(args VMSlice, rets *VMSlice) error {
 	return nil
 }
 
+func (x VMSlice) CopyRecursive() VMSlice {
+	rv := make(VMSlice, len(x))
+	for i, v := range x {
+		switch vv := v.(type) {
+		case VMSlice:
+			rv[i]=vv.CopyRecursive()
+		case VMStringMap:
+			rv[i]=vv.CopyRecursive()
+		default:
+			rv[i]=v
+		}
+	}
+	return rv
+}
+
 func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	copy(rv, x)
+	for i,v:=range rv{
+		switch vv := v.(type) {
+		case VMSlice:
+			rv[i]=vv.CopyRecursive()
+		case VMStringMap:
+			rv[i]=vv.CopyRecursive()
+		}		
+	}
 	rets.Append(rv)
 	return nil
 }
