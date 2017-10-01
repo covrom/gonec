@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/covrom/gonec/names"
 	"github.com/shopspring/decimal"
 )
 
@@ -68,24 +69,46 @@ func (x VMSlice) SortDefault() {
 	sort.Sort(VMSliceUpSort(x))
 }
 
-func (x VMSlice) Сортировать() {
+func (t VMSlice) MethodMember(name int) (VMFunc, bool) {
+
+	// только эти методы будут доступны из кода на языке Гонец!
+
+	switch names.UniqueNames.GetLowerCase(name) {
+	case "сортировать":
+		return VMFuncMustParams(0, t.Сортировать), true
+	case "сортироватьубыв":
+		return VMFuncMustParams(0, t.СортироватьУбыв), true
+	case "обратить":
+		return VMFuncMustParams(0, t.Обратить), true
+	case "скопировать":
+		return VMFuncMustParams(0, t.Скопировать), true
+	}
+
+	return nil, false
+}
+
+func (x VMSlice) Сортировать(args VMSlice, rets *VMSlice) error {
 	x.SortDefault()
+	return nil
 }
 
-func (x VMSlice) СортироватьУбыв() {
+func (x VMSlice) СортироватьУбыв(args VMSlice, rets *VMSlice) error {
 	sort.Sort(VMSliceDownSort(x))
+	return nil
 }
 
-func (x VMSlice) Обратить() {
+func (x VMSlice) Обратить(args VMSlice, rets *VMSlice) error {
 	for left, right := 0, len(x)-1; left < right; left, right = left+1, right-1 {
 		x[left], x[right] = x[right], x[left]
 	}
+	return nil
 }
 
-func (x VMSlice) Скопировать() VMSlice {
+func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	copy(rv, x)
-	return rv
+	rets.Append(rv)
+	return nil
 }
 
 func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
