@@ -58,9 +58,49 @@ func (x VMStringMap) MethodMember(name int) (VMFunc, bool) {
 	switch names.UniqueNames.GetLowerCase(name) {
 	case "скопировать":
 		return VMFuncMustParams(0, x.Скопировать), true
+	case "ключи":
+		return VMFuncMustParams(0, x.Ключи), true
+	case "значения":
+		return VMFuncMustParams(0, x.Значения), true
+	case "удалить":
+		return VMFuncMustParams(1, x.Удалить), true
 	}
 
 	return nil, false
+}
+
+// Ключи возвращаются отсортированными по возрастанию
+func (x VMStringMap) Ключи(args VMSlice, rets *VMSlice) error { //VMSlice {
+	rv := make(VMSlice, len(x))
+	i := 0
+	for k := range x {
+		rv[i] = VMString(k)
+		i++
+	}
+	rv.SortDefault()
+	rets.Append(rv)
+	return nil
+}
+
+// Значения возвращаются в случайном порядке
+func (x VMStringMap) Значения(args VMSlice, rets *VMSlice) error { //VMSlice {
+	rv := make(VMSlice, len(x))
+	i := 0
+	for _, v := range x {
+		rv[i] = v
+		i++
+	}
+	rets.Append(rv)
+	return nil
+}
+
+func (x VMStringMap) Удалить(args VMSlice, rets *VMSlice) error { //VMSlice {
+	p, ok := args[0].(VMString)
+	if !ok {
+		return errors.New("Аргумент должен быть строкой")
+	}
+	delete(x, string(p))
+	return nil
 }
 
 func (x VMStringMap) CopyRecursive() VMStringMap {
@@ -68,17 +108,17 @@ func (x VMStringMap) CopyRecursive() VMStringMap {
 	for k, v := range x {
 		switch vv := v.(type) {
 		case VMSlice:
-			rv[k]=vv.CopyRecursive()
+			rv[k] = vv.CopyRecursive()
 		case VMStringMap:
-			rv[k]=vv.CopyRecursive()
+			rv[k] = vv.CopyRecursive()
 		default:
-			rv[k]=v
+			rv[k] = v
 		}
 	}
 	return rv
 }
 
-func (x VMStringMap) Скопировать(args VMSlice, rets *VMSlice) error { //VMSlice {
+func (x VMStringMap) Скопировать(args VMSlice, rets *VMSlice) error {
 	rv := x.CopyRecursive()
 	rets.Append(rv)
 	return nil

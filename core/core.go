@@ -56,25 +56,6 @@ func Import(env *Env) *Env {
 		return errors.New("Аргумент должен иметь длину")
 	}))
 
-	env.DefineS("ключи", VMFunc(func(args VMSlice, rets *VMSlice) error {
-		if len(args) != 1 {
-			return errors.New("Должен быть один параметр")
-		}
-		if vv, ok := args[0].(VMStringMaper); ok {
-			rv := vv.StringMap()
-			keys := make(VMSlice, len(rv))
-			i := 0
-			for k := range rv {
-				keys[i] = VMString(k)
-				i++
-			}
-			keys.SortDefault()
-			rets.Append(keys)
-			return nil
-		}
-		return errors.New("Аргумент должен быть структурой")
-	}))
-
 	env.DefineS("диапазон", VMFunc(func(args VMSlice, rets *VMSlice) error {
 		if len(args) < 1 {
 			return errors.New("Отсутствуют аргументы")

@@ -86,6 +86,10 @@ func (x VMSlice) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(1, x.НайтиСорт), true
 	case "вставить":
 		return VMFuncMustParams(2, (&x).Вставить), true
+	case "удалить":
+		return VMFuncMustParams(1, (&x).Удалить), true
+	case "скопироватьуникальные":
+		return VMFuncMustParams(0, x.СкопироватьУникальные), true
 	}
 
 	return nil, false
@@ -151,6 +155,20 @@ func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice) error {
 	return nil
 }
 
+func (x *VMSlice) Удалить(args VMSlice, rets *VMSlice) error {
+	p, ok := args[0].(VMInt)
+	if !ok {
+		return errors.New("Аргумент должен быть целым числом")
+	}
+	if int(p) < 0 || int(p) >= len(*x) {
+		return errors.New("Индекс находится за пределами массива")
+	}
+	copy((*x)[p:], (*x)[p+1:])
+	(*x)[len(*x)-1] = nil
+	*x = (*x)[:len(*x)-1]
+	return nil
+}
+
 func (x VMSlice) СортироватьУбыв(args VMSlice, rets *VMSlice) error {
 	sort.Sort(sort.Reverse(VMSliceUpSort(x)))
 	return nil
@@ -189,6 +207,27 @@ func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //V
 		case VMStringMap:
 			rv[i] = vv.CopyRecursive()
 		}
+	}
+	rets.Append(rv)
+	return nil
+}
+
+func (x VMSlice) СкопироватьУникальные(args VMSlice, rets *VMSlice) error { //VMSlice {
+	rv := make(VMSlice, len(x))
+	seen := make(map[VMValuer]bool)
+	for i, v := range x {
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		switch vv := v.(type) {
+		case VMSlice:
+			rv[i] = vv.CopyRecursive()
+		case VMStringMap:
+			rv[i] = vv.CopyRecursive()
+		default:
+			rv[i] = x[i]
+		}
+		seen[v] = true
 	}
 	rets.Append(rv)
 	return nil
