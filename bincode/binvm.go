@@ -497,10 +497,15 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				regs.Reg[s.Reg] = m
 				goto catching
 			case core.VMStringMap:
+				// Сначала ищем поле, в нем может быть переопределен метод как функция
 				if rv, ok := vv[names.UniqueNames.Get(s.Name)]; ok {
 					regs.Reg[s.Reg] = rv
 				} else {
-					regs.Reg[s.Reg] = core.VMNil
+					if ff, ok := vv.MethodMember(s.Name); ok {
+						regs.Reg[s.Reg] = ff
+					} else {
+						regs.Reg[s.Reg] = core.VMNil
+					}
 				}
 			case core.VMMetaObject:
 				if vv.VMIsField(s.Name) {
@@ -705,6 +710,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				}
 				break
 			} else {
+
+				// fmt.Printf("%T\n", fgnc)
+
 				catcherr = binstmt.NewStringError(stmt, "Неверный тип функции")
 				goto catching
 			}
