@@ -79,9 +79,9 @@ func (x VMChan) Размер(args VMSlice, rets *VMSlice) error {
 
 // ЗапуститьСервер (Адрес, ТипПротокола) (Канал остановки VMChan) - запускает сервер в зависимости от выбранного типа
 // Первый аргумент - адрес и порт в формате как для Го http, т.е. "[addr]:port"
-// Второй аргумент - код протокола, целое число
+// Второй аргумент - код протокола, строка
 //   Допустимые значения:
-//     1 - бинарный протокол Гонец через net/tcp, обмен только объектами VMStringMap (со вложенными VMSlice и другими типами интерпретатора)
+//     "bin" - бинарный протокол Гонец через net/tcp, обмен только объектами VMStringMap (со вложенными VMSlice и другими типами интерпретатора)
 //     ...[остальные в разработке]
 // Возвращает канал, закрытие которого приведет к остановке сервера
 func (x VMChan) ЗапуститьСервер(args VMSlice, rets *VMSlice) error {
@@ -89,9 +89,9 @@ func (x VMChan) ЗапуститьСервер(args VMSlice, rets *VMSlice) erro
 	if !ok {
 		return errors.New("Первый аргумент должен быть строкой")
 	}
-	p, ok := args[1].(VMInt)
+	p, ok := args[1].(VMString)
 	if !ok {
-		return errors.New("Второй аргумент должен быть целым числом")
+		return errors.New("Второй аргумент должен быть строкой определенного вида")
 	}
 
 	// в этот канал посылает сигнал VMNil либо сам сервер, если он отстрелен по ошибке,
@@ -99,77 +99,80 @@ func (x VMChan) ЗапуститьСервер(args VMSlice, rets *VMSlice) erro
 	// оба канала могут работать на запись, поэтому, их закрывать нельзя, чтобы не было паники в горутинах
 	chClose := make(VMChan)
 
-	switch int(p) {
+	switch string(p) {
 
-	case 1:
+	case "bin":
 		//бинарный протокол Гонец через net/tcp, обмен объектами VMStringMap со вложенными VMSlice и другими типами интерпретатора
-		go func(ch, cl VMChan, addr string) {
-			ln, err := net.Listen("tcp", addr)
-			if err != nil {
-				cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
-				return
-			}
-			defer ln.Close()
-			go func(cl VMChan) {
-				select {
-				case <-cl:
-					// закрываем сервер
-					ln.Close()
-					cl <- VMNil // ретранслируем
-					return
-				}
-			}(cl)
-			for {
-				conn, err := ln.Accept()
-				if err != nil {
-					cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
-					return
-				}
-				go func(cn net.Conn, ch, cl VMChan) {
-					// в этом протоколе происходит обмен структурами VMStringMap с сериализацией в binary формат
-					var buf bytes.Buffer
-					_, err := io.Copy(&buf, cn)
-					if err != nil {
-						cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
-						cn.Write([]byte("error"))
-						return
-					}
-					b := buf.Bytes()
-					// проверяем целостность полученного сообщения
-					// проверяем хэш, он идет первыми 8-ю байтами
-					// затем идет заголовок 5 байт "gonec"
-					// затем идет тело
-					if len(b) < 13 {
-						// ошибка? ну и ладно, ничего в канал не отправим
-						cn.Write([]byte("error"))
-						return
-					}
-					hashbts, _ := binary.Uvarint(b[:8]) // hash
-					cstr := b[8:13]                     // "gonec"
-					b = b[13:]
-					if string(cstr) != "gonec" || len(b) == 0 {
-						cn.Write([]byte("error"))
-						return
-					}
-					if HashBytes(b) != hashbts {
-						cn.Write([]byte("error"))
-						return
-					}
-					// проверили хэш, все ок - получаем VMStringMap
-					rv := make(VMStringMap)
-					if err := (&rv).UnmarshalBinary(b); err != nil {
-						// ошибка? ну и ладно, ничего в канал не отправим
-						cn.Write([]byte("error"))
-						return
-					}
-					ch <- rv // все ок - отправили VMStringMap в канал
-				}(conn, ch, cl)
-			}
-		}(x, chClose, string(adr))
-
+		go ServeGncBin(string(adr), x, chClose)
 	default:
 		return errors.New("Неизвестный тип протокола")
 	}
+	
 	rets.Append(chClose)
 	return nil
+}
+
+//ServeGncBin - бинарный протокол Гонец через net/tcp, обмен объектами VMStringMap со вложенными VMSlice и другими типами интерпретатора
+func ServeGncBin(addr string, ch, cl VMChan) {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+		return
+	}
+	defer ln.Close()
+	go func(cl VMChan) {
+		select {
+		case <-cl:
+			// закрываем сервер
+			ln.Close()
+			cl <- VMNil // ретранслируем
+			return
+		}
+	}(cl)
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+			return
+		}
+		go func(cn net.Conn, ch, cl VMChan) {
+			// в этом протоколе происходит обмен структурами VMStringMap с сериализацией в binary формат
+			var buf bytes.Buffer
+			_, err := io.Copy(&buf, cn)
+			if err != nil {
+				cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+				cn.Write([]byte("error"))
+				return
+			}
+			b := buf.Bytes()
+			// проверяем целостность полученного сообщения
+			// проверяем хэш, он идет первыми 8-ю байтами
+			// затем идет заголовок 5 байт "gonec"
+			// затем идет тело
+			if len(b) < 13 {
+				// ошибка? ну и ладно, ничего в канал не отправим
+				cn.Write([]byte("error"))
+				return
+			}
+			hashbts, _ := binary.Uvarint(b[:8]) // hash
+			cstr := b[8:13]                     // "gonec"
+			b = b[13:]
+			if string(cstr) != "gonec" || len(b) == 0 {
+				cn.Write([]byte("error"))
+				return
+			}
+			if HashBytes(b) != hashbts {
+				cn.Write([]byte("error"))
+				return
+			}
+			// проверили хэш, все ок - получаем VMStringMap
+			rv := make(VMStringMap)
+			if err := (&rv).UnmarshalBinary(b); err != nil {
+				// ошибка? ну и ладно, ничего в канал не отправим
+				cn.Write([]byte("error"))
+				return
+			}
+			ch <- rv // все ок - отправили VMStringMap в канал
+		}(conn, ch, cl)
+	}
 }
