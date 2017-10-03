@@ -118,6 +118,11 @@ func (x VMChan) ЗапуститьСервер(args VMSlice, rets *VMSlice) erro
 // получает запрос из сети и передает его интерпретацию в виде VMStringMap по каналу ch
 // передает ошибку по каналу cl, если произошла ошибка
 // завершает работу, если получает любое значение по каналу cl (и ретранслирует его)
+
+// TODO: возвращать канал, куда можно будет писать ответ (а он перенаправляться в канал клиента)
+// канал входящего запроса, канал клиента (для ответа на запрос), канал ошибки, канал закрытия
+// нарисовать архитектуру с каналами в Visio
+
 func ServeGncBin(addr string, ch, cl VMChan) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -143,14 +148,11 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 		go func(cn net.Conn, ch, cl VMChan) {
 			// в этом протоколе происходит обмен структурами VMStringMap с сериализацией в binary формат
 			var buf bytes.Buffer
-			_, err := io.Copy(&buf, cn)
-
-			// TODO: проверить, когда закончится чтение, требуется ли разрыв соединения для EOF?
-			// переделать на чтение с заранее известным размером, передаваемым первыми 8 байтами после "gonec"
+			_, err := io.CopyN(&buf, cn, 21)
 
 			if err != nil {
 				cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
-				cn.Write([]byte("error"))
+				cn.Write([]byte("er"))
 				return
 			}
 			b := buf.Bytes()
@@ -158,27 +160,37 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 			// проверяем хэш, он идет первыми 8-ю байтами
 			// затем идет заголовок 5 байт "gonec"
 			// затем идет тело
-			if len(b) < 13 {
+			if len(b) < 21 {
 				// ошибка? ну и ладно, ничего в канал не отправим
-				cn.Write([]byte("error"))
+				cn.Write([]byte("er"))
 				return
 			}
-			cstr := b[:5]                         // "gonec"
+			cstr := b[:5] // "gonec"
+			if string(cstr) != "gonec" {
+				cn.Write([]byte("er"))
+				return
+			}
 			hashbts, _ := binary.Uvarint(b[5:13]) // hash
-			b = b[13:]
-			if string(cstr) != "gonec" || len(b) == 0 {
-				cn.Write([]byte("error"))
+			lenb, _ := binary.Uvarint(b[13:21])   // hash
+
+			buf.Reset()
+			_, err = io.CopyN(&buf, cn, int64(lenb))
+			if err != nil {
+				cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+				cn.Write([]byte("er"))
 				return
 			}
+			b = buf.Bytes()
+
 			if HashBytes(b) != hashbts {
-				cn.Write([]byte("error"))
+				cn.Write([]byte("er"))
 				return
 			}
 			// проверили хэш, все ок - получаем VMStringMap
 			rv := make(VMStringMap)
 			if err := (&rv).UnmarshalBinary(b); err != nil {
 				// ошибка? ну и ладно, ничего в канал не отправим
-				cn.Write([]byte("error"))
+				cn.Write([]byte("er"))
 				return
 			}
 			ch <- rv // все ок - отправили VMStringMap в канал
@@ -209,12 +221,15 @@ func DialGncBin(addr string, ch, cl VMChan) (cret VMChan) {
 				return
 			default:
 				var buf bytes.Buffer
-				_, err := io.Copy(&buf, cn)
+				_, err := io.CopyN(&buf, cn, 2)
 				if err != nil {
 					cl <- VMString(fmt.Sprint(err))
 					return
 				}
-				cr <- VMString(string(buf.Bytes()))
+				rv := string(buf.Bytes())
+				if rv == "er" {
+					cr <- VMNil
+				}
 			}
 			runtime.Gosched()
 		}
@@ -240,6 +255,13 @@ func DialGncBin(addr string, ch, cl VMChan) (cret VMChan) {
 						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
 						return
 					}
+					_, err = cn.Write(hb)
+					if err != nil {
+						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+						return
+					}
+					//пишем длину
+					binary.PutUvarint(hb, uint64(len(b)))
 					_, err = cn.Write(hb)
 					if err != nil {
 						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
