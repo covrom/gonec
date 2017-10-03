@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"runtime"
 
 	"github.com/covrom/gonec/names"
 )
@@ -143,6 +144,10 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 			// в этом протоколе происходит обмен структурами VMStringMap с сериализацией в binary формат
 			var buf bytes.Buffer
 			_, err := io.Copy(&buf, cn)
+
+			// TODO: проверить, когда закончится чтение, требуется ли разрыв соединения для EOF?
+			// переделать на чтение с заранее известным размером, передаваемым первыми 8 байтами после "gonec"
+
 			if err != nil {
 				cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
 				cn.Write([]byte("error"))
@@ -158,8 +163,8 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 				cn.Write([]byte("error"))
 				return
 			}
-			hashbts, _ := binary.Uvarint(b[:8]) // hash
-			cstr := b[8:13]                     // "gonec"
+			cstr := b[:5]                         // "gonec"
+			hashbts, _ := binary.Uvarint(b[5:13]) // hash
 			b = b[13:]
 			if string(cstr) != "gonec" || len(b) == 0 {
 				cn.Write([]byte("error"))
@@ -177,10 +182,85 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 				return
 			}
 			ch <- rv // все ок - отправили VMStringMap в канал
+			cn.Write([]byte("ok"))
 		}(conn, ch, cl)
+		runtime.Gosched()
 	}
 }
 
-func DialGncBin(addr string, ch, cerr VMChan) {
+// DialGncBin отправляет запросы из канала ch на сервер по адресу addr и возвращает ответы в канал cret
+// Если произошла ошибка подключения, она отправляется в канал cl, просмотр канала ch и отправка сообщений на сервер прекращается
+// Если получит любое значение в канал cl, то прекратит просматривать канал ch и перестанет отправлять запросы на сервер
+func DialGncBin(addr string, ch, cl VMChan) (cret VMChan) {
+	cret = make(VMChan)
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+		return
+	}
+	defer conn.Close()
 
+	go func(cr, cl VMChan, cn net.Conn) {
+		// получаем ответы от сервера в cr, строками
+		for {
+			select {
+			case e := <-cl:
+				cl <- e
+				return
+			default:
+				var buf bytes.Buffer
+				_, err := io.Copy(&buf, cn)
+				if err != nil {
+					cl <- VMString(fmt.Sprint(err))
+					return
+				}
+				cr <- VMString(string(buf.Bytes()))
+			}
+			runtime.Gosched()
+		}
+	}(cret, cl, conn)
+
+	for {
+		// ждем значение к отправке
+		select {
+		case v := <-ch:
+			// отправляем только VMStringMap
+			if vv, ok := v.(VMStringMap); ok {
+				go func(cn net.Conn, val VMStringMap) {
+					b, err := val.MarshalBinary()
+					if err != nil {
+						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+						return
+					}
+					hb := make([]byte, 8)
+					binary.PutUvarint(hb, HashBytes(b))
+
+					_, err = cn.Write([]byte("gonec"))
+					if err != nil {
+						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+						return
+					}
+					_, err = cn.Write(hb)
+					if err != nil {
+						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+						return
+					}
+
+					buf := bytes.NewReader(b)
+					_, err = io.Copy(cn, buf)
+					if err != nil {
+						cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+						return
+					}
+				}(conn, vv)
+			} else {
+				cl <- VMString("Можно отправлять только структуры")
+				return // выходим
+			}
+		case e := <-cl:
+			cl <- e // ретранслируем
+			return  // выходим
+		}
+		runtime.Gosched()
+	}
 }
