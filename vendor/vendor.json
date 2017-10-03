@@ -6,6 +6,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "0+glQeMF1acQ4COm+BFmKpQCAYk=",
+			"path": "github.com/boltdb/bolt",
+			"revision": "fa5367d20c994db73282594be0146ab221657943",
+			"revisionTime": "2017-09-07T20:20:52Z"
+		},
+		{
 			"checksumSHA1": "+RnqP2E0QQ0lVibq0H+62R12hEA=",
 			"path": "github.com/daviddengcn/go-colortext",
 			"revision": "805cee6e0d43c72ba1d4e3275965ff41e0da068a",
@@ -34,6 +40,12 @@
 			"path": "github.com/shopspring/decimal",
 			"revision": "730de27aa507d979cb5a8a17b11c82f361c3d4a3",
 			"revisionTime": "2017-09-05T13:57:20Z"
+		},
+		{
+			"checksumSHA1": "uggjqMBFNJd11oNco2kbkAT641w=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "314a259e304ff91bd6985da2a7149bbf91237993",
+			"revisionTime": "2017-07-19T03:44:26Z"
 		}
 	],
 	"rootPath": "github.com/covrom/gonec"
