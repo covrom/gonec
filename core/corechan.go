@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 
@@ -107,32 +108,35 @@ func (x VMChan) ЗапуститьСервер(args VMSlice, rets *VMSlice) erro
 	default:
 		return errors.New("Неизвестный тип протокола")
 	}
-	
+
 	rets.Append(chClose)
 	return nil
 }
 
 //ServeGncBin - бинарный протокол Гонец через net/tcp, обмен объектами VMStringMap со вложенными VMSlice и другими типами интерпретатора
+// получает запрос из сети и передает его интерпретацию в виде VMStringMap по каналу ch
+// передает ошибку по каналу cl, если произошла ошибка
+// завершает работу, если получает любое значение по каналу cl (и ретранслирует его)
 func ServeGncBin(addr string, ch, cl VMChan) {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
-		cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+		cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
 		return
 	}
 	defer ln.Close()
 	go func(cl VMChan) {
 		select {
-		case <-cl:
+		case e := <-cl:
 			// закрываем сервер
 			ln.Close()
-			cl <- VMNil // ретранслируем
+			cl <- e // ретранслируем
 			return
 		}
 	}(cl)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
-			cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+			cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
 			return
 		}
 		go func(cn net.Conn, ch, cl VMChan) {
@@ -140,7 +144,7 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 			var buf bytes.Buffer
 			_, err := io.Copy(&buf, cn)
 			if err != nil {
-				cl <- VMNil // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
+				cl <- VMString(fmt.Sprint(err)) // сигнализируем остальным горутинам (в т.ч. вызывающей), что этот сервер отстрелился
 				cn.Write([]byte("error"))
 				return
 			}
@@ -175,4 +179,8 @@ func ServeGncBin(addr string, ch, cl VMChan) {
 			ch <- rv // все ок - отправили VMStringMap в канал
 		}(conn, ch, cl)
 	}
+}
+
+func DialGncBin(addr string, ch, cerr VMChan) {
+
 }
