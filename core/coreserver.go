@@ -6,14 +6,19 @@ import (
 	"net"
 	"runtime"
 	"sync"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
-	VMErrorServerNowOnline = errors.New("Сервер уже запущен!")
-	VMErrorServerOffline   = errors.New("Сервер уже остановлен!")
+	VMErrorServerNowOnline   = errors.New("Сервер уже запущен")
+	VMErrorServerOffline     = errors.New("Сервер уже остановлен")
+	VMErrorIncorrectClientId = errors.New("Неверный идентификатор соединения")
 )
+
+type VMConn struct {
+	conn   net.Conn
+	id     int
+	closed bool
+}
 
 // VMServer - сервер протоколов взаимодействия, предоставляет базовый обработчик для TCP, RPC-JSON и HTTP соединений
 // данный объект не может сериализоваться и не может участвовать в операциях с операндами
@@ -24,39 +29,49 @@ type VMServer struct {
 	addr     string // [addr]:port
 	protocol string // tcp, json, http
 	done     chan error
-	clients  map[string]net.Conn // каждому соединению присваивается GUID
+	health   chan bool
+	clients  []VMConn // каждому соединению присваивается GUID
 	lnr      net.Listener
+	maxconn  int
 }
 
 func (x *VMServer) String() string {
-	x.mu.RLock()
-	defer x.mu.RUnlock()
 	return fmt.Sprintf("Сервер %s %s", x.protocol, x.addr)
 }
 
 func (x *VMServer) IsOnline() bool {
-	x.mu.RLock()
-	defer x.mu.RUnlock()
-	return x.lnr != nil
+	return <-x.health
 }
 
-func (x *VMServer) Open(proto, addr string) (err error) {
+func (x *VMServer) healthSender() {
+	for {
+		select {
+		case x.health <- true:
+			runtime.Gosched()
+		case e, ok := <-x.done:
+			close(x.health)
+			if ok {
+				// перехватили ошибку, а канал не закрыт -> ретранслируем
+				x.done <- e
+			}
+			return
+		}
+	}
+}
+
+func (x *VMServer) Open(proto, addr string, maxconn int) (err error) {
 	// запускаем сервер
-	x.mu.RLock()
 	if x.lnr != nil {
-		x.mu.RUnlock()
 		return VMErrorServerNowOnline
 	}
-	x.mu.RUnlock()
 
-	x.mu.Lock()
-	defer x.mu.Unlock()
-
-	x.done = make(chan error, 1) //буфер на одну ошибку, для закрытия
-	x.clients = make(map[string]net.Conn)
+	x.done = make(chan error)
+	x.health = make(chan bool)
+	x.clients = make([]VMConn, 0)
 
 	x.addr = addr
 	x.protocol = proto
+	x.maxconn = maxconn
 
 	switch proto {
 	case "tcp":
@@ -66,58 +81,100 @@ func (x *VMServer) Open(proto, addr string) (err error) {
 			return err
 		}
 
-		go func() {
-			defer func() {
-				x.mu.Lock()
-				x.lnr = nil
-				x.mu.Unlock()
-			}()
+		go x.healthSender()
+
+		// запускаем воркер, который принимает команды по каналу управления
+		// x.lnr может стать nil, поэтому, передаем сюда копию указателя
+		go func(lnr net.Listener) {
 			for {
-				x.mu.RLock()
-				ln := x.lnr
-				x.mu.RUnlock()
-				conn, err := ln.Accept()
+				conn, err := lnr.Accept()
 				if err != nil {
-					ln.Close() // отстрел сервера может произойти как принудительно, так и по внешнему событию,
-					//поэтому, дублируем очистку ресурсов как в Close
 					x.done <- err
 					return
 				}
+
 				x.mu.Lock()
-				x.clients[uuid.NewV1().String()] = conn
+				l := len(x.clients)
+				if l < maxconn || maxconn == -1 {
+					x.clients = append(x.clients, VMConn{conn: conn, id: l, closed: false})
+				} else {
+					conn.Close()
+				}
 				x.mu.Unlock()
 
 				runtime.Gosched()
 			}
-		}()
-
-		// TODO: просмотр и удаление закрытых коннектов с клиентами, обработка открытых коннектов с помощью callback
+		}(x.lnr)
 	}
-
 	return nil
 }
 
-// Close закрываем все, останавливаем горутины, всегда возвращаем ошибку закрытия
+// Close закрываем все ресурсы и всегда возвращаем ошибку,
+// которая могла возникнуть на сервере, либо во время закрытия
 func (x *VMServer) Close() error {
-	x.mu.RLock()
-	ln := x.lnr
-	x.mu.RUnlock()
-
-	if ln != nil {
-		ln.Close()
+	if x.lnr != nil {
+		x.lnr.Close()
 	}
-
-	err,ok := <-x.done // дождемся ошибки из горутины, или возьмем ее, если она уже была
-	if ok{
+	err, ok := <-x.done // дождемся ошибки из горутины, или возьмем ее, если она уже была
+	if ok {
 		// канал не закрыт
-		close(x.done)   // чтобы при вызове второй раз не зависнуть
-	}else{
+		close(x.done)
+	} else {
 		err = VMErrorServerOffline
 	}
 	x.mu.Lock()
 	x.lnr = nil
+	// закрываем все клиентские соединения
+	for i := range x.clients {
+		if !x.clients[i].closed {
+			x.clients[i].conn.Close()
+			x.clients[i].conn = nil
+			x.clients[i].closed = true
+		}
+	}
+	x.clients = x.clients[:0]
 	x.mu.Unlock()
 	return err
+}
+
+func (x *VMServer) ClientsCount() int {
+	x.mu.RLock()
+	defer x.mu.RUnlock()
+	return len(x.clients)
+}
+
+func (x *VMServer) CloseClient(i int) (err error) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	l := len(x.clients)
+	if i >= 0 && i < l {
+		err = nil
+		if !x.clients[i].closed {
+			err = x.clients[i].conn.Close()
+			x.clients[i].conn = nil
+			x.clients[i].closed = true
+		}
+		return
+	} else {
+		return VMErrorIncorrectClientId
+	}
+}
+
+func (x *VMServer) RemoveAllClosedClients() {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	l := len(x.clients)
+	for i := l - 1; i >= 0; i-- {
+		if x.clients[i].closed {
+			copy(x.clients[i:], x.clients[i+1:])
+			nl := len(x.clients) - 1
+			x.clients[nl].conn = nil
+			x.clients = x.clients[:nl]
+			for j := i; j < nl; j++ {
+				x.clients[j].id--
+			}
+		}
+	}
 }
 
 func (x *VMServer) VMRegister() {
