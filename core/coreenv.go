@@ -17,8 +17,8 @@ import (
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          []VMValuer
-	typ          []reflect.Type
+	env          map[int]VMValuer
+	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
 	stdout       io.Writer
@@ -37,8 +37,8 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:          make([]VMValuer, 0),
-		typ:          make([]reflect.Type, 0),
+		env:          make(map[int]VMValuer),
+		typ:          make(map[int]reflect.Type),
 		parent:       nil,
 		interrupt:    &b,
 		stdout:       os.Stdout,
@@ -54,8 +54,8 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:          make([]VMValuer, len(ee.env)),
-				typ:          make([]reflect.Type, len(ee.typ)),
+				env:          make(map[int]VMValuer),
+				typ:          make(map[int]reflect.Type),
 				parent:       ee,
 				interrupt:    e.interrupt,
 				stdout:       e.stdout,
@@ -72,8 +72,8 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:          make([]VMValuer, len(e.env)),
-		typ:          make([]reflect.Type, len(e.typ)),
+		env:          make(map[int]VMValuer),
+		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		interrupt:    e.interrupt,
 		stdout:       e.stdout,
@@ -116,8 +116,8 @@ func (e *Env) NewModule(n string) *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:          make([]VMValuer, len(e.env)),
-		typ:          make([]reflect.Type, len(e.typ)),
+		env:          make(map[int]VMValuer),
+		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		name:         names.FastToLower(n),
 		interrupt:    e.interrupt,
@@ -130,19 +130,21 @@ func (e *Env) NewPackage(n string) *Env {
 
 // Destroy deletes current scope.
 func (e *Env) Destroy() {
+	if e.parent == nil {
+		return
+	}
+
 	if e.goRunned {
 		e.Lock()
 		defer e.Unlock()
-	}
-
-	if e.parent == nil {
-		return
+		e.parent.Lock()
+		defer e.parent.Unlock()
 	}
 
 	for k, v := range e.parent.env {
 		if vv, ok := v.(*Env); ok {
 			if vv == e {
-				e.parent.env[k] = nil
+				delete(e.parent.env, k)
 			}
 		}
 	}
@@ -209,15 +211,14 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 		if ee.goRunned {
 			ee.RLock()
 		}
-		if k >= 0 && k < len(ee.typ) {
-			v := ee.typ[k]
-			if v != nil {
-				if ee.goRunned {
-					ee.RUnlock()
-				}
-				return v, nil
+		// if k >= 0 && k < len(ee.typ) {
+		if v, ok := ee.typ[k]; ok {
+			if ee.goRunned {
+				ee.RUnlock()
 			}
+			return v, nil
 		}
+		// }
 		if ee.goRunned {
 			ee.RUnlock()
 		}
@@ -236,24 +237,27 @@ func (e *Env) Get(k int) (VMValuer, error) {
 		if ee.goRunned {
 			ee.RLock()
 		}
-		if e.lastid == k {
+		if ee.lastid == k {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
-			return e.lastval, nil
+			return ee.lastval, nil
 		}
-		if k >= 0 && k < len(ee.env) {
-			v := ee.env[k]
-			if v != nil {
-				if ee.goRunned {
-					ee.RUnlock()
-				}
-				return v, nil
-			}
-		}
-		// if v, ok := ee.env[k]; ok {
-		// 	return v, nil
+		// if k >= 0 && k < len(ee.env) {
+		// 	v := ee.env[k]
+		// 	if v != nil {
+		// 		if ee.goRunned {
+		// 			ee.RUnlock()
+		// 		}
+		// 		return v, nil
+		// 	}
 		// }
+		if v, ok := ee.env[k]; ok {
+			if ee.goRunned {
+				ee.RUnlock()
+			}
+			return v, nil
+		}
 		if ee.goRunned {
 			ee.RUnlock()
 		}
@@ -269,21 +273,24 @@ func (e *Env) Set(k int, v VMValuer) error {
 		if ee.goRunned {
 			ee.Lock()
 		}
-		if k >= 0 && k < len(ee.env) {
+		// if k >= 0 && k < len(ee.env) {
+		// 	ee.env[k] = v
+		// 	e.lastid = k
+		// 	e.lastval = v
+		// 	if ee.goRunned {
+		// 		ee.Unlock()
+		// 	}
+		// 	return nil
+		// }
+		if _, ok := ee.env[k]; ok {
 			ee.env[k] = v
-			e.lastid = k
-			e.lastval = v
+			ee.lastid = k
+			ee.lastval = v
 			if ee.goRunned {
 				ee.Unlock()
 			}
 			return nil
 		}
-		// if _, ok := ee.env[k]; ok {
-		// 	ee.env[k] = v
-		// 	e.lastid = k
-		// 	e.lastval = v
-		// 	return nil
-		// }
 		if ee.goRunned {
 			ee.Unlock()
 		}
@@ -309,9 +316,9 @@ func (e *Env) DefineType(k int, t reflect.Type) error {
 				ee.Lock()
 				defer ee.Unlock()
 			}
-			for k >= len(ee.typ) {
-				ee.typ = append(ee.typ, nil)
-			}
+			// for k >= len(ee.typ) {
+			// 	ee.typ = append(ee.typ, nil)
+			// }
 			ee.typ[k] = t
 			// // пишем в кэш индексы полей и методов для структур
 			// // для работы со структурами нам нужен конкретный тип
@@ -379,9 +386,9 @@ func (e *Env) Define(k int, v VMValuer) error {
 	if e.goRunned {
 		e.Lock()
 	}
-	for k >= len(e.env) {
-		e.env = append(e.env, nil)
-	}
+	// for k >= len(e.env) {
+	// 	e.env = append(e.env, nil)
+	// }
 	e.env[k] = v
 	e.lastid = k
 	e.lastval = v
