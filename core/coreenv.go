@@ -7,11 +7,13 @@ import (
 	"os"
 	"reflect"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/covrom/gonec/names"
 )
+
+// TODO: защита горутин не нужна, делим горутины по окружениям (из внешнего окружения можно только читать)
+// TODO: переделать на слайсы вместо мапы
 
 // Env provides interface to run VM. This mean function scope and blocked-scope.
 // If stack goes to blocked-scope, it will make new Env.
@@ -120,7 +122,7 @@ func (e *Env) NewPackage(n string) *Env {
 		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
-		name:         strings.ToLower(n),
+		name:         names.FastToLower(n),
 		interrupt:    e.interrupt,
 		stdout:       e.stdout,
 		goRunned:     false,
@@ -187,7 +189,7 @@ func (e *Env) SetName(n string) {
 	if e.goRunned {
 		e.Lock()
 	}
-	e.name = strings.ToLower(n)
+	e.name = names.FastToLower(n)
 	if e.goRunned {
 		e.Unlock()
 	}

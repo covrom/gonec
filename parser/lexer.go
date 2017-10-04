@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"unicode"
 
-	"strings"
-
 	"github.com/covrom/gonec/ast"
+	"github.com/covrom/gonec/names"
 	posit "github.com/covrom/gonec/pos"
 )
 
@@ -143,7 +142,7 @@ retry:
 		if err != nil {
 			return
 		}
-		lowlit := strings.ToLower(lit)
+		lowlit := names.FastToLower(lit)
 		if name, ok := opName[lowlit]; ok {
 			tok = name
 			_, s.canequal = opCanEqual[tok]

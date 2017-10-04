@@ -2,10 +2,10 @@ package ast
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
+	"github.com/covrom/gonec/names"
 	"github.com/covrom/gonec/pos"
 )
 
@@ -744,7 +744,7 @@ type ConstExpr struct {
 }
 
 func (x *ConstExpr) Simplify() Expr {
-	switch strings.ToLower(x.Value) {
+	switch names.FastToLower(x.Value) {
 	case "истина", "true":
 		return &NativeExpr{Value: core.VMBool(true)}
 	case "ложь", "false":
@@ -760,7 +760,7 @@ func (x *ConstExpr) Simplify() Expr {
 func (e *ConstExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool, maxreg *int) {
 	var v core.VMValuer
 
-	switch strings.ToLower(e.Value) {
+	switch names.FastToLower(e.Value) {
 	case "истина", "true":
 		v = core.VMBool(true)
 	case "ложь", "false":

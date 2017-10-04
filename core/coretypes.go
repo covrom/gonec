@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/covrom/gonec/names"
 	"github.com/dchest/siphash"
 	"github.com/shopspring/decimal"
 )
@@ -151,7 +152,7 @@ func (x VMNilType) ParseGoType(v interface{}) {
 	}
 }
 func (x VMNilType) Parse(s string) error {
-	if strings.ToLower(s) != "неопределено" {
+	if names.FastToLower(s) != "неопределено" {
 		return errors.New("Значение определено")
 	}
 	return nil

@@ -1,10 +1,12 @@
 package names
 
 import (
+	"bytes"
 	"fmt"
-	"strings"
 	"sync"
 )
+
+// TODO: переделать на atomic инкремент Iter
 
 // все переменные
 var UniqueNames = NewEnvNames()
@@ -29,7 +31,7 @@ func NewEnvNames() *EnvNames {
 }
 
 func (en *EnvNames) Set(n string) int {
-	ns := strings.ToLower(n)
+	ns := FastToLower(n)
 	en.mu.RLock()
 	if i, ok := en.Names[ns]; ok {
 		en.mu.RUnlock()
@@ -74,7 +76,7 @@ func (en *EnvNames) GetLowerCaseOk(i int) (s string, ok bool) {
 }
 
 func (en *EnvNames) SetToId(n string, i int) {
-	ns := strings.ToLower(n)
+	ns := FastToLower(n)
 	en.mu.Lock()
 	en.Names[ns] = i
 	en.Handles[i] = n
@@ -83,4 +85,19 @@ func (en *EnvNames) SetToId(n string, i int) {
 		en.Iter = i + 1 // гарантированно следующий
 	}
 	en.mu.Unlock()
+}
+
+func FastToLower(s string) string {
+	rs := bytes.NewBuffer(make([]byte, 0, len(s)))
+	for _, rn := range s {
+		switch {
+		case (rn >= 'А' && rn <= 'Я') || (rn >= 'A' && rn <= 'Z'):
+			rs.WriteRune(rn + 0x20)
+		case rn == 'Ё':
+			rs.WriteRune('ё')
+		default:
+			rs.WriteRune(rn)
+		}
+	}
+	return rs.String()
 }

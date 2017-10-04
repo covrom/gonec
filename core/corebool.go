@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
+	"github.com/covrom/gonec/names"
 	"github.com/shopspring/decimal"
 )
 
@@ -80,7 +80,7 @@ func (x VMBool) MakeChan(size int) VMChaner {
 }
 
 func ParseVMBool(s string) (VMBool, error) {
-	switch strings.ToLower(s) {
+	switch names.FastToLower(s) {
 	case "true", "истина":
 		return true, nil
 	case "false", "ложь":
