@@ -12,16 +12,13 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
-// TODO: защита горутин не нужна, делим горутины по окружениям (из внешнего окружения можно только читать)
-// TODO: переделать на слайсы вместо мапы
-
 // Env provides interface to run VM. This mean function scope and blocked-scope.
 // If stack goes to blocked-scope, it will make new Env.
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          map[int]VMValuer
-	typ          map[int]reflect.Type
+	env          []VMValuer
+	typ          []reflect.Type
 	parent       *Env
 	interrupt    *bool
 	stdout       io.Writer
@@ -40,8 +37,8 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:          make(map[int]VMValuer),
-		typ:          make(map[int]reflect.Type),
+		env:          make([]VMValuer, 0),
+		typ:          make([]reflect.Type, 0),
 		parent:       nil,
 		interrupt:    &b,
 		stdout:       os.Stdout,
@@ -57,8 +54,8 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:          make(map[int]VMValuer),
-				typ:          make(map[int]reflect.Type),
+				env:          make([]VMValuer, len(ee.env)),
+				typ:          make([]reflect.Type, len(ee.typ)),
 				parent:       ee,
 				interrupt:    e.interrupt,
 				stdout:       e.stdout,
@@ -75,8 +72,8 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:          make(map[int]VMValuer),
-		typ:          make(map[int]reflect.Type),
+		env:          make([]VMValuer, len(e.env)),
+		typ:          make([]reflect.Type, len(e.typ)),
 		parent:       e,
 		interrupt:    e.interrupt,
 		stdout:       e.stdout,
@@ -119,8 +116,8 @@ func (e *Env) NewModule(n string) *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:          make(map[int]VMValuer),
-		typ:          make(map[int]reflect.Type),
+		env:          make([]VMValuer, len(e.env)),
+		typ:          make([]reflect.Type, len(e.typ)),
 		parent:       e,
 		name:         names.FastToLower(n),
 		interrupt:    e.interrupt,
@@ -145,7 +142,7 @@ func (e *Env) Destroy() {
 	for k, v := range e.parent.env {
 		if vv, ok := v.(*Env); ok {
 			if vv == e {
-				delete(e.parent.env, k)
+				e.parent.env[k] = nil
 			}
 		}
 	}
@@ -155,28 +152,16 @@ func (e *Env) Destroy() {
 
 func (e *Env) SetGoRunned(t bool) {
 	for ee := e; ee != nil; ee = ee.parent {
-		ee.Lock()
 		ee.goRunned = t
-		ee.Unlock()
 	}
 }
 
 func (e *Env) SetBuiltsIsLoaded() {
-	if e.goRunned {
-		e.Lock()
-	}
 	e.builtsLoaded = true
-	if e.goRunned {
-		e.Unlock()
-	}
 }
 
 func (e *Env) IsBuiltsLoaded() bool {
 	for ee := e; ee != nil; ee = ee.parent {
-		if ee.goRunned {
-			ee.RLock()
-			defer ee.RUnlock()
-		}
 		if ee.builtsLoaded {
 			return true
 		}
@@ -186,22 +171,11 @@ func (e *Env) IsBuiltsLoaded() bool {
 
 // SetName sets a name of the scope. This means that the scope is module.
 func (e *Env) SetName(n string) {
-	if e.goRunned {
-		e.Lock()
-	}
 	e.name = names.FastToLower(n)
-	if e.goRunned {
-		e.Unlock()
-	}
 }
 
 // GetName returns module name.
 func (e *Env) GetName() string {
-	if e.goRunned {
-		e.RLock()
-		defer e.RUnlock()
-	}
-
 	return e.name
 }
 
@@ -211,12 +185,17 @@ func (e *Env) TypeName(t reflect.Type) int {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.goRunned {
 			ee.RLock()
-			defer ee.RUnlock()
 		}
 		for k, v := range ee.typ {
 			if v == t {
+				if ee.goRunned {
+					ee.RUnlock()
+				}
 				return k
 			}
+		}
+		if ee.goRunned {
+			ee.RUnlock()
 		}
 	}
 	return names.UniqueNames.Set(t.String())
@@ -229,11 +208,22 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.goRunned {
 			ee.RLock()
-			defer ee.RUnlock()
 		}
-		if v, ok := ee.typ[k]; ok {
-			return v, nil
+		if k >= 0 && k < len(ee.typ) {
+			v := ee.typ[k]
+			if v != nil {
+				if ee.goRunned {
+					ee.RUnlock()
+				}
+				return v, nil
+			}
 		}
+		if ee.goRunned {
+			ee.RUnlock()
+		}
+		// if v, ok := ee.typ[k]; ok {
+		// 	return v, nil
+		// }
 	}
 	return nil, fmt.Errorf("Тип неопределен '%s'", names.UniqueNames.Get(k))
 }
@@ -245,14 +235,27 @@ func (e *Env) Get(k int) (VMValuer, error) {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.goRunned {
 			ee.RLock()
-			defer ee.RUnlock()
 		}
 		if e.lastid == k {
-			// это именно здесь, т.к. нужно учесть блокировку
+			if ee.goRunned {
+				ee.RUnlock()
+			}
 			return e.lastval, nil
 		}
-		if v, ok := ee.env[k]; ok {
-			return v, nil
+		if k >= 0 && k < len(ee.env) {
+			v := ee.env[k]
+			if v != nil {
+				if ee.goRunned {
+					ee.RUnlock()
+				}
+				return v, nil
+			}
+		}
+		// if v, ok := ee.env[k]; ok {
+		// 	return v, nil
+		// }
+		if ee.goRunned {
+			ee.RUnlock()
 		}
 	}
 	return nil, fmt.Errorf("Имя неопределено '%s'", names.UniqueNames.Get(k))
@@ -265,13 +268,24 @@ func (e *Env) Set(k int, v VMValuer) error {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.goRunned {
 			ee.Lock()
-			defer ee.Unlock()
 		}
-		if _, ok := ee.env[k]; ok {
+		if k >= 0 && k < len(ee.env) {
 			ee.env[k] = v
 			e.lastid = k
 			e.lastval = v
+			if ee.goRunned {
+				ee.Unlock()
+			}
 			return nil
+		}
+		// if _, ok := ee.env[k]; ok {
+		// 	ee.env[k] = v
+		// 	e.lastid = k
+		// 	e.lastval = v
+		// 	return nil
+		// }
+		if ee.goRunned {
+			ee.Unlock()
 		}
 	}
 	return fmt.Errorf("Имя неопределено '%s'", names.UniqueNames.Get(k))
@@ -294,6 +308,9 @@ func (e *Env) DefineType(k int, t reflect.Type) error {
 			if ee.goRunned {
 				ee.Lock()
 				defer ee.Unlock()
+			}
+			for k >= len(ee.typ) {
+				ee.typ = append(ee.typ, nil)
 			}
 			ee.typ[k] = t
 			// // пишем в кэш индексы полей и методов для структур
@@ -362,6 +379,9 @@ func (e *Env) Define(k int, v VMValuer) error {
 	if e.goRunned {
 		e.Lock()
 	}
+	for k >= len(e.env) {
+		e.env = append(e.env, nil)
+	}
 	e.env[k] = v
 	e.lastid = k
 	e.lastval = v
@@ -379,10 +399,6 @@ func (e *Env) DefineS(k string, v VMValuer) error {
 
 // String return the name of current scope.
 func (e *Env) String() string {
-	if e.goRunned {
-		e.RLock()
-		defer e.RUnlock()
-	}
 	return e.name
 }
 
@@ -462,16 +478,10 @@ func (e *Env) GetSid() string {
 }
 
 func (e *Env) Interrupt() {
-	e.Lock()
 	*(e.interrupt) = true
-	e.Unlock()
 }
 
 func (e *Env) CheckInterrupt() bool {
-	if e.goRunned {
-		e.Lock()
-		defer e.Unlock()
-	}
 	if *(e.interrupt) {
 		*(e.interrupt) = false
 		return true

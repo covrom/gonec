@@ -286,6 +286,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			regs.Reg[s.Reg] = v
 
 		case *binstmt.BinSET:
+			// всегда сохраняются локальные переменные, глобальные и из внешнего окружения можно только читать
 			env.Define(s.Id, regs.Reg[s.Reg])
 
 		case *binstmt.BinSETMEMBER:
