@@ -63,6 +63,7 @@ func (x VMChan) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, x.Закрыть), true
 	case "размер":
 		return VMFuncMustParams(0, x.Размер), true
+	// TODO: заменить на VMServer
 	case "запуститьсервер":
 		return VMFuncMustParams(2, x.ЗапуститьСервер), true
 	}
