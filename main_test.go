@@ -10,8 +10,6 @@ import (
 	"github.com/covrom/gonec/parser"
 )
 
-// go tool pprof --alloc_objects your-program mem.pprof
-
 func TestRun(t *testing.T) {
 	env := core.NewEnv()
 
@@ -28,7 +26,8 @@ func TestRun(t *testing.T) {
 	сообщить(к, ПрошлоВремениС(дтнач))
 	
 	#gonec.exe -web -t
-	#go tool pprof -svg ./gonec.exe http://localhost:5000/debug/pprof/profile?seconds=10 > cpu.svg
+	#go tool pprof -pdf ./gonec.exe http://localhost:5000/debug/pprof/profile?seconds=60 > cpu.pdf
+	#go tool pprof -pdf --alloc_objects ./gonec.exe http://localhost:5000/debug/pprof/heap > mem.pdf
 	
 	а=Новый("__функциональнаяструктуратест__",{"ПолеСтрока": "цщушаццке", "ПолеЦелоеЧисло": 3456})
   сообщить(а)

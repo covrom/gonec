@@ -263,6 +263,8 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("дата", ReflectVMTime)
 	env.DefineTypeS("длительность", ReflectVMTimeDuration)
 
+	env.DefineTypeStruct("сервер", &VMServer{})
+
 	//////////////////
 	env.DefineTypeStruct("__функциональнаяструктуратест__", &TttStructTest{})
 

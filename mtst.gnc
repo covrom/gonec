@@ -1,4 +1,4 @@
-	дтнач = ТекущаяДата()
+  дтнач = ТекущаяДата()
 	а = [](0,1000000)
 	для н=1 по 1000000 цикл
 	  а=а+[н]+[н*10]
@@ -11,6 +11,7 @@
 	
 	#gonec.exe -web -t
 	#go tool pprof -svg ./gonec.exe http://localhost:5000/debug/pprof/profile?seconds=10 > cpu.svg
+	#go tool pprof -pdf --alloc_objects ./gonec.exe http://localhost:5000/debug/pprof/heap > mem.pdf
 	
 	а=Новый("__функциональнаяструктуратест__",{"ПолеСтрока": "цщушаццке", "ПолеЦелоеЧисло": 3456})
   сообщить(а)
