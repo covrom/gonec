@@ -375,3 +375,10 @@ func (x *VMServer) Работает(args VMSlice, rets *VMSlice) error {
 	rets.Append(VMBool(x.IsOnline()))
 	return nil
 }
+
+// TODO:
+// функция обработать(соед)
+//   сообщить(соед)
+// конецфункции
+// серв = Новый Сервер
+// серв.Открыть("tcp", ":9990", 1000, обработать)
