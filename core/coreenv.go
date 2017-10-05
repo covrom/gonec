@@ -12,72 +12,12 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
-type Vars struct {
-	ids  []int      // сортированный массив идентификаторов из names.UniqueNames, отраженных в состав переменных
-	vals []VMValuer // индекс значения равен индексу идентификатора в ids
-}
-
-func NewVars(cap int) *Vars {
-	return &Vars{
-		ids:  make([]int, 0, cap),
-		vals: make([]VMValuer, 0, cap),
-	}
-}
-
-func (v *Vars) Put(id int, val VMValuer, define bool) bool {
-	i := sort.SearchInts(v.ids, id)
-	if i == len(v.ids) {
-		if define {
-			v.ids = append(v.ids, id)
-			v.vals = append(v.vals, val)
-			return true
-		}
-	} else {
-		if v.ids[i] == id {
-			v.vals[i] = val
-			return true
-		} else if define {
-			v.ids = append(v.ids, 0)
-			v.vals = append(v.vals, VMNil)
-			copy(v.ids[i+1:], v.ids[i:])
-			v.ids[i] = id
-			copy(v.vals[i+1:], v.vals[i:])
-			v.vals[i] = val
-			return true
-		}
-	}
-	return false
-}
-
-func (v *Vars) Get(id int) (VMValuer, bool) {
-	i := sort.SearchInts(v.ids, id)
-	if i < len(v.ids) {
-		if v.ids[i] == id {
-			return v.vals[i], true
-		}
-	}
-	return nil, false
-}
-
-func (v *Vars) Delete(id int) {
-	i := sort.SearchInts(v.ids, id)
-	if i < len(v.ids) {
-		if v.ids[i] == id {
-			copy(v.ids[i:], v.ids[i+1:])
-			v.ids = v.ids[:len(v.ids)-1]
-			copy(v.vals[i:], v.vals[i+1:])
-			v.vals[len(v.vals)-1] = nil
-			v.vals = v.vals[:len(v.vals)-1]
-		}
-	}
-}
-
 // Env provides interface to run VM. This mean function scope and blocked-scope.
 // If stack goes to blocked-scope, it will make new Env.
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          *Vars
+	env          map[int]VMValuer
 	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
@@ -97,7 +37,7 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:          NewVars(20),
+		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       nil,
 		interrupt:    &b,
@@ -114,7 +54,7 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:          NewVars(20),
+				env:          make(map[int]VMValuer),
 				typ:          make(map[int]reflect.Type),
 				parent:       ee,
 				interrupt:    e.interrupt,
@@ -132,7 +72,7 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:          NewVars(20),
+		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		interrupt:    e.interrupt,
@@ -176,7 +116,7 @@ func (e *Env) NewModule(n string) *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:          NewVars(20),
+		env:          make(map[int]VMValuer),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		name:         names.FastToLower(n),
@@ -201,10 +141,10 @@ func (e *Env) Destroy() {
 		defer e.parent.Unlock()
 	}
 
-	for k, v := range e.parent.env.vals {
+	for k, v := range e.parent.env {
 		if vv, ok := v.(*Env); ok {
 			if vv == e {
-				e.parent.env.Delete(e.parent.env.ids[k])
+				delete(e.parent.env, k)
 			}
 		}
 	}
@@ -271,20 +211,15 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 		if ee.goRunned {
 			ee.RLock()
 		}
-		// if k >= 0 && k < len(ee.typ) {
 		if v, ok := ee.typ[k]; ok {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
 			return v, nil
 		}
-		// }
 		if ee.goRunned {
 			ee.RUnlock()
 		}
-		// if v, ok := ee.typ[k]; ok {
-		// 	return v, nil
-		// }
 	}
 	return nil, fmt.Errorf("Тип неопределен '%s'", names.UniqueNames.Get(k))
 }
@@ -303,16 +238,7 @@ func (e *Env) Get(k int) (VMValuer, error) {
 			}
 			return ee.lastval, nil
 		}
-		// if k >= 0 && k < len(ee.env) {
-		// 	v := ee.env[k]
-		// 	if v != nil {
-		// 		if ee.goRunned {
-		// 			ee.RUnlock()
-		// 		}
-		// 		return v, nil
-		// 	}
-		// }
-		if v, ok := ee.env.Get(k); ok {
+		if v, ok := ee.env[k]; ok {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
@@ -333,7 +259,8 @@ func (e *Env) Set(k int, v VMValuer) error {
 		if ee.goRunned {
 			ee.Lock()
 		}
-		if ok := ee.env.Put(k, v, false); ok {
+		if _, ok := ee.env[k]; ok {
+			ee.env[k] = v
 			ee.lastid = k
 			ee.lastval = v
 			if ee.goRunned {
@@ -366,55 +293,7 @@ func (e *Env) DefineType(k int, t reflect.Type) error {
 				ee.Lock()
 				defer ee.Unlock()
 			}
-			// for k >= len(ee.typ) {
-			// 	ee.typ = append(ee.typ, nil)
-			// }
 			ee.typ[k] = t
-			// // пишем в кэш индексы полей и методов для структур
-			// // для работы со структурами нам нужен конкретный тип
-			// if typ.Kind() == reflect.Ptr {
-			// 	typ = typ.Elem()
-			// }
-			// if typ.Kind() == reflect.Struct {
-			// 	// методы берем в т.ч. у ссылки на структуру, они включают методы самой структуры
-			// 	// это будут разные методы для разных reflect.Value
-			// 	ptyp := reflect.TypeOf(reflect.New(typ).Interface())
-			// 	basicpath := typ.PkgPath() + "." + typ.Name() + "."
-
-			// 	//методы
-			// 	nm := typ.NumMethod()
-			// 	for i := 0; i < nm; i++ {
-			// 		meth := typ.Method(i)
-			// 		// только экспортируемые
-			// 		if meth.PkgPath == "" {
-			// 			namtyp := UniqueNames.Set(basicpath + meth.Name)
-			// 			// fmt.Println("SET METHOD: "+basicpath+meth.Name, meth.Index)
-			// 			// ast.StructMethodIndexes.Cache[namtyp] = meth.Index
-			// 		}
-			// 	}
-			// 	nm = ptyp.NumMethod()
-			// 	for i := 0; i < nm; i++ {
-			// 		meth := ptyp.Method(i)
-			// 		// только экспортируемые
-			// 		if meth.PkgPath == "" {
-			// 			namtyp := UniqueNames.Set(basicpath + "*" + meth.Name)
-			// 			// fmt.Println("SET *METHOD: "+basicpath+"*"+meth.Name, meth.Index)
-			// 			// ast.StructMethodIndexes.Cache[namtyp] = meth.Index
-			// 		}
-			// 	}
-
-			// 	//поля
-			// 	nm = typ.NumField()
-			// 	for i := 0; i < nm; i++ {
-			// 		field := typ.Field(i)
-			// 		// только экспортируемые неанонимные поля
-			// 		if field.PkgPath == "" && !field.Anonymous {
-			// 			namtyp := UniqueNames.Set(basicpath + field.Name)
-			// 			// fmt.Println("SET FIELD: "+basicpath+field.Name, field.Index)
-			// 			// ast.StructFieldIndexes.Cache[namtyp] = field.Index
-			// 		}
-			// 	}
-			// }
 			return nil
 		}
 	}
@@ -436,10 +315,7 @@ func (e *Env) Define(k int, v VMValuer) error {
 	if e.goRunned {
 		e.Lock()
 	}
-	// for k >= len(e.env) {
-	// 	e.env = append(e.env, nil)
-	// }
-	e.env.Put(k, v, true)
+	e.env[k] = v
 	e.lastid = k
 	e.lastval = v
 
@@ -464,8 +340,15 @@ func (e *Env) Dump() {
 	if e.goRunned {
 		e.RLock()
 	}
-	for i, k := range e.env.ids {
-		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), e.env.vals[i], e.env.vals[i])
+	sk := make([]int, len(e.env))
+	i := 0
+	for k := range e.env {
+		sk[i] = k
+		i++
+	}
+	sort.Ints(sk)
+	for _, k := range sk {
+		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), e.env[k], e.env[k])
 	}
 	if e.goRunned {
 		e.RUnlock()
