@@ -6,6 +6,9 @@ import (
 	"net"
 	"runtime"
 	"sync"
+
+	"github.com/covrom/gonec/names"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -18,7 +21,43 @@ type VMConn struct {
 	conn   net.Conn
 	id     int
 	closed bool
+	uid    string
 }
+
+func (c *VMConn) vmval() {}
+
+func (c *VMConn) Interface() interface{} {
+	return c.conn
+}
+
+func (c *VMConn) String() string {
+	if c.closed {
+		return fmt.Sprintf("Соединение с клиентом (закрыто)")
+	}
+	return fmt.Sprintf("Соединение с клиентом %s", c.conn.RemoteAddr())
+}
+
+func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
+
+	// только эти методы будут доступны из кода на языке Гонец!
+
+	switch names.UniqueNames.GetLowerCase(name) {
+	case "":
+		// return VMFuncMustParams(0, t.Год), true
+
+	}
+
+	return nil, false
+}
+
+func (x *VMConn) Handle(f VMFunc) {
+	args := make(VMSlice, 1)
+	rets := make(VMSlice, 0)
+	args[0] = x
+	f(args, &rets)
+}
+
+// TODO: функции получения и отправки VMStringMap
 
 // VMServer - сервер протоколов взаимодействия, предоставляет базовый обработчик для TCP, RPC-JSON и HTTP соединений
 // данный объект не может сериализоваться и не может участвовать в операциях с операндами
@@ -30,7 +69,7 @@ type VMServer struct {
 	protocol string // tcp, json, http
 	done     chan error
 	health   chan bool
-	clients  []VMConn // каждому соединению присваивается GUID
+	clients  []*VMConn // каждому соединению присваивается GUID
 	lnr      net.Listener
 	maxconn  int
 }
@@ -59,7 +98,7 @@ func (x *VMServer) healthSender() {
 	}
 }
 
-func (x *VMServer) Open(proto, addr string, maxconn int) (err error) {
+func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc) (err error) {
 	// запускаем сервер
 	if x.lnr != nil {
 		return VMErrorServerNowOnline
@@ -67,7 +106,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int) (err error) {
 
 	x.done = make(chan error)
 	x.health = make(chan bool)
-	x.clients = make([]VMConn, 0)
+	x.clients = make([]*VMConn, 0)
 
 	x.addr = addr
 	x.protocol = proto
@@ -96,7 +135,16 @@ func (x *VMServer) Open(proto, addr string, maxconn int) (err error) {
 				x.mu.Lock()
 				l := len(x.clients)
 				if l < maxconn || maxconn == -1 {
-					x.clients = append(x.clients, VMConn{conn: conn, id: l, closed: false})
+
+					vcn := &VMConn{
+						conn:   conn,
+						id:     l,
+						closed: false,
+						uid:    uuid.NewV4().String(),
+					}
+					x.clients = append(x.clients, vcn)
+					go vcn.Handle(handler)
+
 				} else {
 					conn.Close()
 				}
@@ -174,6 +222,18 @@ func (x *VMServer) RemoveAllClosedClients() {
 				x.clients[j].id--
 			}
 		}
+	}
+}
+
+// ForEachClient запускает обработчики для каждого клиента, последовательно
+func (x *VMServer) ForEachClient(f VMFunc) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	for _, cli := range x.clients {
+		args := make(VMSlice, 1)
+		rets := make(VMSlice, 0)
+		args[0] = cli
+		f(args, &rets)
 	}
 }
 
