@@ -12,12 +12,72 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
+type Vars struct {
+	ids  []int      // сортированный массив идентификаторов из names.UniqueNames, отраженных в состав переменных
+	vals []VMValuer // индекс значения равен индексу идентификатора в ids
+}
+
+func NewVars(cap int) *Vars {
+	return &Vars{
+		ids:  make([]int, 0, cap),
+		vals: make([]VMValuer, 0, cap),
+	}
+}
+
+func (v *Vars) Put(id int, val VMValuer, define bool) bool {
+	i := sort.SearchInts(v.ids, id)
+	if i == len(v.ids) {
+		if define {
+			v.ids = append(v.ids, id)
+			v.vals = append(v.vals, val)
+			return true
+		}
+	} else {
+		if v.ids[i] == id {
+			v.vals[i] = val
+			return true
+		} else if define {
+			v.ids = append(v.ids, 0)
+			v.vals = append(v.vals, VMNil)
+			copy(v.ids[i+1:], v.ids[i:])
+			v.ids[i] = id
+			copy(v.vals[i+1:], v.vals[i:])
+			v.vals[i] = val
+			return true
+		}
+	}
+	return false
+}
+
+func (v *Vars) Get(id int) (VMValuer, bool) {
+	i := sort.SearchInts(v.ids, id)
+	if i < len(v.ids) {
+		if v.ids[i] == id {
+			return v.vals[i], true
+		}
+	}
+	return nil, false
+}
+
+func (v *Vars) Delete(id int) {
+	i := sort.SearchInts(v.ids, id)
+	if i < len(v.ids) {
+		if v.ids[i] == id {
+			copy(v.ids[i:], v.ids[i+1:])
+			v.ids = v.ids[:len(v.ids)-1]
+			copy(v.vals[i:], v.vals[i+1:])
+			v.vals[len(v.vals)-1] = nil
+			v.vals = v.vals[:len(v.vals)-1]
+		}
+	}
+}
+
 // Env provides interface to run VM. This mean function scope and blocked-scope.
 // If stack goes to blocked-scope, it will make new Env.
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          map[int]VMValuer
+	env          *Vars
 	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
@@ -37,7 +97,7 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:          make(map[int]VMValuer),
+		env:          NewVars(20),
 		typ:          make(map[int]reflect.Type),
 		parent:       nil,
 		interrupt:    &b,
@@ -54,7 +114,7 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:          make(map[int]VMValuer),
+				env:          NewVars(20),
 				typ:          make(map[int]reflect.Type),
 				parent:       ee,
 				interrupt:    e.interrupt,
@@ -72,7 +132,7 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:          make(map[int]VMValuer),
+		env:          NewVars(20),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		interrupt:    e.interrupt,
@@ -116,7 +176,7 @@ func (e *Env) NewModule(n string) *Env {
 
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:          make(map[int]VMValuer),
+		env:          NewVars(20),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		name:         names.FastToLower(n),
@@ -141,10 +201,10 @@ func (e *Env) Destroy() {
 		defer e.parent.Unlock()
 	}
 
-	for k, v := range e.parent.env {
+	for k, v := range e.parent.env.vals {
 		if vv, ok := v.(*Env); ok {
 			if vv == e {
-				delete(e.parent.env, k)
+				e.parent.env.Delete(e.parent.env.ids[k])
 			}
 		}
 	}
@@ -252,7 +312,7 @@ func (e *Env) Get(k int) (VMValuer, error) {
 		// 		return v, nil
 		// 	}
 		// }
-		if v, ok := ee.env[k]; ok {
+		if v, ok := ee.env.Get(k); ok {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
@@ -273,17 +333,7 @@ func (e *Env) Set(k int, v VMValuer) error {
 		if ee.goRunned {
 			ee.Lock()
 		}
-		// if k >= 0 && k < len(ee.env) {
-		// 	ee.env[k] = v
-		// 	e.lastid = k
-		// 	e.lastval = v
-		// 	if ee.goRunned {
-		// 		ee.Unlock()
-		// 	}
-		// 	return nil
-		// }
-		if _, ok := ee.env[k]; ok {
-			ee.env[k] = v
+		if ok := ee.env.Put(k, v, false); ok {
 			ee.lastid = k
 			ee.lastval = v
 			if ee.goRunned {
@@ -389,7 +439,7 @@ func (e *Env) Define(k int, v VMValuer) error {
 	// for k >= len(e.env) {
 	// 	e.env = append(e.env, nil)
 	// }
-	e.env[k] = v
+	e.env.Put(k, v, true)
 	e.lastid = k
 	e.lastval = v
 
@@ -414,13 +464,8 @@ func (e *Env) Dump() {
 	if e.goRunned {
 		e.RLock()
 	}
-	var keys []int
-	for k := range e.env {
-		keys = append(keys, k)
-	}
-	sort.Ints(keys)
-	for _, k := range keys {
-		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), e.env[k], e.env[k])
+	for i, k := range e.env.ids {
+		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), e.env.vals[i], e.env.vals[i])
 	}
 	if e.goRunned {
 		e.RUnlock()

@@ -444,20 +444,28 @@ func (e *CallExpr) BinTo(bins *binstmt.BinStmts, reg int, lid *int, inStmt bool,
 	}
 
 	// помещаем аргументы в массив аргументов
-	bins.Append(binstmt.NewBinMAKESLICE(reg+regoff, len(e.SubExprs), len(e.SubExprs), e))
-	sliceoff := 1
+	// bins.Append(binstmt.NewBinMAKESLICE(reg+regoff, len(e.SubExprs), len(e.SubExprs), e))
+	// sliceoff := 1
 
 	for i, ee := range e.SubExprs {
-		// каждое выражение сохраняем в следующем по номеру регистре (относительно регистра слайса)
-		ee.BinTo(bins, reg+sliceoff+regoff, lid, false, maxreg)
-		bins.Append(binstmt.NewBinSETIDX(reg+regoff, i, reg+sliceoff+regoff, ee))
+		// каждое выражение сохраняем в следующем по номеру регистре
+		ri := reg + regoff + i
+		ee.BinTo(bins, ri, lid, false, maxreg)
+		if ri > *maxreg {
+			*maxreg = ri
+		}
+		// ee.BinTo(bins, reg+sliceoff+regoff, lid, false, maxreg)
+		// bins.Append(binstmt.NewBinSETIDX(reg+regoff, i, reg+sliceoff+regoff, ee))
 	}
 
 	// для анонимных (Name==0) - в reg будет функция, иначе первый аргумент (см. выше) или слайс аргументов
 	bins.Append(binstmt.NewBinCALL(e.Name, len(e.SubExprs), reg, reg, e.VarArg, e.Go, e))
 
-	if reg+regoff+sliceoff > *maxreg {
-		*maxreg = reg + regoff + sliceoff
+	// if reg+regoff+sliceoff > *maxreg {
+	// 	*maxreg = reg + regoff + sliceoff
+	// }
+	if reg > *maxreg {
+		*maxreg = reg
 	}
 }
 

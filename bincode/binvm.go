@@ -671,14 +671,14 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			var argsl core.VMSlice
 			if s.Name == 0 {
 				fgnc = regs.Reg[s.RegArgs]
-				argsl = regs.Reg[s.RegArgs+1].(core.VMSlice)
+				argsl = regs.Reg[s.RegArgs+1 : s.RegArgs+1+s.NumArgs]
 			} else {
 				fgnc, err = env.Get(s.Name)
 				if err != nil {
 					catcherr = binstmt.NewError(stmt, err)
 					goto catching
 				}
-				argsl = regs.Reg[s.RegArgs].(core.VMSlice)
+				argsl = regs.Reg[s.RegArgs : s.RegArgs+s.NumArgs]
 			}
 			rets := retsSlice[:0]
 			if fnc, ok := fgnc.(core.VMFunc); ok {
