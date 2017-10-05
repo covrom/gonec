@@ -1,8 +1,11 @@
 package core
 
 import (
+	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"runtime"
 	"sync"
@@ -15,6 +18,8 @@ var (
 	VMErrorServerNowOnline   = errors.New("Сервер уже запущен")
 	VMErrorServerOffline     = errors.New("Сервер уже остановлен")
 	VMErrorIncorrectClientId = errors.New("Неверный идентификатор соединения")
+	VMErrorIncorrectMessage  = errors.New("Неверный формат сообщения")
+	VMErrorWrongType         = errors.New("По каналу TCP можно передавать только структуры")
 )
 
 type VMConn struct {
@@ -42,9 +47,12 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 	// только эти методы будут доступны из кода на языке Гонец!
 
 	switch names.UniqueNames.GetLowerCase(name) {
-	case "":
-		// return VMFuncMustParams(0, t.Год), true
-
+	case "получить":
+		return VMFuncMustParams(0, c.Получить), true
+	case "отправить":
+		return VMFuncMustParams(1, c.Отправить), true
+	case "закрыт":
+		return VMFuncMustParams(0, c.Закрыт), true
 	}
 
 	return nil, false
@@ -57,7 +65,123 @@ func (x *VMConn) Handle(f VMFunc) {
 	f(args, &rets)
 }
 
-// TODO: функции получения и отправки VMStringMap
+func (x *VMConn) Receive() (VMStringMap, error) {
+
+	rv := make(VMStringMap)
+	var buf bytes.Buffer
+
+	_, err := io.CopyN(&buf, x.conn, 24)
+
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+		}
+		return rv, err
+	}
+
+	b := buf.Bytes()
+
+	// проверяем целостность полученного сообщения
+	// сначала идет заголовок 8 байт "gonectcp"
+	// затем хэш тела, он идет 8-ю байтами
+	// затем длина тела 8 байт
+	// затем тело, шифрованное по AES128
+
+	if len(b) < 24 {
+		return rv, VMErrorIncorrectMessage
+	}
+	cstr := b[:8] // gonectcp
+	if !bytes.Equal(cstr, []byte("gonectcp")) {
+		return rv, VMErrorIncorrectMessage
+	}
+	hashbts, _ := binary.Uvarint(b[8:16]) // hash
+	lenb, _ := binary.Uvarint(b[16:24])   // len
+
+	buf.Reset()
+	_, err = io.CopyN(&buf, x.conn, int64(lenb))
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+		}
+		return rv, err
+	}
+
+	b = buf.Bytes()
+
+	// хэш зашифрованного
+	if HashBytes(b) != hashbts {
+		return rv, VMErrorIncorrectMessage
+	}
+	// проверили хэш, все ок - получаем VMStringMap
+	bd, err := DecryptAES128(b)
+	if err != nil {
+		return rv, err
+	}
+
+	if err := (&rv).UnmarshalBinary(bd); err != nil {
+		return rv, err
+	}
+	return rv, nil
+}
+
+func (x *VMConn) Получить(args VMSlice, rets *VMSlice) error {
+	v, err := x.Receive()
+	rets.Append(v)
+	return err // при ошибке вызовет исключение, нужно обрабатывать в попытке
+}
+
+func (x *VMConn) Send(val VMStringMap) error {
+
+	b, err := val.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	be, err := EncryptAES128(b)
+	if err != nil {
+		return err
+	}
+
+	//хэш зашифрованного
+	var hb [24]byte
+	copy(hb[:8], []byte("gonectcp"))
+	binary.PutUvarint(hb[8:16], HashBytes(be))
+	binary.PutUvarint(hb[16:24], uint64(len(b)))
+
+	_, err = io.Copy(x.conn, bytes.NewBuffer(hb[:]))
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+		}
+		return err
+	}
+
+	_, err = io.Copy(x.conn, bytes.NewReader(be))
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+		}
+		return err
+	}
+	return nil
+}
+
+func (x *VMConn) Отправить(args VMSlice, rets *VMSlice) error {
+	v, ok := args[0].(VMStringMap)
+	if !ok {
+		return VMErrorWrongType
+	}
+	return x.Send(v) // при ошибке вызовет исключение, нужно обрабатывать в попытке
+}
+
+func (x *VMConn) Закрыт(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMBool(x.closed))
+	return nil
+}
 
 // VMServer - сервер протоколов взаимодействия, предоставляет базовый обработчик для TCP, RPC-JSON и HTTP соединений
 // данный объект не может сериализоваться и не может участвовать в операциях с операндами
@@ -176,7 +300,6 @@ func (x *VMServer) Close() error {
 	for i := range x.clients {
 		if !x.clients[i].closed {
 			x.clients[i].conn.Close()
-			x.clients[i].conn = nil
 			x.clients[i].closed = true
 		}
 	}
@@ -199,7 +322,6 @@ func (x *VMServer) CloseClient(i int) (err error) {
 		err = nil
 		if !x.clients[i].closed {
 			err = x.clients[i].conn.Close()
-			x.clients[i].conn = nil
 			x.clients[i].closed = true
 		}
 		return
