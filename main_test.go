@@ -10,6 +10,8 @@ import (
 	"github.com/covrom/gonec/parser"
 )
 
+// go tool pprof --alloc_objects your-program mem.pprof
+
 func TestRun(t *testing.T) {
 	env := core.NewEnv()
 
