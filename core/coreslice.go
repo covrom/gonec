@@ -8,9 +8,34 @@ import (
 	"errors"
 	"reflect"
 	"sort"
+	"sync"
 
 	"github.com/covrom/gonec/names"
 )
+
+const ChunkVMSlicePool = 50
+
+// globalVMSlicePool используется виртуальной машиной для переиспользования в регистрах и параметрах вызова
+var globalVMSlicePool = sync.Pool{
+	New: func() interface{} {
+		return make(VMSlice, 0, ChunkVMSlicePool)
+	},
+}
+
+func GetGlobalVMSlice() VMSlice {
+	sl := globalVMSlicePool.Get()
+	if sl != nil {
+		return sl.(VMSlice)
+	}
+	return make(VMSlice, 0, ChunkVMSlicePool)
+}
+
+func PutGlobalVMSlice(sl VMSlice) {
+	if cap(sl) <= ChunkVMSlicePool {
+		sl = sl[:0]
+		globalVMSlicePool.Put(sl)
+	}
+}
 
 type VMSlice []VMValuer
 

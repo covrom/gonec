@@ -12,12 +12,78 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
+const chunkValsPool = 200
+
+var envPool = sync.Pool{
+	New: func() interface{} {
+		return make(VMSlice, 0, chunkValsPool)
+	},
+}
+
+func getEnvVals() VMSlice {
+	sl := envPool.Get()
+	if sl != nil {
+		return sl.(VMSlice)
+	}
+	return make(VMSlice, 0, chunkValsPool)
+}
+
+func putEnvVals(sl VMSlice) {
+	if cap(sl) <= chunkValsPool {
+		sl = sl[:0]
+		envPool.Put(sl)
+	}
+}
+
+type Vals struct {
+	idx  map[int]int
+	vals VMSlice
+}
+
+func NewVals() *Vals {
+	v := Vals{
+		idx:  make(map[int]int),
+		vals: getEnvVals(),
+	}
+	return &v
+}
+
+func (v *Vals) Get(name int) (VMValuer, bool) {
+	if i, ok := v.idx[name]; ok {
+		return v.vals[i], v.vals[i] != nil
+	}
+	return nil, false
+}
+
+func (v *Vals) Set(name int, val VMValuer) {
+	if i, ok := v.idx[name]; ok {
+		v.vals[i] = val
+	} else {
+		i = len(v.vals)
+		v.idx[name] = i
+		v.vals = append(v.vals, val)
+	}
+}
+
+func (v *Vals) Del(name int) {
+	if i, ok := v.idx[name]; ok {
+		v.vals[i] = nil
+	}
+}
+
+func (v *Vals) Destroy() {
+	for i := range v.vals {
+		v.vals[i] = nil
+	}
+	putEnvVals(v.vals)
+}
+
 // Env provides interface to run VM. This mean function scope and blocked-scope.
 // If stack goes to blocked-scope, it will make new Env.
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          map[int]VMValuer
+	env          *Vals
 	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
@@ -37,7 +103,7 @@ func NewEnv() *Env {
 	b := false
 
 	m := &Env{
-		env:          make(map[int]VMValuer),
+		env:          NewVals(),
 		typ:          make(map[int]reflect.Type),
 		parent:       nil,
 		interrupt:    &b,
@@ -54,7 +120,7 @@ func (e *Env) NewEnv() *Env {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
 			return &Env{
-				env:          make(map[int]VMValuer),
+				env:          NewVals(),
 				typ:          make(map[int]reflect.Type),
 				parent:       ee,
 				interrupt:    e.interrupt,
@@ -72,7 +138,7 @@ func (e *Env) NewEnv() *Env {
 // NewSubEnv создает новое окружение под e, нужно для замыкания в анонимных функциях
 func (e *Env) NewSubEnv() *Env {
 	return &Env{
-		env:          make(map[int]VMValuer),
+		env:          NewVals(),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		interrupt:    e.interrupt,
@@ -101,22 +167,9 @@ func (e *Env) NewModule(n string) *Env {
 	return m
 }
 
-// func NewPackage(n string, w io.Writer) *Env {
-// 	b := false
-
-// 	return &Env{
-// 		env:       make(map[string]reflect.Value),
-// 		typ:       make(map[string]reflect.Type),
-// 		parent:    nil,
-// 		name:      strings.ToLower(n),
-// 		interrupt: &b,
-// 		stdout:    w,
-// 	}
-// }
-
 func (e *Env) NewPackage(n string) *Env {
 	return &Env{
-		env:          make(map[int]VMValuer),
+		env:          NewVals(),
 		typ:          make(map[int]reflect.Type),
 		parent:       e,
 		name:         names.FastToLower(n),
@@ -141,14 +194,15 @@ func (e *Env) Destroy() {
 		defer e.parent.Unlock()
 	}
 
-	for k, v := range e.parent.env {
+	for k, v := range e.parent.env.vals {
 		if vv, ok := v.(*Env); ok {
 			if vv == e {
-				delete(e.parent.env, k)
+				e.parent.env.vals[k] = nil
 			}
 		}
 	}
 	e.parent = nil
+	e.env.Destroy()
 	e.env = nil
 }
 
@@ -238,7 +292,7 @@ func (e *Env) Get(k int) (VMValuer, error) {
 			}
 			return ee.lastval, nil
 		}
-		if v, ok := ee.env[k]; ok {
+		if v, ok := ee.env.Get(k); ok {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
@@ -259,8 +313,8 @@ func (e *Env) Set(k int, v VMValuer) error {
 		if ee.goRunned {
 			ee.Lock()
 		}
-		if _, ok := ee.env[k]; ok {
-			ee.env[k] = v
+		if _, ok := ee.env.Get(k); ok {
+			ee.env.Set(k, v)
 			ee.lastid = k
 			ee.lastval = v
 			if ee.goRunned {
@@ -315,7 +369,7 @@ func (e *Env) Define(k int, v VMValuer) error {
 	if e.goRunned {
 		e.Lock()
 	}
-	e.env[k] = v
+	e.env.Set(k, v)
 	e.lastid = k
 	e.lastval = v
 
@@ -340,15 +394,16 @@ func (e *Env) Dump() {
 	if e.goRunned {
 		e.RLock()
 	}
-	sk := make([]int, len(e.env))
+	sk := make([]int, len(e.env.vals))
 	i := 0
-	for k := range e.env {
+	for k := range e.env.idx {
 		sk[i] = k
 		i++
 	}
 	sort.Ints(sk)
 	for _, k := range sk {
-		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), e.env[k], e.env[k])
+		v, _ := e.env.Get(k)
+		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), v, v)
 	}
 	if e.goRunned {
 		e.RUnlock()

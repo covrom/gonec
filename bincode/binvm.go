@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/covrom/gonec/ast"
 	"github.com/covrom/gonec/bincode/binstmt"
@@ -57,6 +58,23 @@ func ParseSrc(src string) (prs ast.Stmts, bin binstmt.BinCode, err error) {
 	bin = prs.BinaryCode(0, &lid)
 
 	return prs, bin, err
+}
+
+var binRegsPool = sync.Pool{}
+
+func getRegs(ln int) core.VMSlice {
+	sl := binRegsPool.Get()
+	if sl != nil {
+		vsl := sl.(core.VMSlice)
+		if len(vsl) == ln {
+			return vsl
+		}
+	}
+	return make(core.VMSlice, ln)
+}
+
+func putRegs(sl core.VMSlice) {
+	binRegsPool.Put(sl)
 }
 
 // Run запускает код на исполнение, например, после загрузки из файла
@@ -129,8 +147,10 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 		core.LoadAllBuiltins(env)
 	}
 
-	registers := make([]core.VMValuer, stmts.MaxReg+1)
-	return RunWorker(stmts.Code, stmts.Labels, registers, env, 0)
+	registers := getRegs(stmts.MaxReg + 1)
+	retval, reterr = RunWorker(stmts.Code, stmts.Labels, registers, env, 0)
+	putRegs(registers)
+	return
 }
 
 // RunWorker исполняет кусок кода, начиная с инструкции idx
@@ -160,8 +180,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 		ForBreaks:    make([]int, 0, 8),
 		ForContinues: make([]int, 0, 8),
 	}
-
-	retsSlice := make(core.VMSlice, 0, 20) // кэширующий слайс возвращаемых значений из функций VMFunc
 
 	var (
 		catcherr error
@@ -680,14 +698,17 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				}
 				argsl = regs.Reg[s.RegArgs : s.RegArgs+s.NumArgs]
 			}
-			rets := retsSlice[:0]
+			rets := core.GetGlobalVMSlice()
 			if fnc, ok := fgnc.(core.VMFunc); ok {
 				// если ее надо вызвать в горутине - вызываем
 				if s.Go {
 					env.SetGoRunned(true)
-					rets = make(core.VMSlice, 0) // для каждой горутины отдельный массив возвратов, который потом не используется
-					go fnc(argsl, &rets)
-					regs.Reg[s.RegRets] = make(core.VMSlice, 0) // для такого вызова - всегда пустой массив возвратов
+					rets = core.GetGlobalVMSlice() // для каждой горутины отдельный массив возвратов, который потом не используется
+					go func(args, rets core.VMSlice) {
+						fnc(argsl, &rets)
+						core.PutGlobalVMSlice(rets) // всегда возвращаем в пул
+					}(argsl, rets)
+					regs.Reg[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
 					break
 				}
 
@@ -704,10 +725,12 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				switch len(rets) {
 				case 0:
 					regs.Reg[s.RegRets] = core.VMNil
+					core.PutGlobalVMSlice(rets)
 				case 1:
 					regs.Reg[s.RegRets] = rets[0]
+					core.PutGlobalVMSlice(rets)
 				default:
-					regs.Reg[s.RegRets] = rets
+					regs.Reg[s.RegRets] = rets //не возвращаем в пул
 				}
 				break
 			} else {
@@ -745,8 +768,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						}
 					}
 					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
-					callregs := make([]core.VMValuer, expr.MaxReg+1)
+					callregs := getRegs(expr.MaxReg + 1)
 					rr, err := RunWorker(fstmts, flabels, callregs, newenv, flabels[expr.LabelStart])
+					putRegs(callregs)
 					if err == binstmt.ReturnError {
 						err = nil
 					}
@@ -756,6 +780,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					} else {
 						rets.Append(rr)
 					}
+					newenv.Destroy()
 					return err
 				}
 			}(s, stmts, labels, env)

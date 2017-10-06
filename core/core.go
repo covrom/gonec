@@ -151,6 +151,25 @@ func Import(env *Env) *Env {
 		return nil
 	}))
 
+	env.DefineS("получитьмассивизпула", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 0 {
+			return errors.New("Параметры не требуются")
+		}
+		rets.Append(GetGlobalVMSlice())
+		return nil
+	}))
+
+	env.DefineS("вернутьмассиввпул", VMFunc(func(args VMSlice, rets *VMSlice) error {
+		if len(args) != 1 {
+			return errors.New("Требуется один параметр-массив")
+		}
+		if v, ok := args[0].(VMSlice); ok {
+			PutGlobalVMSlice(v)
+			return nil
+		}
+		return errors.New("Параметр должен быть массивом")
+	}))
+
 	env.DefineS("случайнаястрока", VMFunc(func(args VMSlice, rets *VMSlice) error {
 		if len(args) != 1 {
 			return errors.New("Должен быть один параметр")
