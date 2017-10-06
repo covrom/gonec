@@ -17,9 +17,10 @@ import (
 var (
 	VMErrorServerNowOnline   = errors.New("Сервер уже запущен")
 	VMErrorServerOffline     = errors.New("Сервер уже остановлен")
+	VMErrorIncorrectProtocol = errors.New("Неверный протокол")
 	VMErrorIncorrectClientId = errors.New("Неверный идентификатор соединения")
 	VMErrorIncorrectMessage  = errors.New("Неверный формат сообщения")
-	VMErrorWrongType         = errors.New("По каналу TCP можно передавать только структуры")
+	VMErrorNeedSlice         = errors.New("По каналу TCP можно передавать только структуры")
 )
 
 type VMConn struct {
@@ -173,7 +174,7 @@ func (x *VMConn) Send(val VMStringMap) error {
 func (x *VMConn) Отправить(args VMSlice, rets *VMSlice) error {
 	v, ok := args[0].(VMStringMap)
 	if !ok {
-		return VMErrorWrongType
+		return VMErrorNeedSlice
 	}
 	return x.Send(v) // при ошибке вызовет исключение, нужно обрабатывать в попытке
 }
@@ -277,6 +278,8 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc) (err er
 				runtime.Gosched()
 			}
 		}(x.lnr)
+	default:
+		return VMErrorIncorrectProtocol
 	}
 	return nil
 }
@@ -362,6 +365,7 @@ func (x *VMServer) ForEachClient(f VMFunc) {
 func (x *VMServer) VMRegister() {
 	x.VMRegisterMethod("Закрыть", x.Закрыть)
 	x.VMRegisterMethod("Работает", x.Работает)
+	x.VMRegisterMethod("Открыть", x.Открыть)
 	// tst.VMRegisterField("ПолеСтрока", &tst.ПолеСтрока)
 }
 
@@ -373,6 +377,68 @@ func (x *VMServer) Закрыть(args VMSlice, rets *VMSlice) error {
 
 func (x *VMServer) Работает(args VMSlice, rets *VMSlice) error {
 	rets.Append(VMBool(x.IsOnline()))
+	return nil
+}
+
+func (x *VMServer) Открыть(args VMSlice, rets *VMSlice) error {
+	if len(args) != 4 {
+		return errors.New("Требуется четыре аргумента")
+	}
+	p, ok := args[0].(VMString)
+	if !ok {
+		return errors.New("Первый аргумент должен быть строкой")
+	}
+	adr, ok := args[1].(VMString)
+	if !ok {
+		return errors.New("Второй аргумент должен быть строкой")
+	}
+	lim, ok := args[2].(VMInt)
+	if !ok {
+		return errors.New("Третий аргумент должен быть числом")
+	}
+	f, ok := args[3].(VMFunc)
+	if !ok {
+		return errors.New("Четвертый аргумент должен быть функцией")
+	}
+
+	return x.Open(string(p), string(adr), int(lim), f)
+}
+
+type VMClient struct {
+	VMMetaObj //должен передаваться по ссылке, поэтому это будет объект метаданных
+
+	addr     string  // [addr]:port
+	protocol string  // tcp, json, http
+	conn     *VMConn // каждому соединению присваивается GUID
+}
+
+func (x *VMClient) String() string {
+	return fmt.Sprintf("Клиент %s %s", x.protocol, x.addr)
+}
+
+func (x *VMClient) IsOnline() bool {
+	return x.conn != nil && !x.conn.closed
+}
+
+func (x *VMClient) Open(proto, addr string, handler VMFunc) error {
+	switch proto {
+	case "tcp":
+		conn, err := net.Dial(proto, addr)
+		if err != nil {
+			return err
+		}
+
+		x.conn = &VMConn{
+			conn:   conn,
+			id:     -1,
+			closed: false,
+			uid:    uuid.NewV4().String(),
+		}
+
+		go x.conn.Handle(handler)
+	default:
+		return VMErrorIncorrectProtocol
+	}
 	return nil
 }
 
