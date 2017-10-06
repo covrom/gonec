@@ -52,8 +52,10 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, c.Получить), true
 	case "отправить":
 		return VMFuncMustParams(1, c.Отправить), true
-	case "закрыт":
-		return VMFuncMustParams(0, c.Закрыт), true
+	case "закрыто":
+		return VMFuncMustParams(0, c.Закрыто), true
+	case "идентификатор":
+		return VMFuncMustParams(0, c.Идентификатор), true
 	}
 
 	return nil, false
@@ -64,6 +66,14 @@ func (x *VMConn) Handle(f VMFunc) {
 	rets := make(VMSlice, 0)
 	args[0] = x
 	f(args, &rets)
+	// закрываем по окончании обработки
+	x.conn.Close()
+	x.closed = true
+}
+
+func (x *VMConn) Идентификатор(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMString(x.uid))
+	return nil
 }
 
 func (x *VMConn) Receive() (VMStringMap, error) {
@@ -179,7 +189,7 @@ func (x *VMConn) Отправить(args VMSlice, rets *VMSlice) error {
 	return x.Send(v) // при ошибке вызовет исключение, нужно обрабатывать в попытке
 }
 
-func (x *VMConn) Закрыт(args VMSlice, rets *VMSlice) error {
+func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice) error {
 	rets.Append(VMBool(x.closed))
 	return nil
 }
@@ -386,19 +396,19 @@ func (x *VMServer) Открыть(args VMSlice, rets *VMSlice) error {
 	}
 	p, ok := args[0].(VMString)
 	if !ok {
-		return errors.New("Первый аргумент должен быть строкой")
+		return errors.New("Первый аргумент должен быть строкой с типом канала")
 	}
 	adr, ok := args[1].(VMString)
 	if !ok {
-		return errors.New("Второй аргумент должен быть строкой")
+		return errors.New("Второй аргумент должен быть строкой-адресом")
 	}
 	lim, ok := args[2].(VMInt)
 	if !ok {
-		return errors.New("Третий аргумент должен быть числом")
+		return errors.New("Третий аргумент должен быть числом-лимитом подключений")
 	}
 	f, ok := args[3].(VMFunc)
 	if !ok {
-		return errors.New("Четвертый аргумент должен быть функцией")
+		return errors.New("Четвертый аргумент должен быть функцией с одним аргументом-соединением")
 	}
 
 	return x.Open(string(p), string(adr), int(lim), f)
@@ -436,15 +446,51 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc) error {
 		}
 
 		go x.conn.Handle(handler)
+
 	default:
 		return VMErrorIncorrectProtocol
 	}
 	return nil
 }
 
-// TODO:
-// функция обработать(соед)
-//   сообщить(соед)
-// конецфункции
-// серв = Новый Сервер
-// серв.Открыть("tcp", ":9990", 1000, обработать)
+func (x *VMClient) Close() {
+	x.conn.conn.Close()
+	x.conn.closed = true
+}
+
+func (x *VMClient) VMRegister() {
+	x.VMRegisterMethod("Закрыть", x.Закрыть)
+	x.VMRegisterMethod("Работает", x.Работает)
+	x.VMRegisterMethod("Открыть", x.Открыть)
+	// tst.VMRegisterField("ПолеСтрока", &tst.ПолеСтрока)
+}
+
+func (x *VMClient) Открыть(args VMSlice, rets *VMSlice) error {
+	if len(args) != 3 {
+		return errors.New("Требуется три аргумента")
+	}
+	p, ok := args[0].(VMString)
+	if !ok {
+		return errors.New("Первый аргумент должен быть строкой с типом канала")
+	}
+	adr, ok := args[1].(VMString)
+	if !ok {
+		return errors.New("Второй аргумент должен быть строкой с адресом")
+	}
+	f, ok := args[2].(VMFunc)
+	if !ok {
+		return errors.New("Третий аргумент должен быть функцией с одним аргументом-соединением")
+	}
+
+	return x.Open(string(p), string(adr), f)
+}
+
+func (x *VMClient) Закрыть(args VMSlice, rets *VMSlice) error {
+	x.Close()
+	return nil
+}
+
+func (x *VMClient) Работает(args VMSlice, rets *VMSlice) error {
+	rets.Append(VMBool(x.IsOnline()))
+	return nil
+}
