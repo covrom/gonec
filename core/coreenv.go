@@ -72,9 +72,6 @@ func (v *Vals) Del(name int) {
 }
 
 func (v *Vals) Destroy() {
-	for i := range v.vals {
-		v.vals[i] = nil
-	}
 	putEnvVals(v.vals)
 }
 
