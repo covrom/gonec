@@ -136,7 +136,7 @@ func (s *IfStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 	if reg > *maxreg {
 		*maxreg = reg
 	}
@@ -188,7 +188,7 @@ func (s *TryStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) 
 	bins.Append(binstmt.NewBinPOPTRY(li, s))
 
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 
 	if reg+1 > *maxreg {
 		*maxreg = reg + 1
@@ -246,7 +246,7 @@ func (s *ForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) 
 	bins.Append(binstmt.NewBinPOPFOR(li, s))
 
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 
 	if reg+3 > *maxreg {
 		*maxreg = reg + 3
@@ -323,7 +323,7 @@ func (s *NumForStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	bins.Append(binstmt.NewBinPOPFOR(li, s))
 
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 
 	if reg+3 > *maxreg {
 		*maxreg = reg + 3
@@ -382,7 +382,7 @@ func (s *LoopStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int)
 	bins.Append(binstmt.NewBinPOPFOR(li, s))
 
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 
 	if reg+1 > *maxreg {
 		*maxreg = reg + 1
@@ -448,7 +448,7 @@ func (s *ReturnStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 		}
 	}
 	// в reg имеем значение или структуру возврата
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 	bins.Append(binstmt.NewBinRET(reg, s))
 
 	if reg+1 > *maxreg {
@@ -540,7 +540,7 @@ func (s *SwitchStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	}
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 	if reg+2 > *maxreg {
 		*maxreg = reg + 2
 	}
@@ -643,7 +643,7 @@ func (s *SelectStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *in
 	}
 	bins.Append(binstmt.NewBinLABEL(lend, s))
 	// освобождаем память
-	bins.Append(binstmt.NewBinFREE(reg+1, s))
+	// bins.Append(binstmt.NewBinFREE(reg+1, s))
 
 	if reg+3 > *maxreg {
 		*maxreg = reg + 3
