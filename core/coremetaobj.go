@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"reflect"
 
 	"github.com/covrom/gonec/names"
@@ -159,53 +158,53 @@ func (v *VMMetaObj) VMGetMethod(name int) (VMFunc, bool) {
 func (v *VMMetaObj) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	switch op {
 	case ADD:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case *VMMetaObj:
 			eq := v.Hash() == yy.Hash()
 			return VMBool(eq), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case *VMMetaObj:
 			eq := v.Hash() != yy.Hash()
 			return VMBool(eq), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -225,7 +224,7 @@ func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		// case ReflectVMStringMap: // получится только через Структура(Строка(объект))
 	}
 
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 func (v *VMMetaObj) MarshalBinary() ([]byte, error) {

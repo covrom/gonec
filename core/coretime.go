@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -167,13 +166,13 @@ func (x VMTimeDuration) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, er
 		case VMTime:
 			return yy.Add(x), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMTimeDuration(int64(x) - int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
 		switch yy := y.(type) {
 		case VMInt:
@@ -183,71 +182,71 @@ func (x VMTimeDuration) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, er
 		case VMTimeDuration:
 			return VMTimeDuration(int64(x) * int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMTimeDuration(int64(x) / int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMTimeDuration(int64(x) % int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMBool(int64(x) == int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMBool(int64(x) != int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMBool(int64(x) > int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMBool(int64(x) >= int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMBool(int64(x) < int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
 		switch yy := y.(type) {
 		case VMTimeDuration:
 			return VMBool(int64(x) <= int64(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMTimeDuration) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -261,7 +260,7 @@ func (x VMTimeDuration) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	case ReflectVMDecimal:
 		return NewVMDecimalFromInt64(int64(x)), nil
 	}
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 func (x VMTimeDuration) MarshalBinary() ([]byte, error) {
@@ -648,7 +647,7 @@ func (t VMTime) Формат(args VMSlice, rets *VMSlice) error {
 	// аргумент - форматная строка
 	fmtstr, ok := args[0].(VMString)
 	if !ok {
-		return errors.New("Требуется форматная строка")
+		return VMErrorNeedString
 	}
 
 	// д (d) - день месяца (цифрами) без лидирующего нуля;
@@ -896,7 +895,7 @@ func (t VMTime) Sub(t2 VMTime) VMTimeDuration {
 func (t VMTime) Вычесть(args VMSlice, rets *VMSlice) error {
 	t2, ok := args[0].(VMTime)
 	if !ok {
-		return errors.New("Требуется значение типа Дата")
+		return VMErrorNeedDate
 	}
 	rets.Append(t.Sub(t2))
 	return nil
@@ -909,7 +908,7 @@ func (t VMTime) Add(d VMTimeDuration) VMTime {
 func (t VMTime) Добавить(args VMSlice, rets *VMSlice) error {
 	d, ok := args[0].(VMTimeDuration)
 	if !ok {
-		return errors.New("Требуется значение типа Длительность")
+		return VMErrorNeedDuration
 	}
 	rets.Append(t.Add(d))
 	return nil
@@ -918,15 +917,15 @@ func (t VMTime) Добавить(args VMSlice, rets *VMSlice) error {
 func (t VMTime) ДобавитьПериод(args VMSlice, rets *VMSlice) error { //(dy, dm, dd int) VMTime {
 	dy, ok := args[0].(VMInt)
 	if !ok {
-		return errors.New("Требуется значение типа ЦелоеЧисло")
+		return VMErrorNeedInt
 	}
 	dm, ok := args[1].(VMInt)
 	if !ok {
-		return errors.New("Требуется значение типа ЦелоеЧисло")
+		return VMErrorNeedInt
 	}
 	dd, ok := args[2].(VMInt)
 	if !ok {
-		return errors.New("Требуется значение типа ЦелоеЧисло")
+		return VMErrorNeedInt
 	}
 	rets.Append(VMTime(time.Time(t).AddDate(int(dy), int(dm), int(dd))))
 	return nil
@@ -939,7 +938,7 @@ func (t VMTime) Before(d VMTime) bool {
 func (t VMTime) Раньше(args VMSlice, rets *VMSlice) error { //(d VMTime) bool {
 	t2, ok := args[0].(VMTime)
 	if !ok {
-		return errors.New("Требуется значение типа Дата")
+		return VMErrorNeedDate
 	}
 	rets.Append(VMBool(t.Before(t2)))
 	return nil
@@ -952,7 +951,7 @@ func (t VMTime) After(d VMTime) bool {
 func (t VMTime) Позже(args VMSlice, rets *VMSlice) error { //(d VMTime) bool {
 	t2, ok := args[0].(VMTime)
 	if !ok {
-		return errors.New("Требуется значение типа Дата")
+		return VMErrorNeedDate
 	}
 	rets.Append(VMBool(t.After(t2)))
 	return nil
@@ -967,7 +966,7 @@ func (t VMTime) Равно(args VMSlice, rets *VMSlice) error { //(d VMTime) boo
 	// для разных локаций тоже работает, в отличие от =
 	t2, ok := args[0].(VMTime)
 	if !ok {
-		return errors.New("Требуется значение типа Дата")
+		return VMErrorNeedDate
 	}
 	rets.Append(VMBool(t.Equal(t2)))
 	return nil
@@ -1020,7 +1019,7 @@ func (t VMTime) InLocation(name string) VMTime {
 func (t VMTime) ВЛокации(args VMSlice, rets *VMSlice) error { //(name string) VMTime {
 	name, ok := args[0].(VMString)
 	if !ok {
-		return errors.New("Требуется значение типа Строка")
+		return VMErrorNeedString
 	}
 	loc, err := time.LoadLocation(string(name))
 	if err != nil {
@@ -1038,7 +1037,7 @@ func (x VMTime) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDurationer:
 			return x.Add(yy.Duration()), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		switch yy := y.(type) {
 		case VMDurationer:
@@ -1046,65 +1045,65 @@ func (x VMTime) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMTime:
 			return x.Sub(yy), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMDateTimer:
 			return VMBool(x.Equal(yy.Time())), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMDateTimer:
 			return VMBool(!x.Equal(yy.Time())), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
 		switch yy := y.(type) {
 		case VMDateTimer:
 			return VMBool(x.After(yy.Time())), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
 		switch yy := y.(type) {
 		case VMDateTimer:
 			return VMBool(x.Equal(yy.Time()) || x.After(yy.Time())), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
 		switch yy := y.(type) {
 		case VMDateTimer:
 			return VMBool(x.Before(yy.Time())), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
 		switch yy := y.(type) {
 		case VMDateTimer:
 			return VMBool(x.Equal(yy.Time()) || x.Before(yy.Time())), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMTime) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -1125,5 +1124,5 @@ func (x VMTime) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		// case ReflectVMStringMap:
 	}
 
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }

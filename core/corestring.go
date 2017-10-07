@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strconv"
 	"strings"
@@ -154,77 +153,77 @@ func (x VMString) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMString:
 			return VMString(string(x) + string(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		switch yy := y.(type) {
 		case VMString:
 			return VMString(strings.Replace(string(x), string(yy), "", -1)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMString(strings.Repeat(string(x), int(yy))), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(bytes.Equal([]byte(x), []byte(yy))), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(!bytes.Equal([]byte(x), []byte(yy))), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(bytes.Compare([]byte(x), []byte(yy)) == 1), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
 		switch yy := y.(type) {
 		case VMString:
 			cmp := bytes.Compare([]byte(x), []byte(yy))
 			return VMBool(cmp == 1 || cmp == 0), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
 		switch yy := y.(type) {
 		case VMString:
 			return VMBool(bytes.Compare([]byte(x), []byte(yy)) == -1), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
 		switch yy := y.(type) {
 		case VMString:
 			cmp := bytes.Compare([]byte(x), []byte(yy))
 			return VMBool(cmp == -1 || cmp == 0), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMString) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -258,13 +257,13 @@ func (x VMString) ConvertToType(nt reflect.Type) (VMValuer, error) {
 				vobj.VMRegister()
 				return vobj, nil
 			} else {
-				return nil, errors.New("Невозможно использовать данный тип структуры")
+				return nil, VMErrorIncorrectStructType
 				//return rv, nil
 			}
 		}
-		return VMNil, errors.New("Объект несовместим с типами интерпретатора")
+		return VMNil, VMErrorIncorrectStructType
 	}
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 func (x VMString) MarshalBinary() ([]byte, error) {

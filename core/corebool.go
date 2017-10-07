@@ -3,8 +3,6 @@ package core
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/covrom/gonec/names"
@@ -86,7 +84,7 @@ func ParseVMBool(s string) (VMBool, error) {
 	case "false", "ложь":
 		return false, nil
 	}
-	return false, fmt.Errorf("Неверное значение для преобразования в булево")
+	return false, VMErrorNotConverted
 }
 
 func (x VMBool) EvalUnOp(op rune) (VMValuer, error) {
@@ -96,65 +94,65 @@ func (x VMBool) EvalUnOp(op rune) (VMValuer, error) {
 	case '!':
 		return VMBool(!bool(x)), nil
 	}
-	return VMNil, fmt.Errorf("Неизвестный оператор")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMBool) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	switch op {
 	case ADD:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMBool:
 			return VMBool(bool(x) == bool(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMBool:
 			return VMBool(bool(x) != bool(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
 		switch yy := y.(type) {
 		case VMBool:
 			return VMBool(bool(x) || bool(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
 		switch yy := y.(type) {
 		case VMBool:
 			return VMBool(bool(x) && bool(yy)), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMBool) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -172,7 +170,7 @@ func (x VMBool) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		// case ReflectVMStringMap:
 	}
 
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 func (x VMBool) MarshalBinary() ([]byte, error) {

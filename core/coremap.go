@@ -5,8 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"reflect"
 
 	"github.com/covrom/gonec/names"
@@ -97,7 +95,7 @@ func (x VMStringMap) Значения(args VMSlice, rets *VMSlice) error { //VMS
 func (x VMStringMap) Удалить(args VMSlice, rets *VMSlice) error { //VMSlice {
 	p, ok := args[0].(VMString)
 	if !ok {
-		return errors.New("Аргумент должен быть строкой")
+		return VMErrorNeedString
 	}
 	delete(x, string(p))
 	return nil
@@ -141,7 +139,7 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		switch yy := y.(type) {
 		case VMStringMap:
@@ -153,11 +151,11 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
 		switch yy := y.(type) {
 		case VMStringMap:
@@ -174,7 +172,7 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMStringMap:
@@ -192,7 +190,7 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return VMBool(true), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMStringMap:
@@ -210,15 +208,15 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return VMBool(false), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
 		// только добавляем только те, которых еще нет, в отличие от ADD, где существующие обновляются
 		switch yy := y.(type) {
@@ -234,9 +232,9 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
 		// оставляем только те элементы, которые есть в обоих структурах
 		switch yy := y.(type) {
@@ -249,17 +247,17 @@ func (x VMStringMap) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -301,7 +299,7 @@ func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 						if setv.Type().ConvertibleTo(fv.Type()) {
 							setv = setv.Convert(fv.Type())
 						} else {
-							return nil, fmt.Errorf("Поле структуры имеет другой тип")
+							return nil, VMErrorIncorrectFieldType
 						}
 					}
 					fv.Set(setv)
@@ -314,16 +312,16 @@ func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 				vobj.VMRegister()
 				return vobj, nil
 			} else {
-				return nil, errors.New("Невозможно использовать данный тип структуры")
+				return nil, VMErrorIncorrectStructType
 				//return vv, nil
 			}
 		} else {
-			return nil, errors.New("Невозможно использовать данный тип в интерпретаторе")
+			return nil, VMErrorUnknownType
 		}
 
 	}
 
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 func (x VMStringMap) MarshalBinary() ([]byte, error) {
@@ -341,7 +339,7 @@ func (x VMStringMap) MarshalBinary() ([]byte, error) {
 			binary.Write(&buf, binary.LittleEndian, uint64(len(bb)))
 			buf.Write(bb)
 		} else {
-			return nil, errors.New("Значение не может быть преобразовано в бинарный формат")
+			return nil, VMErrorNotBinaryConverted
 		}
 	}
 	return buf.Bytes(), nil

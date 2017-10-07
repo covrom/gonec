@@ -137,7 +137,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Add(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		switch yy := y.(type) {
 		case VMInt:
@@ -145,7 +145,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Sub(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
 		switch yy := y.(type) {
 		case VMInt:
@@ -153,7 +153,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Mul(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
 		switch yy := y.(type) {
 		case VMInt:
@@ -161,7 +161,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Div(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
 		switch yy := y.(type) {
 		case VMInt:
@@ -169,7 +169,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Mod(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMInt:
@@ -177,7 +177,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Equal(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMInt:
@@ -185,7 +185,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).NotEqual(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
 		switch yy := y.(type) {
 		case VMInt:
@@ -193,7 +193,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return VMBool(NewVMDecimalFromInt64(int64(x)).Cmp(yy) == 1), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
 		switch yy := y.(type) {
 		case VMInt:
@@ -202,7 +202,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			cmp := NewVMDecimalFromInt64(int64(x)).Cmp(yy)
 			return VMBool(cmp == 1 || cmp == 0), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
 		switch yy := y.(type) {
 		case VMInt:
@@ -210,7 +210,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return VMBool(NewVMDecimalFromInt64(int64(x)).Cmp(yy) == -1), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
 		switch yy := y.(type) {
 		case VMInt:
@@ -219,23 +219,23 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			cmp := NewVMDecimalFromInt64(int64(x)).Cmp(yy)
 			return VMBool(cmp == -1 || cmp == 0), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) | int64(yy)), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) & int64(yy)), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
 		switch yy := y.(type) {
 		case VMInt:
@@ -243,21 +243,21 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Pow(yy), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) >> uint64(yy)), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) << uint64(yy)), nil
 		}
-		return VMNil, fmt.Errorf("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, fmt.Errorf("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMInt) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -276,7 +276,7 @@ func (x VMInt) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	case ReflectVMDecimal:
 		return x.Decimal(), nil
 	}
-	return VMNil, fmt.Errorf("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 // маршаллинг нужен для того, чтобы encoding не использовал рефлексию

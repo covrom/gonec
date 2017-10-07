@@ -1,7 +1,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -34,9 +33,9 @@ func VMFuncMustParams(n int, f VMMethod) VMFunc {
 			if len(args) != n {
 				switch n {
 				case 0:
-					return errors.New("Параметры не требуются")
+					return VMErrorNoNeedArgs
 				default:
-					return fmt.Errorf("Неверное количество параметров (требуется %d)", n)
+					return VMErrorNeedArgs(n)
 				}
 			}
 			return f(args, rets)

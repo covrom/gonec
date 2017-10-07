@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"reflect"
 	"sort"
 	"sync"
@@ -168,10 +167,10 @@ func (x VMSlice) НайтиСорт(args VMSlice, rets *VMSlice) error {
 func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice) error {
 	p, ok := args[0].(VMInt)
 	if !ok {
-		return errors.New("Первый аргумент должен быть целым числом")
+		return VMErrorNeedInt
 	}
 	if int(p) < 0 || int(p) > len(*x) {
-		return errors.New("Индекс находится за пределами массива")
+		return VMErrorIndexOutOfBoundary
 	}
 	y := args[1]
 	*x = append(*x, VMNil)
@@ -183,10 +182,10 @@ func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice) error {
 func (x *VMSlice) Удалить(args VMSlice, rets *VMSlice) error {
 	p, ok := args[0].(VMInt)
 	if !ok {
-		return errors.New("Аргумент должен быть целым числом")
+		return VMErrorNeedInt
 	}
 	if int(p) < 0 || int(p) >= len(*x) {
-		return errors.New("Индекс находится за пределами массива")
+		return VMErrorIndexOutOfBoundary
 	}
 	copy((*x)[p:], (*x)[p+1:])
 	(*x)[len(*x)-1] = nil
@@ -269,7 +268,7 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			return append(x, yy), nil
 		}
 		return append(x, y), nil
-		// return VMNil, errors.New("Операция между значениями невозможна")
+		// return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		// удаляем из первого слайса любые элементы второго слайса, встречающиеся в первом
 		switch yy := y.(type) {
@@ -292,11 +291,11 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			}
 			return rv[:il], nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case MUL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case QUO:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case REM:
 		// оставляем только элементы, которые есть в первом и нет во втором и есть во втором но нет в первом
 		// эквивалентно (С1 | С2) - (С1 & С2), или (С1-С2)|(С2-С1), или С2-(С1-С2), внешнее соединение
@@ -346,7 +345,7 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			return append(rvx, rvy...), nil
 		}
 
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		// равенство по глубокому равенству элементов
 		switch yy := y.(type) {
@@ -363,7 +362,7 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			}
 			return VMBool(true), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMSlice:
@@ -379,15 +378,15 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			}
 			return VMBool(false), nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GTR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LSS:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case OR:
 		// добавляем в конец первого слайса только те элементы второго слайса, которые не встречаются в первом
 		switch yy := y.(type) {
@@ -407,9 +406,9 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LOR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case AND:
 		// оставляем только те элементы, которые есть в обоих слайсах
 		switch yy := y.(type) {
@@ -429,17 +428,17 @@ func (x VMSlice) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 			}
 			return rv, nil
 		}
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case LAND:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case POW:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHR:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	case SHL:
-		return VMNil, errors.New("Операция между значениями невозможна")
+		return VMNil, VMErrorIncorrectOperation
 	}
-	return VMNil, errors.New("Неизвестная операция")
+	return VMNil, VMErrorUnknownOperation
 }
 
 func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
@@ -460,7 +459,7 @@ func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		// case ReflectVMStringMap:
 	}
 
-	return VMNil, errors.New("Приведение к типу невозможно")
+	return VMNil, VMErrorNotConverted
 }
 
 func (x VMSlice) MarshalBinary() ([]byte, error) {
@@ -476,7 +475,7 @@ func (x VMSlice) MarshalBinary() ([]byte, error) {
 			binary.Write(&buf, binary.LittleEndian, uint64(len(bb)))
 			buf.Write(bb)
 		} else {
-			return nil, errors.New("Значение не может быть преобразовано в бинарный формат")
+			return nil, VMErrorNotBinaryConverted
 		}
 	}
 	return buf.Bytes(), nil
