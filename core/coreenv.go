@@ -184,19 +184,24 @@ func (e *Env) Destroy() {
 		return
 	}
 
-	if e.goRunned {
-		e.Lock()
-		defer e.Unlock()
-		e.parent.Lock()
-		defer e.parent.Unlock()
-	}
+	// if e.goRunned {
+	// 	e.Lock()
+	// 	defer e.Unlock()
+	// 	e.parent.Lock()
+	// 	defer e.parent.Unlock()
+	// }
 
-	for k, v := range e.parent.env.vals {
-		if vv, ok := v.(*Env); ok {
-			if vv == e {
-				e.parent.env.vals[k] = nil
-			}
-		}
+	// for k, v := range e.parent.env.vals {
+	// 	if vv, ok := v.(*Env); ok {
+	// 		if vv == e {
+	// 			e.parent.env.vals[k] = nil
+	// 		}
+	// 	}
+	// }
+
+	if e.name != "" {
+		id := names.UniqueNames.Set(e.name)
+		e.DefineGlobal(id, nil)
 	}
 	e.parent = nil
 	e.env.Destroy()
