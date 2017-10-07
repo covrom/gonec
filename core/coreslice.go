@@ -12,7 +12,7 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
-const ChunkVMSlicePool = 32
+const ChunkVMSlicePool = 64
 
 // globalVMSlicePool используется виртуальной машиной для переиспользования в регистрах и параметрах вызова
 var globalVMSlicePool = sync.Pool{
