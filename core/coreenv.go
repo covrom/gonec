@@ -12,7 +12,7 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
-const chunkValsPool = 200
+const chunkValsPool = 16
 
 var envPool = sync.Pool{
 	New: func() interface{} {
