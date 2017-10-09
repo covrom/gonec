@@ -30,6 +30,7 @@ import (
 const version = "3.2a"
 const APIPath = "/gonec"
 
+
 var (
 	fs          = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	line        = fs.String("e", "", "Исполнение одной строчки кода")
