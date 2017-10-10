@@ -66,7 +66,7 @@ func getRegs(ln int) core.VMSlice {
 	sl := binRegsPool.Get()
 	if sl != nil {
 		vsl := sl.(core.VMSlice)
-		if len(vsl) == ln {
+		if len(vsl) >= ln && len(vsl) < ln*2 {
 			return vsl
 		}
 	}
@@ -147,14 +147,13 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 		core.LoadAllBuiltins(env)
 	}
 
-	registers := getRegs(stmts.MaxReg + 1)
-	retval, reterr = RunWorker(stmts.Code, stmts.Labels, registers, env, 0)
-	putRegs(registers)
+	retval, reterr = RunWorker(stmts.Code, stmts.Labels, stmts.MaxReg+1, env, 0)
+
 	return
 }
 
 // RunWorker исполняет кусок кода, начиная с инструкции idx
-func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, env *core.Env, idx int) (retval core.VMValuer, reterr error) {
+func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.Env, idx int) (retval core.VMValuer, reterr error) {
 	defer func() {
 		// если это не паника из кода языка
 		// if os.Getenv("GONEC_DEBUG") == "" {
@@ -171,9 +170,11 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
+	registers := make(core.VMSlice, numofregs) //getRegs(numofregs)
+
 	regs := &VMRegs{
-		Env:          env,
-		Reg:          registers,
+		Env: env,
+		// Reg:          registers,
 		Labels:       labels,
 		TryLabel:     make([]int, 0, 8),
 		TryRegErr:    make([]int, 0, 8),
@@ -207,7 +208,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			continue
 
 		case *binstmt.BinJFALSE:
-			if b, ok := regs.Reg[s.Reg].(core.VMBooler); ok {
+			if b, ok := registers[s.Reg].(core.VMBooler); ok {
 				if !b.Bool() {
 					idx = regs.Labels[s.JumpTo]
 					continue
@@ -218,7 +219,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinJTRUE:
-			if b, ok := regs.Reg[s.Reg].(core.VMBooler); ok {
+			if b, ok := registers[s.Reg].(core.VMBooler); ok {
 				if b.Bool() {
 					idx = regs.Labels[s.JumpTo]
 					continue
@@ -232,18 +233,38 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			// пропускаем
 
 		case *binstmt.BinLOAD:
-			regs.Reg[s.Reg] = s.Val
+			registers[s.Reg] = s.Val
+
+		case *binstmt.BinOPER:
+			v1 := registers[s.RegL]
+			v2 := registers[s.RegR]
+			if vv1, ok := v1.(core.VMOperationer); ok {
+				if vv2, ok := v2.(core.VMOperationer); ok {
+					if rv, err := vv1.EvalBinOp(s.Op, vv2); err == nil {
+						registers[s.RegL] = rv
+					} else {
+						catcherr = binstmt.NewError(stmt, err)
+						goto catching
+					}
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
+					goto catching
+				}
+			} else {
+				catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
+				goto catching
+			}
 
 		case *binstmt.BinMV:
-			regs.Reg[s.RegTo] = regs.Reg[s.RegFrom]
+			registers[s.RegTo] = registers[s.RegFrom]
 
 		case *binstmt.BinEQUAL:
-			v1 := regs.Reg[s.Reg1]
-			v2 := regs.Reg[s.Reg2]
+			v1 := registers[s.Reg1]
+			v2 := registers[s.Reg2]
 			if vv1, ok := v1.(core.VMOperationer); ok {
 				if vv2, ok := v2.(core.VMOperationer); ok {
 					if rv, err := vv1.EvalBinOp(core.EQL, vv2); err == nil {
-						regs.Reg[s.Reg] = rv
+						registers[s.Reg] = rv
 					} else {
 						catcherr = binstmt.NewError(stmt, err)
 						break
@@ -261,35 +282,35 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			// ошибки обрабатываем в попытке
 			var num core.VMNumberer
 			var ok bool
-			if num, ok = regs.Reg[s.Reg].(core.VMNumberer); !ok {
-				regs.Reg[s.Reg] = nil
+			if num, ok = registers[s.Reg].(core.VMNumberer); !ok {
+				registers[s.Reg] = nil
 				catcherr = binstmt.NewStringError(stmt, "Литерал должен быть числом")
 				break
 			}
 			v, err := num.InvokeNumber()
 			if err != nil {
-				regs.Reg[s.Reg] = nil
+				registers[s.Reg] = nil
 				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
-			regs.Reg[s.Reg] = v
+			registers[s.Reg] = v
 
 		case *binstmt.BinMAKESLICE:
-			regs.Reg[s.Reg] = make(core.VMSlice, s.Len, s.Cap)
+			registers[s.Reg] = make(core.VMSlice, s.Len, s.Cap)
 
 		case *binstmt.BinSETIDX:
-			if v, ok := regs.Reg[s.Reg].(core.VMSlice); ok {
-				v[s.Index] = regs.Reg[s.RegVal]
+			if v, ok := registers[s.Reg].(core.VMSlice); ok {
+				v[s.Index] = registers[s.RegVal]
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Невозможно изменить значение по индексу")
 				break
 			}
 		case *binstmt.BinMAKEMAP:
-			regs.Reg[s.Reg] = make(core.VMStringMap, s.Len)
+			registers[s.Reg] = make(core.VMStringMap, s.Len)
 
 		case *binstmt.BinSETKEY:
-			if v, ok := regs.Reg[s.Reg].(core.VMStringMap); ok {
-				v[s.Key] = regs.Reg[s.RegVal]
+			if v, ok := registers[s.Reg].(core.VMStringMap); ok {
+				v[s.Key] = registers[s.RegVal]
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Невозможно изменить значение по ключу")
 				break
@@ -301,15 +322,15 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
 				break
 			}
-			regs.Reg[s.Reg] = v
+			registers[s.Reg] = v
 
 		case *binstmt.BinSET:
 			// всегда сохраняются локальные переменные, глобальные и из внешнего окружения можно только читать
-			env.Define(s.Id, regs.Reg[s.Reg])
+			env.Define(s.Id, registers[s.Reg])
 
 		case *binstmt.BinSETMEMBER:
-			m := regs.Reg[s.Reg]
-			mv := regs.Reg[s.RegVal]
+			m := registers[s.Reg]
+			mv := registers[s.RegVal]
 			switch mm := m.(type) {
 			case core.VMMetaObject:
 				mm.VMSetField(s.Id, mv.(core.VMInterfacer))
@@ -321,19 +342,19 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinSETNAME:
-			v, ok := regs.Reg[s.Reg].(core.VMString)
+			v, ok := registers[s.Reg].(core.VMString)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Имя типа должно быть строкой")
 				break
 			}
 			eType := names.UniqueNames.Set(string(v))
-			regs.Reg[s.Reg] = core.VMInt(eType)
+			registers[s.Reg] = core.VMInt(eType)
 
 		case *binstmt.BinSETITEM:
-			v := regs.Reg[s.Reg]
-			i := regs.Reg[s.RegIndex]
-			rv := regs.Reg[s.RegVal]
-			regs.Reg[s.RegNeedLet] = core.VMBool(false)
+			v := registers[s.Reg]
+			i := registers[s.RegIndex]
+			rv := registers[s.RegVal]
+			registers[s.RegNeedLet] = core.VMBool(false)
 
 			switch vv := v.(type) {
 			case core.VMSlice:
@@ -362,15 +383,15 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinSETSLICE:
-			if vv, ok := regs.Reg[s.Reg].(core.VMSlice); ok {
-				if rv, ok := regs.Reg[s.RegVal].(core.VMSlice); ok {
+			if vv, ok := registers[s.Reg].(core.VMSlice); ok {
+				if rv, ok := registers[s.RegVal].(core.VMSlice); ok {
 
 					vlen := len(vv)
 
 					var rb int
-					if regs.Reg[s.RegBegin] == nil {
+					if registers[s.RegBegin] == nil {
 						rb = 0
-					} else if rbv, ok := regs.Reg[s.RegBegin].(core.VMInt); ok {
+					} else if rbv, ok := registers[s.RegBegin].(core.VMInt); ok {
 						rb = int(rbv)
 					} else {
 						catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
@@ -378,16 +399,16 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					}
 
 					var re int
-					if regs.Reg[s.RegEnd] == nil {
+					if registers[s.RegEnd] == nil {
 						re = vlen
-					} else if rev, ok := regs.Reg[s.RegEnd].(core.VMInt); ok {
+					} else if rev, ok := registers[s.RegEnd].(core.VMInt); ok {
 						re = int(rev)
 					} else {
 						catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 						goto catching
 					}
 
-					regs.Reg[s.RegNeedLet] = core.VMBool(false)
+					registers[s.RegNeedLet] = core.VMBool(false)
 
 					ii, ij := LeftRightBounds(rb, re, vlen)
 					if ij < ii {
@@ -411,10 +432,10 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinUNARY:
-			if vv, ok := regs.Reg[s.Reg].(core.VMUnarer); ok {
+			if vv, ok := registers[s.Reg].(core.VMUnarer); ok {
 				rv, err := vv.EvalUnOp(s.Op)
 				if err == nil {
-					regs.Reg[s.Reg] = rv
+					registers[s.Reg] = rv
 				} else {
 					catcherr = err
 					break
@@ -504,7 +525,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 		// 	regs.Set(s.Reg, m.Elem().Interface())
 
 		case *binstmt.BinGETMEMBER:
-			v := regs.Reg[s.Reg]
+			v := registers[s.Reg]
 			switch vv := v.(type) {
 			case *core.Env:
 				// это идентификатор из модуля или окружения
@@ -513,25 +534,25 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					catcherr = binstmt.NewStringError(stmt, "Имя не найдено")
 					goto catching
 				}
-				regs.Reg[s.Reg] = m
+				registers[s.Reg] = m
 				goto catching
 			case core.VMStringMap:
 				// Сначала ищем поле, в нем может быть переопределен метод как функция
 				if rv, ok := vv[names.UniqueNames.Get(s.Name)]; ok {
-					regs.Reg[s.Reg] = rv
+					registers[s.Reg] = rv
 				} else {
 					if ff, ok := vv.MethodMember(s.Name); ok {
-						regs.Reg[s.Reg] = ff
+						registers[s.Reg] = ff
 					} else {
-						regs.Reg[s.Reg] = core.VMNil
+						registers[s.Reg] = core.VMNil
 					}
 				}
 			case core.VMMetaObject:
 				if vv.VMIsField(s.Name) {
-					regs.Reg[s.Reg] = vv.VMGetField(s.Name)
+					registers[s.Reg] = vv.VMGetField(s.Name)
 				} else {
 					if ff, ok := vv.VMGetMethod(s.Name); ok {
-						regs.Reg[s.Reg] = ff
+						registers[s.Reg] = ff
 					} else {
 						catcherr = binstmt.NewStringError(stmt, "Нет поля или метода с таким именем")
 						goto catching
@@ -539,7 +560,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				}
 			case core.VMMethodImplementer:
 				if ff, ok := vv.MethodMember(s.Name); ok {
-					regs.Reg[s.Reg] = ff
+					registers[s.Reg] = ff
 				} else {
 					catcherr = binstmt.NewStringError(stmt, "Нет метода с таким именем")
 					goto catching
@@ -550,8 +571,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinGETIDX:
-			v := regs.Reg[s.Reg]
-			i := regs.Reg[s.RegIndex]
+			v := registers[s.Reg]
+			i := registers[s.RegIndex]
 			switch vv := v.(type) {
 			case core.VMSlice:
 				if iv, ok := i.(core.VMInt); ok {
@@ -563,7 +584,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
 						goto catching
 					}
-					regs.Reg[s.Reg] = vv[ii]
+					registers[s.Reg] = vv[ii]
 				} else {
 					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 					goto catching
@@ -579,14 +600,14 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
 						goto catching
 					}
-					regs.Reg[s.Reg] = core.VMString(string(r[ii]))
+					registers[s.Reg] = core.VMString(string(r[ii]))
 				} else {
 					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 					goto catching
 				}
 			case core.VMStringMap:
 				if k, ok := i.(core.VMString); ok {
-					regs.Reg[s.Reg] = vv[string(k)]
+					registers[s.Reg] = vv[string(k)]
 				} else {
 					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
 					goto catching
@@ -599,23 +620,23 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 		case *binstmt.BinGETSUBSLICE:
 
 			var rb int
-			if regs.Reg[s.RegBegin] == nil {
+			if registers[s.RegBegin] == nil {
 				rb = 0
-			} else if rbv, ok := regs.Reg[s.RegBegin].(core.VMInt); ok {
+			} else if rbv, ok := registers[s.RegBegin].(core.VMInt); ok {
 				rb = int(rbv)
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
 				goto catching
 			}
 
-			switch vv := regs.Reg[s.Reg].(type) {
+			switch vv := registers[s.Reg].(type) {
 			case core.VMSlice:
 				vlen := len(vv)
 
 				var re int
-				if regs.Reg[s.RegEnd] == nil {
+				if registers[s.RegEnd] == nil {
 					re = vlen
-				} else if rev, ok := regs.Reg[s.RegEnd].(core.VMInt); ok {
+				} else if rev, ok := registers[s.RegEnd].(core.VMInt); ok {
 					re = int(rev)
 				} else {
 					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
@@ -629,7 +650,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					goto catching
 				}
 
-				regs.Reg[s.Reg] = vv[ii:ij]
+				registers[s.Reg] = vv[ii:ij]
 
 			case core.VMString:
 				r := []rune(string(vv))
@@ -637,9 +658,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				vlen := len(r)
 
 				var re int
-				if regs.Reg[s.RegEnd] == nil {
+				if registers[s.RegEnd] == nil {
 					re = vlen
-				} else if rev, ok := regs.Reg[s.RegEnd].(core.VMInt); ok {
+				} else if rev, ok := registers[s.RegEnd].(core.VMInt); ok {
 					re = int(rev)
 				} else {
 					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
@@ -653,31 +674,11 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 					goto catching
 				}
 
-				regs.Reg[s.Reg] = core.VMString(string(r[ii:ij]))
+				registers[s.Reg] = core.VMString(string(r[ii:ij]))
 
 			default:
 				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break
-			}
-
-		case *binstmt.BinOPER:
-			v1 := regs.Reg[s.RegL]
-			v2 := regs.Reg[s.RegR]
-			if vv1, ok := v1.(core.VMOperationer); ok {
-				if vv2, ok := v2.(core.VMOperationer); ok {
-					if rv, err := vv1.EvalBinOp(s.Op, vv2); err == nil {
-						regs.Reg[s.RegL] = rv
-					} else {
-						catcherr = binstmt.NewError(stmt, err)
-						goto catching
-					}
-				} else {
-					catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
-					goto catching
-				}
-			} else {
-				catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
-				goto catching
 			}
 
 		case *binstmt.BinCALL:
@@ -688,15 +689,15 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			var fgnc core.VMValuer
 			var argsl core.VMSlice
 			if s.Name == 0 {
-				fgnc = regs.Reg[s.RegArgs]
-				argsl = regs.Reg[s.RegArgs+1 : s.RegArgs+1+s.NumArgs]
+				fgnc = registers[s.RegArgs]
+				argsl = registers[s.RegArgs+1 : s.RegArgs+1+s.NumArgs]
 			} else {
 				fgnc, err = env.Get(s.Name)
 				if err != nil {
 					catcherr = binstmt.NewError(stmt, err)
 					goto catching
 				}
-				argsl = regs.Reg[s.RegArgs : s.RegArgs+s.NumArgs]
+				argsl = registers[s.RegArgs : s.RegArgs+s.NumArgs]
 			}
 			rets := core.GetGlobalVMSlice()
 			if fnc, ok := fgnc.(core.VMFunc); ok {
@@ -708,7 +709,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						fnc(argsl, &rets)
 						core.PutGlobalVMSlice(rets) // всегда возвращаем в пул
 					}(argsl, rets)
-					regs.Reg[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
+					registers[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
 					break
 				}
 
@@ -724,13 +725,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				}
 				switch len(rets) {
 				case 0:
-					regs.Reg[s.RegRets] = core.VMNil
+					registers[s.RegRets] = core.VMNil
 					core.PutGlobalVMSlice(rets)
 				case 1:
-					regs.Reg[s.RegRets] = rets[0]
+					registers[s.RegRets] = rets[0]
 					core.PutGlobalVMSlice(rets)
 				default:
-					regs.Reg[s.RegRets] = rets //не возвращаем в пул
+					registers[s.RegRets] = rets //не возвращаем в пул
 				}
 				break
 			} else {
@@ -768,9 +769,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 						}
 					}
 					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
-					callregs := getRegs(expr.MaxReg + 1)
-					rr, err := RunWorker(fstmts, flabels, callregs, newenv, flabels[expr.LabelStart])
-					putRegs(callregs)
+
+					rr, err := RunWorker(fstmts, flabels, expr.MaxReg+1, newenv, flabels[expr.LabelStart])
+
 					if err == binstmt.ReturnError {
 						err = nil
 					}
@@ -786,16 +787,16 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}(s, stmts, labels, env)
 
 			env.Define(s.Name, f)
-			regs.Reg[s.Reg] = f
+			registers[s.Reg] = f
 			idx = regs.Labels[s.LabelEnd]
 
 		case *binstmt.BinRET:
-			retval = regs.Reg[s.Reg]
+			retval = registers[s.Reg]
 			return retval, binstmt.ReturnError
 
 		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив
-			eType, ok := regs.Reg[s.TypeReg].(core.VMInt)
+			eType, ok := registers[s.TypeReg].(core.VMInt)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
 				break
@@ -805,21 +806,21 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				catcherr = binstmt.NewError(stmt, err)
 				break
 			}
-			rv := regs.Reg[s.Reg]
+			rv := registers[s.Reg]
 			if cv, ok := rv.(core.VMConverter); ok {
 				v, err := cv.ConvertToType(nt)
 				if err != nil {
 					catcherr = binstmt.NewError(stmt, err)
 					break
 				}
-				regs.Reg[s.Reg] = v
+				registers[s.Reg] = v
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Значение не может быть преобразовано")
 				break
 			}
 
 		case *binstmt.BinMAKE:
-			eType, ok := regs.Reg[s.Reg].(core.VMInt)
+			eType, ok := registers[s.Reg].(core.VMInt)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
 				break
@@ -842,9 +843,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				if vobj, ok := vv.(core.VMMetaObject); ok {
 					vobj.VMInit(vobj)
 					vobj.VMRegister()
-					regs.Reg[s.Reg] = vobj
+					registers[s.Reg] = vobj
 				} else {
-					regs.Reg[s.Reg] = vv
+					registers[s.Reg] = vv
 				}
 			} else {
 				catcherr = binstmt.NewStringError(stmt, "Неизвестный тип")
@@ -852,31 +853,31 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinMAKECHAN:
-			size, ok := regs.Reg[s.Reg].(core.VMInt)
+			size, ok := registers[s.Reg].(core.VMInt)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Размер должен быть целым числом")
 				break
 			}
 			v := make(core.VMChan, int(size))
-			regs.Reg[s.Reg] = v
+			registers[s.Reg] = v
 
 		case *binstmt.BinMAKEARR:
-			alen, ok := regs.Reg[s.Reg].(core.VMInt)
+			alen, ok := registers[s.Reg].(core.VMInt)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Длина должна быть целым числом")
 				break
 			}
-			acap, ok := regs.Reg[s.RegCap].(core.VMInt)
+			acap, ok := registers[s.RegCap].(core.VMInt)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Размер должен быть целым числом")
 				break
 			}
 
 			v := make(core.VMSlice, int(alen), int(acap))
-			regs.Reg[s.Reg] = v
+			registers[s.Reg] = v
 
 		case *binstmt.BinCHANRECV:
-			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			ch, ok := registers[s.Reg].(core.VMChan)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
@@ -884,55 +885,55 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			v, ok := ch.Recv()
 			if !ok {
 				// если закрыт, то пишем nil
-				regs.Reg[s.RegVal] = core.VMNil
+				registers[s.RegVal] = core.VMNil
 			} else {
-				regs.Reg[s.RegVal] = v
+				registers[s.RegVal] = v
 			}
 
 		case *binstmt.BinCHANSEND:
-			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			ch, ok := registers[s.Reg].(core.VMChan)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
-			v := regs.Reg[s.RegVal]
+			v := registers[s.RegVal]
 			ch.Send(v)
 
 		case *binstmt.BinISKIND:
-			v := reflect.ValueOf(regs.Reg).Index(s.Reg).Elem()
-			regs.Reg[s.Reg] = core.VMBool(v.Kind() == s.Kind)
+			v := reflect.ValueOf(registers).Index(s.Reg).Elem()
+			registers[s.Reg] = core.VMBool(v.Kind() == s.Kind)
 
 		case *binstmt.BinISSLICE:
-			_, ok := regs.Reg[s.Reg].(core.VMSlice)
-			regs.Reg[s.RegBool] = core.VMBool(ok)
+			_, ok := registers[s.Reg].(core.VMSlice)
+			registers[s.RegBool] = core.VMBool(ok)
 
 		case *binstmt.BinINC:
-			v := regs.Reg[s.Reg]
+			v := registers[s.Reg]
 			var x core.VMValuer
 			if vv, ok := v.(core.VMInt); ok {
 				x = core.VMInt(int64(vv) + 1)
 			} else if vv, ok := v.(core.VMDecimal); ok {
 				x = vv.Add(core.VMDecimal(decimal.New(1, 0)))
 			}
-			regs.Reg[s.Reg] = x
+			registers[s.Reg] = x
 
 		case *binstmt.BinDEC:
-			v := regs.Reg[s.Reg]
+			v := registers[s.Reg]
 			var x core.VMValuer
 			if vv, ok := v.(core.VMInt); ok {
 				x = core.VMInt(int64(vv) - 1)
 			} else if vv, ok := v.(core.VMDecimal); ok {
 				x = vv.Add(core.VMDecimal(decimal.New(-1, 0)))
 			}
-			regs.Reg[s.Reg] = x
+			registers[s.Reg] = x
 
 		case *binstmt.BinTRY:
 			regs.PushTry(s.Reg, s.JumpTo)
-			regs.Reg[s.Reg] = nil // изначально ошибки нет
+			registers[s.Reg] = nil // изначально ошибки нет
 
 		case *binstmt.BinCATCH:
 			// получаем ошибку, и если ее нет, переходим на метку, иначе, выполняем дальше
-			nerr := regs.Reg[s.Reg]
+			nerr := registers[s.Reg]
 			if nerr == nil {
 				idx = regs.Labels[s.JumpTo]
 				continue
@@ -945,13 +946,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinFOREACH:
-			val := regs.Reg[s.Reg]
+			val := registers[s.Reg]
 
 			switch val.(type) {
 			case core.VMSlice:
-				regs.Reg[s.RegIter] = core.VMInt(-1)
+				registers[s.RegIter] = core.VMInt(-1)
 			case core.VMChan:
-				regs.Reg[s.RegIter] = nil
+				registers[s.RegIter] = nil
 			default:
 				catcherr = binstmt.NewStringError(stmt, "Не является коллекцией или каналом")
 				goto catching
@@ -961,15 +962,15 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			regs.PushContinue(s.ContinueLabel)
 
 		case *binstmt.BinNEXT:
-			val := regs.Reg[s.Reg]
+			val := registers[s.Reg]
 
 			switch vv := val.(type) {
 			case core.VMSlice:
-				iter := int(regs.Reg[s.RegIter].(core.VMInt))
+				iter := int(registers[s.RegIter].(core.VMInt))
 				iter++
 				if iter < len(vv) {
-					regs.Reg[s.RegIter] = core.VMInt(iter)
-					regs.Reg[s.RegVal] = vv[iter]
+					registers[s.RegIter] = core.VMInt(iter)
+					registers[s.RegVal] = vv[iter]
 				} else {
 					idx = regs.Labels[s.JumpTo]
 					continue
@@ -977,9 +978,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			case core.VMChan:
 				iv, ok := vv.Recv()
 				if !ok {
-					regs.Reg[s.RegVal] = core.VMNil
+					registers[s.RegVal] = core.VMNil
 				} else {
-					regs.Reg[s.RegVal] = iv
+					registers[s.RegVal] = iv
 				}
 
 			default:
@@ -994,9 +995,9 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinFORNUM:
-			if _, ok := regs.Reg[s.RegFrom].(core.VMInt); ok {
-				if _, ok := regs.Reg[s.RegTo].(core.VMInt); ok {
-					regs.Reg[s.Reg] = nil
+			if _, ok := registers[s.RegFrom].(core.VMInt); ok {
+				if _, ok := registers[s.RegTo].(core.VMInt); ok {
+					registers[s.Reg] = nil
 					regs.PushBreak(s.BreakLabel)
 					regs.PushContinue(s.ContinueLabel)
 				} else {
@@ -1009,13 +1010,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			}
 
 		case *binstmt.BinNEXTNUM:
-			afrom := int64(regs.Reg[s.RegFrom].(core.VMInt))
-			ato := int64(regs.Reg[s.RegTo].(core.VMInt))
+			afrom := int64(registers[s.RegFrom].(core.VMInt))
+			ato := int64(registers[s.RegTo].(core.VMInt))
 			fviadd := int64(1)
 			if afrom > ato {
 				fviadd = int64(-1) // если конечное значение меньше первого, идем в обратном порядке
 			}
-			vv := regs.Reg[s.Reg]
+			vv := registers[s.Reg]
 			var iter int64
 			if vv == nil {
 				iter = afrom
@@ -1028,7 +1029,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				inrange = iter >= ato
 			}
 			if inrange {
-				regs.Reg[s.Reg] = core.VMInt(iter)
+				registers[s.Reg] = core.VMInt(iter)
 			} else {
 				idx = regs.Labels[s.JumpTo]
 				continue
@@ -1039,7 +1040,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 			regs.PushContinue(s.ContinueLabel)
 
 		case *binstmt.BinTHROW:
-			catcherr = binstmt.NewStringError(stmt, fmt.Sprint(regs.Reg[s.Reg]))
+			catcherr = binstmt.NewStringError(stmt, fmt.Sprint(registers[s.Reg]))
 			break
 
 		case *binstmt.BinMODULE:
@@ -1075,36 +1076,36 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 		case *binstmt.BinTRYRECV:
 
-			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			ch, ok := registers[s.Reg].(core.VMChan)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
 			v, ok, notready := ch.TryRecv()
 			if !ok {
-				regs.Reg[s.RegVal] = core.VMNil
-				regs.Reg[s.RegOk] = core.VMBool(ok)
-				regs.Reg[s.RegClosed] = core.VMBool(!notready)
+				registers[s.RegVal] = core.VMNil
+				registers[s.RegOk] = core.VMBool(ok)
+				registers[s.RegClosed] = core.VMBool(!notready)
 			} else {
-				regs.Reg[s.RegVal] = v
-				regs.Reg[s.RegOk] = core.VMBool(ok)
-				regs.Reg[s.RegClosed] = core.VMBool(false)
+				registers[s.RegVal] = v
+				registers[s.RegOk] = core.VMBool(ok)
+				registers[s.RegClosed] = core.VMBool(false)
 			}
 
 		case *binstmt.BinTRYSEND:
-			ch, ok := regs.Reg[s.Reg].(core.VMChan)
+			ch, ok := registers[s.Reg].(core.VMChan)
 			if !ok {
 				catcherr = binstmt.NewStringError(stmt, "Не является каналом")
 				break
 			}
-			ok = ch.TrySend(regs.Reg[s.RegVal])
-			regs.Reg[s.RegOk] = core.VMBool(ok)
+			ok = ch.TrySend(registers[s.RegVal])
+			registers[s.RegOk] = core.VMBool(ok)
 
 		case *binstmt.BinGOSHED:
 			runtime.Gosched()
 
-		case *binstmt.BinFREE:
-			regs.FreeFromReg(s.Reg)
+		// case *binstmt.BinFREE:
+		// 	regs.FreeFromReg(s.Reg)
 
 		default:
 			return nil, binstmt.NewStringError(stmt, "Неизвестная инструкция")
@@ -1129,7 +1130,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 				}(nerr.Error()))
 
 				r, idxl := regs.PopTry()
-				regs.Reg[r] = core.VMString(nerr.Error())
+				registers[r] = core.VMString(nerr.Error())
 				idx = regs.Labels[idxl] // переходим в catch блок, функция с описанием ошибки определена
 				continue
 			}
@@ -1137,5 +1138,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, registers []core.VMValuer, 
 
 		idx++
 	}
+
+	// putRegs(registers)
+
 	return retval, nil
 }
