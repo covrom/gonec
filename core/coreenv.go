@@ -35,40 +35,92 @@ func putEnvVals(sl VMSlice) {
 	}
 }
 
+const sizeNames = 4 * 512
+
 type Vals struct {
-	idx  map[int]int
+	// idx  map[int]int
+	nms  [sizeNames]byte // 512 vars
+	p    int
 	vals VMSlice
 }
 
 func NewVals() *Vals {
 	v := Vals{
-		idx:  make(map[int]int),
+		// idx:  make(map[int]int),
 		vals: getEnvVals(),
 	}
 	return &v
 }
 
-func (v *Vals) Get(name int) (VMValuer, bool) {
-	if i, ok := v.idx[name]; ok {
-		return v.vals[i], v.vals[i] != nil
+func (v *Vals) Get(name uint32) (VMValuer, bool) {
+
+	if v.p > 0 {
+		for i := v.p - 4; i >= 0; i -= 4 {
+			if v.nms[i] == byte(name) &&
+				v.nms[i+1] == byte(name>>8) &&
+				v.nms[i+2] == byte(name>>16) &&
+				v.nms[i+3] == byte(name>>24) {
+				return v.vals[i>>2], v.vals[i>>2] != nil
+			}
+		}
 	}
+
+	// if i, ok := v.idx[name]; ok {
+	// 	return v.vals[i], v.vals[i] != nil
+	// }
 	return nil, false
 }
 
-func (v *Vals) Set(name int, val VMValuer) {
-	if i, ok := v.idx[name]; ok {
-		v.vals[i] = val
-	} else {
-		i = len(v.vals)
-		v.idx[name] = i
-		v.vals = append(v.vals, val)
+func (v *Vals) GetAll() (res []int) {
+	if v.p > 0 {
+		for i := v.p - 4; i >= 0; i -= 4 {
+			res = append(res, int(v.nms[i])+
+				int(v.nms[i+1])<<8+
+				int(v.nms[i+2])<<16+
+				int(v.nms[i+3])<<24)
+		}
 	}
+	return
 }
 
-func (v *Vals) Del(name int) {
-	if i, ok := v.idx[name]; ok {
-		v.vals[i] = nil
+func (v *Vals) Set(name uint32, val VMValuer) {
+
+	if v.p > 0 {
+		for i := v.p - 4; i >= 0; i -= 4 {
+			if v.nms[i] == byte(name) &&
+				v.nms[i+1] == byte(name>>8) &&
+				v.nms[i+2] == byte(name>>16) &&
+				v.nms[i+3] == byte(name>>24) {
+				v.vals[i>>2] = val
+				return
+			}
+		}
 	}
+
+	if v.p > sizeNames {
+		panic("Превышено количество переменных окружения (максимум 512)")
+	}
+
+	v.nms[v.p] = byte(name)
+	v.nms[v.p+1] = byte(name >> 8)
+	v.nms[v.p+2] = byte(name >> 16)
+	v.nms[v.p+3] = byte(name >> 24)
+	v.vals = append(v.vals, val)
+	v.p += 4
+
+	//v.vals[v.p>>2] = val
+
+	// if i, ok := v.idx[name]; ok {
+	// 	v.vals[i] = val
+	// } else {
+	// 	i = len(v.vals)
+	// 	v.idx[name] = i
+	// 	v.vals = append(v.vals, val)
+	// }
+}
+
+func (v *Vals) Del(name uint32) {
+	v.Set(name, nil)
 }
 
 func (v *Vals) Destroy() {
@@ -80,7 +132,7 @@ func (v *Vals) Destroy() {
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          *Vals // TODO: переделать на байт-слайс и поиск числа в нем простым сканированием
+	env          *Vals
 	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
@@ -294,7 +346,7 @@ func (e *Env) Get(k int) (VMValuer, error) {
 			}
 			return ee.lastval, nil
 		}
-		if v, ok := ee.env.Get(k); ok {
+		if v, ok := ee.env.Get(uint32(k)); ok {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
@@ -315,8 +367,8 @@ func (e *Env) Set(k int, v VMValuer) error {
 		if ee.goRunned {
 			ee.Lock()
 		}
-		if _, ok := ee.env.Get(k); ok {
-			ee.env.Set(k, v)
+		if _, ok := ee.env.Get(uint32(k)); ok {
+			ee.env.Set(uint32(k), v)
 			ee.lastid = k
 			ee.lastval = v
 			if ee.goRunned {
@@ -371,7 +423,7 @@ func (e *Env) Define(k int, v VMValuer) error {
 	if e.goRunned {
 		e.Lock()
 	}
-	e.env.Set(k, v)
+	e.env.Set(uint32(k), v)
 	e.lastid = k
 	e.lastval = v
 
@@ -396,15 +448,10 @@ func (e *Env) Dump() {
 	if e.goRunned {
 		e.RLock()
 	}
-	sk := make([]int, len(e.env.vals))
-	i := 0
-	for k := range e.env.idx {
-		sk[i] = k
-		i++
-	}
+	sk := e.env.GetAll()
 	sort.Ints(sk)
 	for _, k := range sk {
-		v, _ := e.env.Get(k)
+		v, _ := e.env.Get(uint32(k))
 		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), v, v)
 	}
 	if e.goRunned {
