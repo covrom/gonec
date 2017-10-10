@@ -235,6 +235,21 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 		case *binstmt.BinLOAD:
 			registers[s.Reg] = s.Val
 
+		case *binstmt.BinMV:
+			registers[s.RegTo] = registers[s.RegFrom]
+
+		case *binstmt.BinGET:
+			v, err := env.Get(s.Id)
+			if err != nil {
+				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
+				break
+			}
+			registers[s.Reg] = v
+
+		case *binstmt.BinSET:
+			// всегда сохраняются локальные переменные, глобальные и из внешнего окружения можно только читать
+			env.Define(s.Id, registers[s.Reg])
+
 		case *binstmt.BinOPER:
 			v1 := registers[s.RegL]
 			v2 := registers[s.RegR]
@@ -254,9 +269,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 				catcherr = binstmt.NewStringError(stmt, "Значение нельзя использовать в выражении")
 				goto catching
 			}
-
-		case *binstmt.BinMV:
-			registers[s.RegTo] = registers[s.RegFrom]
 
 		case *binstmt.BinEQUAL:
 			v1 := registers[s.Reg1]
@@ -315,18 +327,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 				catcherr = binstmt.NewStringError(stmt, "Невозможно изменить значение по ключу")
 				break
 			}
-
-		case *binstmt.BinGET:
-			v, err := env.Get(s.Id)
-			if err != nil {
-				catcherr = binstmt.NewStringError(stmt, "Невозможно получить значение")
-				break
-			}
-			registers[s.Reg] = v
-
-		case *binstmt.BinSET:
-			// всегда сохраняются локальные переменные, глобальные и из внешнего окружения можно только читать
-			env.Define(s.Id, registers[s.Reg])
 
 		case *binstmt.BinSETMEMBER:
 			m := registers[s.Reg]
