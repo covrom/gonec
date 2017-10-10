@@ -172,6 +172,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 
 	registers := make(core.VMSlice, numofregs) //getRegs(numofregs)
 
+	// TODO: stmt ожидает группу созданных перед этим expr по регистрам (реализация через каналы)
+
 	regs := &VMRegs{
 		Env: env,
 		// Reg:          registers,
