@@ -80,7 +80,7 @@ func (v *Vals) Destroy() {
 type Env struct {
 	sync.RWMutex
 	name         string
-	env          *Vals
+	env          *Vals // TODO: переделать на байт-слайс и поиск числа в нем простым сканированием
 	typ          map[int]reflect.Type
 	parent       *Env
 	interrupt    *bool
