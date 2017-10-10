@@ -208,8 +208,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 			continue
 
 		case *binstmt.BinJFALSE:
-			if b, ok := registers[s.Reg].(core.VMBooler); ok {
-				if !b.Bool() {
+			if b, ok := registers[s.Reg].(core.VMBool); ok {
+				if !bool(b) {
 					idx = regs.Labels[s.JumpTo]
 					continue
 				}
@@ -219,8 +219,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 			}
 
 		case *binstmt.BinJTRUE:
-			if b, ok := registers[s.Reg].(core.VMBooler); ok {
-				if b.Bool() {
+			if b, ok := registers[s.Reg].(core.VMBool); ok {
+				if bool(b) {
 					idx = regs.Labels[s.JumpTo]
 					continue
 				}
