@@ -170,7 +170,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
-	registers := make(core.VMSlice, numofregs) //getRegs(numofregs)
+	registers := getRegs(numofregs)
 
 	regs := &VMRegs{
 		Env: env,
@@ -1139,7 +1139,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 		idx++
 	}
 
-	// putRegs(registers)
+	putRegs(registers)
 
 	return retval, nil
 }
