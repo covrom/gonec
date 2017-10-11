@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -15,6 +16,7 @@ type VMConn struct {
 	id     int
 	closed bool
 	uid    string
+	data   VMValuer
 }
 
 func (c *VMConn) vmval() {}
@@ -25,9 +27,9 @@ func (c *VMConn) Interface() interface{} {
 
 func (c *VMConn) String() string {
 	if c.closed {
-		return fmt.Sprintf("Соединение с клиентом (закрыто)")
+		return fmt.Sprintf("Соединение (закрыто)")
 	}
-	return fmt.Sprintf("Соединение с клиентом %s", c.conn.RemoteAddr())
+	return fmt.Sprintf("Соединение с %s", c.conn.RemoteAddr())
 }
 
 func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
@@ -43,6 +45,8 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, c.Закрыто), true
 	case "идентификатор":
 		return VMFuncMustParams(0, c.Идентификатор), true
+	case "параметры":
+		return VMFuncMustParams(0, c.Параметры), true
 	}
 
 	return nil, false
@@ -91,11 +95,11 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	// затем тело, шифрованное по AES128
 
 	if len(b) < 24 {
-		return rv, VMErrorIncorrectMessage
+		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - короткое сообщение")
 	}
 	cstr := b[:8] // gonectcp
 	if !bytes.Equal(cstr, []byte("gonectcp")) {
-		return rv, VMErrorIncorrectMessage
+		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - неверная сигнатура")
 	}
 	hashbts := binary.LittleEndian.Uint64(b[8:16]) // hash
 	lenb := binary.LittleEndian.Uint64(b[16:24])   // len
@@ -113,8 +117,10 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	b = buf.Bytes()
 
 	// хэш зашифрованного
-	if HashBytes(b) != hashbts {
-		return rv, VMErrorIncorrectMessage
+	hb := HashBytes(b)
+	if hb != hashbts {
+		// log.Println("in", hb, b)
+		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - не совпал хэш")
 	}
 	// проверили хэш, все ок - получаем VMStringMap
 	bd, err := DecryptAES128(b)
@@ -148,9 +154,12 @@ func (x *VMConn) Send(val VMStringMap) error {
 
 	//хэш зашифрованного
 	var hb [24]byte
+	hs := HashBytes(be)
 	copy(hb[:8], []byte("gonectcp"))
-	binary.LittleEndian.PutUint64(hb[8:16], HashBytes(be))
-	binary.LittleEndian.PutUint64(hb[16:24], uint64(len(b)))
+	binary.LittleEndian.PutUint64(hb[8:16], hs)
+	binary.LittleEndian.PutUint64(hb[16:24], uint64(len(be)))
+
+	// log.Println("out", hs, be)
 
 	_, err = io.Copy(x.conn, bytes.NewBuffer(hb[:]))
 	if err != nil {
@@ -182,5 +191,10 @@ func (x *VMConn) Отправить(args VMSlice, rets *VMSlice, envout *(*Env))
 
 func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(VMBool(x.closed))
+	return nil
+}
+
+func (x *VMConn) Параметры(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	rets.Append(x.data)
 	return nil
 }

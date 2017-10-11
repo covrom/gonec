@@ -24,7 +24,7 @@ func (x *VMClient) IsOnline() bool {
 	return x.conn != nil && !x.conn.closed
 }
 
-func (x *VMClient) Open(proto, addr string, handler VMFunc) error {
+func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error {
 	switch proto {
 	case "tcp":
 		conn, err := net.Dial(proto, addr)
@@ -37,6 +37,7 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc) error {
 			id:     -1,
 			closed: false,
 			uid:    uuid.NewV4().String(),
+			data:   data,
 		}
 
 		go x.conn.Handle(handler)
@@ -56,12 +57,13 @@ func (x *VMClient) VMRegister() {
 	x.VMRegisterMethod("Закрыть", x.Закрыть)
 	x.VMRegisterMethod("Работает", x.Работает)
 	x.VMRegisterMethod("Открыть", x.Открыть)
+	
 	// tst.VMRegisterField("ПолеСтрока", &tst.ПолеСтрока)
 }
 
 func (x *VMClient) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	if len(args) != 3 {
-		return VMErrorNeedArgs(3)
+	if len(args) != 4 {
+		return VMErrorNeedArgs(4)
 	}
 	p, ok := args[0].(VMString)
 	if !ok {
@@ -76,7 +78,7 @@ func (x *VMClient) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) e
 		return errors.New("Третий аргумент должен быть функцией с одним аргументом-соединением")
 	}
 
-	return x.Open(string(p), string(adr), f)
+	return x.Open(string(p), string(adr), f, args[3])
 }
 
 func (x *VMClient) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {

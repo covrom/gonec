@@ -63,7 +63,6 @@ type (
 	VMBinaryTyper interface {
 		VMValuer
 		encoding.BinaryMarshaler
-		encoding.BinaryUnmarshaler
 		BinaryType() VMBinaryType
 	}
 

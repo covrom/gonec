@@ -49,7 +49,7 @@ func (x *VMServer) healthSender() {
 	}
 }
 
-func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc) (err error) {
+func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VMValuer) (err error) {
 	// запускаем сервер
 	if x.lnr != nil {
 		return VMErrorServerNowOnline
@@ -92,6 +92,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc) (err er
 						id:     l,
 						closed: false,
 						uid:    uuid.NewV4().String(),
+						data:   data,
 					}
 					x.clients = append(x.clients, vcn)
 					go vcn.Handle(handler)
@@ -208,8 +209,8 @@ func (x *VMServer) Работает(args VMSlice, rets *VMSlice, envout *(*Env))
 }
 
 func (x *VMServer) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	if len(args) != 4 {
-		return errors.New("Требуется четыре аргумента")
+	if len(args) != 5 {
+		return VMErrorNeedArgs(5)
 	}
 	p, ok := args[0].(VMString)
 	if !ok {
@@ -228,5 +229,5 @@ func (x *VMServer) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) e
 		return errors.New("Четвертый аргумент должен быть функцией с одним аргументом-соединением")
 	}
 
-	return x.Open(string(p), string(adr), int(lim), f)
+	return x.Open(string(p), string(adr), int(lim), f, args[4])
 }

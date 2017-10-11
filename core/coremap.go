@@ -326,18 +326,21 @@ func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 
 func (x VMStringMap) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
-	binary.Write(&buf, binary.LittleEndian, uint64(len(x)))
+	binary.Write(&buf, binary.LittleEndian, uint64(len(x))) //количество пар ключ-значение
 	for i := range x {
 		if v, ok := x[i].(VMBinaryTyper); ok {
 			bb, err := v.MarshalBinary()
 			if err != nil {
 				return nil, err
 			}
-			binary.Write(&buf, binary.LittleEndian, uint64(len(i)))
-			buf.Write([]byte(i))
-			buf.WriteByte(byte(v.BinaryType()))
-			binary.Write(&buf, binary.LittleEndian, uint64(len(bb)))
-			buf.Write(bb)
+			//ключ
+			bws := []byte(i)
+			binary.Write(&buf, binary.LittleEndian, uint64(len(bws))) //длина
+			buf.Write(bws)                                            //строка ключа
+			//значение
+			buf.WriteByte(byte(v.BinaryType()))                      //тип
+			binary.Write(&buf, binary.LittleEndian, uint64(len(bb))) //длина в байтах
+			buf.Write(bb)                                            //байты
 		} else {
 			return nil, VMErrorNotBinaryConverted
 		}
@@ -348,22 +351,31 @@ func (x VMStringMap) MarshalBinary() ([]byte, error) {
 func (x *VMStringMap) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
 	var l, li, lv uint64
+	// количество пар
 	if err := binary.Read(buf, binary.LittleEndian, &l); err != nil {
 		return err
 	}
 	rv := make(VMStringMap, int(l))
+
 	for i := 0; i < int(l); i++ {
+		//длина ключа
 		if err := binary.Read(buf, binary.LittleEndian, &li); err != nil {
 			return err
 		}
+		//строка ключа
 		bi := buf.Next(int(li))
-		if err := binary.Read(buf, binary.LittleEndian, &lv); err != nil {
-			return err
-		}
+
+		//тип
 		if tt, err := buf.ReadByte(); err != nil {
 			return err
 		} else {
+			//длина значения
+			if err := binary.Read(buf, binary.LittleEndian, &lv); err != nil {
+				return err
+			}
+			//байты значения
 			bb := buf.Next(int(lv))
+			
 			vv, err := VMBinaryType(tt).ParseBinary(bb)
 			if err != nil {
 				return err

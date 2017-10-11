@@ -464,6 +464,7 @@ func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
 
 func (x VMSlice) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
+	//количество элементов
 	binary.Write(&buf, binary.LittleEndian, uint64(len(x)))
 	for i := range x {
 		if v, ok := x[i].(VMBinaryTyper); ok {
@@ -471,8 +472,11 @@ func (x VMSlice) MarshalBinary() ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+			//тип
 			buf.WriteByte(byte(v.BinaryType()))
+			//длина
 			binary.Write(&buf, binary.LittleEndian, uint64(len(bb)))
+			//байты
 			buf.Write(bb)
 		} else {
 			return nil, VMErrorNotBinaryConverted
@@ -484,6 +488,7 @@ func (x VMSlice) MarshalBinary() ([]byte, error) {
 func (x *VMSlice) UnmarshalBinary(data []byte) error {
 	buf := bytes.NewBuffer(data)
 	var l, lv uint64
+	//количество элементов
 	if err := binary.Read(buf, binary.LittleEndian, &l); err != nil {
 		return err
 	}
@@ -495,12 +500,15 @@ func (x *VMSlice) UnmarshalBinary(data []byte) error {
 	}
 
 	for i := 0; i < int(l); i++ {
-		if err := binary.Read(buf, binary.LittleEndian, &lv); err != nil {
-			return err
-		}
+		//тип
 		if tt, err := buf.ReadByte(); err != nil {
 			return err
 		} else {
+			//длина
+			if err := binary.Read(buf, binary.LittleEndian, &lv); err != nil {
+				return err
+			}
+			//байты
 			bb := buf.Next(int(lv))
 			vv, err := VMBinaryType(tt).ParseBinary(bb)
 			if err != nil {
