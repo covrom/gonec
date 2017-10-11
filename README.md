@@ -3,12 +3,12 @@
 # ГОНЕЦ (gonec)
 ## Интерпретатор и платформа создания микросервисов на 1С-подобном языке
 
-[![Gonec Logo](/gonec.png)](https://github.com/covrom/gonec/releases)
+[![Gonec Logo](/extra/gonec.png)](https://github.com/covrom/gonec/releases)
 
-[![Download](/button_down.png)](https://github.com/covrom/gonec/releases)
-[![Docs](/button_doc.png)](https://github.com/covrom/gonec/wiki)
-[![Demo site](/button_play.png)](https://gonec.herokuapp.com/)
-[![Chat](/button_chat.png)](https://gitter.im/gonec/Lobby)
+[![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
+[![Docs](/extra/button_doc.png)](https://github.com/covrom/gonec/wiki)
+[![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com/)
+[![Chat](/extra/button_chat.png)](https://gitter.im/gonec/Lobby)
 
 ## Цели
 
@@ -43,10 +43,10 @@
 ## Архитектура языка и платформы
 
 Архитектура платформы
-![System architecture](/architecture.png)
+![System architecture](/extra/architecture.png)
 
 Архитектура языка Гонец
-![Language architecture](/langarch.png)
+![Language architecture](/extra/langarch.png)
 
 ## Масштабируемость языка и платформы
 Язык Гонец расширяется путем изменения правил синтаксиса в формате YACC, а так же написания собственных высокоэффективных библиотек структур и функций на Го, которые могут быть доступны как объекты метаданных в языке Гонец.
@@ -85,7 +85,7 @@
 * Гонец с регистровой виртуальной машиной
 * 1С:Предприятие 8.3.9.2170 (файловая)
 
-![PerfVs1C](/perf1c.gif)
+![PerfVs1C](/extra/perf1c.gif)
 
 ## Какая технологическая основа используется в интерпретаторе?
 Интерптетатор реализован на языке Go путем адаптации исходных кодов интерпретатора языка anko (https://github.com/mattn/anko).
@@ -95,7 +95,7 @@
 ```
 а = [](0,1000*1000)
 для н=1 по 10*10*10000 цикл
-  а=а+[н]+[н*10]
+  а=а+[н]+[н*10] //постоянно выделяется память для объединения массивов
 конеццикла
 к=0
 для каждого н из а цикл
@@ -104,7 +104,7 @@
 сообщить(к)
 а=Новый("__функциональнаяструктуратест__")
 а.ПолеСтрока = "авузлхвсзщл"
-а.ПолеСтрока[:2] = "АВ"
+а.ПолеСтрока = "АВ"+а.ПолеСтрока[2:]
 сообщить(а.ВСтроку(), а.ПолеСтрока+":ok")
 ```
 Скомпилированный код для виртуальной машины:
@@ -148,9 +148,7 @@ SET "к", r3
 JMP L4
 L3:
 POPFOR L4
-MAKESLICE r0, LEN 1, CAP 1
-GET r1, "к"
-SETIDX r0[0], r1
+GET r0, "к"
 CALL "сообщить", ARGS r0, ARGS_COUNT 1, VARARG false, GO false, RETURN r0
 LOAD r0, "__функциональнаяструктуратест__"
 SETNAME r0
@@ -162,24 +160,19 @@ SETMEMBER r1."ПолеСтрока", r0
 LOAD r0, "АВ"
 GET r1, "а"
 GETMEMBER r1, "ПолеСтрока"
-LOAD r2, <nil>
-LOAD r3, 2
-SETSLICE r1[r2:r3], r0
-JFALSE r4, L5
-GET r2, "а"
-SETMEMBER r2."ПолеСтрока", r1
-L5:
-MAKESLICE r0, LEN 2, CAP 2
+LOAD r2, 2
+LOAD r3, <nil>
+SLICE r1[r2 : r3]
+OP r0, "+", r1
 GET r1, "а"
-GETMEMBER r1, "ВСтроку"
-MAKESLICE r2, LEN 0, CAP 0
-CALL REG r1, ARGS r2, ARGS_COUNT 0, VARARG false, GO false, RETURN r1
-SETIDX r0[0], r1
+SETMEMBER r1."ПолеСтрока", r0
+GET r0, "а"
+GETMEMBER r0, "ВСтроку"
+CALL REG r0, ARGS r1, ARGS_COUNT 0, VARARG false, GO false, RETURN r0
 GET r1, "а"
 GETMEMBER r1, "ПолеСтрока"
 LOAD r2, ":ok"
 OP r1, "+", r2
-SETIDX r0[1], r1
 CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false, RETURN r0
 ```
 Результат исполнения:
@@ -187,9 +180,8 @@ CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false, RETURN r
 5500005500000
 ПолеЦелоеЧисло=0, ПолеСтрока=АВузлхвсзщл АВузлхвсзщл:ok
 Время компиляции: 0s
-Время исполнения: 3.4389302s
+Время исполнения: 1.7867144s
 ```
 
 ## Какой статус разработки интерпретатора?
-Интерпретатор находится в стадии разработки стандартной библиотеки.
-Первая версия уже доступна к тестированию!
+Интерпретатор работает стабильно, протестирован и находится в стадии разработки стандартной библиотеки.
