@@ -93,8 +93,8 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	if !bytes.Equal(cstr, []byte("gonectcp")) {
 		return rv, VMErrorIncorrectMessage
 	}
-	hashbts, _ := binary.Uvarint(b[8:16]) // hash
-	lenb, _ := binary.Uvarint(b[16:24])   // len
+	hashbts := binary.LittleEndian.Uint64(b[8:16]) // hash
+	lenb := binary.LittleEndian.Uint64(b[16:24])   // len
 
 	buf.Reset()
 	_, err = io.CopyN(&buf, x.conn, int64(lenb))
@@ -145,8 +145,8 @@ func (x *VMConn) Send(val VMStringMap) error {
 	//хэш зашифрованного
 	var hb [24]byte
 	copy(hb[:8], []byte("gonectcp"))
-	binary.PutUvarint(hb[8:16], HashBytes(be))
-	binary.PutUvarint(hb[16:24], uint64(len(b)))
+	binary.LittleEndian.PutUint64(hb[8:16], HashBytes(be))
+	binary.LittleEndian.PutUint64(hb[16:24], uint64(len(b)))
 
 	_, err = io.Copy(x.conn, bytes.NewBuffer(hb[:]))
 	if err != nil {
