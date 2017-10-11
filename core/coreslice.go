@@ -119,14 +119,14 @@ func (x VMSlice) MethodMember(name int) (VMFunc, bool) {
 	return nil, false
 }
 
-func (x VMSlice) Сортировать(args VMSlice, rets *VMSlice) error {
+func (x VMSlice) Сортировать(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	x.SortDefault()
 	return nil
 }
 
 // Найти (значение) (индекс, найдено) - находит индекс значения или места для его вставки (конец списка), если его еще нет
 // возврат унифицирован с возвратом функции НайтиСорт
-func (x VMSlice) Найти(args VMSlice, rets *VMSlice) error {
+func (x VMSlice) Найти(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	y := args[0]
 	p := 0
 	fnd := false
@@ -145,7 +145,7 @@ func (x VMSlice) Найти(args VMSlice, rets *VMSlice) error {
 // НайтиСорт (значение) (индекс, найдено) - находит индекс значения или места для его вставки, если его еще нет
 // поиск осуществляется в отсортированном по возрастанию массиве
 // иначе будет непредсказуемый ответ
-func (x VMSlice) НайтиСорт(args VMSlice, rets *VMSlice) error {
+func (x VMSlice) НайтиСорт(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	y := args[0]
 	p := sort.Search(len(x), func(i int) bool { return !SortLessVMValues(x[i], y) }) //data[i] >= x
 	if p < len(x) && EqualVMValues(x[p], y) {
@@ -164,7 +164,7 @@ func (x VMSlice) НайтиСорт(args VMSlice, rets *VMSlice) error {
 // Вставить (индекс, значение) - вставляет значение по индексу.
 // Индекс может быть равен длине, тогда вставка происходит в последний элемент.
 // Обычно используется в связке с НайтиСорт, т.к. позволяет вставлять значения с сохранением сортировки по возрастанию
-func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice) error {
+func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	p, ok := args[0].(VMInt)
 	if !ok {
 		return VMErrorNeedInt
@@ -179,7 +179,7 @@ func (x *VMSlice) Вставить(args VMSlice, rets *VMSlice) error {
 	return nil
 }
 
-func (x *VMSlice) Удалить(args VMSlice, rets *VMSlice) error {
+func (x *VMSlice) Удалить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	p, ok := args[0].(VMInt)
 	if !ok {
 		return VMErrorNeedInt
@@ -193,12 +193,12 @@ func (x *VMSlice) Удалить(args VMSlice, rets *VMSlice) error {
 	return nil
 }
 
-func (x VMSlice) СортироватьУбыв(args VMSlice, rets *VMSlice) error {
+func (x VMSlice) СортироватьУбыв(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	sort.Sort(sort.Reverse(VMSliceUpSort(x)))
 	return nil
 }
 
-func (x VMSlice) Обратить(args VMSlice, rets *VMSlice) error {
+func (x VMSlice) Обратить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	for left, right := 0, len(x)-1; left < right; left, right = left+1, right-1 {
 		x[left], x[right] = x[right], x[left]
 	}
@@ -221,7 +221,7 @@ func (x VMSlice) CopyRecursive() VMSlice {
 }
 
 // Скопировать - помимо обычного копирования еще и рекурсивно копирует и слайсы/структуры, находящиеся в элементах
-func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //VMSlice {
+func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice, envout *(*Env)) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	copy(rv, x)
 	for i, v := range rv {
@@ -236,7 +236,7 @@ func (x VMSlice) Скопировать(args VMSlice, rets *VMSlice) error { //V
 	return nil
 }
 
-func (x VMSlice) СкопироватьУникальные(args VMSlice, rets *VMSlice) error { //VMSlice {
+func (x VMSlice) СкопироватьУникальные(args VMSlice, rets *VMSlice, envout *(*Env)) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	seen := make(map[VMValuer]bool)
 	for i, v := range x {

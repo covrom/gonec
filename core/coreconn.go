@@ -52,13 +52,17 @@ func (x *VMConn) Handle(f VMFunc) {
 	args := make(VMSlice, 1)
 	rets := make(VMSlice, 0)
 	args[0] = x
-	f(args, &rets)
+	var env *Env // сюда вернется окружение вызываемой функции
+	err := f(args, &rets, &env)
 	// закрываем по окончании обработки
 	x.conn.Close()
 	x.closed = true
+	if err != nil && env.Valid {
+		env.Println(err)
+	}
 }
 
-func (x *VMConn) Идентификатор(args VMSlice, rets *VMSlice) error {
+func (x *VMConn) Идентификатор(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(VMString(x.uid))
 	return nil
 }
@@ -124,7 +128,7 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	return rv, nil
 }
 
-func (x *VMConn) Получить(args VMSlice, rets *VMSlice) error {
+func (x *VMConn) Получить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	v, err := x.Receive()
 	rets.Append(v)
 	return err // при ошибке вызовет исключение, нужно обрабатывать в попытке
@@ -168,7 +172,7 @@ func (x *VMConn) Send(val VMStringMap) error {
 	return nil
 }
 
-func (x *VMConn) Отправить(args VMSlice, rets *VMSlice) error {
+func (x *VMConn) Отправить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	v, ok := args[0].(VMStringMap)
 	if !ok {
 		return VMErrorNeedSlice
@@ -176,7 +180,7 @@ func (x *VMConn) Отправить(args VMSlice, rets *VMSlice) error {
 	return x.Send(v) // при ошибке вызовет исключение, нужно обрабатывать в попытке
 }
 
-func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice) error {
+func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(VMBool(x.closed))
 	return nil
 }

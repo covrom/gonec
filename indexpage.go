@@ -9,7 +9,7 @@ const indexPage =
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 	
-	<title>Интерпретатор Гонец</title>
+	<title>Гонец:Микросервисы</title>
 
 	<style type="text/css">
 		#head {

@@ -22,7 +22,8 @@ func LoadAllBuiltins(env *Env) {
 	// "strings":       gonec_strings.Import,
 	}
 
-	env.DefineS("импорт", VMFunc(func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("импорт", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if len(args) != 1 {
 			return VMErrorNeedSinglePacketName
 		}
@@ -44,7 +45,8 @@ func LoadAllBuiltins(env *Env) {
 // Import общая стандартная бибилиотека
 func Import(env *Env) *Env {
 
-	env.DefineS("длина", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("длина", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if rv, ok := args[0].(VMIndexer); ok {
 			rets.Append(rv.Length())
 			return nil
@@ -52,7 +54,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedLength
 	}))
 
-	env.DefineS("диапазон", VMFunc(func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("диапазон", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if len(args) < 1 {
 			return VMErrorNoArgs
 		}
@@ -92,12 +95,14 @@ func Import(env *Env) *Env {
 		return nil
 	}))
 
-	env.DefineS("текущаядата", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("текущаядата", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		rets.Append(Now())
 		return nil
 	}))
 
-	env.DefineS("прошловременис", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("прошловременис", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if rv, ok := args[0].(VMDateTimer); ok {
 			rets.Append(Now().Sub(rv.Time()))
 			return nil
@@ -105,7 +110,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedDate
 	}))
 
-	env.DefineS("пауза", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("пауза", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMNumberer); ok {
 			sec1 := decimal.New(int64(VMSecond), 0)
 			time.Sleep(time.Duration(v.Decimal().Mul(VMDecimal(sec1)).Int()))
@@ -122,7 +128,8 @@ func Import(env *Env) *Env {
 	env.DefineS("длительностьчаса", VMHour)
 	env.DefineS("длительностьдня", VMDay)
 
-	env.DefineS("хэш", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("хэш", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMHasher); ok {
 			rets.Append(v.Hash())
 			return nil
@@ -130,17 +137,20 @@ func Import(env *Env) *Env {
 		return VMErrorNeedHash
 	}))
 
-	env.DefineS("уникальныйидентификатор", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("уникальныйидентификатор", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		rets.Append(VMString(uuid.NewV1().String()))
 		return nil
 	}))
 
-	env.DefineS("получитьмассивизпула", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("получитьмассивизпула", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		rets.Append(GetGlobalVMSlice())
 		return nil
 	}))
 
-	env.DefineS("вернутьмассиввпул", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("вернутьмассиввпул", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMSlice); ok {
 			PutGlobalVMSlice(v)
 			return nil
@@ -148,7 +158,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedSlice
 	}))
 
-	env.DefineS("случайнаястрока", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("случайнаястрока", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMInt); ok {
 			rets.Append(VMString(MustGenerateRandomString(int(v))))
 			return nil
@@ -156,7 +167,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedInt
 	}))
 
-	env.DefineS("нрег", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("нрег", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMStringer); ok {
 			rets.Append(VMString(strings.ToLower(string(v.String()))))
 			return nil
@@ -164,7 +176,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedString
 	}))
 
-	env.DefineS("врег", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("врег", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMStringer); ok {
 			rets.Append(VMString(strings.ToUpper(string(v.String()))))
 			return nil
@@ -172,7 +185,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedString
 	}))
 
-	env.DefineS("формат", VMFunc(func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("формат", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if len(args) < 2 {
 			return VMErrorNeedFormatAndArgs
 		}
@@ -184,7 +198,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedString
 	}))
 
-	env.DefineS("кодсимвола", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("кодсимвола", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if v, ok := args[0].(VMStringer); ok {
 			s := v.String()
 			if len(s) == 0 {
@@ -197,7 +212,8 @@ func Import(env *Env) *Env {
 		return VMErrorNeedString
 	}))
 
-	env.DefineS("типзнч", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("типзнч", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if args[0] == nil || args[0] == VMNil {
 			rets.Append(VMString("Неопределено"))
 			return nil
@@ -206,7 +222,8 @@ func Import(env *Env) *Env {
 		return nil
 	}))
 
-	env.DefineS("сообщить", VMFunc(func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("сообщить", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if len(args) == 0 {
 			env.Println()
 			return nil
@@ -216,7 +233,8 @@ func Import(env *Env) *Env {
 		return nil
 	}))
 
-	env.DefineS("сообщитьф", VMFunc(func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("сообщитьф", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		if len(args) < 2 {
 			return VMErrorNeedFormatAndArgs
 		}
@@ -229,7 +247,8 @@ func Import(env *Env) *Env {
 
 	}))
 
-	env.DefineS("обработатьгорутины", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("обработатьгорутины", VMFuncMustParams(0, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		runtime.Gosched()
 		return nil
 	}))
@@ -245,14 +264,15 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("длительность", ReflectVMTimeDuration)
 
 	env.DefineTypeS("группаожидания", ReflectVMWaitGroup)
-	
+
 	env.DefineTypeStruct("сервер", &VMServer{})
 	env.DefineTypeStruct("клиент", &VMClient{})
 
 	//////////////////
 	env.DefineTypeStruct("__функциональнаяструктуратест__", &TttStructTest{})
 
-	env.DefineS("__дамп__", VMFunc(func(args VMSlice, rets *VMSlice) error {
+	env.DefineS("__дамп__", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
 		env.Dump()
 		return nil
 	}))
@@ -277,7 +297,7 @@ func (tst *TttStructTest) VMRegister() {
 }
 
 // обратите внимание - русскоязычное название метода для структуры и формат для быстрого вызова
-func (tst *TttStructTest) ВСтроку(args VMSlice, rets *VMSlice) error {
+func (tst *TttStructTest) ВСтроку(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(VMString(fmt.Sprintf("ПолеЦелоеЧисло=%v, ПолеСтрока=%v", tst.ПолеЦелоеЧисло, tst.ПолеСтрока)))
 	return nil
 }

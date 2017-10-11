@@ -184,7 +184,8 @@ func (x *VMServer) ForEachClient(f VMFunc) {
 		args := make(VMSlice, 1)
 		rets := make(VMSlice, 0)
 		args[0] = cli
-		f(args, &rets)
+		var env *Env
+		f(args, &rets, &env)
 	}
 }
 
@@ -196,17 +197,17 @@ func (x *VMServer) VMRegister() {
 }
 
 // Закрыть возвращает настоящую причину закрытия, в том числе, ошибку отстрела сервера до вызова закрытия
-func (x *VMServer) Закрыть(args VMSlice, rets *VMSlice) error {
+func (x *VMServer) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(VMString(fmt.Sprint(x.Close())))
 	return nil
 }
 
-func (x *VMServer) Работает(args VMSlice, rets *VMSlice) error {
+func (x *VMServer) Работает(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(VMBool(x.IsOnline()))
 	return nil
 }
 
-func (x *VMServer) Открыть(args VMSlice, rets *VMSlice) error {
+func (x *VMServer) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	if len(args) != 4 {
 		return errors.New("Требуется четыре аргумента")
 	}

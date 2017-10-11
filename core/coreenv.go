@@ -90,6 +90,7 @@ type Env struct {
 	lastid       int
 	lastval      VMValuer
 	builtsLoaded bool
+	Valid        bool
 }
 
 func (e *Env) vmval() {} // нужно для того, чтобы *Env можно было сохранять в переменные VMValuer
@@ -108,6 +109,7 @@ func NewEnv() *Env {
 		goRunned:     false,
 		lastid:       -1,
 		builtsLoaded: false,
+		Valid:        true,
 	}
 	return m
 }
@@ -125,6 +127,7 @@ func (e *Env) NewEnv() *Env {
 				goRunned:     false,
 				lastid:       -1,
 				builtsLoaded: ee.builtsLoaded,
+				Valid:        true,
 			}
 
 		}
@@ -143,6 +146,7 @@ func (e *Env) NewSubEnv() *Env {
 		goRunned:     false,
 		lastid:       -1,
 		builtsLoaded: e.builtsLoaded,
+		Valid:        true,
 	}
 }
 
@@ -175,6 +179,7 @@ func (e *Env) NewPackage(n string) *Env {
 		goRunned:     false,
 		lastid:       -1,
 		builtsLoaded: e.builtsLoaded,
+		Valid:        true,
 	}
 }
 

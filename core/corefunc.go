@@ -9,7 +9,9 @@ import (
 // функции такого типа создаются на языке Гонец,
 // их можно использовать в стандартной библиотеке, проверив на этот тип
 // в args передаются входные параметры, в rets передается ссылка на слайс возвращаемых значений - он заполняется в функции
-type VMFunc func(args VMSlice, rets *VMSlice) error
+// при возврате так же возвращается окружение в envout, в котором выполнялась функция
+// это нужно для обработки callback-вызова из Го, например, отправки ее сообщения об ошибке в ее же окружение
+type VMFunc func(args VMSlice, rets *VMSlice, envout *(*Env)) error
 
 func (f VMFunc) vmval() {}
 
@@ -25,11 +27,11 @@ func (f VMFunc) Func() VMFunc {
 	return f
 }
 
-type VMMethod = func(VMSlice, *VMSlice) error
+type VMMethod = func(VMSlice, *VMSlice, *(*Env)) error
 
 func VMFuncMustParams(n int, f VMMethod) VMFunc {
 	return VMFunc(
-		func(args VMSlice, rets *VMSlice) error {
+		func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 			if len(args) != n {
 				switch n {
 				case 0:
@@ -38,6 +40,6 @@ func VMFuncMustParams(n int, f VMMethod) VMFunc {
 					return VMErrorNeedArgs(n)
 				}
 			}
-			return f(args, rets)
+			return f(args, rets, envout)
 		})
 }

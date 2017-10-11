@@ -68,7 +68,7 @@ func (x VMStringMap) MethodMember(name int) (VMFunc, bool) {
 }
 
 // Ключи возвращаются отсортированными по возрастанию
-func (x VMStringMap) Ключи(args VMSlice, rets *VMSlice) error { //VMSlice {
+func (x VMStringMap) Ключи(args VMSlice, rets *VMSlice, envout *(*Env)) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	i := 0
 	for k := range x {
@@ -81,7 +81,7 @@ func (x VMStringMap) Ключи(args VMSlice, rets *VMSlice) error { //VMSlice {
 }
 
 // Значения возвращаются в случайном порядке
-func (x VMStringMap) Значения(args VMSlice, rets *VMSlice) error { //VMSlice {
+func (x VMStringMap) Значения(args VMSlice, rets *VMSlice, envout *(*Env)) error { //VMSlice {
 	rv := make(VMSlice, len(x))
 	i := 0
 	for _, v := range x {
@@ -92,7 +92,7 @@ func (x VMStringMap) Значения(args VMSlice, rets *VMSlice) error { //VMS
 	return nil
 }
 
-func (x VMStringMap) Удалить(args VMSlice, rets *VMSlice) error { //VMSlice {
+func (x VMStringMap) Удалить(args VMSlice, rets *VMSlice, envout *(*Env)) error { //VMSlice {
 	p, ok := args[0].(VMString)
 	if !ok {
 		return VMErrorNeedString
@@ -116,7 +116,7 @@ func (x VMStringMap) CopyRecursive() VMStringMap {
 	return rv
 }
 
-func (x VMStringMap) Скопировать(args VMSlice, rets *VMSlice) error {
+func (x VMStringMap) Скопировать(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rv := x.CopyRecursive()
 	rets.Append(rv)
 	return nil

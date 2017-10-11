@@ -97,7 +97,8 @@ func Run(stmts binstmt.BinCode, env *core.Env) (retval core.VMValuer, reterr err
 
 	if !env.IsBuiltsLoaded() {
 		// эту функцию определяем тут, чтобы исключить циклические зависимости пакетов
-		env.DefineS("загрузитьивыполнить", core.VMFunc(func(args core.VMSlice, rets *core.VMSlice) error {
+		env.DefineS("загрузитьивыполнить", core.VMFunc(func(args core.VMSlice, rets *core.VMSlice, envout *(*core.Env)) error {
+			*envout = env
 			if len(args) != 1 {
 				return errors.New("Должен быть один параметр")
 			}
@@ -367,9 +368,13 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 					goargs := core.GetGlobalVMSlice() // для горутин аргументы надо скопировать!
 					goargs = append(goargs, argsl...)
 					go func(a, r core.VMSlice) {
-						fnc(a, &r)
+						var e *core.Env
+						err := fnc(a, &r, &e)
 						core.PutGlobalVMSlice(a) // всегда возвращаем в пул
 						core.PutGlobalVMSlice(r) // всегда возвращаем в пул
+						if err != nil && e.Valid {
+							e.Println(err)
+						}
 					}(goargs, rets)
 					registers[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
 					break
@@ -377,7 +382,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 
 				rets := core.GetGlobalVMSlice()
 				// не в горутине
-				err = fnc(argsl, &rets)
+				var fenv *core.Env
+				err = fnc(argsl, &rets, &fenv)
 
 				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
 
@@ -408,7 +414,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 		case *binstmt.BinFUNC:
 
 			f := func(expr *binstmt.BinFUNC, fstmts binstmt.BinStmts, flabels []int, fenv *core.Env) core.VMFunc {
-				return func(args core.VMSlice, rets *core.VMSlice) error {
+				return func(args core.VMSlice, rets *core.VMSlice, envout *(*core.Env)) error {
 					if !expr.VarArg {
 						if len(args) != len(expr.Args) {
 							return binstmt.NewStringError(expr, "Неверное количество аргументов")
@@ -434,6 +440,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
 
 					rr, err := RunWorker(fstmts, flabels, expr.MaxReg+1, newenv, flabels[expr.LabelStart])
+
+					*envout = newenv // указываем окружение после выполнения
 
 					if err == binstmt.ReturnError {
 						err = nil
@@ -1123,7 +1131,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 				return nil, nerr
 			} else {
 				env.DefineS("описаниеошибки", func(s string) core.VMFunc {
-					return func(args core.VMSlice, rets *core.VMSlice) error {
+					return func(args core.VMSlice, rets *core.VMSlice, envout *(*core.Env)) error {
+						*envout = env
 						if len(args) != 0 {
 							return errors.New("Данная функция не требует параметров")
 						}
