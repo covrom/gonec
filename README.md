@@ -1,8 +1,5 @@
 [![GitHub issues](https://img.shields.io/github/issues/covrom/gonec.svg)](https://github.com/covrom/gonec/issues) [![Travis](https://travis-ci.org/covrom/gonec.svg?branch=master)](https://github.com/covrom/gonec/releases)
 
-# ГОНЕЦ (gonec)
-## Интерпретатор и платформа создания микросервисов на 1С-подобном языке
-
 [![Gonec Logo](/extra/gonec.png)](https://github.com/covrom/gonec/releases)
 
 [![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
