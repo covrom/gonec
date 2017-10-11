@@ -170,7 +170,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 
 	// подготавливаем состояние машины: регистры значений, управляющие регистры
 
-	registers := make(core.VMSlice, numofregs) //getRegs(numofregs)
+	registers := getRegs(numofregs)
 
 	// TODO: stmt ожидает группу созданных перед этим expr по регистрам (реализация через каналы)
 
@@ -343,6 +343,119 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 				goto catching
 			}
 
+		case *binstmt.BinCALL:
+
+			var err error
+
+			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
+			var fgnc core.VMValuer
+			var argsl core.VMSlice
+			if s.Name == 0 {
+				fgnc = registers[s.RegArgs]
+				argsl = registers[s.RegArgs+1 : s.RegArgs+1+s.NumArgs]
+			} else {
+				fgnc, err = env.Get(s.Name)
+				if err != nil {
+					catcherr = binstmt.NewError(stmt, err)
+					goto catching
+				}
+				argsl = registers[s.RegArgs : s.RegArgs+s.NumArgs]
+			}
+			rets := core.GetGlobalVMSlice()
+			if fnc, ok := fgnc.(core.VMFunc); ok {
+				// если ее надо вызвать в горутине - вызываем
+				if s.Go {
+					env.SetGoRunned(true)
+					rets = core.GetGlobalVMSlice() // для каждой горутины отдельный массив возвратов, который потом не используется
+					go func(args, rets core.VMSlice) {
+						fnc(argsl, &rets)
+						core.PutGlobalVMSlice(rets) // всегда возвращаем в пул
+					}(argsl, rets)
+					registers[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
+					break
+				}
+
+				// не в горутине
+				err = fnc(argsl, &rets)
+
+				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
+
+				if err != nil {
+					// ошибку передаем в блок обработки исключений
+					catcherr = binstmt.NewError(stmt, err)
+					break
+				}
+				switch len(rets) {
+				case 0:
+					registers[s.RegRets] = core.VMNil
+					core.PutGlobalVMSlice(rets)
+				case 1:
+					registers[s.RegRets] = rets[0]
+					core.PutGlobalVMSlice(rets)
+				default:
+					registers[s.RegRets] = rets //не возвращаем в пул
+				}
+				break
+			} else {
+
+				// fmt.Printf("%T\n", fgnc)
+
+				catcherr = binstmt.NewStringError(stmt, "Неверный тип функции")
+				goto catching
+			}
+
+		case *binstmt.BinFUNC:
+
+			f := func(expr *binstmt.BinFUNC, fstmts binstmt.BinStmts, flabels []int, fenv *core.Env) core.VMFunc {
+				return func(args core.VMSlice, rets *core.VMSlice) error {
+					if !expr.VarArg {
+						if len(args) != len(expr.Args) {
+							return binstmt.NewStringError(expr, "Неверное количество аргументов")
+						}
+					}
+					var newenv *core.Env
+					if expr.Name == 0 {
+						// наследуем от окружения текущей функции
+						newenv = fenv.NewSubEnv()
+					} else {
+						// наследуем от модуля или глобального окружения
+						newenv = fenv.NewEnv()
+					}
+
+					// переменное число аргументов передается как один параметр-слайс
+					if expr.VarArg {
+						newenv.Define(expr.Args[0], args)
+					} else {
+						for i, arg := range expr.Args {
+							newenv.Define(arg, args[i])
+						}
+					}
+					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
+
+					rr, err := RunWorker(fstmts, flabels, expr.MaxReg+1, newenv, flabels[expr.LabelStart])
+
+					if err == binstmt.ReturnError {
+						err = nil
+					}
+					// возврат массива возвращается сразу, иначе добавляется
+					if vsl, ok := rr.(core.VMSlice); ok {
+						*rets = vsl
+					} else {
+						rets.Append(rr)
+					}
+					newenv.Destroy()
+					return err
+				}
+			}(s, stmts, labels, env)
+
+			env.Define(s.Name, f)
+			registers[s.Reg] = f
+			idx = regs.Labels[s.LabelEnd]
+
+		case *binstmt.BinRET:
+			retval = registers[s.Reg]
+			return retval, binstmt.ReturnError
+
 		case *binstmt.BinSETNAME:
 			v, ok := registers[s.Reg].(core.VMString)
 			if !ok {
@@ -351,6 +464,99 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 			}
 			eType := names.UniqueNames.Set(string(v))
 			registers[s.Reg] = core.VMInt(eType)
+
+		case *binstmt.BinGETMEMBER:
+			v := registers[s.Reg]
+			switch vv := v.(type) {
+			case *core.Env:
+				// это идентификатор из модуля или окружения
+				m, err := vv.Get(s.Name)
+				if m == nil || err != nil {
+					catcherr = binstmt.NewStringError(stmt, "Имя не найдено")
+					goto catching
+				}
+				registers[s.Reg] = m
+				goto catching
+			case core.VMStringMap:
+				// Сначала ищем поле, в нем может быть переопределен метод как функция
+				if rv, ok := vv[names.UniqueNames.Get(s.Name)]; ok {
+					registers[s.Reg] = rv
+				} else {
+					if ff, ok := vv.MethodMember(s.Name); ok {
+						registers[s.Reg] = ff
+					} else {
+						registers[s.Reg] = core.VMNil
+					}
+				}
+			case core.VMMetaObject:
+				if vv.VMIsField(s.Name) {
+					registers[s.Reg] = vv.VMGetField(s.Name)
+				} else {
+					if ff, ok := vv.VMGetMethod(s.Name); ok {
+						registers[s.Reg] = ff
+					} else {
+						catcherr = binstmt.NewStringError(stmt, "Нет поля или метода с таким именем")
+						goto catching
+					}
+				}
+			case core.VMMethodImplementer:
+				if ff, ok := vv.MethodMember(s.Name); ok {
+					registers[s.Reg] = ff
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Нет метода с таким именем")
+					goto catching
+				}
+			default:
+				catcherr = binstmt.NewStringError(stmt, "У значения не бывает полей или методов")
+				goto catching
+			}
+
+		case *binstmt.BinGETIDX:
+			v := registers[s.Reg]
+			i := registers[s.RegIndex]
+			switch vv := v.(type) {
+			case core.VMSlice:
+				if iv, ok := i.(core.VMInt); ok {
+					ii := int(iv)
+					if ii < 0 {
+						ii += len(vv)
+					}
+					if ii < 0 || ii >= len(vv) {
+						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
+						goto catching
+					}
+					registers[s.Reg] = vv[ii]
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+					goto catching
+				}
+			case core.VMString:
+				if iv, ok := i.(core.VMInt); ok {
+					ii := int(iv)
+					r := []rune(string(vv))
+					if ii < 0 {
+						ii += len(r)
+					}
+					if ii < 0 || ii >= len(r) {
+						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
+						goto catching
+					}
+					registers[s.Reg] = core.VMString(string(r[ii]))
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
+					goto catching
+				}
+			case core.VMStringMap:
+				if k, ok := i.(core.VMString); ok {
+					registers[s.Reg] = vv[string(k)]
+				} else {
+					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
+					goto catching
+				}
+			default:
+				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
+				goto catching
+			}
 
 		case *binstmt.BinSETITEM:
 			v := registers[s.Reg]
@@ -526,99 +732,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 		// 	}
 		// 	regs.Set(s.Reg, m.Elem().Interface())
 
-		case *binstmt.BinGETMEMBER:
-			v := registers[s.Reg]
-			switch vv := v.(type) {
-			case *core.Env:
-				// это идентификатор из модуля или окружения
-				m, err := vv.Get(s.Name)
-				if m == nil || err != nil {
-					catcherr = binstmt.NewStringError(stmt, "Имя не найдено")
-					goto catching
-				}
-				registers[s.Reg] = m
-				goto catching
-			case core.VMStringMap:
-				// Сначала ищем поле, в нем может быть переопределен метод как функция
-				if rv, ok := vv[names.UniqueNames.Get(s.Name)]; ok {
-					registers[s.Reg] = rv
-				} else {
-					if ff, ok := vv.MethodMember(s.Name); ok {
-						registers[s.Reg] = ff
-					} else {
-						registers[s.Reg] = core.VMNil
-					}
-				}
-			case core.VMMetaObject:
-				if vv.VMIsField(s.Name) {
-					registers[s.Reg] = vv.VMGetField(s.Name)
-				} else {
-					if ff, ok := vv.VMGetMethod(s.Name); ok {
-						registers[s.Reg] = ff
-					} else {
-						catcherr = binstmt.NewStringError(stmt, "Нет поля или метода с таким именем")
-						goto catching
-					}
-				}
-			case core.VMMethodImplementer:
-				if ff, ok := vv.MethodMember(s.Name); ok {
-					registers[s.Reg] = ff
-				} else {
-					catcherr = binstmt.NewStringError(stmt, "Нет метода с таким именем")
-					goto catching
-				}
-			default:
-				catcherr = binstmt.NewStringError(stmt, "У значения не бывает полей или методов")
-				goto catching
-			}
-
-		case *binstmt.BinGETIDX:
-			v := registers[s.Reg]
-			i := registers[s.RegIndex]
-			switch vv := v.(type) {
-			case core.VMSlice:
-				if iv, ok := i.(core.VMInt); ok {
-					ii := int(iv)
-					if ii < 0 {
-						ii += len(vv)
-					}
-					if ii < 0 || ii >= len(vv) {
-						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
-						goto catching
-					}
-					registers[s.Reg] = vv[ii]
-				} else {
-					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
-					goto catching
-				}
-			case core.VMString:
-				if iv, ok := i.(core.VMInt); ok {
-					ii := int(iv)
-					r := []rune(string(vv))
-					if ii < 0 {
-						ii += len(r)
-					}
-					if ii < 0 || ii >= len(r) {
-						catcherr = binstmt.NewStringError(stmt, "Индекс за пределами границ")
-						goto catching
-					}
-					registers[s.Reg] = core.VMString(string(r[ii]))
-				} else {
-					catcherr = binstmt.NewStringError(stmt, "Индекс должен быть целым числом")
-					goto catching
-				}
-			case core.VMStringMap:
-				if k, ok := i.(core.VMString); ok {
-					registers[s.Reg] = vv[string(k)]
-				} else {
-					catcherr = binstmt.NewStringError(stmt, "Ключ должен быть строкой")
-					goto catching
-				}
-			default:
-				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
-				goto catching
-			}
-
 		case *binstmt.BinGETSUBSLICE:
 
 			var rb int
@@ -682,119 +795,6 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 				catcherr = binstmt.NewStringError(stmt, "Неверная операция")
 				break
 			}
-
-		case *binstmt.BinCALL:
-
-			var err error
-
-			//функцию на языке Гонец можно вызывать прямо с аргументами из слайса в регистре
-			var fgnc core.VMValuer
-			var argsl core.VMSlice
-			if s.Name == 0 {
-				fgnc = registers[s.RegArgs]
-				argsl = registers[s.RegArgs+1 : s.RegArgs+1+s.NumArgs]
-			} else {
-				fgnc, err = env.Get(s.Name)
-				if err != nil {
-					catcherr = binstmt.NewError(stmt, err)
-					goto catching
-				}
-				argsl = registers[s.RegArgs : s.RegArgs+s.NumArgs]
-			}
-			rets := core.GetGlobalVMSlice()
-			if fnc, ok := fgnc.(core.VMFunc); ok {
-				// если ее надо вызвать в горутине - вызываем
-				if s.Go {
-					env.SetGoRunned(true)
-					rets = core.GetGlobalVMSlice() // для каждой горутины отдельный массив возвратов, который потом не используется
-					go func(args, rets core.VMSlice) {
-						fnc(argsl, &rets)
-						core.PutGlobalVMSlice(rets) // всегда возвращаем в пул
-					}(argsl, rets)
-					registers[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
-					break
-				}
-
-				// не в горутине
-				err = fnc(argsl, &rets)
-
-				// TODO: проверить, если был передан слайс, и он изменен внутри функции, то что происходит в исходном слайсе?
-
-				if err != nil {
-					// ошибку передаем в блок обработки исключений
-					catcherr = binstmt.NewError(stmt, err)
-					break
-				}
-				switch len(rets) {
-				case 0:
-					registers[s.RegRets] = core.VMNil
-					core.PutGlobalVMSlice(rets)
-				case 1:
-					registers[s.RegRets] = rets[0]
-					core.PutGlobalVMSlice(rets)
-				default:
-					registers[s.RegRets] = rets //не возвращаем в пул
-				}
-				break
-			} else {
-
-				// fmt.Printf("%T\n", fgnc)
-
-				catcherr = binstmt.NewStringError(stmt, "Неверный тип функции")
-				goto catching
-			}
-
-		case *binstmt.BinFUNC:
-
-			f := func(expr *binstmt.BinFUNC, fstmts binstmt.BinStmts, flabels []int, fenv *core.Env) core.VMFunc {
-				return func(args core.VMSlice, rets *core.VMSlice) error {
-					if !expr.VarArg {
-						if len(args) != len(expr.Args) {
-							return binstmt.NewStringError(expr, "Неверное количество аргументов")
-						}
-					}
-					var newenv *core.Env
-					if expr.Name == 0 {
-						// наследуем от окружения текущей функции
-						newenv = fenv.NewSubEnv()
-					} else {
-						// наследуем от модуля или глобального окружения
-						newenv = fenv.NewEnv()
-					}
-
-					// переменное число аргументов передается как один параметр-слайс
-					if expr.VarArg {
-						newenv.Define(expr.Args[0], args)
-					} else {
-						for i, arg := range expr.Args {
-							newenv.Define(arg, args[i])
-						}
-					}
-					// вызов функции возвращает одиночное значение (в т.ч. VMNil) или VMSlice
-
-					rr, err := RunWorker(fstmts, flabels, expr.MaxReg+1, newenv, flabels[expr.LabelStart])
-
-					if err == binstmt.ReturnError {
-						err = nil
-					}
-					// возврат массива возвращается сразу, иначе добавляется
-					if vsl, ok := rr.(core.VMSlice); ok {
-						*rets = vsl
-					} else {
-						rets.Append(rr)
-					}
-					newenv.Destroy()
-					return err
-				}
-			}(s, stmts, labels, env)
-
-			env.Define(s.Name, f)
-			registers[s.Reg] = f
-			idx = regs.Labels[s.LabelEnd]
-
-		case *binstmt.BinRET:
-			retval = registers[s.Reg]
-			return retval, binstmt.ReturnError
 
 		case *binstmt.BinCASTTYPE:
 			// приведение типов, включая приведение типов в массиве как новый типизированный массив
@@ -1141,7 +1141,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 		idx++
 	}
 
-	// putRegs(registers)
+	putRegs(registers)
 
 	return retval, nil
 }
