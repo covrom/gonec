@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="201.75774"
-     inkscape:cy="995.16876"
+     inkscape:zoom="2.8"
+     inkscape:cx="204.47516"
+     inkscape:cy="1019.3763"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -121,14 +121,14 @@
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:9.32444477px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#d64b3e;fill-opacity:1;stroke:none;stroke-width:0.23311111"
-       x="48.896931"
+       x="49.877438"
        y="41.341942"
        id="text22"
        transform="scale(0.88104989,1.1350095)"><tspan
          sodipodi:role="line"
          id="tspan20"
-         x="48.896931"
+         x="49.877438"
          y="41.341942"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.72977781px;font-family:Gabriola;-inkscape-font-specification:Gabriola;fill:#d64b3e;fill-opacity:1;stroke-width:0.23311111">интерпретатор</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:3.72977781px;font-family:Gabriola;-inkscape-font-specification:Gabriola;fill:#d64b3e;fill-opacity:1;stroke-width:0.23311111">микросервисы</tspan></text>
   </g>
 </svg>
