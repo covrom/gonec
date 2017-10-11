@@ -244,6 +244,8 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("дата", ReflectVMTime)
 	env.DefineTypeS("длительность", ReflectVMTimeDuration)
 
+	env.DefineTypeS("группаожидания", ReflectVMWaitGroup)
+	
 	env.DefineTypeStruct("сервер", &VMServer{})
 	env.DefineTypeStruct("клиент", &VMClient{})
 

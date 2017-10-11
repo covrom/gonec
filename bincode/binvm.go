@@ -359,20 +359,23 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 				}
 				argsl = registers[s.RegArgs : s.RegArgs+s.NumArgs]
 			}
-			rets := core.GetGlobalVMSlice()
 			if fnc, ok := fgnc.(core.VMFunc); ok {
 				// если ее надо вызвать в горутине - вызываем
 				if s.Go {
 					env.SetGoRunned(true)
-					rets = core.GetGlobalVMSlice() // для каждой горутины отдельный массив возвратов, который потом не используется
-					go func(args, rets core.VMSlice) {
-						fnc(argsl, &rets)
-						core.PutGlobalVMSlice(rets) // всегда возвращаем в пул
-					}(argsl, rets)
+					rets := core.GetGlobalVMSlice()   // для каждой горутины отдельный массив возвратов, который потом не используется
+					goargs := core.GetGlobalVMSlice() // для горутин аргументы надо скопировать!
+					goargs = append(goargs, argsl...)
+					go func(a, r core.VMSlice) {
+						fnc(a, &r)
+						core.PutGlobalVMSlice(a) // всегда возвращаем в пул
+						core.PutGlobalVMSlice(r) // всегда возвращаем в пул
+					}(goargs, rets)
 					registers[s.RegRets] = core.VMSlice{} // для такого вызова - всегда пустой массив возвратов
 					break
 				}
 
+				rets := core.GetGlobalVMSlice()
 				// не в горутине
 				err = fnc(argsl, &rets)
 
