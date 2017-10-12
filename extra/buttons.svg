@@ -26,8 +26,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
-     inkscape:cx="276.94749"
-     inkscape:cy="695.98039"
+     inkscape:cx="256.37725"
+     inkscape:cy="629.51369"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -44,7 +44,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -151,6 +151,31 @@
            x="28.961729"
            y="54.05571"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Iosevka;-inkscape-font-specification:Iosevka;fill:#ffffff;stroke-width:0.26458332">Чат</tspan></text>
+    </g>
+    <g
+       id="g4514"
+       inkscape:export-xdpi="50"
+       inkscape:export-ydpi="50">
+      <rect
+         ry="6.0047445"
+         rx="5.4916077"
+         y="148.62422"
+         x="20.900091"
+         height="15.07119"
+         width="72.059448"
+         id="rect4500"
+         style="opacity:1;fill:#005c94;fill-opacity:1;stroke:none;stroke-width:0.23997602;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers" />
+      <text
+         id="text4504"
+         y="159.37262"
+         x="27.868723"
+         style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:6.61458302px;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+         xml:space="preserve"><tspan
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Iosevka;-inkscape-font-specification:Iosevka;fill:#ffffff;stroke-width:0.26458332"
+           y="159.37262"
+           x="27.868723"
+           id="tspan4502"
+           sodipodi:role="line">Презентация</tspan></text>
     </g>
   </g>
 </svg>
