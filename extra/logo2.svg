@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="308.8784"
-     inkscape:cy="695.29536"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="428.04864"
+     inkscape:cy="910.51658"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -38,7 +38,50 @@
      inkscape:window-height="1017"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
-     inkscape:window-maximized="1" />
+     inkscape:window-maximized="1"
+     showguides="true"
+     inkscape:guide-bbox="true">
+    <sodipodi:guide
+       position="114.12409,266.46772"
+       orientation="0,1"
+       id="guide4520"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="113.32228,227.98091"
+       orientation="0,1"
+       id="guide4522"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="43.845237,271.54586"
+       orientation="1,0"
+       id="guide4524"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="81.642855,271.54586"
+       orientation="1,0"
+       id="guide4526"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="91.659224,252.4881"
+       orientation="1,0"
+       id="guide4528"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="181.61756,240.20388"
+       orientation="1,0"
+       id="guide4530"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="121.14137,257.40179"
+       orientation="0,1"
+       id="guide4532"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="130.40178,248.33036"
+       orientation="0,1"
+       id="guide4534"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
   <metadata
      id="metadata5">
     <rdf:RDF>
@@ -57,34 +100,31 @@
      id="layer1">
     <text
        xml:space="preserve"
-       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-       x="88.733475"
-       y="47.370239"
-       id="text52"><tspan
+       style="font-style:normal;font-weight:normal;font-size:16.51102638px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.41277567"
+       x="80.505684"
+       y="77.104225"
+       id="text52"
+       transform="scale(1.1162835,0.89582979)"><tspan
          sodipodi:role="line"
-         id="tspan50"
-         x="88.733475"
-         y="47.370239"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.75555556px;line-height:1.25;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:2.32304176px;fill:#ff6600;stroke-width:0.26458332"
-         dx="0 -1.1339285"
-         rotate="0 0 0">GO<tspan
-   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.75555556px;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:2.32304176px;fill:#005c94"
+         x="80.505684"
+         y="77.104225"
+         style="font-style:normal;font-variant:normal;font-weight:200;font-stretch:normal;font-size:26.41764259px;line-height:1;font-family:Iosevka;-inkscape-font-specification:'Iosevka Ultra-Light';stroke-width:0.41277567"
+         id="tspan54"><tspan
+           dx="0 -1.7690384"
+           rotate="0 0 0"
+           id="tspan4516"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:30.82058525px;line-height:1.25;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:3.62417078px;fill:#ff6600;stroke-width:0.41277567">GO<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:30.82058525px;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:3.62417078px;fill:#005c94;stroke-width:0.41277567"
    id="tspan56"
-   dx="-1.1339285 -1.1339285"
+   dx="-1.7690384 -1.7690384"
    rotate="0 0 0">NE</tspan><tspan
-   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.75555556px;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:2.32304176px;fill:#dc0000"
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:30.82058525px;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:3.62417078px;fill:#dc0000;stroke-width:0.41277567"
    id="tspan58"
-   dx="-1.6226114"
-   rotate="0 0">C</tspan></tspan><tspan
-         sodipodi:role="line"
-         x="88.733475"
-         y="67.871315"
-         style="font-style:normal;font-variant:normal;font-weight:200;font-stretch:normal;font-size:16.93333244px;line-height:1;font-family:Iosevka;-inkscape-font-specification:'Iosevka Ultra-Light';stroke-width:0.26458332"
-         id="tspan54"
-         dx="0 3.890742e-009 -0.53453904 -0.8018086 -0.53453898 -0.80180854 -1.0690781 -0.80180854 -1.0690781 -0.8018086 -1.0690781 -0.8018086">Микросервисы</tspan></text>
+   dx="-2.5314312"
+   rotate="0 0">C</tspan></tspan></tspan></text>
     <g
        id="g4532"
-       transform="matrix(0.68250034,-0.22979826,0.17969899,0.88387132,20.922512,15.263421)">
+       transform="matrix(0.68250034,-0.22979826,0.17969899,0.88387132,20.254338,15.082782)">
       <g
          transform="matrix(0.37435544,0,0,0.46002838,20.066206,0.67874806)"
          id="g70">
@@ -168,5 +208,22 @@
         </g>
       </g>
     </g>
+    <text
+       id="text4514"
+       y="13.818456"
+       x="90.512978"
+       style="font-style:normal;font-weight:normal;font-size:10.36957455px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.25923935"
+       xml:space="preserve"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:19.35654068px;line-height:1.25;font-family:Iosevka;-inkscape-font-specification:Iosevka;letter-spacing:2.27612185px;fill:#ff6600;stroke-width:0.25923935"
+         y="22.993099"
+         x="90.512978"
+         id="tspan4510"
+         sodipodi:role="line" /><tspan
+         dx="0 3.8121581e-009 -0.52374262 -0.78561395 -0.52374256 -0.78561389 -1.0474852 -0.78561389 -1.0474852 -0.78561395 -1.0474852 -0.78561395"
+         id="tspan4512"
+         style="font-style:normal;font-variant:normal;font-weight:200;font-stretch:normal;font-size:16.59131813px;line-height:1;font-family:Iosevka;-inkscape-font-specification:'Iosevka Ultra-Light';stroke-width:0.25923935"
+         y="39.758579"
+         x="90.512978"
+         sodipodi:role="line">Микросервисы</tspan></text>
   </g>
 </svg>
