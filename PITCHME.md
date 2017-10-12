@@ -1,10 +1,6 @@
 # Гонец:Микросервисы
 ![Gonec Logo](/extra/gonec.png)
 
-[Скачать](https://github.com/covrom/gonec/releases)
-[Документация](https://github.com/covrom/gonec/wiki)
-[Попробовать онлайн](https://gonec.herokuapp.com)
-
 Платформа создана для решения программистами 1С задач 
 с использованием синтаксиса языка, похожего, 
 но не ограниченного возможностями языка 1С:
@@ -259,14 +255,10 @@ CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false, RETURN r
 Время исполнения: 1.7867144s
 ```
 ---
-[![GitHub issues](https://img.shields.io/github/issues/covrom/gonec.svg)](https://github.com/covrom/gonec/issues) [![Travis](https://travis-ci.org/covrom/gonec.svg?branch=master)](https://github.com/covrom/gonec/releases)
+![Gonec Logo](/extra/gonec.png)
 
-[![Gonec Logo](/extra/gonec.png)](https://github.com/covrom/gonec/releases)
+* [Скачать](https://github.com/covrom/gonec/releases)
 
-[![Presentation](/extra/button_ppt.png)](https://gitpitch.com/covrom/gonec)
-[![Chat](/extra/button_chat.png)](https://gitter.im/gonec/Lobby)
+* [Документация](https://github.com/covrom/gonec/wiki)
 
-[![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
-[![Docs](/extra/button_doc.png)](https://github.com/covrom/gonec/wiki)
-
-[![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com/)
+* [Попробовать онлайн](https://gonec.herokuapp.com)
