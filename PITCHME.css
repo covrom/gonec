@@ -4,3 +4,7 @@
     font-weight: normal;
     text-align: left;
 }
+
+.reveal section img {
+    border: 0;
+    box-shadow: none; }
