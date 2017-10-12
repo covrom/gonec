@@ -1,5 +1,4 @@
-.reveal .slides>section,
-.reveal .slides>section>section {
+.reveal {
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 	font-size: 32px;
 	font-weight: normal;
