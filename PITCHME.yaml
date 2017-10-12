@@ -1,2 +1,3 @@
 theme : beige
 logo : extra/gonec_head.png
+theme-override : PITCHME.css
