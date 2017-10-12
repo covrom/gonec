@@ -262,3 +262,7 @@ CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false, RETURN r
 * [Документация](https://github.com/covrom/gonec/wiki)
 
 * [Попробовать онлайн](https://gonec.herokuapp.com)
+
+MIT License (C) Роман Цованян, 2017
+
+rs@tsov.pro
