@@ -1,9 +1,9 @@
 # Гонец:Микросервисы
 ![Gonec Logo](/extra/gonec.png)
 
-[![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
-[![Docs](/extra/button_doc.png)](https://github.com/covrom/gonec/wiki)
-[![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com)
+[Скачать](https://github.com/covrom/gonec/releases)
+[Документация](https://github.com/covrom/gonec/wiki)
+[Попробовать онлайн](https://gonec.herokuapp.com)
 
 Платформа создана для решения программистами 1С задач 
 с использованием синтаксиса языка, похожего, 
