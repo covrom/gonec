@@ -3,6 +3,7 @@ package core
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"runtime"
 	"strings"
@@ -251,6 +252,17 @@ func Import(env *Env) *Env {
 		*envout = env
 		runtime.Gosched()
 		return nil
+	}))
+
+	env.DefineS("переменнаяокружения", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		if v, ok := args[0].(VMString); ok {
+			val, setted := os.LookupEnv(string(v))
+			rets.Append(VMString(val))
+			rets.Append(VMBool(setted))
+			return nil
+		}
+		return VMErrorNeedSeconds
 	}))
 
 	// при изменении состава типов не забывать изменять их и в lexer.go
