@@ -7,7 +7,7 @@ const indexPage =
 	<meta charset="utf-8">
 	<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge" /><![endif]-->
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+	<script src="/gonec/src?name=jquery"></script>
 	
 	<title>Гонец:Микросервисы</title>
 

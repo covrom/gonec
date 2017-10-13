@@ -29,6 +29,7 @@ import (
 
 const version = "3.2a"
 const APIPath = "/gonec"
+const SrcPath = "/gonec/src"
 
 var (
 	fs          = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
@@ -295,6 +296,37 @@ func main() {
 	}
 }
 
+func handlerSource(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		defer r.Body.Close()
+		srcname := r.URL.Query().Get("name")
+		if srcname != "" {
+			switch srcname {
+			case "jquery":
+				w.Header().Set("Content-Type", "text/javascript")
+				_, err := w.Write([]byte(jQuery))
+				if err != nil {
+					time.Sleep(time.Second) //анти-ddos
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					log.Println(err)
+					return
+				}
+			default:
+				http.Error(w, "Неправильно указано имя", http.StatusBadRequest)
+			}
+
+		} else {
+			http.Error(w, "Не указано имя", http.StatusBadRequest)
+		}
+
+	default:
+		time.Sleep(time.Second) //анти-ddos
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+}
+
 func handlerAPI(w http.ResponseWriter, r *http.Request) {
 
 	if r.ContentLength > 1<<26 {
@@ -365,6 +397,7 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 func Run(srv string) {
 	http.HandleFunc("/", handlerIndex)
 	http.HandleFunc(APIPath, handlerAPI)
+	http.HandleFunc(SrcPath, handlerSource)
 	//добавляем горутину на принудительное закрытие сессий через 10 мин без активности
 	go func() {
 		for {
