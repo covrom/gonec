@@ -40,6 +40,7 @@ var (
 	VMErrorIncorrectProtocol = errors.New("Неверный протокол")
 	VMErrorIncorrectClientId = errors.New("Неверный идентификатор соединения")
 	VMErrorIncorrectMessage  = errors.New("Неверный формат сообщения")
+	VMErrorEOF  = errors.New("Недостаточно данных в источнике")
 )
 
 func VMErrorNeedArgs(n int) error {

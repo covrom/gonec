@@ -71,13 +71,39 @@ func (x *VMConn) Идентификатор(args VMSlice, rets *VMSlice, envout 
 	return nil
 }
 
+type binTCPHead struct {
+	Signature [8]byte //[8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'}
+	Hash      uint64  //хэш зашифрованного тела
+	Len       int64   //длина тела
+}
+
 func (x *VMConn) Receive() (VMStringMap, error) {
 
 	rv := make(VMStringMap)
 	var buf bytes.Buffer
 
-	_, err := io.CopyN(&buf, x.conn, 24)
+	var head binTCPHead
 
+	err := binary.Read(x.conn, binary.LittleEndian, &head)
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+			err = VMErrorEOF
+		}
+		return rv, err
+	}
+
+	// проверяем целостность полученного сообщения
+	// сначала идет заголовок
+	// затем тело, шифрованное по AES128
+
+	if head.Signature != [8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'} {
+		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - неверная сигнатура")
+	}
+
+	buf.Reset()
+	_, err = io.CopyN(&buf, x.conn, head.Len)
 	if err != nil {
 		if err == io.EOF {
 			x.closed = true
@@ -88,37 +114,9 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 
 	b := buf.Bytes()
 
-	// проверяем целостность полученного сообщения
-	// сначала идет заголовок 8 байт "gonectcp"
-	// затем хэш тела, он идет 8-ю байтами
-	// затем длина тела 8 байт
-	// затем тело, шифрованное по AES128
-
-	if len(b) < 24 {
-		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - короткое сообщение")
-	}
-	cstr := b[:8] // gonectcp
-	if !bytes.Equal(cstr, []byte("gonectcp")) {
-		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - неверная сигнатура")
-	}
-	hashbts := binary.LittleEndian.Uint64(b[8:16]) // hash
-	lenb := binary.LittleEndian.Uint64(b[16:24])   // len
-
-	buf.Reset()
-	_, err = io.CopyN(&buf, x.conn, int64(lenb))
-	if err != nil {
-		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
-		}
-		return rv, err
-	}
-
-	b = buf.Bytes()
-
 	// хэш зашифрованного
 	hb := HashBytes(b)
-	if hb != hashbts {
+	if hb != head.Hash {
 		// log.Println("in", hb, b)
 		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - не совпал хэш")
 	}
@@ -153,15 +151,17 @@ func (x *VMConn) Send(val VMStringMap) error {
 	}
 
 	//хэш зашифрованного
-	var hb [24]byte
 	hs := HashBytes(be)
-	copy(hb[:8], []byte("gonectcp"))
-	binary.LittleEndian.PutUint64(hb[8:16], hs)
-	binary.LittleEndian.PutUint64(hb[16:24], uint64(len(be)))
+
+	head := binTCPHead{
+		Signature: [8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'},
+		Hash:      hs,
+		Len:       int64(len(be)),
+	}
 
 	// log.Println("out", hs, be)
 
-	_, err = io.Copy(x.conn, bytes.NewBuffer(hb[:]))
+	err = binary.Write(x.conn, binary.LittleEndian, head)
 	if err != nil {
 		if err == io.EOF {
 			x.closed = true
