@@ -312,6 +312,33 @@ func handlerSource(w http.ResponseWriter, r *http.Request) {
 					log.Println(err)
 					return
 				}
+			case "ace":
+				w.Header().Set("Content-Type", "text/javascript")
+				_, err := w.Write([]byte(jsAce))
+				if err != nil {
+					time.Sleep(time.Second) //анти-ddos
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					log.Println(err)
+					return
+				}
+			case "acetheme":
+				w.Header().Set("Content-Type", "text/javascript")
+				_, err := w.Write([]byte(jsAceTheme))
+				if err != nil {
+					time.Sleep(time.Second) //анти-ddos
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					log.Println(err)
+					return
+				}
+			case "acelang":
+				w.Header().Set("Content-Type", "text/javascript")
+				_, err := w.Write([]byte(jsAceLang))
+				if err != nil {
+					time.Sleep(time.Second) //анти-ddos
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					log.Println(err)
+					return
+				}
 			default:
 				http.Error(w, "Неправильно указано имя", http.StatusBadRequest)
 			}
