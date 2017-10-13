@@ -142,7 +142,7 @@ const indexPage =
 		<script type="text/javascript">
 			require("ace/ext/language_tools");
 			var editor = ace.edit("code");
-			editor.getSession().setMode("ace/mode/lua");
+			editor.getSession().setMode("ace/mode/gonec");
 			editor.setTheme("ace/theme/tomorrow_night");
 			editor.setOptions({
 				enableBasicAutocompletion: true,

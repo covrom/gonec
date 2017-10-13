@@ -9,23 +9,23 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 	var GonecHighlightRules = function() {
 	
 		var keywords = (
-			"прервать|цикл|новый|иначе|иначеесли|для|функция|если|из|по|выбор|когда|другое|старт|параллельно|"+
-			 "возврат|тогда|каждого|пока|или|и|не|попытка|вызватьисключение|исключение|продолжить|канал|модуль|"+
-			 "конеццикла|конецесли|конецфункции|конецпопытки|конецвыбора|?"
+			"Прервать|Цикл|Новый|Иначе|ИначеЕсли|Для|Функция|Если|из|по|Выбор|Когда|Другое|Старт|Параллельно|"+
+			 "Возврат|Тогда|каждого|Пока|ИЛИ|И|НЕ|Попытка|ВызватьИсключение|Исключение|Продолжить|Канал|Модуль|"+
+			 "КонецЦикла|КонецЕсли|КонецФункции|КонецПопытки|КонецВыбора"
 		);
 	
-		var builtinConstants = ("истина|ложь|неопределено|null|длительностьнаносекунды|"+
-			"длительностьмикросекунды|длительностьмиллисекунды|длительностьсекунды|"+
-			"длительностьминуты|длительностьчаса|длительностьдня");
+		var builtinConstants = ("Истина|Ложь|Неопределено|NULL|ДлительностьНаносекунды|"+
+			"ДлительностьМикросекунды|ДлительностьМиллисекунды|ДлительностьСекунды|"+
+			"ДлительностьМинуты|ДлительностьЧаса|ДлительностьДня");
 	
 		var functions = (
-			"число|строка|булево|целоечисло|массив|структура|дата|длительность|"+
-			"импорт|длина|диапазон|текущаядата|прошловременис|пауза|хэш|"+
-			"уникальныйидентификатор|получитьмассивизпула|вернутьмассиввпул|случайнаястрока|нрег|врег|"+
-			"формат|кодсимвола|типзнч|сообщить|сообщитьф|обработатьгорутины"
+			"Число|Строка|Булево|ЦелоеЧисло|Массив|Структура|Дата|Длительность|"+
+			"Импорт|Длина|Диапазон|ТекущаяДата|ПрошлоВремениС|Пауза|Хэш|"+
+			"УникальныйИдентификатор|ПолучитьМассивИзПула|ВернутьМассивВПул|СлучайнаяСтрока|НРег|ВРег|"+
+			"Формат|КодСимвола|ТипЗнч|Сообщить|СообщитьФ|ОбработатьГорутины"
 		);
 	
-		var builtinTypes = ("группаожидания|сервер|клиент");
+		var builtinTypes = ("ГруппаОжидания|Сервер|Клиент");
 	
 		var keywordMapper = this.createKeywordMapper({
 			"keyword": keywords,
@@ -60,13 +60,13 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 				regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
 			}, {
 				token : ["keyword", "text", "entity.name.function"],
-				regex : "(функция)(\\s+)([a-zA-Zа-яА-Я_$][a-zA-Zа-яА-Я0-9_$]*)\\b"
+				regex : "(Функция)(\\s+)([a-zA-Zа-яА-ЯёЁ_$][a-zA-Zа-яА-Я0-9_$]*)(?![a-zA-Zа-яА-ЯёЁ])"
 			}, {
 				token : keywordMapper,
-				regex : "[a-zA-Zа-яА-Я_$][a-zA-Zа-яА-Я0-9_$]*\\b"
+				regex : "[a-zA-Zа-яА-Я_$][a-zA-Zа-яА-Я0-9_$]*(?![a-zA-Zа-яА-ЯёЁ])"
 			}, {
 				token : "keyword.operator",
-				regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|==|=|!=|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^="
+				regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|==|=|!=|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\:|\\*=|%=|\\+=|\\-=|&=|\\^="
 			}, {
 				token : "paren.lparen",
 				regex : "[\\[\\(\\{]"
@@ -95,179 +95,52 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 	
 	exports.GonecHighlightRules = GonecHighlightRules;
 	});
-	
-	ace.define("ace/mode/folding/gonec",["require","exports","module","ace/lib/oop","ace/mode/folding/fold_mode","ace/range","ace/token_iterator"], function(require, exports, module) {
-	"use strict";
-	
-	var oop = require("../../lib/oop");
-	var BaseFoldMode = require("./fold_mode").FoldMode;
-	var Range = require("../../range").Range;
-	var TokenIterator = require("../../token_iterator").TokenIterator;
-	
-	
-	var FoldMode = exports.FoldMode = function() {};
-	
-	oop.inherits(FoldMode, BaseFoldMode);
-	
-	(function() {
-	
-		this.foldingStartMarker = /\b(function|then|do|repeat)\b|{\s*$|(\[=*\[)/;
-		this.foldingStopMarker = /\bend\b|^\s*}|\]=*\]/;
-	
-		this.getFoldWidget = function(session, foldStyle, row) {
-			var line = session.getLine(row);
-			var isStart = this.foldingStartMarker.test(line);
-			var isEnd = this.foldingStopMarker.test(line);
-	
-			if (isStart && !isEnd) {
-				var match = line.match(this.foldingStartMarker);
-				if (match[1] == "then" && /\belseif\b/.test(line))
-					return;
-				if (match[1]) {
-					if (session.getTokenAt(row, match.index + 1).type === "keyword")
-						return "start";
-				} else if (match[2]) {
-					var type = session.bgTokenizer.getState(row) || "";
-					if (type[0] == "bracketedComment" || type[0] == "bracketedString")
-						return "start";
-				} else {
-					return "start";
-				}
-			}
-			if (foldStyle != "markbeginend" || !isEnd || isStart && isEnd)
-				return "";
-	
-			var match = line.match(this.foldingStopMarker);
-			if (match[0] === "end") {
-				if (session.getTokenAt(row, match.index + 1).type === "keyword")
-					return "end";
-			} else if (match[0][0] === "]") {
-				var type = session.bgTokenizer.getState(row - 1) || "";
-				if (type[0] == "bracketedComment" || type[0] == "bracketedString")
-					return "end";
-			} else
-				return "end";
-		};
-	
-		this.getFoldWidgetRange = function(session, foldStyle, row) {
-			var line = session.doc.getLine(row);
-			var match = this.foldingStartMarker.exec(line);
-			if (match) {
-				if (match[1])
-					return this.luaBlock(session, row, match.index + 1);
-	
-				if (match[2])
-					return session.getCommentFoldRange(row, match.index + 1);
-	
-				return this.openingBracketBlock(session, "{", row, match.index);
-			}
-	
-			var match = this.foldingStopMarker.exec(line);
-			if (match) {
-				if (match[0] === "end") {
-					if (session.getTokenAt(row, match.index + 1).type === "keyword")
-						return this.luaBlock(session, row, match.index + 1);
-				}
-	
-				if (match[0][0] === "]")
-					return session.getCommentFoldRange(row, match.index + 1);
-	
-				return this.closingBracketBlock(session, "}", row, match.index + match[0].length);
-			}
-		};
-	
-		this.luaBlock = function(session, row, column) {
-			var stream = new TokenIterator(session, row, column);
-			var indentKeywords = {
-				"function": 1,
-				"do": 1,
-				"then": 1,
-				"elseif": -1,
-				"end": -1,
-				"repeat": 1,
-				"until": -1
-			};
-	
-			var token = stream.getCurrentToken();
-			if (!token || token.type != "keyword")
-				return;
-	
-			var val = token.value;
-			var stack = [val];
-			var dir = indentKeywords[val];
-	
-			if (!dir)
-				return;
-	
-			var startColumn = dir === -1 ? stream.getCurrentTokenColumn() : session.getLine(row).length;
-			var startRow = row;
-	
-			stream.step = dir === -1 ? stream.stepBackward : stream.stepForward;
-			while(token = stream.step()) {
-				if (token.type !== "keyword")
-					continue;
-				var level = dir * indentKeywords[token.value];
-	
-				if (level > 0) {
-					stack.unshift(token.value);
-				} else if (level <= 0) {
-					stack.shift();
-					if (!stack.length && token.value != "elseif")
-						break;
-					if (level === 0)
-						stack.unshift(token.value);
-				}
-			}
-	
-			var row = stream.getCurrentTokenRow();
-			if (dir === -1)
-				return new Range(row, session.getLine(row).length, startRow, startColumn);
-			else
-				return new Range(startRow, startColumn, row, stream.getCurrentTokenColumn());
-		};
-	
-	}).call(FoldMode.prototype);
-	
-	});
-	
-	ace.define("ace/mode/lua",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/gonec_highlight_rules","ace/mode/folding/gonec","ace/range","ace/worker/worker_client"], function(require, exports, module) {
+		
+	ace.define("ace/mode/gonec",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/gonec_highlight_rules","ace/mode/folding/gonec","ace/range","ace/worker/worker_client"], function(require, exports, module) {
 	"use strict";
 	
 	var oop = require("../lib/oop");
 	var TextMode = require("./text").Mode;
 	var GonecHighlightRules = require("./gonec_highlight_rules").GonecHighlightRules;
-	var LuaFoldMode = require("./folding/gonec").FoldMode;
 	var Range = require("../range").Range;
 	var WorkerClient = require("../worker/worker_client").WorkerClient;
 	
 	var Mode = function() {
 		this.HighlightRules = GonecHighlightRules;
 		
-		this.foldingRules = new LuaFoldMode();
 		this.$behaviour = this.$defaultBehaviour;
 	};
 	oop.inherits(Mode, TextMode);
 	
 	(function() {
 	   
-		this.lineCommentStart = "--";
-		this.blockComment = {start: "--[", end: "]--"};
+		this.lineCommentStart = "//";
 		
 		var indentKeywords = {
-			"function": 1,
-			"then": 1,
-			"do": 1,
-			"else": 1,
-			"elseif": 1,
-			"repeat": 1,
-			"end": -1,
-			"until": -1
+			"Функция": 1,
+			"Тогда": 1,
+			"Цикл": 1,
+			"Иначе": 1,
+			"ИначеЕсли": 1,
+			"Когда": 1,
+			"Другое": 1,
+			"Пока": 1,
+			"Попытка": 1,
+			"Исключение": 1,
+			"КонецЦикла": -1,
+			"КонецЕсли": -1,
+			"КонецФункции": -1,
+			"КонецПопытки": -1,
+			"КонецВыбора": -1
 		};
 		var outdentKeywords = [
-			"else",
-			"elseif",
-			"end",
-			"until"
+			"Иначе",
+			"ИначеЕсли",
+			"КонецЦикла",
+			"КонецЕсли",
+			"КонецФункции",
+			"КонецПопытки",
+			"КонецВыбора"
 		];
 	
 		function getNetIndentLevel(tokens) {
@@ -342,7 +215,7 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 		};
 	
 		this.createWorker = function(session) {
-			var worker = new WorkerClient(["ace"], "ace/mode/lua_worker", "Worker");
+			var worker = new WorkerClient(["ace"], "ace/mode/gonec_worker", "Worker");
 			worker.attachToDocument(session.getDocument());
 			
 			worker.on("annotate", function(e) {
@@ -356,7 +229,7 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 			return worker;
 		};
 	
-		this.$id = "ace/mode/lua";
+		this.$id = "ace/mode/gonec";
 	}).call(Mode.prototype);
 	
 	exports.Mode = Mode;
