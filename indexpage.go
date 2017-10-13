@@ -113,31 +113,6 @@ const indexPage =
 		
 	</style>
 
-	<script type='text/javascript'>
-		$(document).ready(function() {
-			$('#run').click(function(){
-				var body = $("textarea#code").val();
-				$.ajax('/gonec', {
-					type: 'POST',
-					data: body,
-					processData : false,
-					dataType: 'text',
-					cache: false,
-					beforeSend: function(xhr){
-						xhr.overrideMimeType("text/plain");
-						xhr.setRequestHeader('Sid', $("#sid").val());
-					},
-					success: function(data, textStatus, request) {
-						$("#output").text(data);
-						$("#sid").val(request.getResponseHeader('Sid'));
-					},
-					error: function(xhr, status, error) {
-						$("#output").text(xhr.responseText);
-					}
-				});
-			});
-		});
-	</script>
 </head>
 <body bgcolor=#CCBDB3>
 	<div id="head" itemprop="name">	
@@ -147,16 +122,40 @@ const indexPage =
 	<input type="button" value="Выполнить" id="run">
 	<span class="header">v`+version+`</span></div>
 	<div id="wrap">
-		<div id="code" name="code">some text</div>
-		<script src="/gonec/src?name=ace" type="text/javascript"></script>
-		<script src="/gonec/src?name=acetheme" type="text/javascript"></script>
-		<script src="/gonec/src?name=acelang" type="text/javascript"></script>
-		<script>
+		<div id="code" name="code">function int(t)
+		return t:byte(1)+t:byte(2)*0x100+t:byte(3)*0x10000+t:byte(4)*0x1000000
+	end</div>
+		<script src="/gonec/src?name=ace" type="text/javascript" charset="utf-8"></script>
+		<script src="/gonec/src?name=acetheme" type="text/javascript" charset="utf-8"></script>
+		<script src="/gonec/src?name=acelang" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
 			var editor = ace.edit("code");
 			editor.setTheme("ace/theme/tomorrow_night");
-			var GonecMode = ace.require("ace/mode/gonec_highlight_rules").Mode;
-			editor.session.setMode(new GonecMode());
-		</script>	
+			editor.getSession().setMode("ace/mode/gonec_highlight_rules");
+			$(document).ready(function() {
+				$('#run').click(function(){
+					var body = editor.getValue();
+					$.ajax('/gonec', {
+						type: 'POST',
+						data: body,
+						processData : false,
+						dataType: 'text',
+						cache: false,
+						beforeSend: function(xhr){
+							xhr.overrideMimeType("text/plain");
+							xhr.setRequestHeader('Sid', $("#sid").val());
+						},
+						success: function(data, textStatus, request) {
+							$("#output").text(data);
+							$("#sid").val(request.getResponseHeader('Sid'));
+						},
+						error: function(xhr, status, error) {
+							$("#output").text(xhr.responseText);
+						}
+					});
+				});
+			});
+			</script>	
 	</div>
 	<div id="wrapout">
 	<textarea id="output" autocorrect="off" autocomplete="off" autocapitalize="off" spellcheck="false" wrap="off" readonly></textarea>
