@@ -1,144 +1,72 @@
 package main
 
-const jsAceLang=`ace.define("ace/mode/lua_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
+const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module) {
 	"use strict";
 	
 	var oop = require("../lib/oop");
 	var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
 	
-	var LuaHighlightRules = function() {
+	var GonecHighlightRules = function() {
 	
 		var keywords = (
-			"break|do|else|elseif|end|for|function|if|in|local|repeat|"+
-			 "return|then|until|while|or|and|not"
+			"прервать|цикл|новый|иначе|иначеесли|для|функция|если|из|по|выбор|когда|другое|старт|параллельно|"+
+			 "возврат|тогда|каждого|пока|или|и|не|попытка|вызватьисключение|исключение|продолжить|канал|модуль|"+
+			 "конеццикла|конецесли|конецфункции|конецпопытки|конецвыбора|?"
 		);
 	
-		var builtinConstants = ("true|false|nil|_G|_VERSION");
+		var builtinConstants = ("истина|ложь|неопределено|null|длительностьнаносекунды|"+
+			"длительностьмикросекунды|длительностьмиллисекунды|длительностьсекунды|"+
+			"длительностьминуты|длительностьчаса|длительностьдня");
 	
 		var functions = (
-			"string|xpcall|package|tostring|print|os|unpack|require|"+
-			"getfenv|setmetatable|next|assert|tonumber|io|rawequal|"+
-			"collectgarbage|getmetatable|module|rawset|math|debug|"+
-			"pcall|table|newproxy|type|coroutine|_G|select|gcinfo|"+
-			"pairs|rawget|loadstring|ipairs|_VERSION|dofile|setfenv|"+
-			"load|error|loadfile|"+
-	
-			"sub|upper|len|gfind|rep|find|match|char|dump|gmatch|"+
-			"reverse|byte|format|gsub|lower|preload|loadlib|loaded|"+
-			"loaders|cpath|config|path|seeall|exit|setlocale|date|"+
-			"getenv|difftime|remove|time|clock|tmpname|rename|execute|"+
-			"lines|write|close|flush|open|output|type|read|stderr|"+
-			"stdin|input|stdout|popen|tmpfile|log|max|acos|huge|"+
-			"ldexp|pi|cos|tanh|pow|deg|tan|cosh|sinh|random|randomseed|"+
-			"frexp|ceil|floor|rad|abs|sqrt|modf|asin|min|mod|fmod|log10|"+
-			"atan2|exp|sin|atan|getupvalue|debug|sethook|getmetatable|"+
-			"gethook|setmetatable|setlocal|traceback|setfenv|getinfo|"+
-			"setupvalue|getlocal|getregistry|getfenv|setn|insert|getn|"+
-			"foreachi|maxn|foreach|concat|sort|remove|resume|yield|"+
-			"status|wrap|create|running|"+
-			"__add|__sub|__mod|__unm|__concat|__lt|__index|__call|__gc|__metatable|"+
-			 "__mul|__div|__pow|__len|__eq|__le|__newindex|__tostring|__mode|__tonumber"
+			"число|строка|булево|целоечисло|массив|структура|дата|длительность|"+
+			"импорт|длина|диапазон|текущаядата|прошловременис|пауза|хэш|"+
+			"уникальныйидентификатор|получитьмассивизпула|вернутьмассиввпул|случайнаястрока|нрег|врег|"+
+			"формат|кодсимвола|типзнч|сообщить|сообщитьф|обработатьгорутины"
 		);
 	
-		var stdLibaries = ("string|package|os|io|math|debug|table|coroutine");
-	
-		var deprecatedIn5152 = ("setn|foreach|foreachi|gcinfo|log10|maxn");
+		var builtinTypes = ("группаожидания|сервер|клиент");
 	
 		var keywordMapper = this.createKeywordMapper({
 			"keyword": keywords,
 			"support.function": functions,
-			"keyword.deprecated": deprecatedIn5152,
-			"constant.library": stdLibaries,
+			"support.type": builtinTypes,
 			"constant.language": builtinConstants,
 			"variable.language": "self"
 		}, "identifier");
-	
-		var decimalInteger = "(?:(?:[1-9]\\d*)|(?:0))";
-		var hexInteger = "(?:0[xX][\\dA-Fa-f]+)";
-		var integer = "(?:" + decimalInteger + "|" + hexInteger + ")";
-	
-		var fraction = "(?:\\.\\d+)";
-		var intPart = "(?:\\d+)";
-		var pointFloat = "(?:(?:" + intPart + "?" + fraction + ")|(?:" + intPart + "\\.))";
-		var floatNumber = "(?:" + pointFloat + ")";
-	
+		
 		this.$rules = {
-			"start" : [{
-				stateName: "bracketedComment",
-				onMatch : function(value, currentState, stack){
-					stack.unshift(this.next, value.length - 2, currentState);
-					return "comment";
-				},
-				regex : /\-\-\[=*\[/,
-				next  : [
-					{
-						onMatch : function(value, currentState, stack) {
-							if (value.length == stack[1]) {
-								stack.shift();
-								stack.shift();
-								this.next = stack.shift();
-							} else {
-								this.next = "";
-							}
-							return "comment";
-						},
-						regex : /\]=*\]/,
-						next  : "start"
-					}, {
-						defaultToken : "comment"
-					}
-				]
-			},
-	
+			"start" : [
 			{
 				token : "comment",
-				regex : "\\-\\-.*$"
+				regex : "\\/\\/.*$"
 			},
 			{
-				stateName: "bracketedString",
-				onMatch : function(value, currentState, stack){
-					stack.unshift(this.next, value.length, currentState);
-					return "string.start";
-				},
-				regex : /\[=*\[/,
-				next  : [
-					{
-						onMatch : function(value, currentState, stack) {
-							if (value.length == stack[1]) {
-								stack.shift();
-								stack.shift();
-								this.next = stack.shift();
-							} else {
-								this.next = "";
-							}
-							return "string.end";
-						},
-						
-						regex : /\]=*\]/,
-						next  : "start"
-					}, {
-						defaultToken : "string"
-					}
-				]
+				token : "comment",
+				regex : "\\#.*$"
 			},
 			{
-				token : "string",           // " string
-				regex : '"(?:[^\\\\]|\\\\.)*?"'
+				token : "string", // single line
+				regex : /"(?:[^"\\]|\\.)*?"/
 			}, {
-				token : "string",           // ' string
-				regex : "'(?:[^\\\\]|\\\\.)*?'"
+				token : "string", // raw
+				regex : '`+"`"+`',
+				next : "bqstring"
+			}, {
+				token : "constant.numeric", // hex
+				regex : "0[xX][0-9a-fA-F]+\\b" 
 			}, {
 				token : "constant.numeric", // float
-				regex : floatNumber
+				regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
 			}, {
-				token : "constant.numeric", // integer
-				regex : integer + "\\b"
+				token : ["keyword", "text", "entity.name.function"],
+				regex : "(функция)(\\s+)([a-zA-Zа-яА-Я_$][a-zA-Zа-яА-Я0-9_$]*)\\b"
 			}, {
 				token : keywordMapper,
-				regex : "[a-zA-Z_$][a-zA-Z0-9_$]*\\b"
+				regex : "[a-zA-Zа-яА-Я_$][a-zA-Zа-яА-Я0-9_$]*\\b"
 			}, {
 				token : "keyword.operator",
-				regex : "\\+|\\-|\\*|\\/|%|\\#|\\^|~|<|>|<=|=>|==|~=|=|\\:|\\.\\.\\.|\\.\\."
+				regex : "!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+|~|==|=|!=|<=|>=|<<=|>>=|>>>=|<>|<|>|!|&&|\\|\\||\\?\\:|\\*=|%=|\\+=|\\-=|&=|\\^="
 			}, {
 				token : "paren.lparen",
 				regex : "[\\[\\(\\{]"
@@ -148,18 +76,27 @@ const jsAceLang=`ace.define("ace/mode/lua_highlight_rules",["require","exports",
 			}, {
 				token : "text",
 				regex : "\\s+|\\w+"
-			} ]
+			} ],
+			"bqstring" : [
+                {
+                    token : "string",
+                    regex : '`+"`"+`',
+                    next : "start"
+                }, {
+                    defaultToken : "string"
+                }
+            ]
 		};
 		
 		this.normalizeRules();
 	}
 	
-	oop.inherits(LuaHighlightRules, TextHighlightRules);
+	oop.inherits(GonecHighlightRules, TextHighlightRules);
 	
-	exports.LuaHighlightRules = LuaHighlightRules;
+	exports.GonecHighlightRules = GonecHighlightRules;
 	});
 	
-	ace.define("ace/mode/folding/lua",["require","exports","module","ace/lib/oop","ace/mode/folding/fold_mode","ace/range","ace/token_iterator"], function(require, exports, module) {
+	ace.define("ace/mode/folding/gonec",["require","exports","module","ace/lib/oop","ace/mode/folding/fold_mode","ace/range","ace/token_iterator"], function(require, exports, module) {
 	"use strict";
 	
 	var oop = require("../../lib/oop");
@@ -293,18 +230,18 @@ const jsAceLang=`ace.define("ace/mode/lua_highlight_rules",["require","exports",
 	
 	});
 	
-	ace.define("ace/mode/lua",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/lua_highlight_rules","ace/mode/folding/lua","ace/range","ace/worker/worker_client"], function(require, exports, module) {
+	ace.define("ace/mode/lua",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/gonec_highlight_rules","ace/mode/folding/gonec","ace/range","ace/worker/worker_client"], function(require, exports, module) {
 	"use strict";
 	
 	var oop = require("../lib/oop");
 	var TextMode = require("./text").Mode;
-	var LuaHighlightRules = require("./lua_highlight_rules").LuaHighlightRules;
+	var GonecHighlightRules = require("./gonec_highlight_rules").GonecHighlightRules;
 	var LuaFoldMode = require("./folding/lua").FoldMode;
 	var Range = require("../range").Range;
 	var WorkerClient = require("../worker/worker_client").WorkerClient;
 	
 	var Mode = function() {
-		this.HighlightRules = LuaHighlightRules;
+		this.HighlightRules = GonecHighlightRules;
 		
 		this.foldingRules = new LuaFoldMode();
 		this.$behaviour = this.$defaultBehaviour;
