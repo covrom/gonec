@@ -236,7 +236,7 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 	var oop = require("../lib/oop");
 	var TextMode = require("./text").Mode;
 	var GonecHighlightRules = require("./gonec_highlight_rules").GonecHighlightRules;
-	var LuaFoldMode = require("./folding/lua").FoldMode;
+	var LuaFoldMode = require("./folding/gonec").FoldMode;
 	var Range = require("../range").Range;
 	var WorkerClient = require("../worker/worker_client").WorkerClient;
 	
