@@ -20787,7 +20787,7 @@ exports.version = "1.2.8";
 	}\
 	.ace_editor.ace_autocomplete .ace_completion-highlight{\
 		color: #000;\
-		text-shadow: 0 0 0.01em;\
+		font-weight: bolder;\
 	}\
 	.ace_editor.ace_autocomplete {\
 		width: 280px;\
