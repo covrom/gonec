@@ -6833,7 +6833,7 @@ var Mode = function() {
 			   name: word,
 			   value: word,
 			   score: 0,
-			   meta: "keyword"
+			   meta: "ключевое"
 		   };
 	   });
    };
@@ -21362,7 +21362,7 @@ exports.version = "1.2.8";
 					caption: word,
 					value: word,
 					score: wordScore[word],
-					meta: "local"
+					meta: "локальное"
 				};
 			}));
 		};
