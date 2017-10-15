@@ -237,7 +237,9 @@ const indexPage =
 	<input type="button" value="Выполнить" id="run">
 	<span class="header">v`+version+`</span></div>
 	<div id="wrap">
-		<div id="code" name="code">Функция ОбработатьСерв(соед)
+		<div id="code" name="code">дтнач = ТекущаяДата()
+		
+Функция ОбработатьСерв(соед)
 	Сообщить("Сервер получил соединение:",соед)
 	Сообщить("Получен запрос:",соед.Получить())
 КонецФункции
@@ -276,7 +278,7 @@ const indexPage =
 гр.Ожидать()
 серв.Закрыть()
 
-Сообщить("Все завершилось просто идеально!")
+Сообщить("Все завершилось просто идеально за", ПрошлоВремениС(дтнач), "!")
 	    </div>
 		<script src="/gonec/src?name=ace" type="text/javascript" charset="utf-8"></script>
 		<script src="/gonec/src?name=acetheme" type="text/javascript" charset="utf-8"></script>
