@@ -161,8 +161,6 @@ func (x *VMServiceBus) Register(svc VMServicer) error {
 		if err != nil {
 			return err
 		}
-
-		// TODO: health checking
 	}
 
 	return nil
