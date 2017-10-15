@@ -137,20 +137,23 @@ func (x *VMServiceBus) Register(svc VMServicer) error {
 		if err != nil {
 			return err
 		}
-
-		cat := cli.Catalog()
-		reg := &consulapi.CatalogRegistration{
-			ID: hdr.ID,
-			Service: &consulapi.AgentService{
-				ID: hdr.Path,
-				Service: hdr.Name,
-				Port:    p,
-			},
-		}
-		_, err = cat.Register(reg, nil)
+		agent := cli.Agent()
 		if err != nil {
 			return err
 		}
+
+		err = agent.ServiceRegister(
+			&consulapi.AgentServiceRegistration{
+				ID:   hdr.Path,
+				Name: hdr.Path,
+				Port: p,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		// TODO: health checking
 	}
 
 	return nil
@@ -166,6 +169,9 @@ func (x *VMServiceBus) UpdateRegister(svc VMServicer) error {
 		x.Deregister(v)
 	}
 	x.services[id] = svc
+
+	// TODO: consul update
+
 	return nil
 }
 
@@ -188,11 +194,14 @@ func (x *VMServiceBus) Deregister(svc VMServicer) error {
 		if err != nil {
 			return err
 		}
-		cat := cli.Catalog()
-		reg := &consulapi.CatalogDeregistration{
-			ServiceID: hdr.ID,
+
+		agent := cli.Agent()
+		if err != nil {
+			return err
 		}
-		_, err = cat.Deregister(reg, nil)
+
+		err = agent.ServiceDeregister(hdr.Path)
+
 		if err != nil {
 			return err
 		}
