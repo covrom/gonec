@@ -1,4 +1,4 @@
-package main
+package gonecsvc
 
 const jsAce=`/* ***** BEGIN LICENSE BLOCK *****
 * Distributed under the BSD license:

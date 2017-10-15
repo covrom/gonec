@@ -1,4 +1,8 @@
-package main
+package gonecsvc
+
+import (
+		"github.com/covrom/gonec/version"
+)
 
 const indexPage = 
 `<!doctype html>
@@ -235,7 +239,7 @@ const indexPage =
 	SUVORK5CYII="/>
 	</a>
 	<input type="button" value="Выполнить" id="run">
-	<span class="header">v`+version+`</span></div>
+	<span class="header">v`+version.Version+`</span></div>
 	<div id="wrap">
 		<div id="code" name="code">дтнач = ТекущаяДата()
 		

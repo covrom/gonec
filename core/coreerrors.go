@@ -41,6 +41,10 @@ var (
 	VMErrorIncorrectClientId = errors.New("Неверный идентификатор соединения")
 	VMErrorIncorrectMessage  = errors.New("Неверный формат сообщения")
 	VMErrorEOF  = errors.New("Недостаточно данных в источнике")
+
+	VMErrorServiceNotReady  = errors.New("Сервис не готов") // устанавливается сервисами в случае прекращения работы
+	VMErrorServiceAlreadyRegistered  = errors.New("Сервис уже зарегистрирован с таким же ID")
+	VMErrorServerAlreadyStarted  = errors.New("Сервер уже запущен")
 )
 
 func VMErrorNeedArgs(n int) error {

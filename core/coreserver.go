@@ -113,6 +113,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 
 // Close закрываем все ресурсы и всегда возвращаем ошибку,
 // которая могла возникнуть на сервере, либо во время закрытия
+// !!! Эту процедуру нужно обязательно вызывать по окончании работы с сервером !!!
 func (x *VMServer) Close() error {
 	if x.lnr != nil {
 		x.lnr.Close()

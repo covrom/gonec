@@ -20,6 +20,10 @@ func (x *VMWaitGroup) Interface() interface{} {
 	return x
 }
 
+func (x *VMWaitGroup) String() string {
+	return "Группа ожидания"
+}
+
 func (x *VMWaitGroup) Add(delta int) {
 	x.wg.Add(delta)
 }

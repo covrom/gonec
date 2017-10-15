@@ -80,6 +80,12 @@ var OperMapR = map[VMOperation]string{
 	SHR:  ">>", // >>
 }
 
+// VMValueStruct используется для встраивания в структуры других пакетов для обеспечения возможности соответствия VMValuer интерфейсу
+type VMValueStruct struct{}
+
+func (x VMValueStruct) vmval()                 {}
+
+
 type VMBinaryType byte
 
 const (

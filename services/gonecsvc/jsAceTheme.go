@@ -1,4 +1,4 @@
-package main
+package gonecsvc
 
 const jsAceTheme = `ace.define("ace/theme/tomorrow_night",["require","exports","module","ace/lib/dom"], function(require, exports, module) {
 	

@@ -1,5 +1,3 @@
-// +build !appengine
-
 package main
 
 import (
@@ -7,29 +5,24 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/covrom/gonec/bincode"
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/parser"
+	"github.com/covrom/gonec/services/gonecsvc"
+	"github.com/covrom/gonec/version"
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
 
 	_ "net/http/pprof"
 )
-
-const version = "3.2a"
-const APIPath = "/gonec"
-const SrcPath = "/gonec/src"
 
 var (
 	fs          = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
@@ -44,10 +37,6 @@ var (
 	istty = isatty.IsTerminal(os.Stdout.Fd())
 
 	fsArgs []string
-
-	sessions     = map[string]*core.Env{}
-	lastAccess   = map[string]time.Time{}
-	lockSessions = sync.RWMutex{}
 )
 
 func colortext(color ct.Color, bright bool, f func()) {
@@ -64,7 +53,7 @@ func main() {
 
 	fs.Parse(os.Args[1:])
 	if *v {
-		fmt.Println(version)
+		fmt.Println(version.Version)
 		os.Exit(0)
 	}
 
@@ -79,11 +68,16 @@ func main() {
 	interactive := fs.NArg() == 0 && *line == "" && !*compile
 	fsArgs = fs.Args()
 
+	// если есть PORT в переменных окружения - сразу стартуем сервис
+	// это нужно для развертывания в Docker контейнере
 	penv := os.Getenv("PORT")
 	if penv != "" {
 		Run(penv)
 		return
 	}
+
+	// если есть -web в ключах запуска (и, возможно, -p порт) - сразу стартуем сервис
+	// это нужно для развертывания в Docker контейнере
 	if *w {
 		if *port == "" {
 			*port = "5000"
@@ -91,6 +85,8 @@ func main() {
 		Run(*port)
 		return
 	}
+
+	// иначе - запуск из командной строки
 
 	if interactive {
 		reader = bufio.NewReader(os.Stdin)
@@ -296,212 +292,26 @@ func main() {
 	}
 }
 
-func handlerSource(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		defer r.Body.Close()
-		srcname := r.URL.Query().Get("name")
-		if srcname != "" {
-			switch srcname {
-			case "jquery":
-				w.Header().Set("Content-Type", "text/javascript")
-				_, err := w.Write([]byte(jQuery))
-				if err != nil {
-					time.Sleep(time.Second) //анти-ddos
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					log.Println(err)
-					return
-				}
-			case "ace":
-				w.Header().Set("Content-Type", "text/javascript")
-				_, err := w.Write([]byte(jsAce))
-				if err != nil {
-					time.Sleep(time.Second) //анти-ddos
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					log.Println(err)
-					return
-				}
-			case "acetheme":
-				w.Header().Set("Content-Type", "text/javascript")
-				_, err := w.Write([]byte(jsAceTheme))
-				if err != nil {
-					time.Sleep(time.Second) //анти-ddos
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					log.Println(err)
-					return
-				}
-			case "acelang":
-				w.Header().Set("Content-Type", "text/javascript")
-				_, err := w.Write([]byte(jsAceLang))
-				if err != nil {
-					time.Sleep(time.Second) //анти-ddos
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					log.Println(err)
-					return
-				}
-			default:
-				http.Error(w, "Неправильно указано имя", http.StatusBadRequest)
-			}
+// Run запускает микросервис интерпретатора на порту
+func Run(port string) {
 
-		} else {
-			http.Error(w, "Не указано имя", http.StatusBadRequest)
-		}
+	// создаем сервис
+	svc := gonecsvc.NewGonecInterpreter(
+		core.VMServiceHeader{
+			ID:   "gonec",
+			Name: "Интерпретатор Гонец",
+			Port: port,
+		}, fsArgs, *testingMode)
 
-	default:
-		time.Sleep(time.Second) //анти-ddos
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-}
+	// регистрируем
+	core.VMMainServiceBus.Register(svc)
+	
+	// запускаем все сервисы
+	core.VMMainServiceBus.Run()
+	
+	// ждем окончания работы всех сервисов
+	core.VMMainServiceBus.WaitForAll()
 
-func handlerAPI(w http.ResponseWriter, r *http.Request) {
-
-	if r.ContentLength > 1<<26 {
-		time.Sleep(time.Second) //анти-ddos
-		http.Error(w, "Слишком большой запрос", http.StatusForbidden)
-		return
-	}
-
-	switch r.Method {
-
-	case http.MethodPost:
-
-		defer r.Body.Close()
-
-		//интерпретируется код и возвращается вывод как простой текст
-		w.Header().Set("Content-Type", "text/plain")
-
-		sid := r.Header.Get("Sid")
-		if sid == "" {
-			sid = core.MustGenerateRandomString(22)
-		}
-
-		lockSessions.RLock()
-		env, ok := sessions[sid]
-		lockSessions.RUnlock()
-		if !ok {
-
-			//создаем новое окружение
-			env = core.NewEnv()
-			env.DefineS("аргументызапуска", core.NewVMSliceFromStrings(fsArgs))
-
-			lockSessions.Lock()
-			sessions[sid] = env
-			lastAccess[sid] = time.Now()
-			lockSessions.Unlock()
-			w.Header().Set("Newsid", "true")
-		} else {
-			lockSessions.Lock()
-			lastAccess[sid] = time.Now()
-			lockSessions.Unlock()
-		}
-
-		w.Header().Set("Sid", sid)
-
-		env.SetSid(sid)
-		//log.Println("Сессия:",sid)
-
-		err := ParseAndRun(r.Body, w, env)
-
-		if err != nil {
-			time.Sleep(time.Second) //анти-ddos
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-	default:
-		time.Sleep(time.Second) //анти-ddos
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-}
-
-func handlerIndex(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, indexPage)
-}
-
-// Run запускает микросервис интерпретатора по адресу и порту
-func Run(srv string) {
-	http.HandleFunc("/", handlerIndex)
-	http.HandleFunc(APIPath, handlerAPI)
-	http.HandleFunc(SrcPath, handlerSource)
-	//добавляем горутину на принудительное закрытие сессий через 10 мин без активности
-	go func() {
-		for {
-			time.Sleep(time.Minute)
-			lockSessions.Lock()
-			for id, lat := range lastAccess {
-				if time.Since(lat) >= 10*time.Minute {
-					delete(sessions, id)
-					delete(lastAccess, id)
-					log.Println("Закрыта сессия Sid=" + id)
-				}
-			}
-			lockSessions.Unlock()
-		}
-	}()
-	log.Println("Запущен сервер на порту", srv)
-	log.Fatal(http.ListenAndServe(":"+srv, nil))
-}
-
-func ParseAndRun(r io.Reader, w io.Writer, env *core.Env) (err error) {
-	b, err := ioutil.ReadAll(r)
-	if err != nil {
-		return err
-	}
-	parser.EnableErrorVerbose()
-
-	sb := string(b)
-
-	if *testingMode {
-		log.Printf("--Выполняется код-- %s\n%s\n", env.GetSid(), sb)
-	}
-
-	//замер производительности
-	tstart := time.Now()
-	_, bins, err := bincode.ParseSrc(sb)
-	tsParse := time.Since(tstart)
-
-	if *testingMode {
-		log.Printf("--Скомпилирован код-- \n%s\n", bins.String())
-	}
-
-	if err != nil {
-		return err
-	}
-
-	var rb bytes.Buffer
-	env.SetStdOut(&rb)
-
-	tstart = time.Now()
-	// if *stackvm {
-	// 	_, err = vm.Run(stmts, env)
-	// } else {
-	_, err = bincode.Run(bins, env)
-	// }
-	tsRun := time.Since(tstart)
-
-	if err != nil {
-		if e, ok := err.(*binstmt.Error); ok {
-			env.Printf("Ошибка исполнения: %s\n", e)
-		} else if e, ok := err.(*parser.Error); ok {
-			env.Printf("Ошибка в коде: %s\n", e)
-		} else {
-			env.Println(err)
-		}
-	}
-
-	if *testingMode {
-		env.Printf("Время компиляции: %v\n", tsParse)
-		env.Printf("Время исполнения: %v\n", tsRun)
-		log.Printf("--Результат выполнения кода--\n%s\n", rb.String())
-	}
-
-	_, err = w.Write(rb.Bytes())
-
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-	return nil
+	// дерегистрируем сервис
+	core.VMMainServiceBus.Deregister(svc)
 }

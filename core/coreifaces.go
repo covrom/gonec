@@ -150,11 +150,21 @@ type (
 		VMGetMethod(int) (VMFunc, bool) // реализовано в VMMetaObj
 	}
 
+	// VMMethodImplementer реализует только методы, доступные в языке Гонец
 	VMMethodImplementer interface{
 		VMValuer
 		MethodMember(int) (VMFunc, bool) // возвращает метод в нужном формате		
 	}
 
+	// VMServicer определяет микросервис, который может регистрироваться в главном менеджере сервисов
+	VMServicer interface{
+		VMValuer
+		Header() VMServiceHeader
+		Start() error // запускает горутину, и если не стартовал, возвращает ошибку
+		HealthCheck() error // если не живой, то возвращает ошибку
+		Stop() error // последняя ошибка при остановке
+	}
+		
 	// VMNullable означает значение null
 	VMNullable interface {
 		VMStringer
