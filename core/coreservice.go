@@ -2,8 +2,11 @@ package core
 
 import (
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
+
+	"github.com/covrom/gonec/consulapi"
 )
 
 // VMMainServiceBus главный менеджер сервисов
@@ -11,10 +14,12 @@ var VMMainServiceBus = NewServiceBus()
 
 // VMServiceHeader заголовок сервиса, определяющий его адресуемость
 type VMServiceHeader struct {
-	ID   string // используется в URL сервисов
-	Port string // число 1-65535
-	Name string
-	Tags []string
+	ID       string
+	Path     string // используется в URL сервисов
+	Port     string // число 1-65535
+	Name     string // имя
+	Tags     []string
+	External string //= "consul" регистрирует сервис в Consul
 }
 
 func NewServiceBus() *VMServiceBus {
@@ -117,11 +122,37 @@ func (x *VMServiceBus) Register(svc VMServicer) error {
 	x.Lock()
 	defer x.Unlock()
 
-	id := svc.Header().ID
-	if _, ok := x.services[id]; ok {
+	hdr := svc.Header()
+	if _, ok := x.services[hdr.ID]; ok {
 		return VMErrorServiceAlreadyRegistered
 	}
-	x.services[id] = svc
+	x.services[hdr.ID] = svc
+
+	if hdr.External == "consul" {
+		cli, err := consulapi.NewClient(consulapi.DefaultConfig())
+		if err != nil {
+			return err
+		}
+		p, err := strconv.Atoi(hdr.Port)
+		if err != nil {
+			return err
+		}
+
+		cat := cli.Catalog()
+		reg := &consulapi.CatalogRegistration{
+			ID: hdr.ID,
+			Service: &consulapi.AgentService{
+				ID: hdr.Path,
+				Service: hdr.Name,
+				Port:    p,
+			},
+		}
+		_, err = cat.Register(reg, nil)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -142,13 +173,31 @@ func (x *VMServiceBus) UpdateRegister(svc VMServicer) error {
 func (x *VMServiceBus) Deregister(svc VMServicer) error {
 	x.Lock()
 	defer x.Unlock()
-	v, ok := x.services[svc.Header().ID]
+
+	hdr := svc.Header()
+	v, ok := x.services[hdr.ID]
 	if ok {
 		if v.HealthCheck() == nil {
 			v.Stop()
 		}
 	}
-	delete(x.services, svc.Header().ID)
+	delete(x.services, hdr.ID)
+
+	if hdr.External == "consul" {
+		cli, err := consulapi.NewClient(consulapi.DefaultConfig())
+		if err != nil {
+			return err
+		}
+		cat := cli.Catalog()
+		reg := &consulapi.CatalogDeregistration{
+			ServiceID: hdr.ID,
+		}
+		_, err = cat.Deregister(reg, nil)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

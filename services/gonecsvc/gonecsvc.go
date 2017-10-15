@@ -55,8 +55,8 @@ func (x *VMGonecInterpreterService) Start() error {
 	}
 
 	http.HandleFunc("/", x.handlerIndex)
-	http.HandleFunc("/"+x.hdr.ID, x.handlerAPI)
-	http.HandleFunc("/"+x.hdr.ID+"/src", x.handlerSource)
+	http.HandleFunc("/"+x.hdr.Path, x.handlerAPI)
+	http.HandleFunc("/"+x.hdr.Path+"/src", x.handlerSource)
 
 	//добавляем горутину на принудительное закрытие сессий через 10 мин без активности
 	go func() {

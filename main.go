@@ -20,6 +20,7 @@ import (
 	"github.com/covrom/gonec/version"
 	"github.com/daviddengcn/go-colortext"
 	"github.com/mattn/go-isatty"
+	uuid "github.com/satori/go.uuid"
 
 	_ "net/http/pprof"
 )
@@ -29,6 +30,7 @@ var (
 	line        = fs.String("e", "", "Исполнение одной строчки кода")
 	compile     = fs.Bool("c", false, "Компиляция в файл .gnx")
 	testingMode = fs.Bool("t", false, "Режим вывода отладочной информации")
+	toconsul    = fs.Bool("consul", false, "Зарегистрировать микросервис интерпретатора в Consul")
 	// stackvm     = fs.Bool("stack", false, "Старая стековая виртуальная машина версии 1.8b")
 	v    = fs.Bool("v", false, "Версия программы")
 	w    = fs.Bool("web", false, "Запустить вэб-сервер на порту 5000, если не указан параметр -p")
@@ -68,11 +70,16 @@ func main() {
 	interactive := fs.NArg() == 0 && *line == "" && !*compile
 	fsArgs = fs.Args()
 
+	ext := ""
+	if *toconsul {
+		ext = "consul"
+	}
+
 	// если есть PORT в переменных окружения - сразу стартуем сервис
 	// это нужно для развертывания в Docker контейнере
 	penv := os.Getenv("PORT")
 	if penv != "" {
-		Run(penv)
+		Run(penv, ext)
 		return
 	}
 
@@ -82,7 +89,7 @@ func main() {
 		if *port == "" {
 			*port = "5000"
 		}
-		Run(*port)
+		Run(*port, ext)
 		return
 	}
 
@@ -293,25 +300,34 @@ func main() {
 }
 
 // Run запускает микросервис интерпретатора на порту
-func Run(port string) {
+func Run(port string, ext string) {
 
 	// создаем сервис
 	svc := gonecsvc.NewGonecInterpreter(
 		core.VMServiceHeader{
-			ID:   "gonec",
-			Name: "Интерпретатор Гонец",
-			Port: port,
+			ID:       uuid.NewV4().String(),
+			Path:     "gonec",
+			Name:     "Интерпретатор Гонец",
+			Port:     port,
+			External: ext,
 		}, fsArgs, *testingMode)
 
 	// регистрируем
-	core.VMMainServiceBus.Register(svc)
-	
+	err := core.VMMainServiceBus.Register(svc)
+	if err != nil {
+		log.Println(err)
+	}
+
 	// запускаем все сервисы
 	core.VMMainServiceBus.Run()
-	
+
 	// ждем окончания работы всех сервисов
 	core.VMMainServiceBus.WaitForAll()
 
 	// дерегистрируем сервис
-	core.VMMainServiceBus.Deregister(svc)
+	err = core.VMMainServiceBus.Deregister(svc)
+	if err != nil {
+		log.Println(err)
+	}
+
 }
