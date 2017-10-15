@@ -129,7 +129,10 @@ func (x *VMServiceBus) Register(svc VMServicer) error {
 	x.services[hdr.ID] = svc
 
 	if hdr.External == "consul" {
-		cli, err := consulapi.NewClient(consulapi.DefaultConfig())
+
+		cfg := consulapi.DefaultConfig()
+
+		cli, err := consulapi.NewClient(cfg)
 		if err != nil {
 			return err
 		}
@@ -147,6 +150,12 @@ func (x *VMServiceBus) Register(svc VMServicer) error {
 				ID:   hdr.Path,
 				Name: hdr.Path,
 				Port: p,
+				Check: &consulapi.AgentServiceCheck{
+					Interval: "15s",
+					// чекинг пока идет только по loopback интерфейсу,
+					// для удаленного надо передавать адреса биндинга из настроек окружения или флагов
+					HTTP: "http://127.0.0.1:" + hdr.Port + "/" + hdr.Path + "/healthcheck",
+				},
 			},
 		)
 		if err != nil {
@@ -161,16 +170,17 @@ func (x *VMServiceBus) Register(svc VMServicer) error {
 
 // Register апдейтит сервис в менеджере, останавливая и удаляя старую версию
 func (x *VMServiceBus) UpdateRegister(svc VMServicer) error {
-	x.Lock()
-	defer x.Unlock()
 
 	id := svc.Header().ID
-	if v, ok := x.services[id]; ok {
+
+	x.RLock()
+	v, ok := x.services[id]
+	x.RUnlock()
+
+	if ok {
 		x.Deregister(v)
 	}
-	x.services[id] = svc
-
-	// TODO: consul update
+	x.Register(svc)
 
 	return nil
 }

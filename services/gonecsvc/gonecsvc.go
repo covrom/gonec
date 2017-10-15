@@ -57,6 +57,7 @@ func (x *VMGonecInterpreterService) Start() error {
 	http.HandleFunc("/", x.handlerIndex)
 	http.HandleFunc("/"+x.hdr.Path, x.handlerAPI)
 	http.HandleFunc("/"+x.hdr.Path+"/src", x.handlerSource)
+	http.HandleFunc("/"+x.hdr.Path+"/healthcheck", x.handlerHealth) // в таком же формате регистрируется в consul и т.п.
 
 	//добавляем горутину на принудительное закрытие сессий через 10 мин без активности
 	go func() {
@@ -302,4 +303,9 @@ func (x *VMGonecInterpreterService) parseAndRun(r io.Reader, w io.Writer, env *c
 		return err
 	}
 	return nil
+}
+
+func (x *VMGonecInterpreterService) handlerHealth(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	// log.Println("Healthcheck")
 }
