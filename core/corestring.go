@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/shopspring/decimal"
 )
@@ -26,6 +27,17 @@ func (x VMString) Interface() interface{} {
 
 func (x VMString) String() string {
 	return string(x)
+}
+
+func (x VMString) Length() VMInt {
+	return VMInt(utf8.RuneCountInString(string(x)))
+}
+
+func (x VMString) IndexVal(i VMValuer) VMValuer {
+	if ii, ok := i.(VMInt); ok {
+		return VMString(string([]rune(string(x))[int(ii)]))
+	}
+	panic("Индекс должен быть числом")
 }
 
 func (x VMString) Int() int64 {

@@ -186,6 +186,39 @@ func Import(env *Env) *Env {
 		return VMErrorNeedString
 	}))
 
+	env.DefineS("стрсодержит", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		if ok1 && ok2 {
+			rets.Append(VMBool(strings.Contains(string(v1.String()), string(v2.String()))))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+
+	env.DefineS("стрсодержитлюбой", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		if ok1 && ok2 {
+			rets.Append(VMBool(strings.ContainsAny(string(v1.String()), string(v2.String()))))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+
+	env.DefineS("стрколичество", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		if ok1 && ok2 {
+			rets.Append(VMInt(strings.Count(string(v1.String()), string(v2.String()))))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+
 	env.DefineS("формат", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 		*envout = env
 		if len(args) < 2 {

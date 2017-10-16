@@ -24,8 +24,15 @@ func (x VMStringMap) StringMap() VMStringMap {
 	return x
 }
 
-func (x VMStringMap) Len() VMInt {
+func (x VMStringMap) Length() VMInt {
 	return VMInt(len(x))
+}
+
+func (x VMStringMap) IndexVal(i VMValuer) VMValuer {
+	if ii, ok := i.(VMStringer); ok {
+		return x[ii.String()]
+	}
+	panic("Индекс должен быть строкой")
 }
 
 func (x VMStringMap) Index(i VMValuer) VMValuer {
@@ -375,7 +382,7 @@ func (x *VMStringMap) UnmarshalBinary(data []byte) error {
 			}
 			//байты значения
 			bb := buf.Next(int(lv))
-			
+
 			vv, err := VMBinaryType(tt).ParseBinary(bb)
 			if err != nil {
 				return err
