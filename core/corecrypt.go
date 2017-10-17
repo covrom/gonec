@@ -1,9 +1,12 @@
 package core
 
 import (
+	"bytes"
+	"compress/gzip"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/tls"
 	"io"
 )
 
@@ -34,9 +37,11 @@ qw==
 -----END CERTIFICATE-----
 `)
 
-// TODO: перенести в core-функции языка
+var TLSKeyPair, _ = tls.X509KeyPair(TLSCertGonec, TLSKeyGonec)
 
 var aesKey = []byte("oUwhsPdfj439pfoi")
+
+// TODO: перенести в core-функции языка
 
 func EncryptAES128(plaintext []byte) ([]byte, error) {
 	c, err := aes.NewCipher(aesKey)
@@ -75,4 +80,30 @@ func DecryptAES128(ciphertext []byte) ([]byte, error) {
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 	return gcm.Open(nil, nonce, ciphertext, nil)
+}
+
+func GZip(src []byte) ([]byte, error) {
+	b := new(bytes.Buffer)
+	w := gzip.NewWriter(b)
+	_, err := w.Write(src)
+	if err != nil {
+		return nil, err
+	}
+	w.Close()
+	return b.Bytes(), nil
+}
+
+func UnGZip(src []byte) ([]byte, error) {
+	b := bytes.NewReader(src)
+	r, err := gzip.NewReader(b)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	bo := new(bytes.Buffer)
+	_, err = io.Copy(bo, r)
+	if err != nil {
+		return nil, err
+	}
+	return bo.Bytes(), nil
 }

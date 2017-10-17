@@ -17,6 +17,7 @@ type VMConn struct {
 	closed bool
 	uid    string
 	data   VMValuer
+	gzip   bool
 }
 
 func (c *VMConn) vmval() {}
@@ -75,6 +76,7 @@ type binTCPHead struct {
 	Signature [8]byte //[8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'}
 	Hash      uint64  //хэш зашифрованного тела
 	Len       int64   //длина тела
+	Gzip      byte    //==0 - без сжатия (зашифрован), иначе сжат и зашифрован
 }
 
 func (x *VMConn) Receive() (VMStringMap, error) {
@@ -96,7 +98,7 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 
 	// проверяем целостность полученного сообщения
 	// сначала идет заголовок
-	// затем тело, шифрованное по AES128
+	// затем тело
 
 	if head.Signature != [8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'} {
 		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - неверная сигнатура")
@@ -121,7 +123,15 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 		return rv, errors.New(VMErrorIncorrectMessage.Error() + " - не совпал хэш")
 	}
 	// проверили хэш, все ок - получаем VMStringMap
+
 	bd, err := DecryptAES128(b)
+	if err != nil {
+		return rv, err
+	}
+
+	if head.Gzip != 0 {
+		bd, err = UnGZip(bd)
+	}
 	if err != nil {
 		return rv, err
 	}
@@ -145,7 +155,17 @@ func (x *VMConn) Send(val VMStringMap) error {
 		return err
 	}
 
-	be, err := EncryptAES128(b)
+	var be []byte
+	if x.gzip {
+		be, err = GZip(b)
+		if err != nil {
+			return err
+		}
+		be, err = EncryptAES128(be)
+	} else {
+		be, err = EncryptAES128(b)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -157,6 +177,10 @@ func (x *VMConn) Send(val VMStringMap) error {
 		Signature: [8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'},
 		Hash:      hs,
 		Len:       int64(len(be)),
+	}
+
+	if x.gzip {
+		head.Gzip = 1
 	}
 
 	// log.Println("out", hs, be)

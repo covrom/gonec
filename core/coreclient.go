@@ -27,21 +27,30 @@ func (x *VMClient) IsOnline() bool {
 
 func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error {
 	switch proto {
-	case "tcp", "tcptls":
-		
+	case "tcp", "tcpgzip", "tcptls":
+
 		var conn net.Conn
 		var err error
+		gzipped := false
 
 		if proto == "tcptls" {
-			config := &tls.Config{}
+			// certPool := x509.NewCertPool()
+			// certPool.AppendCertsFromPEM(TLSCertGonec)
+			config := &tls.Config{
+				// RootCAs: certPool,
+				InsecureSkipVerify: true,
+			}
 			conn, err = tls.Dial("tcp", addr, config)
 			if err != nil {
 				return err
 			}
 		} else {
-			conn, err = net.Dial(proto, addr)
+			conn, err = net.Dial("tcp", addr)
 			if err != nil {
 				return err
+			}
+			if proto == "tcpgzip" {
+				gzipped = true
 			}
 		}
 
@@ -51,6 +60,7 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error
 			closed: false,
 			uid:    uuid.NewV4().String(),
 			data:   data,
+			gzip:   gzipped,
 		}
 
 		go x.conn.Handle(handler)

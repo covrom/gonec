@@ -65,13 +65,12 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 	x.maxconn = maxconn
 
 	switch proto {
-	case "tcp", "tcptls":
+	case "tcp", "tcpgzip", "tcptls":
+		gzipped := false
 		if proto == "tcptls" {
-			cer, err := tls.X509KeyPair(TLSCertGonec, TLSKeyGonec)
-			if err != nil {
-				return err
+			config := &tls.Config{
+				Certificates: []tls.Certificate{TLSKeyPair},
 			}
-			config := &tls.Config{Certificates: []tls.Certificate{cer}}
 			x.lnr, err = tls.Listen("tcp", addr, config)
 			if err != nil {
 				return err
@@ -81,6 +80,9 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 			if err != nil {
 				x.lnr = nil
 				return err
+			}
+			if proto == "tcpgzip" {
+				gzipped = true
 			}
 		}
 
@@ -106,6 +108,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 						closed: false,
 						uid:    uuid.NewV4().String(),
 						data:   data,
+						gzip:   gzipped,
 					}
 					x.clients = append(x.clients, vcn)
 					go vcn.Handle(handler)
