@@ -85,7 +85,7 @@ func DecryptAES128(ciphertext []byte) ([]byte, error) {
 func GZip(src []byte) ([]byte, error) {
 	b := new(bytes.Buffer)
 	r := bytes.NewReader(src)
-	w, err := flate.NewWriter(b, flate.DefaultCompression)
+	w, err := flate.NewWriter(b, flate.BestSpeed)
 	if err != nil {
 		return nil, err
 	}
