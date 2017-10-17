@@ -102,10 +102,12 @@ func putZipBuf(sl []byte) {
 func GZip(src []byte) ([]byte, error) {
 	b := bytes.NewBuffer(make([]byte, 0, len(src)*2))
 	r := bytes.NewReader(src)
+
 	w, err := flate.NewWriter(b, flate.DefaultCompression)
 	if err != nil {
 		return nil, err
 	}
+
 	buf := getZipBuf()
 	_, err = io.CopyBuffer(w, r, buf)
 	putZipBuf(buf)
@@ -118,8 +120,10 @@ func GZip(src []byte) ([]byte, error) {
 
 func UnGZip(src []byte) ([]byte, error) {
 	b := bytes.NewReader(src)
+
 	r := flate.NewReader(b)
 	defer r.Close()
+
 	bo := bytes.NewBuffer(make([]byte, 0, len(src)*2))
 	buf := getZipBuf()
 	_, err := io.CopyBuffer(bo, r, buf)
