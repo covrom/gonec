@@ -1,6 +1,7 @@
 package core
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -26,10 +27,22 @@ func (x *VMClient) IsOnline() bool {
 
 func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error {
 	switch proto {
-	case "tcp":
-		conn, err := net.Dial(proto, addr)
-		if err != nil {
-			return err
+	case "tcp", "tcptls":
+		
+		var conn net.Conn
+		var err error
+
+		if proto == "tcptls" {
+			config := &tls.Config{}
+			conn, err = tls.Dial("tcp", addr, config)
+			if err != nil {
+				return err
+			}
+		} else {
+			conn, err = net.Dial(proto, addr)
+			if err != nil {
+				return err
+			}
 		}
 
 		x.conn = &VMConn{
@@ -57,7 +70,7 @@ func (x *VMClient) VMRegister() {
 	x.VMRegisterMethod("Закрыть", x.Закрыть)
 	x.VMRegisterMethod("Работает", x.Работает)
 	x.VMRegisterMethod("Открыть", x.Открыть)
-	
+
 	// tst.VMRegisterField("ПолеСтрока", &tst.ПолеСтрока)
 }
 

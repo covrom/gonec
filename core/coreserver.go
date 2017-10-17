@@ -1,6 +1,7 @@
 package core
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net"
@@ -64,11 +65,23 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 	x.maxconn = maxconn
 
 	switch proto {
-	case "tcp":
-		x.lnr, err = net.Listen("tcp", addr)
-		if err != nil {
-			x.lnr = nil
-			return err
+	case "tcp", "tcptls":
+		if proto == "tcptls" {
+			cer, err := tls.X509KeyPair(TLSCertGonec, TLSKeyGonec)
+			if err != nil {
+				return err
+			}
+			config := &tls.Config{Certificates: []tls.Certificate{cer}}
+			x.lnr, err = tls.Listen("tcp", addr, config)
+			if err != nil {
+				return err
+			}
+		} else {
+			x.lnr, err = net.Listen("tcp", addr)
+			if err != nil {
+				x.lnr = nil
+				return err
+			}
 		}
 
 		go x.healthSender()
