@@ -65,7 +65,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 	x.maxconn = maxconn
 
 	switch proto {
-	case "tcp", "tcpgzip", "tcptls":
+	case "tcp", "tcpzip", "tcptls":
 		gzipped := false
 		if proto == "tcptls" {
 			config := &tls.Config{
@@ -81,7 +81,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 				x.lnr = nil
 				return err
 			}
-			if proto == "tcpgzip" {
+			if proto == "tcpzip" {
 				gzipped = true
 			}
 		}

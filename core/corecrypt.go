@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"io"
+	"sync"
 )
 
 var TLSKeyGonec = []byte(`-----BEGIN EC PARAMETERS-----
@@ -82,14 +83,32 @@ func DecryptAES128(ciphertext []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
+var zipPool sync.Pool
+
+const zipSizeBuf = 32 * 1024
+
+func getZipBuf() []byte {
+	sl := zipPool.Get()
+	if sl != nil {
+		return sl.([]byte)
+	}
+	return make([]byte, zipSizeBuf)
+}
+
+func putZipBuf(sl []byte) {
+	zipPool.Put(sl)
+}
+
 func GZip(src []byte) ([]byte, error) {
-	b := new(bytes.Buffer)
+	b := bytes.NewBuffer(make([]byte, 0, len(src)*2))
 	r := bytes.NewReader(src)
-	w, err := flate.NewWriter(b, flate.BestSpeed)
+	w, err := flate.NewWriter(b, flate.DefaultCompression)
 	if err != nil {
 		return nil, err
 	}
-	_, err = io.Copy(w, r)
+	buf := getZipBuf()
+	_, err = io.CopyBuffer(w, r, buf)
+	putZipBuf(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -101,8 +120,10 @@ func UnGZip(src []byte) ([]byte, error) {
 	b := bytes.NewReader(src)
 	r := flate.NewReader(b)
 	defer r.Close()
-	bo := new(bytes.Buffer)
-	_, err := io.Copy(bo, r)
+	bo := bytes.NewBuffer(make([]byte, 0, len(src)*2))
+	buf := getZipBuf()
+	_, err := io.CopyBuffer(bo, r, buf)
+	putZipBuf(buf)
 	if err != nil {
 		return nil, err
 	}

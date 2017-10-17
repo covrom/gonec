@@ -27,7 +27,7 @@ func (x *VMClient) IsOnline() bool {
 
 func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error {
 	switch proto {
-	case "tcp", "tcpgzip", "tcptls":
+	case "tcp", "tcpzip", "tcptls":
 
 		var conn net.Conn
 		var err error
@@ -49,7 +49,7 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error
 			if err != nil {
 				return err
 			}
-			if proto == "tcpgzip" {
+			if proto == "tcpzip" {
 				gzipped = true
 			}
 		}
