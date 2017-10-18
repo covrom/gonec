@@ -2,6 +2,8 @@
 
 HTTP протокол + context
 
+Мьютекс
+
 Kubernetes service discovery
 
 Микросервис авторизации
