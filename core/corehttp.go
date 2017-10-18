@@ -61,6 +61,64 @@ func (x *VMHttpRequest) Method() VMString {
 	return VMString(x.r.Method)
 }
 
+// RequestAsVMStringMap возвращает структуру в формате JSON
+// {
+//  "Адрес":"IP адрес корреспондента",
+//  "Путь":"/root",
+//  "Фрагмент":"после#",
+//  "Параметры":{"Имя":Значение,...},
+//  "ПараметрыФормы":{"Имя":Значение,...},
+//  "Метод":Метод,
+//  "Заголовки":{"Имя":Значение,...},
+//  "Тело":"Строка JSON"
+// }
+func (x *VMHttpRequest) RequestAsVMStringMap() (VMStringMap, error) {
+
+	rmap := make(VMStringMap)
+
+	err := x.r.ParseMultipartForm(32 << 20)
+	if err != nil {
+		return rmap, err
+	}
+
+	rmap["Тело"], err = x.ReadBody()
+	if err != nil {
+		return rmap, err
+	}
+
+	rmap["Адрес"] = x.RemoteAddr()
+	rmap["Путь"] = x.Path()
+	rmap["Фрагмент"] = x.Fragment()
+	// rmap["Данные"] = x.data
+	rmap["Метод"] = x.Method()
+
+	m1 := make(VMStringMap)
+	for k, v := range x.r.Header {
+		if len(v) > 0 {
+			m1[k] = VMString(v[0])
+		}
+	}
+	rmap["Заголовки"] = m1
+
+	m2 := make(VMStringMap)
+	for k, v := range x.r.Form {
+		if len(v) > 0 {
+			m2[k] = VMString(v[0])
+		}
+	}
+	rmap["Параметры"] = m2
+
+	m3 := make(VMStringMap)
+	for k, v := range x.r.PostForm {
+		if len(v) > 0 {
+			m3[k] = VMString(v[0])
+		}
+	}
+	rmap["ПараметрыФормы"] = m3
+
+	return rmap, nil
+}
+
 func (x *VMHttpRequest) MethodMember(name int) (VMFunc, bool) {
 
 	// только эти методы будут доступны из кода на языке Гонец!
@@ -84,6 +142,8 @@ func (x *VMHttpRequest) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(1, x.Параметр), true
 	case "данные":
 		return VMFuncMustParams(0, x.Данные), true
+	case "сообщение":
+		return VMFuncMustParams(0, x.Сообщение), true
 	}
 
 	return nil, false
@@ -148,6 +208,15 @@ func (x *VMHttpRequest) Параметр(args VMSlice, rets *VMSlice, envout *(*
 
 func (x *VMHttpRequest) Данные(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(x.data)
+	return nil
+}
+
+func (x *VMHttpRequest) Сообщение(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	v, err := x.RequestAsVMStringMap()
+	if err != nil {
+		return err
+	}
+	rets.Append(v)
 	return nil
 }
 
