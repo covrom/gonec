@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"runtime"
 	"sync"
 
@@ -18,11 +19,13 @@ type VMServer struct {
 
 	mu       sync.RWMutex
 	addr     string // [addr]:port
-	protocol string // tcp, json, http
+	protocol string // tcp, tcpzip, tcptls, http, https
 	done     chan error
 	health   chan bool
 	clients  []*VMConn // каждому соединению присваивается GUID
 	lnr      net.Listener
+	mux      *http.ServeMux
+	srv      *http.Server
 	maxconn  int
 }
 
@@ -50,9 +53,9 @@ func (x *VMServer) healthSender() {
 	}
 }
 
-func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VMValuer) (err error) {
+func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VMValuer, vsmHandlers VMStringMap) (err error) {
 	// запускаем сервер
-	if x.lnr != nil {
+	if x.lnr != nil || x.srv != nil {
 		return VMErrorServerNowOnline
 	}
 
@@ -121,6 +124,36 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 				runtime.Gosched()
 			}
 		}(x.lnr)
+	case "http", "https":
+		// TODO: https
+		x.mux = http.NewServeMux()
+		for k, v := range vsmHandlers {
+			if f, ok := v.(VMFunc); ok {
+				x.mux.HandleFunc(k, func(w http.ResponseWriter, r *http.Request) {
+					req := &VMHttpRequest{r: r}
+					resp := &VMHttpResponse{w: w}
+					args := make(VMSlice, 2)
+					rets := make(VMSlice, 0)
+					args[0] = resp
+					args[1] = req
+					var env *Env // сюда вернется окружение вызываемой функции
+					err := f(args, &rets, &env)
+					if err != nil && env.Valid {
+						env.Println(err)
+					}
+				})
+			}
+		}
+		x.srv = &http.Server{
+			Addr:    addr,
+			Handler: x.mux,
+		}
+		go x.healthSender()
+		go func(s *http.Server) {
+			err := s.ListenAndServe()
+			x.done <- err
+		}(x.srv)
+
 	default:
 		return VMErrorIncorrectProtocol
 	}
@@ -134,6 +167,9 @@ func (x *VMServer) Close() error {
 	if x.lnr != nil {
 		x.lnr.Close()
 	}
+	if x.srv != nil {
+		x.srv.Close()
+	}
 	err, ok := <-x.done // дождемся ошибки из горутины, или возьмем ее, если она уже была
 	if ok {
 		// канал не закрыт
@@ -143,6 +179,8 @@ func (x *VMServer) Close() error {
 	}
 	x.mu.Lock()
 	x.lnr = nil
+	x.srv = nil
+	x.mux = nil
 	// закрываем все клиентские соединения
 	for i := range x.clients {
 		if !x.clients[i].closed {
@@ -241,10 +279,20 @@ func (x *VMServer) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) e
 	if !ok {
 		return errors.New("Третий аргумент должен быть числом-лимитом подключений")
 	}
-	f, ok := args[3].(VMFunc)
-	if !ok {
-		return errors.New("Четвертый аргумент должен быть функцией с одним аргументом-соединением")
+	var f VMFunc
+	var vsm VMStringMap
+	switch string(p) {
+	case "http", "https":
+		vsm, ok = args[3].(VMStringMap)
+		if !ok {
+			return errors.New("Четвертый аргумент должен быть структурой с функциями с одним аргументом-соединением, где ключ строкой - относительный путь URI")
+		}
+	default:
+		f, ok = args[3].(VMFunc)
+		if !ok {
+			return errors.New("Четвертый аргумент должен быть функцией с одним аргументом-соединением")
+		}
 	}
 
-	return x.Open(string(p), string(adr), int(lim), f, args[4])
+	return x.Open(string(p), string(adr), int(lim), f, args[4], vsm)
 }
