@@ -77,9 +77,9 @@ func (x *VMHttpRequest) RequestAsVMStringMap() (VMStringMap, error) {
 	rmap := make(VMStringMap)
 
 	err := x.r.ParseMultipartForm(32 << 20)
-	if err != nil {
-		return rmap, err
-	}
+	// if err != nil {
+	// 	return rmap, err
+	// }
 
 	rmap["Тело"], err = x.ReadBody()
 	if err != nil {
