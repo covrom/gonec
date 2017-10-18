@@ -10,6 +10,7 @@
 
 [![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com/)
 
+[![Blog](/extra/button_blog.png)](https://www.facebook.com/gonecplatform/)
 
 ## Цели
 

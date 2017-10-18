@@ -263,6 +263,8 @@ CALL "сообщить", ARGS r0, ARGS_COUNT 2, VARARG false, GO false, RETURN r
 
 * [Попробовать онлайн](https://gonec.herokuapp.com)
 
+* [Блог Facebook](https://www.facebook.com/gonecplatform/)
+
 MIT License (C) Роман Цованян, 2017
 
 rs@tsov.pro
