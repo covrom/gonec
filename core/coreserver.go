@@ -130,8 +130,8 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 		for k, v := range vsmHandlers {
 			if f, ok := v.(VMFunc); ok {
 				x.mux.HandleFunc(k, func(w http.ResponseWriter, r *http.Request) {
-					req := &VMHttpRequest{r: r}
-					resp := &VMHttpResponse{w: w}
+					req := &VMHttpRequest{r: r, data: data}
+					resp := &VMHttpResponse{w: w, data: data}
 					args := make(VMSlice, 2)
 					rets := make(VMSlice, 0)
 					args[0] = resp

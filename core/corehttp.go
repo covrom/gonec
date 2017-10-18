@@ -8,7 +8,8 @@ import (
 )
 
 type VMHttpRequest struct {
-	r *http.Request
+	r    *http.Request
+	data VMValuer
 }
 
 func (x *VMHttpRequest) vmval() {}
@@ -18,6 +19,7 @@ func (x *VMHttpRequest) Interface() interface{} {
 }
 
 func (x *VMHttpRequest) String() string {
+	// TODO: представление строкой
 	return fmt.Sprintf("Запрос %s", x.r)
 }
 
@@ -26,6 +28,8 @@ func (x *VMHttpRequest) MethodMember(name int) (VMFunc, bool) {
 	// только эти методы будут доступны из кода на языке Гонец!
 
 	switch names.UniqueNames.GetLowerCase(name) {
+	// TODO: параметр() из data
+
 	// case "получить":
 	// 	return VMFuncMustParams(0, x.Получить), true
 	}
@@ -34,8 +38,9 @@ func (x *VMHttpRequest) MethodMember(name int) (VMFunc, bool) {
 }
 
 type VMHttpResponse struct {
-	r *http.Response
-	w http.ResponseWriter
+	r    *http.Response
+	w    http.ResponseWriter
+	data VMValuer
 }
 
 func (x *VMHttpResponse) vmval() {}
