@@ -46,8 +46,8 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, c.Закрыто), true
 	case "идентификатор":
 		return VMFuncMustParams(0, c.Идентификатор), true
-	case "параметры":
-		return VMFuncMustParams(0, c.Параметры), true
+	case "данные":
+		return VMFuncMustParams(0, c.Данные), true
 	}
 
 	return nil, false
@@ -218,7 +218,7 @@ func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice, envout *(*Env)) err
 	return nil
 }
 
-func (x *VMConn) Параметры(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+func (x *VMConn) Данные(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(x.data)
 	return nil
 }
