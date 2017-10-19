@@ -114,7 +114,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 						gzip:   gzipped,
 					}
 					x.clients = append(x.clients, vcn)
-					go vcn.Handle(handler)
+					go vcn.Handle(handler, true)
 
 				} else {
 					conn.Close()

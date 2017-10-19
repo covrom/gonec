@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"sync"
 )
 
 type VMClient struct {
@@ -21,13 +22,13 @@ func (x *VMClient) IsOnline() bool {
 	return x.conn != nil && !x.conn.closed
 }
 
-func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error {
+func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer, closeOnExitHandler bool) error {
 
 	switch proto {
 	case "tcp", "tcpzip", "tcptls", "http", "https":
 
 		x.conn = NewVMConn(data)
-		err := x.conn.Dial(proto, addr, handler)
+		err := x.conn.Dial(proto, addr, handler, closeOnExitHandler)
 		if err != nil {
 			return err
 		}
@@ -39,14 +40,14 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error
 }
 
 func (x *VMClient) Close() {
-	x.conn.conn.Close()
-	x.conn.closed = true
+	x.conn.Close()
 }
 
 func (x *VMClient) VMRegister() {
 	x.VMRegisterMethod("Закрыть", x.Закрыть)
 	x.VMRegisterMethod("Работает", x.Работает)
-	x.VMRegisterMethod("Открыть", x.Открыть)
+	x.VMRegisterMethod("Открыть", x.Открыть)     // асинхронно
+	x.VMRegisterMethod("Соединить", x.Соединить) // синхронно
 
 	// tst.VMRegisterField("ПолеСтрока", &tst.ПолеСтрока)
 }
@@ -68,7 +69,46 @@ func (x *VMClient) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) e
 		return errors.New("Третий аргумент должен быть функцией с одним аргументом-соединением")
 	}
 
-	return x.Open(string(p), string(adr), f, args[3])
+	return x.Open(string(p), string(adr), f, args[3], true)
+}
+
+func (x *VMClient) Соединить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	if len(args) != 2 {
+		return VMErrorNeedArgs(2)
+	}
+	p, ok := args[0].(VMString)
+	if !ok {
+		return errors.New("Первый аргумент должен быть строкой с типом канала")
+	}
+	adr, ok := args[1].(VMString)
+	if !ok {
+		return errors.New("Второй аргумент должен быть строкой с адресом")
+	}
+
+	var vcn *VMConn
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	f := VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		defer wg.Done()
+		vcn = args[0].(*VMConn)
+		return nil
+	})
+
+	err := x.Open(string(p), string(adr), f, VMNil, false)
+	if err != nil {
+		return err
+	}
+	wg.Wait()
+
+	if vcn == nil {
+		return errors.New("Соединение не было установлено")
+	}
+
+	rets.Append(vcn)
+
+	return nil
 }
 
 func (x *VMClient) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {

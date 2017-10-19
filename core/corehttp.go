@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/covrom/gonec/names"
@@ -225,6 +226,7 @@ func (x *VMHttpRequest) Сообщение(args VMSlice, rets *VMSlice, envout *
 type VMHttpResponse struct {
 	r    *http.Response
 	w    http.ResponseWriter
+	body []byte
 	data VMValuer
 }
 
@@ -235,7 +237,29 @@ func (x *VMHttpResponse) Interface() interface{} {
 }
 
 func (x *VMHttpResponse) String() string {
-	return fmt.Sprintf("Ответ %s %s", x.r.StatusCode, x.r.Status)
+	return fmt.Sprintf("%s %s", x.r.Status, x.body)
+}
+
+func (x *VMHttpResponse) ReadAll() (err error) {
+	x.body, err = ioutil.ReadAll(x.r.Body)
+	x.r.Body.Close()
+	return
+}
+
+func (x *VMHttpResponse) Send(status VMInt, b VMString, h VMStringMap) error {
+	hdrs := x.w.Header()
+	for k, v := range h {
+		vv, ok := v.(VMStringer)
+		if !ok {
+			return VMErrorNeedString
+		}
+		hdrs.Add(k, vv.String())
+	}
+
+	x.w.WriteHeader(int(status))
+
+	fmt.Fprintln(x.w, b)
+	return nil
 }
 
 func (x *VMHttpResponse) MethodMember(name int) (VMFunc, bool) {
@@ -267,15 +291,6 @@ func (x *VMHttpResponse) Отправить(args VMSlice, rets *VMSlice, envout 
 		}
 	}
 
-	hdrs := x.w.Header()
-	for k, v := range h {
-		vv, ok := v.(VMStringer)
-		if !ok {
-			return VMErrorNeedString
-		}
-		hdrs.Add(k, vv.String())
-	}
-
 	var sts VMInt
 	if v, ok := vsm["Статус"]; ok {
 		if sts, ok = v.(VMInt); !ok {
@@ -292,9 +307,5 @@ func (x *VMHttpResponse) Отправить(args VMSlice, rets *VMSlice, envout 
 		}
 	}
 
-	x.w.WriteHeader(int(sts))
-
-	fmt.Fprintln(x.w, b)
-	
-	return nil
+	return x.Send(sts, b, h)
 }

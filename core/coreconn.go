@@ -2,7 +2,6 @@ package core
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"encoding/binary"
 	"errors"
@@ -53,6 +52,9 @@ func (c *VMConn) Interface() interface{} {
 func (c *VMConn) String() string {
 	if c.closed {
 		return fmt.Sprintf("Соединение (закрыто)")
+	}
+	if c.httpcl != nil {
+		return "Соединение HTTP"
 	}
 	return fmt.Sprintf("Соединение с %s", c.conn.RemoteAddr())
 }
@@ -115,11 +117,18 @@ func (x *VMConn) HttpReq(meth, rurl, body VMString, hdrs, vals VMStringMap) (*VM
 
 	resp, err = x.httpcl.Do(req)
 
+	if err != nil {
+		return nil, err
+	}
+
 	res := &VMHttpResponse{r: resp, data: x.data}
+
+	err = res.ReadAll()
+
 	return res, err
 }
 
-func (x *VMConn) Dial(proto, addr string, handler VMFunc) (err error) {
+func (x *VMConn) Dial(proto, addr string, handler VMFunc, closeOnExitHandler bool) (err error) {
 
 	x.httpcl = nil
 
@@ -148,12 +157,13 @@ func (x *VMConn) Dial(proto, addr string, handler VMFunc) (err error) {
 
 	if proto == "http" {
 		tr := &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				c, err := x.dialer.DialContext(ctx, network, addr)
-				x.conn = c
-				return c, err
-			},
+			Proxy:       http.ProxyFromEnvironment,
+			DialContext: x.dialer.DialContext,
+			// func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// 	c, err := x.dialer.DialContext(ctx, network, addr)
+			// 	x.conn = c
+			// 	return c, err
+			// },
 			MaxIdleConns:          100,
 			IdleConnTimeout:       90 * time.Second,
 			TLSHandshakeTimeout:   10 * time.Second,
@@ -163,23 +173,31 @@ func (x *VMConn) Dial(proto, addr string, handler VMFunc) (err error) {
 		x.httpcl = &http.Client{Transport: tr}
 	}
 
-	go x.Handle(handler)
+	go x.Handle(handler, closeOnExitHandler) // TODO: пул ожидания массива соединений
 	return nil
 
 }
 
-func (x *VMConn) Handle(f VMFunc) {
+func (x *VMConn) Handle(f VMFunc, closeOnExitHandler bool) {
 	args := make(VMSlice, 1)
 	rets := make(VMSlice, 0)
 	args[0] = x
 	var env *Env // сюда вернется окружение вызываемой функции
 	err := f(args, &rets, &env)
 	// закрываем по окончании обработки
-	x.conn.Close()
-	x.closed = true
+	if closeOnExitHandler {
+		x.Close()
+	}
 	if err != nil && env.Valid {
 		env.Println(err)
 	}
+}
+
+func (x *VMConn) Close() {
+	if x.conn != nil {
+		x.conn.Close()
+	}
+	x.closed = true
 }
 
 type binTCPHead struct {
@@ -326,6 +344,8 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, c.Данные), true
 	case "запрос":
 		return VMFuncMustParams(1, c.Запрос), true //метод, урл, тело, заголовки, параметры формы
+	case "закрыть":
+		return VMFuncMustParams(0, c.Закрыть), true
 	}
 
 	return nil, false
@@ -364,6 +384,11 @@ func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice, envout *(*Env)) err
 
 func (x *VMConn) Данные(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(x.data)
+	return nil
+}
+
+func (x *VMConn) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	x.Close()
 	return nil
 }
 
@@ -409,7 +434,7 @@ func (x *VMConn) Запрос(args VMSlice, rets *VMSlice, envout *(*Env)) error
 	if err != nil {
 		return err
 	}
-	
+
 	rets.Append(r)
 
 	return nil
