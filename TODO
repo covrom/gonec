@@ -4,6 +4,8 @@ HTTP протокол + context
 
 Мьютекс
 
+Замыкания из go-lua
+
 Kubernetes service discovery
 
 Микросервис авторизации
