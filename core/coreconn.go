@@ -10,6 +10,8 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/covrom/gonec/names"
@@ -55,24 +57,66 @@ func (c *VMConn) String() string {
 	return fmt.Sprintf("Соединение с %s", c.conn.RemoteAddr())
 }
 
-func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
+func urlValuesFromMap(vals VMStringMap) (url.Values, error) {
+	uvs := make(url.Values)
+	for k, v := range vals {
+		vv, ok := v.(VMStringer)
+		if !ok {
+			return nil, VMErrorNeedString
+		}
+		uvs.Set(k, vv.String())
+	}
+	return uvs, nil
+}
 
-	// только эти методы будут доступны из кода на языке Гонец!
+func (x *VMConn) HttpReq(meth, rurl, body VMString, hdrs, vals VMStringMap) (*VMHttpResponse, error) {
 
-	switch names.UniqueNames.GetLowerCase(name) {
-	case "получить":
-		return VMFuncMustParams(0, c.Получить), true
-	case "отправить":
-		return VMFuncMustParams(1, c.Отправить), true
-	case "закрыто":
-		return VMFuncMustParams(0, c.Закрыто), true
-	case "идентификатор":
-		return VMFuncMustParams(0, c.Идентификатор), true
-	case "данные":
-		return VMFuncMustParams(0, c.Данные), true
+	var req *http.Request
+	var err error
+
+	// если указаны vals, то body игнорируется
+	if meth == VMString("POST") && len(vals) > 0 {
+		uvs, err := urlValuesFromMap(vals)
+		if err != nil {
+			return nil, err
+		}
+		req, err = http.NewRequest(string(meth), string(rurl), strings.NewReader(uvs.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	} else if meth == VMString("GET") && len(vals) > 0 {
+		uvs, err := urlValuesFromMap(vals)
+		if err != nil {
+			return nil, err
+		}
+		nurl, err := url.Parse(string(rurl))
+		if err != nil {
+			return nil, err
+		}
+		nurl.RawQuery = uvs.Encode()
+		req, err = http.NewRequest(string(meth), nurl.String(), strings.NewReader(string(body)))
+
+	} else {
+		req, err = http.NewRequest(string(meth), string(rurl), strings.NewReader(string(body)))
 	}
 
-	return nil, false
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range hdrs {
+		vv, ok := v.(VMStringer)
+		if !ok {
+			return nil, VMErrorNeedString
+		}
+		req.Header.Add(k, vv.String())
+	}
+
+	var resp *http.Response
+
+	resp, err = x.httpcl.Do(req)
+
+	res := &VMHttpResponse{r: resp, data: x.data}
+	return res, err
 }
 
 func (x *VMConn) Dial(proto, addr string, handler VMFunc) (err error) {
@@ -138,16 +182,68 @@ func (x *VMConn) Handle(f VMFunc) {
 	}
 }
 
-func (x *VMConn) Идентификатор(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	rets.Append(VMString(x.uid))
-	return nil
-}
-
 type binTCPHead struct {
 	Signature [8]byte //[8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'}
 	Hash      uint64  //хэш зашифрованного тела
 	Len       int64   //длина тела
 	Gzip      byte    //==0 - без сжатия (зашифрован), иначе сжат и зашифрован
+}
+
+func (x *VMConn) Send(val VMStringMap) error {
+
+	b, err := val.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	var be []byte
+	if x.gzip {
+		be, err = GZip(b)
+		if err != nil {
+			return err
+		}
+		be, err = EncryptAES128(be)
+	} else {
+		be, err = EncryptAES128(b)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	//хэш зашифрованного
+	hs := HashBytes(be)
+
+	head := binTCPHead{
+		Signature: [8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'},
+		Hash:      hs,
+		Len:       int64(len(be)),
+	}
+
+	if x.gzip {
+		head.Gzip = 1
+	}
+
+	// log.Println("out", hs, be)
+
+	err = binary.Write(x.conn, binary.LittleEndian, head)
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+		}
+		return err
+	}
+
+	_, err = io.Copy(x.conn, bytes.NewReader(be))
+	if err != nil {
+		if err == io.EOF {
+			x.closed = true
+			x.conn.Close()
+		}
+		return err
+	}
+	return nil
 }
 
 func (x *VMConn) Receive() (VMStringMap, error) {
@@ -213,73 +309,50 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	return rv, nil
 }
 
+func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
+
+	// только эти методы будут доступны из кода на языке Гонец!
+
+	switch names.UniqueNames.GetLowerCase(name) {
+	case "получить":
+		return VMFuncMustParams(0, c.Получить), true
+	case "отправить":
+		return VMFuncMustParams(1, c.Отправить), true
+	case "закрыто":
+		return VMFuncMustParams(0, c.Закрыто), true
+	case "идентификатор":
+		return VMFuncMustParams(0, c.Идентификатор), true
+	case "данные":
+		return VMFuncMustParams(0, c.Данные), true
+	case "запрос":
+		return VMFuncMustParams(1, c.Запрос), true //метод, урл, тело, заголовки, параметры формы
+	}
+
+	return nil, false
+}
+
+func (x *VMConn) Идентификатор(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	rets.Append(VMString(x.uid))
+	return nil
+}
+
 func (x *VMConn) Получить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	if x.httpcl != nil {
+		return VMErrorWrongHTTPMethod
+	}
+	// TCP
 	v, err := x.Receive()
 	rets.Append(v)
 	return err // при ошибке вызовет исключение, нужно обрабатывать в попытке
 }
 
-func (x *VMConn) Send(val VMStringMap) error {
-
-	b, err := val.MarshalBinary()
-	if err != nil {
-		return err
-	}
-
-	var be []byte
-	if x.gzip {
-		be, err = GZip(b)
-		if err != nil {
-			return err
-		}
-		be, err = EncryptAES128(be)
-	} else {
-		be, err = EncryptAES128(b)
-	}
-
-	if err != nil {
-		return err
-	}
-
-	//хэш зашифрованного
-	hs := HashBytes(be)
-
-	head := binTCPHead{
-		Signature: [8]byte{'g', 'o', 'n', 'e', 'c', 't', 'c', 'p'},
-		Hash:      hs,
-		Len:       int64(len(be)),
-	}
-
-	if x.gzip {
-		head.Gzip = 1
-	}
-
-	// log.Println("out", hs, be)
-
-	err = binary.Write(x.conn, binary.LittleEndian, head)
-	if err != nil {
-		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
-		}
-		return err
-	}
-
-	_, err = io.Copy(x.conn, bytes.NewReader(be))
-	if err != nil {
-		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
-		}
-		return err
-	}
-	return nil
-}
-
 func (x *VMConn) Отправить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	if x.httpcl != nil {
+		return VMErrorWrongHTTPMethod
+	}
 	v, ok := args[0].(VMStringMap)
 	if !ok {
-		return VMErrorNeedSlice
+		return VMErrorNeedMap
 	}
 	return x.Send(v) // при ошибке вызовет исключение, нужно обрабатывать в попытке
 }
@@ -291,5 +364,53 @@ func (x *VMConn) Закрыто(args VMSlice, rets *VMSlice, envout *(*Env)) err
 
 func (x *VMConn) Данные(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	rets.Append(x.data)
+	return nil
+}
+
+func (x *VMConn) Запрос(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	if x.httpcl == nil {
+		return VMErrorNonHTTPMethod
+	}
+	vsm, ok := args[0].(VMStringMap)
+	if !ok {
+		return VMErrorNeedMap
+	}
+
+	var m, p, b VMString
+	var h, vals VMStringMap
+
+	if v, ok := vsm["Метод"]; ok {
+		if m, ok = v.(VMString); !ok {
+			return VMErrorNeedString
+		}
+	}
+	if v, ok := vsm["Путь"]; ok {
+		if p, ok = v.(VMString); !ok {
+			return VMErrorNeedString
+		}
+	}
+	if v, ok := vsm["Тело"]; ok {
+		if b, ok = v.(VMString); !ok {
+			return VMErrorNeedString
+		}
+	}
+	if v, ok := vsm["Заголовки"]; ok {
+		if h, ok = v.(VMStringMap); !ok {
+			return VMErrorNeedMap
+		}
+	}
+	if v, ok := vsm["Параметры"]; ok {
+		if vals, ok = v.(VMStringMap); !ok {
+			return VMErrorNeedMap
+		}
+	}
+
+	r, err := x.HttpReq(m, p, b, h, vals)
+	if err != nil {
+		return err
+	}
+	
+	rets.Append(r)
+
 	return nil
 }

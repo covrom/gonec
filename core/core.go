@@ -156,7 +156,7 @@ func Import(env *Env) *Env {
 			PutGlobalVMSlice(v)
 			return nil
 		}
-		return VMErrorNeedSlice
+		return VMErrorNeedMap
 	}))
 
 	env.DefineS("случайнаястрока", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {

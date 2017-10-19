@@ -16,7 +16,8 @@ var (
 	VMErrorNeedString   = errors.New("Требуется значение типа Строка")
 	VMErrorNeedInt      = errors.New("Требуется значение типа ЦелоеЧисло")
 	VMErrorNeedDate     = errors.New("Требуется значение типа Дата")
-	VMErrorNeedSlice    = errors.New("Требуется значение типа Структура")
+	VMErrorNeedMap    = errors.New("Требуется значение типа Структура")
+	VMErrorNeedSlice    = errors.New("Требуется значение типа Массив")
 	VMErrorNeedDuration = errors.New("Требуется значение типа Длительность")
 	VMErrorNeedSeconds  = errors.New("Должно быть число секунд (допустимо с дробной частью)")
 	VMErrorNeedHash     = errors.New("Параметр не может быть хэширован")
@@ -45,6 +46,8 @@ var (
 	VMErrorServiceNotReady  = errors.New("Сервис не готов") // устанавливается сервисами в случае прекращения работы
 	VMErrorServiceAlreadyRegistered  = errors.New("Сервис уже зарегистрирован с таким же ID")
 	VMErrorServerAlreadyStarted  = errors.New("Сервер уже запущен")
+	VMErrorWrongHTTPMethod  = errors.New("Метод не применим к HTTP-соединению")
+	VMErrorNonHTTPMethod  = errors.New("Метод применим только к HTTP-соединению")
 )
 
 func VMErrorNeedArgs(n int) error {

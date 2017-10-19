@@ -9,6 +9,7 @@ import (
 	"github.com/covrom/gonec/names"
 )
 
+// VMHttpRequest запрос к http серверу
 type VMHttpRequest struct {
 	r    *http.Request
 	data VMValuer
@@ -70,7 +71,7 @@ func (x *VMHttpRequest) Method() VMString {
 //  "ПараметрыФормы":{"Имя":Значение,...},
 //  "Метод":Метод,
 //  "Заголовки":{"Имя":Значение,...},
-//  "Тело":"Строка JSON"
+//  "Тело":"Строка"
 // }
 func (x *VMHttpRequest) RequestAsVMStringMap() (VMStringMap, error) {
 
@@ -220,6 +221,7 @@ func (x *VMHttpRequest) Сообщение(args VMSlice, rets *VMSlice, envout *
 	return nil
 }
 
+// VMHttpResponse ответ от http сервера
 type VMHttpResponse struct {
 	r    *http.Response
 	w    http.ResponseWriter
@@ -233,7 +235,7 @@ func (x *VMHttpResponse) Interface() interface{} {
 }
 
 func (x *VMHttpResponse) String() string {
-	return fmt.Sprintf("Ответ %s", x.r)
+	return fmt.Sprintf("Ответ %s %s", x.r.StatusCode, x.r.Status)
 }
 
 func (x *VMHttpResponse) MethodMember(name int) (VMFunc, bool) {
