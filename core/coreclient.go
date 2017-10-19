@@ -1,15 +1,8 @@
 package core
 
 import (
-	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"net"
-	"net/http"
-	"time"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type VMClient struct {
@@ -34,50 +27,10 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error
 	case "tcp", "tcpzip", "tcptls", "http", "https":
 
 		x.conn = NewVMConn(data)
-
-		var err error
-
-		if proto == "tcptls" {
-			// certPool := x509.NewCertPool()
-			// certPool.AppendCertsFromPEM(TLSCertGonec)
-			config := &tls.Config{
-				// RootCAs: certPool,
-				InsecureSkipVerify: true,
-			}
-			x.conn.conn, err = tls.DialWithDialer(x.dialer, "tcp", addr, config)
-			if err != nil {
-				return err
-			}
+		err:=x.conn.Dial(proto, addr)
+		if err != nil {
+			return err
 		}
-
-		if proto == "tcp" || proto == "tcpzip" {
-			conn, err = x.dialer.Dial("tcp", addr)
-			if err != nil {
-				return err
-			}
-			if proto == "tcpzip" {
-				gzipped = true
-			}
-		}
-
-		if proto == "http" {
-			tr := &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-				DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-					c, err := x.dialer.DialContext(ctx, network, addr)
-					x.conn.conn = c
-					return c, err
-				},
-				MaxIdleConns:          100,
-				IdleConnTimeout:       90 * time.Second,
-				TLSHandshakeTimeout:   10 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-			}
-
-			x.httpcl = &http.Client{Transport: tr}
-		}
-
-		go x.conn.Handle(handler)
 
 	default:
 		return VMErrorIncorrectProtocol
