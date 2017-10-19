@@ -2,6 +2,8 @@ package core
 
 import (
 	"bytes"
+	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -73,7 +75,7 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 	return nil, false
 }
 
-func (x *VMConn) Dial(proto, addr string) (err error) {
+func (x *VMConn) Dial(proto, addr string, handler VMFunc) (err error) {
 	if proto == "tcptls" {
 		// certPool := x509.NewCertPool()
 		// certPool.AppendCertsFromPEM(TLSCertGonec)
@@ -81,19 +83,19 @@ func (x *VMConn) Dial(proto, addr string) (err error) {
 			// RootCAs: certPool,
 			InsecureSkipVerify: true,
 		}
-		x.conn.conn, err = tls.DialWithDialer(x.dialer, "tcp", addr, config)
+		x.conn, err = tls.DialWithDialer(x.dialer, "tcp", addr, config)
 		if err != nil {
 			return err
 		}
 	}
 
 	if proto == "tcp" || proto == "tcpzip" {
-		conn, err = x.dialer.Dial("tcp", addr)
+		x.conn, err = x.dialer.Dial("tcp", addr)
 		if err != nil {
 			return err
 		}
 		if proto == "tcpzip" {
-			gzipped = true
+			x.gzip = true
 		}
 	}
 
@@ -102,7 +104,7 @@ func (x *VMConn) Dial(proto, addr string) (err error) {
 			Proxy: http.ProxyFromEnvironment,
 			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 				c, err := x.dialer.DialContext(ctx, network, addr)
-				x.conn.conn = c
+				x.conn = c
 				return c, err
 			},
 			MaxIdleConns:          100,
@@ -114,9 +116,9 @@ func (x *VMConn) Dial(proto, addr string) (err error) {
 		x.httpcl = &http.Client{Transport: tr}
 	}
 
-	go x.conn.Handle(handler)
+	go x.Handle(handler)
 	return nil
-	
+
 }
 
 func (x *VMConn) Handle(f VMFunc) {

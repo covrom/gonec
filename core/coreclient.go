@@ -27,7 +27,7 @@ func (x *VMClient) Open(proto, addr string, handler VMFunc, data VMValuer) error
 	case "tcp", "tcpzip", "tcptls", "http", "https":
 
 		x.conn = NewVMConn(data)
-		err:=x.conn.Dial(proto, addr)
+		err := x.conn.Dial(proto, addr, handler)
 		if err != nil {
 			return err
 		}
