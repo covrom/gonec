@@ -7,12 +7,32 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
+	"time"
 
 	"github.com/covrom/gonec/names"
+	uuid "github.com/satori/go.uuid"
 )
+
+func NewVMConn(data VMValuer) *VMConn {
+	return &VMConn{
+		id:     -1,
+		closed: false,
+		uid:    uuid.NewV4().String(),
+		data:   data,
+		httpcl: nil,
+		dialer: &net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		},
+	}
+}
 
 type VMConn struct {
 	conn   net.Conn
+	dialer *net.Dialer
+	httpcl *http.Client // клиент http
 	id     int
 	closed bool
 	uid    string
@@ -51,6 +71,10 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 	}
 
 	return nil, false
+}
+
+func (x *VMConn) Dial() {
+
 }
 
 func (x *VMConn) Handle(f VMFunc) {
