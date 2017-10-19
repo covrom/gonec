@@ -76,6 +76,9 @@ func (c *VMConn) MethodMember(name int) (VMFunc, bool) {
 }
 
 func (x *VMConn) Dial(proto, addr string, handler VMFunc) (err error) {
+
+	x.httpcl = nil
+
 	if proto == "tcptls" {
 		// certPool := x509.NewCertPool()
 		// certPool.AppendCertsFromPEM(TLSCertGonec)
