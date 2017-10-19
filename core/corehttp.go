@@ -243,9 +243,58 @@ func (x *VMHttpResponse) MethodMember(name int) (VMFunc, bool) {
 	// только эти методы будут доступны из кода на языке Гонец!
 
 	switch names.UniqueNames.GetLowerCase(name) {
-	// case "получить":
-	// 	return VMFuncMustParams(0, x.Получить), true
+	case "отправить":
+		return VMFuncMustParams(1, x.Отправить), true
 	}
 
 	return nil, false
+}
+
+func (x *VMHttpResponse) Отправить(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	if x.w == nil || x.w == http.ResponseWriter(nil) {
+		return VMErrorHTTPResponseMethod
+	}
+
+	vsm, ok := args[0].(VMStringMap)
+	if !ok {
+		return VMErrorNeedMap
+	}
+
+	var h VMStringMap
+	if v, ok := vsm["Заголовки"]; ok {
+		if h, ok = v.(VMStringMap); !ok {
+			return VMErrorNeedMap
+		}
+	}
+
+	hdrs := x.w.Header()
+	for k, v := range h {
+		vv, ok := v.(VMStringer)
+		if !ok {
+			return VMErrorNeedString
+		}
+		hdrs.Add(k, vv.String())
+	}
+
+	var sts VMInt
+	if v, ok := vsm["Статус"]; ok {
+		if sts, ok = v.(VMInt); !ok {
+			return VMErrorNeedInt
+		}
+	} else {
+		sts = http.StatusOK
+	}
+
+	var b VMString
+	if v, ok := vsm["Тело"]; ok {
+		if b, ok = v.(VMString); !ok {
+			return VMErrorNeedString
+		}
+	}
+
+	x.w.WriteHeader(int(sts))
+
+	fmt.Fprintln(x.w, b)
+	
+	return nil
 }

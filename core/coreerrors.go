@@ -48,6 +48,7 @@ var (
 	VMErrorServerAlreadyStarted  = errors.New("Сервер уже запущен")
 	VMErrorWrongHTTPMethod  = errors.New("Метод не применим к HTTP-соединению")
 	VMErrorNonHTTPMethod  = errors.New("Метод применим только к HTTP-соединению")
+	VMErrorHTTPResponseMethod  = errors.New("Метод применим только к ответу HTTP сервера")
 )
 
 func VMErrorNeedArgs(n int) error {
