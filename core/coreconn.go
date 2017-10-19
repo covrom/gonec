@@ -56,7 +56,7 @@ func (c *VMConn) String() string {
 	if c.httpcl != nil {
 		return "Соединение HTTP"
 	}
-	return fmt.Sprintf("Соединение с %s", c.conn.RemoteAddr())
+	return fmt.Sprintf("Соединение TCP с %s", c.conn.RemoteAddr())
 }
 
 func urlValuesFromMap(vals VMStringMap) (url.Values, error) {
