@@ -2,12 +2,24 @@ package ast
 
 import (
 	"reflect"
+	"runtime"
 
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/names"
 	"github.com/covrom/gonec/pos"
 )
+
+func StartStmtSimplifyWorkers(ch chan Stmt, done chan bool, num int) {
+	for i := 0; i < num; i++ {
+		go func() {
+			for x := range ch {
+				x.Simplify()
+				done <- true
+			}
+		}()
+	}
+}
 
 // Stmt provides all of interfaces for statement.
 type Stmt interface {
@@ -483,8 +495,17 @@ type ModuleStmt struct {
 }
 
 func (x *ModuleStmt) Simplify() {
+	ch := make(chan Stmt, 20)
+	done := make(chan bool, 20)
+	StartStmtSimplifyWorkers(ch, done, runtime.NumCPU())
+	n := 0
 	for _, st := range x.Stmts {
-		st.Simplify()
+		// st.Simplify()
+		ch <- st
+		n++
+	}
+	for ; n > 0; n-- {
+		<-done
 	}
 }
 
