@@ -342,7 +342,7 @@ retry:
 				if s.peek() == '.' {
 					tok = VARARG
 				} else {
-					err = fmt.Errorf(`syntax error "%s"`, "..")
+					err = fmt.Errorf(`синтаксическая ошибка "%s"`, "..")
 					return
 				}
 			} else {
@@ -407,7 +407,7 @@ retry:
 				lit = string(ch)
 			}
 		default:
-			err = fmt.Errorf(`syntax error "%s"`, string(ch))
+			err = fmt.Errorf(`синтаксическая ошибка "%s"`, string(ch))
 			tok = int(ch)
 			lit = string(ch)
 			return
@@ -541,7 +541,7 @@ func (s *Scanner) scanNumber() (string, error) {
 			}
 		}
 		if isLetter(s.peek()) {
-			return "", errors.New("identifier starts immediately after numeric literal")
+			return "", errors.New("идентификатор следует сразу после числа")
 		}
 	}
 	return string(ret), nil
@@ -553,7 +553,7 @@ func (s *Scanner) scanRawString() (string, error) {
 	for {
 		s.next()
 		if s.peek() == EOF {
-			return "", errors.New("unexpected EOF")
+			return "", errors.New("неожиданный EOF")
 			break
 		}
 		if s.peek() == '`' {
@@ -574,9 +574,9 @@ eos:
 		s.next()
 		switch s.peek() {
 		case EOL:
-			return "", errors.New("unexpected EOL")
+			return "", errors.New("неожиданный EOL")
 		case EOF:
-			return "", errors.New("unexpected EOF")
+			return "", errors.New("неожиданный EOF")
 		case l:
 			s.next()
 			break eos
