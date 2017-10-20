@@ -12,6 +12,12 @@
 			"revisionTime": "2017-09-07T20:20:52Z"
 		},
 		{
+			"checksumSHA1": "Zs/NF9vG80/aA3FQ+iWJd2TVG68=",
+			"path": "github.com/covrom/decnum",
+			"revision": "6cca433c66b6b073576741eb3478dda59eb936cd",
+			"revisionTime": "2017-10-20T19:56:05Z"
+		},
+		{
 			"checksumSHA1": "+RnqP2E0QQ0lVibq0H+62R12hEA=",
 			"path": "github.com/daviddengcn/go-colortext",
 			"revision": "805cee6e0d43c72ba1d4e3275965ff41e0da068a",
