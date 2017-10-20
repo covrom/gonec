@@ -363,7 +363,7 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 			if fnc, ok := fgnc.(core.VMFunc); ok {
 				// если ее надо вызвать в горутине - вызываем
 				if s.Go {
-					env.SetGoRunned(true)
+					// env.SetGoRunned(true)
 					rets := core.GetGlobalVMSlice()   // для каждой горутины отдельный массив возвратов, который потом не используется
 					goargs := core.GetGlobalVMSlice() // для горутин аргументы надо скопировать!
 					goargs = append(goargs, argsl...)

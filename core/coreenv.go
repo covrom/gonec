@@ -86,7 +86,6 @@ type Env struct {
 	interrupt    *bool
 	stdout       io.Writer
 	sid          string
-	goRunned     bool
 	lastid       int
 	lastval      VMValuer
 	builtsLoaded bool
@@ -106,7 +105,6 @@ func NewEnv() *Env {
 		parent:       nil,
 		interrupt:    &b,
 		stdout:       os.Stdout,
-		goRunned:     false,
 		lastid:       -1,
 		builtsLoaded: false,
 		Valid:        true,
@@ -124,7 +122,6 @@ func (e *Env) NewEnv() *Env {
 				parent:       ee,
 				interrupt:    e.interrupt,
 				stdout:       e.stdout,
-				goRunned:     false,
 				lastid:       -1,
 				builtsLoaded: ee.builtsLoaded,
 				Valid:        true,
@@ -143,7 +140,6 @@ func (e *Env) NewSubEnv() *Env {
 		parent:       e,
 		interrupt:    e.interrupt,
 		stdout:       e.stdout,
-		goRunned:     false,
 		lastid:       -1,
 		builtsLoaded: e.builtsLoaded,
 		Valid:        true,
@@ -176,7 +172,6 @@ func (e *Env) NewPackage(n string) *Env {
 		name:         names.FastToLower(n),
 		interrupt:    e.interrupt,
 		stdout:       e.stdout,
-		goRunned:     false,
 		lastid:       -1,
 		builtsLoaded: e.builtsLoaded,
 		Valid:        true,
@@ -213,12 +208,6 @@ func (e *Env) Destroy() {
 	e.env = nil
 }
 
-func (e *Env) SetGoRunned(t bool) {
-	for ee := e; ee != nil; ee = ee.parent {
-		ee.goRunned = t
-	}
-}
-
 func (e *Env) SetBuiltsIsLoaded() {
 	e.builtsLoaded = true
 }
@@ -246,20 +235,14 @@ func (e *Env) GetName() string {
 func (e *Env) TypeName(t reflect.Type) int {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		if ee.goRunned {
-			ee.RLock()
-		}
+		ee.RLock()
 		for k, v := range ee.typ {
 			if v == t {
-				if ee.goRunned {
-					ee.RUnlock()
-				}
+				ee.RUnlock()
 				return k
 			}
 		}
-		if ee.goRunned {
-			ee.RUnlock()
-		}
+		ee.RUnlock()
 	}
 	return names.UniqueNames.Set(t.String())
 }
@@ -269,18 +252,12 @@ func (e *Env) TypeName(t reflect.Type) int {
 func (e *Env) Type(k int) (reflect.Type, error) {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		if ee.goRunned {
-			ee.RLock()
-		}
+		ee.RLock()
 		if v, ok := ee.typ[k]; ok {
-			if ee.goRunned {
-				ee.RUnlock()
-			}
+			ee.RUnlock()
 			return v, nil
 		}
-		if ee.goRunned {
-			ee.RUnlock()
-		}
+		ee.RUnlock()
 	}
 	return nil, fmt.Errorf("Тип неопределен '%s'", names.UniqueNames.Get(k))
 }
@@ -290,24 +267,24 @@ func (e *Env) Type(k int) (reflect.Type, error) {
 func (e *Env) Get(k int) (VMValuer, error) {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		if ee.goRunned {
-			ee.RLock()
-		}
+		ee.RLock()
 		if ee.lastid == k {
-			if ee.goRunned {
-				ee.RUnlock()
-			}
-			return ee.lastval, nil
+			v := ee.lastval
+			ee.RUnlock()
+			return v, nil
 		}
 		if v, ok := ee.env.Get(k); ok {
-			if ee.goRunned {
-				ee.RUnlock()
+			li := ee.lastid
+			ee.RUnlock()
+			if k != li {
+				ee.Lock()
+				ee.lastid = k
+				ee.lastval = v
+				ee.Unlock()
 			}
 			return v, nil
 		}
-		if ee.goRunned {
-			ee.RUnlock()
-		}
+		ee.RUnlock()
 	}
 	return nil, fmt.Errorf("Имя неопределено '%s'", names.UniqueNames.Get(k))
 }
@@ -317,21 +294,15 @@ func (e *Env) Get(k int) (VMValuer, error) {
 func (e *Env) Set(k int, v VMValuer) error {
 
 	for ee := e; ee != nil; ee = ee.parent {
-		if ee.goRunned {
-			ee.Lock()
-		}
+		ee.Lock()
 		if _, ok := ee.env.Get(k); ok {
 			ee.env.Set(k, v)
 			ee.lastid = k
 			ee.lastval = v
-			if ee.goRunned {
-				ee.Unlock()
-			}
+			ee.Unlock()
 			return nil
 		}
-		if ee.goRunned {
-			ee.Unlock()
-		}
+		ee.Unlock()
 	}
 	return fmt.Errorf("Имя неопределено '%s'", names.UniqueNames.Get(k))
 }
@@ -350,10 +321,8 @@ func (e *Env) DefineGlobal(k int, v VMValuer) error {
 func (e *Env) DefineType(k int, t reflect.Type) error {
 	for ee := e; ee != nil; ee = ee.parent {
 		if ee.parent == nil {
-			if ee.goRunned {
-				ee.Lock()
-				defer ee.Unlock()
-			}
+			ee.Lock()
+			defer ee.Unlock()
 			ee.typ[k] = t
 			return nil
 		}
@@ -373,16 +342,12 @@ func (e *Env) DefineTypeStruct(k string, t interface{}) error {
 
 // Define defines symbol in current scope.
 func (e *Env) Define(k int, v VMValuer) error {
-	if e.goRunned {
-		e.Lock()
-	}
+	e.Lock()
 	e.env.Set(k, v)
 	e.lastid = k
 	e.lastval = v
 
-	if e.goRunned {
-		e.Unlock()
-	}
+	e.Unlock()
 
 	return nil
 }
@@ -398,9 +363,7 @@ func (e *Env) String() string {
 
 // Dump show symbol values in the scope.
 func (e *Env) Dump() {
-	if e.goRunned {
-		e.RLock()
-	}
+	e.RLock()
 	sk := make([]int, len(e.env.vals))
 	i := 0
 	for k := range e.env.idx {
@@ -412,9 +375,7 @@ func (e *Env) Dump() {
 		v, _ := e.env.Get(k)
 		e.Printf("%d %s = %#v %T\n", k, names.UniqueNames.Get(k), v, v)
 	}
-	if e.goRunned {
-		e.RUnlock()
-	}
+	e.RUnlock()
 }
 
 func (e *Env) Println(a ...interface{}) (n int, err error) {

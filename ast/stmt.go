@@ -1,8 +1,10 @@
 package ast
 
 import (
+	"log"
 	"reflect"
 	"runtime"
+	"sync"
 
 	"github.com/covrom/gonec/bincode/binstmt"
 	"github.com/covrom/gonec/core"
@@ -10,12 +12,21 @@ import (
 	"github.com/covrom/gonec/pos"
 )
 
-func StartStmtSimplifyWorkers(ch chan Stmt, done chan bool, num int) {
+func StartStmtSimplifyWorkers(ch chan Stmt, wg *sync.WaitGroup, num int) {
 	for i := 0; i < num; i++ {
 		go func() {
 			for x := range ch {
-				x.Simplify()
-				done <- true
+				func() {
+					defer func() {
+						if ex := recover(); ex != nil {
+							log.Println(ex)
+						}
+					}()
+					if x != nil {
+						x.Simplify()
+					}
+				}()
+				wg.Done()
 			}
 		}()
 	}
@@ -495,18 +506,24 @@ type ModuleStmt struct {
 }
 
 func (x *ModuleStmt) Simplify() {
+
 	ch := make(chan Stmt, 20)
-	done := make(chan bool, 20)
-	StartStmtSimplifyWorkers(ch, done, runtime.NumCPU())
-	n := 0
+	wg := &sync.WaitGroup{}
+	StartStmtSimplifyWorkers(ch, wg, runtime.NumCPU())
+
 	for _, st := range x.Stmts {
+
 		// st.Simplify()
+
+		wg.Add(1)
 		ch <- st
-		n++
+		runtime.Gosched()
+
 	}
-	for ; n > 0; n-- {
-		<-done
-	}
+
+	wg.Wait()
+	close(ch)
+
 }
 
 func (s *ModuleStmt) BinTo(bins *binstmt.BinStmts, reg int, lid *int, maxreg *int) {
