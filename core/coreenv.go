@@ -303,16 +303,16 @@ func (e *Env) Get(k int) (VMValuer, error) {
 			if ee.goRunned {
 				ee.RUnlock()
 			}
-			if k != ee.lastid {
-				if ee.goRunned {
-					ee.Lock()
-				}
-				ee.lastid = k
-				ee.lastval = v
-				if ee.goRunned {
-					ee.Unlock()
-				}
-			}
+			// if k != ee.lastid {
+			// 	if ee.goRunned {
+			// 		ee.Lock()
+			// 	}
+			// 	ee.lastid = k
+			// 	ee.lastval = v
+			// 	if ee.goRunned {
+			// 		ee.Unlock()
+			// 	}
+			// }
 			return v, nil
 		}
 		if ee.goRunned {
