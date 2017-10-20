@@ -184,8 +184,7 @@ func (x *VMServer) Close() error {
 	// закрываем все клиентские соединения
 	for i := range x.clients {
 		if !x.clients[i].closed {
-			x.clients[i].conn.Close()
-			x.clients[i].closed = true
+			x.clients[i].Close()
 		}
 	}
 	x.clients = x.clients[:0]
@@ -206,8 +205,7 @@ func (x *VMServer) CloseClient(i int) (err error) {
 	if i >= 0 && i < l {
 		err = nil
 		if !x.clients[i].closed {
-			err = x.clients[i].conn.Close()
-			x.clients[i].closed = true
+			err = x.clients[i].Close()
 		}
 		return
 	} else {

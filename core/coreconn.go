@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/binary"
 	"errors"
@@ -33,9 +34,13 @@ func NewVMConn(data VMValuer) *VMConn {
 }
 
 type VMConn struct {
-	conn   net.Conn
+	conn net.Conn
+
 	dialer *net.Dialer
 	httpcl *http.Client // клиент http
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	id     int
 	closed bool
 	uid    string
@@ -71,7 +76,43 @@ func urlValuesFromMap(vals VMStringMap) (url.Values, error) {
 	return uvs, nil
 }
 
-func (x *VMConn) HttpReq(meth, rurl, body VMString, hdrs, vals VMStringMap) (*VMHttpResponse, error) {
+// пример работы с контекстом
+
+// cx, cancel := context.WithCancel(context.Background())
+// req, _ := http.NewRequest("GET", "http://google.com", nil)
+// req = req.WithContext(cx)
+// ch := make(chan error)
+
+// go func() {
+// 	_, err := http.DefaultClient.Do(req)
+// 	select {
+// 	case <-cx.Done():
+// 		// Already timedout
+// 	default:
+// 		ch <- err
+// 	}
+// }()
+
+// // Simulating user cancel request
+// go func() {
+// 	time.Sleep(100 * time.Millisecond)
+// 	cancel()
+// }()
+// select {
+// case err := <-ch:
+// 	if err != nil {
+// 		// HTTP error
+// 		panic(err)
+// 	}
+// 	print("no error")
+// case <-cx.Done():
+// 	panic(cx.Err())
+// }
+
+// HttpReq выполняет универсальный (с любыми методами) запрос к серверу и ждет ответа
+// hdrs - заголовки, которые будут помещены в запрос
+// vals - если это GET, то будут помещены в URL, если POST - помещаются в FormValues тела запроса, иначе - игнорируются
+func (x *VMConn) HttpReq(meth, rurl VMString, body []byte, hdrs, vals VMStringMap) (*VMHttpResponse, error) {
 
 	var req *http.Request
 	var err error
@@ -95,15 +136,19 @@ func (x *VMConn) HttpReq(meth, rurl, body VMString, hdrs, vals VMStringMap) (*VM
 			return nil, err
 		}
 		nurl.RawQuery = uvs.Encode()
-		req, err = http.NewRequest(string(meth), nurl.String(), strings.NewReader(string(body)))
+		req, err = http.NewRequest(string(meth), nurl.String(), bytes.NewReader(body))
 
 	} else {
-		req, err = http.NewRequest(string(meth), string(rurl), strings.NewReader(string(body)))
+		req, err = http.NewRequest(string(meth), string(rurl), bytes.NewReader(body))
 	}
 
 	if err != nil {
 		return nil, err
 	}
+
+	// заворачиваем в контекст для возможности прерывания
+	x.ctx, x.cancel = context.WithCancel(context.Background())
+	req = req.WithContext(x.ctx)
 
 	for k, v := range hdrs {
 		vv, ok := v.(VMStringer)
@@ -173,7 +218,10 @@ func (x *VMConn) Dial(proto, addr string, handler VMFunc, closeOnExitHandler boo
 		x.httpcl = &http.Client{Transport: tr}
 	}
 
-	go x.Handle(handler, closeOnExitHandler) // TODO: пул ожидания массива соединений
+	if handler != nil {
+		go x.Handle(handler, closeOnExitHandler)
+	}
+
 	return nil
 
 }
@@ -193,11 +241,15 @@ func (x *VMConn) Handle(f VMFunc, closeOnExitHandler bool) {
 	}
 }
 
-func (x *VMConn) Close() {
+func (x *VMConn) Close() (err error) {
+	if x.httpcl != nil {
+		x.cancel()
+	}
 	if x.conn != nil {
-		x.conn.Close()
+		err = x.conn.Close()
 	}
 	x.closed = true
+	return
 }
 
 type binTCPHead struct {
@@ -247,8 +299,7 @@ func (x *VMConn) Send(val VMStringMap) error {
 	err = binary.Write(x.conn, binary.LittleEndian, head)
 	if err != nil {
 		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
+			x.Close()
 		}
 		return err
 	}
@@ -256,8 +307,7 @@ func (x *VMConn) Send(val VMStringMap) error {
 	_, err = io.Copy(x.conn, bytes.NewReader(be))
 	if err != nil {
 		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
+			x.Close()
 		}
 		return err
 	}
@@ -274,8 +324,7 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	err := binary.Read(x.conn, binary.LittleEndian, &head)
 	if err != nil {
 		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
+			x.Close()
 			err = VMErrorEOF
 		}
 		return rv, err
@@ -293,8 +342,7 @@ func (x *VMConn) Receive() (VMStringMap, error) {
 	_, err = io.CopyN(&buf, x.conn, head.Len)
 	if err != nil {
 		if err == io.EOF {
-			x.closed = true
-			x.conn.Close()
+			x.Close()
 		}
 		return rv, err
 	}
@@ -430,7 +478,7 @@ func (x *VMConn) Запрос(args VMSlice, rets *VMSlice, envout *(*Env)) error
 		}
 	}
 
-	r, err := x.HttpReq(m, p, b, h, vals)
+	r, err := x.HttpReq(m, p, []byte(b), h, vals)
 	if err != nil {
 		return err
 	}

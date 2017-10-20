@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"sync"
 )
 
 type VMClient struct {
@@ -85,28 +84,16 @@ func (x *VMClient) Соединить(args VMSlice, rets *VMSlice, envout *(*Env
 		return errors.New("Второй аргумент должен быть строкой с адресом")
 	}
 
-	var vcn *VMConn
-
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
-	f := VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-		defer wg.Done()
-		vcn = args[0].(*VMConn)
-		return nil
-	})
-
-	err := x.Open(string(p), string(adr), f, VMNil, false)
+	err := x.Open(string(p), string(adr), nil, VMNil, false) // не запускает handler
 	if err != nil {
 		return err
 	}
-	wg.Wait()
 
-	if vcn == nil {
+	if x.conn == nil {
 		return errors.New("Соединение не было установлено")
 	}
 
-	rets.Append(vcn)
+	rets.Append(x.conn)
 
 	return nil
 }
