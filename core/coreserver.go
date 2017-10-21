@@ -141,6 +141,7 @@ func (x *VMServer) Open(proto, addr string, maxconn int, handler VMFunc, data VM
 					if err != nil && env.Valid {
 						env.Println(err)
 					}
+					req.Close()
 				})
 			}
 		}

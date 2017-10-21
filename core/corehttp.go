@@ -33,6 +33,16 @@ func (x *VMHttpRequest) SetHeader(name, val VMString) {
 	x.r.Header.Set(string(name), string(val))
 }
 
+func (x *VMHttpRequest) Close() {
+	if x.r != nil {
+		if x.r.Body != nil {
+			x.r.Body.Close()
+		}
+	}
+	x.r = nil
+	x.body = nil
+}
+
 func (x *VMHttpRequest) ReadBody() (b VMString, err error) {
 	if x.body != nil {
 		return VMString(x.body), nil
@@ -242,6 +252,16 @@ func (x *VMHttpResponse) Interface() interface{} {
 
 func (x *VMHttpResponse) String() string {
 	return fmt.Sprintf("%s %s", x.r.Status, x.body)
+}
+
+func (x *VMHttpResponse) Close() {
+	if x.r != nil {
+		if x.r.Body != nil {
+			x.r.Body.Close()
+		}
+	}
+	x.r = nil
+	x.body = nil
 }
 
 func (x *VMHttpResponse) ReadBody() (b VMString, err error) {
