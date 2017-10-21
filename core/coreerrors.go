@@ -49,6 +49,7 @@ var (
 	VMErrorWrongHTTPMethod  = errors.New("Метод не применим к HTTP-соединению")
 	VMErrorNonHTTPMethod  = errors.New("Метод применим только к HTTP-соединению")
 	VMErrorHTTPResponseMethod  = errors.New("Метод применим только к ответу HTTP сервера")
+	VMErrorNilResponse  = errors.New("Отсутствует содержимое ответа")
 )
 
 func VMErrorNeedArgs(n int) error {

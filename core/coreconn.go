@@ -163,12 +163,17 @@ func (x *VMConn) HttpReq(meth, rurl VMString, body []byte, hdrs, vals VMStringMa
 	resp, err = x.httpcl.Do(req)
 
 	if err != nil {
+		if resp != nil {
+			if resp.Body != nil {
+				resp.Body.Close()
+			}
+		}
 		return nil, err
 	}
 
 	res := &VMHttpResponse{r: resp, data: x.data}
 
-	err = res.ReadAll()
+	_, err = res.ReadBody()
 
 	return res, err
 }

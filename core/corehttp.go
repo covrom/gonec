@@ -1,9 +1,7 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -14,6 +12,7 @@ import (
 type VMHttpRequest struct {
 	r    *http.Request
 	data VMValuer
+	body []byte
 }
 
 func (x *VMHttpRequest) vmval() {}
@@ -34,13 +33,18 @@ func (x *VMHttpRequest) SetHeader(name, val VMString) {
 	x.r.Header.Set(string(name), string(val))
 }
 
-func (x *VMHttpRequest) ReadBody() (VMString, error) {
-	var buf bytes.Buffer
-	_, err := io.Copy(&buf, x.r.Body)
+func (x *VMHttpRequest) ReadBody() (b VMString, err error) {
+	if x.body != nil {
+		return VMString(x.body), nil
+	}
+	x.body, err = ioutil.ReadAll(x.r.Body)
+	if x.r.Body != nil {
+		x.r.Body.Close()
+	}
 	if err != nil {
 		return VMString(""), err
 	}
-	return VMString(buf.String()), nil
+	return VMString(x.body), nil
 }
 
 func (x *VMHttpRequest) Path() VMString {
@@ -240,10 +244,18 @@ func (x *VMHttpResponse) String() string {
 	return fmt.Sprintf("%s %s", x.r.Status, x.body)
 }
 
-func (x *VMHttpResponse) ReadAll() (err error) {
+func (x *VMHttpResponse) ReadBody() (b VMString, err error) {
+	if x.body != nil {
+		return VMString(x.body), nil
+	}
 	x.body, err = ioutil.ReadAll(x.r.Body)
-	x.r.Body.Close()
-	return
+	if x.r.Body != nil {
+		x.r.Body.Close()
+	}
+	if err != nil {
+		return VMString(""), err
+	}
+	return VMString(x.body), nil
 }
 
 func (x *VMHttpResponse) Send(status VMInt, b VMString, h VMStringMap) error {
@@ -269,6 +281,8 @@ func (x *VMHttpResponse) MethodMember(name int) (VMFunc, bool) {
 	switch names.UniqueNames.GetLowerCase(name) {
 	case "отправить":
 		return VMFuncMustParams(1, x.Отправить), true
+	case "тело":
+		return VMFuncMustParams(0, x.Тело), true
 	}
 
 	return nil, false
@@ -308,4 +322,10 @@ func (x *VMHttpResponse) Отправить(args VMSlice, rets *VMSlice, envout 
 	}
 
 	return x.Send(sts, b, h)
+}
+
+func (x *VMHttpResponse) Тело(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	s, _ := x.ReadBody()
+	rets.Append(VMString(s))
+	return nil
 }
