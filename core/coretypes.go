@@ -92,7 +92,7 @@ const (
 	_ VMBinaryType = iota
 	VMBOOL
 	VMINT
-	VMDECIMAL
+	VMDECNUM
 	VMSTRING
 	VMSLICE
 	VMSTRINGMAP
@@ -112,8 +112,8 @@ func (x VMBinaryType) ParseBinary(data []byte) (VMValuer, error) {
 		var v VMInt
 		err := (&v).UnmarshalBinary(data)
 		return v, err
-	case VMDECIMAL:
-		var v VMDecimal
+	case VMDECNUM:
+		var v VMDecNum
 		err := (&v).UnmarshalBinary(data)
 		return v, err
 	case VMSTRING:

@@ -239,6 +239,7 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 	case POW:
 		switch yy := y.(type) {
 		case VMInt:
+			// TODO: переделать на math
 			return NewVMDecimalFromInt64(int64(x)).Pow(NewVMDecimalFromInt64(int64(yy))), nil
 		case VMDecimal:
 			return NewVMDecimalFromInt64(int64(x)).Pow(yy), nil

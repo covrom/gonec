@@ -79,8 +79,8 @@ type (
 		VMInterfacer
 		Int() int64
 		Float() float64
-		Decimal() VMDecimal
-		InvokeNumber() (VMNumberer, error) // извлекает VMInt или VMDecimal, в зависимости от наличия .eE
+		DecNum() VMDecNum
+		InvokeNumber() (VMNumberer, error) // извлекает VMInt или VMDecNum, в зависимости от наличия .eE
 	}
 
 	// VMBooler сообщает значение булево
