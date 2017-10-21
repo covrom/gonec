@@ -507,22 +507,22 @@ type ModuleStmt struct {
 
 func (x *ModuleStmt) Simplify() {
 
-	ch := make(chan Stmt, 20)
-	wg := &sync.WaitGroup{}
-	StartStmtSimplifyWorkers(ch, wg, runtime.NumCPU())
-
-	for _, st := range x.Stmts {
-
-		// st.Simplify()
-
-		wg.Add(1)
-		ch <- st
-		runtime.Gosched()
-
+	ncpu := runtime.NumCPU()
+	if ncpu > 1 {
+		ch := make(chan Stmt, 20)
+		wg := &sync.WaitGroup{}
+		StartStmtSimplifyWorkers(ch, wg, ncpu)
+		for _, st := range x.Stmts {
+			wg.Add(1)
+			ch <- st
+		}
+		wg.Wait()
+		close(ch)
+	} else {
+		for _, st := range x.Stmts {
+			st.Simplify()
+		}
 	}
-
-	wg.Wait()
-	close(ch)
 
 }
 
