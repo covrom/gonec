@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/covrom/decnum"
-
 	"github.com/covrom/gonec/names"
 )
 
@@ -60,9 +58,9 @@ func (x VMBool) Float() float64 {
 
 func (x VMBool) DecNum() VMDecNum {
 	if x {
-		return VMDecNum{num: decnum.FromInt64(1)}
+		return VMDecNumOne
 	} else {
-		return VMDecNum{num: decnum.Zero()}
+		return VMDecNumZero
 	}
 }
 

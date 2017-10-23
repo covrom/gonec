@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/covrom/decnum"
 )
 
 // VMInt для ускорения работы храним целочисленное представление отдельно от decimal
@@ -74,7 +72,7 @@ func (x VMInt) Float() float64 {
 }
 
 func (x VMInt) DecNum() VMDecNum {
-	return VMDecNum{num: decnum.Zero()}
+	return NewVMDecNumFromInt64(int64(x))
 }
 
 func (x VMInt) InvokeNumber() (VMNumberer, error) {
