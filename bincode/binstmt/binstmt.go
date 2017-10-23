@@ -142,7 +142,7 @@ func init() {
 	gob.Register(BinCode{})
 	gob.Register(&names.EnvNames{})
 	gob.Register(core.VMInt(0))
-	gob.Register(core.VMDecimal{})
+	gob.Register(core.VMDecNumZero)
 	gob.Register(&core.VMMetaObj{})
 	gob.Register(core.VMString(""))
 	gob.Register(core.VMBool(false))

@@ -11,7 +11,6 @@ import (
 
 	"github.com/covrom/gonec/names"
 	"github.com/satori/go.uuid"
-	"github.com/shopspring/decimal"
 )
 
 // LoadAllBuiltins is a convenience function that loads all defineSd builtins.
@@ -114,8 +113,8 @@ func Import(env *Env) *Env {
 	env.DefineS("пауза", VMFuncMustParams(1, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 		*envout = env
 		if v, ok := args[0].(VMNumberer); ok {
-			sec1 := decimal.New(int64(VMSecond), 0)
-			time.Sleep(time.Duration(v.Decimal().Mul(VMDecimal(sec1)).Int()))
+			sec1 := NewVMDecNumFromInt64(int64(VMSecond))
+			time.Sleep(time.Duration(v.DecNum().Mul(sec1).Int()))
 			return nil
 		}
 		return VMErrorNeedSeconds
@@ -300,7 +299,7 @@ func Import(env *Env) *Env {
 
 	// при изменении состава типов не забывать изменять их и в lexer.go
 	env.DefineTypeS("целоечисло", ReflectVMInt)
-	env.DefineTypeS("число", ReflectVMDecimal)
+	env.DefineTypeS("число", ReflectVMDecNum)
 	env.DefineTypeS("булево", ReflectVMBool)
 	env.DefineTypeS("строка", ReflectVMString)
 	env.DefineTypeS("массив", ReflectVMSlice)

@@ -282,7 +282,7 @@ func (x VMStringMap) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	// case ReflectVMInt:
 	// case ReflectVMTime:
 	// case ReflectVMBool:
-	// case ReflectVMDecimal:
+	// case ReflectVMDecNum:
 	// case ReflectVMSlice:
 	case ReflectVMStringMap:
 		return x, nil

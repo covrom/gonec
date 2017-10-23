@@ -453,7 +453,7 @@ func (x VMSlice) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		// case ReflectVMInt:
 		// case ReflectVMTime:
 		// case ReflectVMBool:
-		// case ReflectVMDecimal:
+		// case ReflectVMDecNum:
 	case ReflectVMSlice:
 		return x, nil
 		// case ReflectVMStringMap:

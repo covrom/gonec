@@ -67,7 +67,7 @@ func (v *VMMetaObj) VMRegisterField(name string, m VMValuer) {
 	}
 	switch m.(type) {
 	case *VMInt, *VMString, *VMBool,
-		*VMChan, *VMDecimal, *VMStringMap,
+		*VMChan, *VMDecNum, *VMStringMap,
 		*VMSlice, *VMTime, *VMTimeDuration:
 
 		namtyp := names.UniqueNames.Set(name)
@@ -93,7 +93,7 @@ func (v *VMMetaObj) VMGetField(name int) VMValuer {
 			return *rv
 		case *VMChan:
 			return *rv
-		case *VMDecimal:
+		case *VMDecNum:
 			return *rv
 		case *VMStringMap:
 			return *rv
@@ -124,8 +124,8 @@ func (v *VMMetaObj) VMSetField(name int, val VMValuer) {
 		case *VMChan:
 			*rv = val.(VMChan)
 			return
-		case *VMDecimal:
-			*rv = val.(VMNumberer).Decimal()
+		case *VMDecNum:
+			*rv = val.(VMNumberer).DecNum()
 			return
 		case *VMStringMap:
 			*rv = val.(VMStringMaper).StringMap()
@@ -219,7 +219,7 @@ func (v *VMMetaObj) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		// case ReflectVMInt:
 		// case ReflectVMTime:
 		// case ReflectVMBool:
-		// case ReflectVMDecimal:
+		// case ReflectVMDecNum:
 		// case ReflectVMSlice:
 		// case ReflectVMStringMap: // получится только через Структура(Строка(объект))
 	}

@@ -16,7 +16,6 @@ import (
 	"github.com/covrom/gonec/core"
 	"github.com/covrom/gonec/names"
 	"github.com/covrom/gonec/parser"
-	"github.com/shopspring/decimal"
 )
 
 func Interrupt(env *core.Env) {
@@ -923,8 +922,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 			var x core.VMValuer
 			if vv, ok := v.(core.VMInt); ok {
 				x = core.VMInt(int64(vv) + 1)
-			} else if vv, ok := v.(core.VMDecimal); ok {
-				x = vv.Add(core.VMDecimal(decimal.New(1, 0)))
+			} else if vv, ok := v.(core.VMDecNum); ok {
+				x = vv.Add(core.VMDecNumOne)
 			}
 			registers[s.Reg] = x
 
@@ -933,8 +932,8 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 			var x core.VMValuer
 			if vv, ok := v.(core.VMInt); ok {
 				x = core.VMInt(int64(vv) - 1)
-			} else if vv, ok := v.(core.VMDecimal); ok {
-				x = vv.Add(core.VMDecimal(decimal.New(-1, 0)))
+			} else if vv, ok := v.(core.VMDecNum); ok {
+				x = vv.Add(core.VMDecNumNegOne)
 			}
 			registers[s.Reg] = x
 

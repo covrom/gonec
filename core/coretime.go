@@ -177,8 +177,8 @@ func (x VMTimeDuration) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, er
 		switch yy := y.(type) {
 		case VMInt:
 			return VMTimeDuration(int64(x) * int64(yy)), nil
-		case VMDecimal:
-			return VMTimeDuration(yy.Mul(NewVMDecimalFromInt64(int64(x))).Int()), nil
+		case VMDecNum:
+			return VMTimeDuration(yy.Mul(NewVMDecNumFromInt64(int64(x))).Int()), nil
 		case VMTimeDuration:
 			return VMTimeDuration(int64(x) * int64(yy)), nil
 		}
@@ -257,8 +257,8 @@ func (x VMTimeDuration) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		return VMInt(int64(x)), nil
 	case ReflectVMTimeDuration:
 		return x, nil
-	case ReflectVMDecimal:
-		return NewVMDecimalFromInt64(int64(x)), nil
+	case ReflectVMDecNum:
+		return NewVMDecNumFromInt64(int64(x)), nil
 	}
 	return VMNil, VMErrorNotConverted
 }
@@ -1119,7 +1119,7 @@ func (x VMTime) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	case ReflectVMTime:
 		return x, nil
 		// case ReflectVMBool:
-		// case ReflectVMDecimal:
+		// case ReflectVMDecNum:
 		// case ReflectVMSlice:
 		// case ReflectVMStringMap:
 	}

@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/covrom/decnum"
 	"github.com/covrom/gonec/names"
 	"github.com/dchest/siphash"
-	"github.com/shopspring/decimal"
 )
 
 type VMOperation int
@@ -83,8 +83,7 @@ var OperMapR = map[VMOperation]string{
 // VMValueStruct используется для встраивания в структуры других пакетов для обеспечения возможности соответствия VMValuer интерфейсу
 type VMValueStruct struct{}
 
-func (x VMValueStruct) vmval()                 {}
-
+func (x VMValueStruct) vmval() {}
 
 type VMBinaryType byte
 
@@ -384,7 +383,7 @@ func ReflectToVMValue(rv reflect.Value) VMInterfacer {
 	case reflect.Bool:
 		return VMBool(rv.Bool())
 	case reflect.Float32, reflect.Float64:
-		return VMDecimal(decimal.NewFromFloat(rv.Float()))
+		return VMDecNum{num: decnum.FromFloat(rv.Float())}
 	case reflect.Chan:
 		// проверяем, может это VMChaner
 		if x, ok := rv.Interface().(VMChaner); ok {
@@ -407,8 +406,8 @@ func ReflectToVMValue(rv reflect.Value) VMInterfacer {
 		}
 	case reflect.Struct:
 		switch v := rv.Interface().(type) {
-		case decimal.Decimal:
-			return VMDecimal(v)
+		case decnum.Quad:
+			return VMDecNum{num: v}
 		case time.Time:
 			return VMTime(v)
 		case VMNumberer:
@@ -433,9 +432,9 @@ func VMValuerFromJSON(s string) (VMValuer, error) {
 	if err == nil {
 		return VMInt(i64), nil
 	}
-	d, err := decimal.NewFromString(s)
+	d, err := decnum.FromString(s)
 	if err == nil {
-		return VMDecimal(d), nil
+		return VMDecNum{num: d}, nil
 	}
 	var rwi interface{}
 	if err = json.Unmarshal([]byte(s), &rwi); err != nil {
@@ -453,7 +452,7 @@ func VMValuerFromJSON(s string) (VMValuer, error) {
 	case bool:
 		return VMBool(w), nil
 	case float64:
-		return VMDecimal(decimal.NewFromFloat(w)), nil
+		return VMDecNum{num: decnum.FromFloat(w)}, nil
 	case []interface{}:
 		return VMSliceFromJson(s)
 	case map[string]interface{}:
@@ -525,19 +524,19 @@ func SortLessVMValues(v1, v2 VMValuer) bool {
 		if vj, ok := v2.(VMInt); ok {
 			return vi.Int() < vj.Int()
 		}
-		if vj, ok := v2.(VMDecimal); ok {
-			vii := decimal.New(int64(vi), 0)
-			return vii.LessThan(decimal.Decimal(vj))
+		if vj, ok := v2.(VMDecNum); ok {
+			vii := decnum.FromInt64(int64(vi))
+			return vii.Less(vj.num)
 		}
 	}
 
-	if vi, ok := v1.(VMDecimal); ok {
+	if vi, ok := v1.(VMDecNum); ok {
 		if vj, ok := v2.(VMInt); ok {
-			vjj := decimal.New(int64(vj), 0)
-			return decimal.Decimal(vi).LessThan(vjj)
+			vjj := decnum.FromInt64(int64(vj))
+			return vi.num.Less(vjj)
 		}
-		if vj, ok := v2.(VMDecimal); ok {
-			return decimal.Decimal(vi).LessThan(decimal.Decimal(vj))
+		if vj, ok := v2.(VMDecNum); ok {
+			return vi.num.Less(vj.num)
 		}
 	}
 
@@ -549,7 +548,7 @@ func SortLessVMValues(v1, v2 VMValuer) bool {
 		if vj, ok := v2.(VMInt); ok {
 			return strings.Compare(vi.String(), vj.String()) == -1
 		}
-		if vj, ok := v2.(VMDecimal); ok {
+		if vj, ok := v2.(VMDecNum); ok {
 			return strings.Compare(vi.String(), vj.String()) == -1
 		}
 	}

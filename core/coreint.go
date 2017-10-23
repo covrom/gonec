@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shopspring/decimal"
+	"github.com/covrom/decnum"
 )
 
 // VMInt для ускорения работы храним целочисленное представление отдельно от decimal
@@ -73,8 +73,8 @@ func (x VMInt) Float() float64 {
 	return float64(x)
 }
 
-func (x VMInt) Decimal() VMDecimal {
-	return VMDecimal(decimal.New(int64(x), 0))
+func (x VMInt) DecNum() VMDecNum {
+	return VMDecNum{num: decnum.Zero()}
 }
 
 func (x VMInt) InvokeNumber() (VMNumberer, error) {
@@ -134,90 +134,90 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) + int64(yy)), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Add(yy), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Add(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case SUB:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) - int64(yy)), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Sub(yy), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Sub(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case MUL:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) * int64(yy)), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Mul(yy), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Mul(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case QUO:
 		switch yy := y.(type) {
 		case VMInt:
-			return NewVMDecimalFromInt64(int64(x)).Div(NewVMDecimalFromInt64(int64(yy))), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Div(yy), nil
+			return NewVMDecNumFromInt64(int64(x)).Div(NewVMDecNumFromInt64(int64(yy))), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Div(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case REM:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMInt(int64(x) % int64(yy)), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Mod(yy), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Mod(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case EQL:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMBool(int64(x) == int64(yy)), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Equal(yy), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Equal(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case NEQ:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMBool(int64(x) != int64(yy)), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).NotEqual(yy), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).NotEqual(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case GTR:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMBool(int64(x) > int64(yy)), nil
-		case VMDecimal:
-			return VMBool(NewVMDecimalFromInt64(int64(x)).Cmp(yy) == 1), nil
+		case VMDecNum:
+			return VMBool(yy.Less(NewVMDecNumFromInt64(int64(x)))), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case GEQ:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMBool(int64(x) >= int64(yy)), nil
-		case VMDecimal:
-			cmp := NewVMDecimalFromInt64(int64(x)).Cmp(yy)
-			return VMBool(cmp == 1 || cmp == 0), nil
+		case VMDecNum:
+			cmp := NewVMDecNumFromInt64(int64(x)).num.GreaterEqual(yy.num)
+			return VMBool(cmp), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case LSS:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMBool(int64(x) < int64(yy)), nil
-		case VMDecimal:
-			return VMBool(NewVMDecimalFromInt64(int64(x)).Cmp(yy) == -1), nil
+		case VMDecNum:
+			return VMBool(NewVMDecNumFromInt64(int64(x)).Less(yy)), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case LEQ:
 		switch yy := y.(type) {
 		case VMInt:
 			return VMBool(int64(x) <= int64(yy)), nil
-		case VMDecimal:
-			cmp := NewVMDecimalFromInt64(int64(x)).Cmp(yy)
-			return VMBool(cmp == -1 || cmp == 0), nil
+		case VMDecNum:
+			cmp := NewVMDecNumFromInt64(int64(x)).num.LessEqual(yy.num)
+			return VMBool(cmp), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case OR:
@@ -240,9 +240,9 @@ func (x VMInt) EvalBinOp(op VMOperation, y VMOperationer) (VMValuer, error) {
 		switch yy := y.(type) {
 		case VMInt:
 			// TODO: переделать на math
-			return NewVMDecimalFromInt64(int64(x)).Pow(NewVMDecimalFromInt64(int64(yy))), nil
-		case VMDecimal:
-			return NewVMDecimalFromInt64(int64(x)).Pow(yy), nil
+			return NewVMDecNumFromInt64(int64(x)).Pow(NewVMDecNumFromInt64(int64(yy))), nil
+		case VMDecNum:
+			return NewVMDecNumFromInt64(int64(x)).Pow(yy), nil
 		}
 		return VMNil, VMErrorIncorrectOperation
 	case SHR:
@@ -274,8 +274,8 @@ func (x VMInt) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		return VMBool(x.Bool()), nil
 	case ReflectVMString:
 		return VMString(x.String()), nil
-	case ReflectVMDecimal:
-		return x.Decimal(), nil
+	case ReflectVMDecNum:
+		return x.DecNum(), nil
 	}
 	return VMNil, VMErrorNotConverted
 }

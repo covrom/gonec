@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"reflect"
 
+	"github.com/covrom/decnum"
+
 	"github.com/covrom/gonec/names"
-	"github.com/shopspring/decimal"
 )
 
 // VMInt для ускорения работы храним целочисленное представление отдельно от decimal
@@ -57,11 +58,11 @@ func (x VMBool) Float() float64 {
 	}
 }
 
-func (x VMBool) Decimal() VMDecimal {
+func (x VMBool) DecNum() VMDecNum {
 	if x {
-		return VMDecimal(decimal.New(1, 0))
+		return VMDecNum{num: decnum.FromInt64(1)}
 	} else {
-		return VMDecimal(decimal.New(0, 0))
+		return VMDecNum{num: decnum.Zero()}
 	}
 }
 
@@ -164,8 +165,8 @@ func (x VMBool) ConvertToType(nt reflect.Type) (VMValuer, error) {
 	case ReflectVMInt:
 		return VMInt(x.Int()), nil
 	// case ReflectVMTime:
-	case ReflectVMDecimal:
-		return x.Decimal(), nil
+	case ReflectVMDecNum:
+		return x.DecNum(), nil
 		// case ReflectVMSlice:
 		// case ReflectVMStringMap:
 	}

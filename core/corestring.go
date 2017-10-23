@@ -11,7 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/shopspring/decimal"
+	"github.com/covrom/decnum"
 )
 
 // VMString строки
@@ -62,17 +62,17 @@ func (x VMString) Float() float64 {
 	return f64
 }
 
-func (x VMString) Decimal() VMDecimal {
-	d, err := decimal.NewFromString(string(x))
+func (x VMString) Decimal() VMDecNum {
+	d, err := decnum.FromString(string(x))
 	if err != nil {
 		panic(err)
 	}
-	return VMDecimal(d)
+	return VMDecNum{num: d}
 }
 
 func (x VMString) InvokeNumber() (v VMNumberer, err error) {
 	if strings.ContainsAny(string(x), ".eE") {
-		v, err = ParseVMDecimal(string(x))
+		v, err = ParseVMDecNum(string(x))
 	} else {
 		v, err = ParseVMInt(string(x))
 	}
@@ -248,7 +248,7 @@ func (x VMString) ConvertToType(nt reflect.Type) (VMValuer, error) {
 		return x.Time(), nil
 	case ReflectVMBool:
 		return VMBool(x.Bool()), nil
-	case ReflectVMDecimal:
+	case ReflectVMDecNum:
 		return x.Decimal(), nil
 	case ReflectVMSlice:
 		return VMSliceFromJson(string(x))
