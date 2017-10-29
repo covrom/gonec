@@ -13,15 +13,17 @@ var (
 	VMErrorNeedFormatAndArgs    = errors.New("Должны быть форматная строка и хотя бы один параметр")
 	VMErrorSmallDecodeBuffer    = errors.New("Мало данных для декодирования")
 
-	VMErrorNeedString   = errors.New("Требуется значение типа Строка")
-	VMErrorNeedInt      = errors.New("Требуется значение типа ЦелоеЧисло")
+	VMErrorNeedString      = errors.New("Требуется значение типа Строка")
+	VMErrorNeedBool        = errors.New("Требуется значение типа Булево")
+	VMErrorNeedInt         = errors.New("Требуется значение типа ЦелоеЧисло")
 	VMErrorNeedDecNum      = errors.New("Требуется значение типа Число")
-	VMErrorNeedDate     = errors.New("Требуется значение типа Дата")
-	VMErrorNeedMap    = errors.New("Требуется значение типа Структура")
-	VMErrorNeedSlice    = errors.New("Требуется значение типа Массив")
-	VMErrorNeedDuration = errors.New("Требуется значение типа Длительность")
-	VMErrorNeedSeconds  = errors.New("Должно быть число секунд (допустимо с дробной частью)")
-	VMErrorNeedHash     = errors.New("Параметр не может быть хэширован")
+	VMErrorNeedDate        = errors.New("Требуется значение типа Дата")
+	VMErrorNeedMap         = errors.New("Требуется значение типа Структура")
+	VMErrorNeedSlice       = errors.New("Требуется значение типа Массив")
+	VMErrorNeedDuration    = errors.New("Требуется значение типа Длительность")
+	VMErrorNeedSeconds     = errors.New("Должно быть число секунд (допустимо с дробной частью)")
+	VMErrorNeedHash        = errors.New("Параметр не может быть хэширован")
+	VMErrorNeedBinaryTyper = errors.New("Требуется значение, которое может быть сериализовано в бинарное")
 
 	VMErrorIndexOutOfBoundary  = errors.New("Индекс находится за пределами массива")
 	VMErrorNotConverted        = errors.New("Приведение к типу невозможно")
@@ -42,15 +44,19 @@ var (
 	VMErrorIncorrectProtocol = errors.New("Неверный протокол")
 	VMErrorIncorrectClientId = errors.New("Неверный идентификатор соединения")
 	VMErrorIncorrectMessage  = errors.New("Неверный формат сообщения")
-	VMErrorEOF  = errors.New("Недостаточно данных в источнике")
+	VMErrorEOF               = errors.New("Недостаточно данных в источнике")
 
-	VMErrorServiceNotReady  = errors.New("Сервис не готов") // устанавливается сервисами в случае прекращения работы
-	VMErrorServiceAlreadyRegistered  = errors.New("Сервис уже зарегистрирован с таким же ID")
-	VMErrorServerAlreadyStarted  = errors.New("Сервер уже запущен")
-	VMErrorWrongHTTPMethod  = errors.New("Метод не применим к HTTP-соединению")
-	VMErrorNonHTTPMethod  = errors.New("Метод применим только к HTTP-соединению")
-	VMErrorHTTPResponseMethod  = errors.New("Метод применим только к ответу HTTP сервера")
-	VMErrorNilResponse  = errors.New("Отсутствует содержимое ответа")
+	VMErrorServiceNotReady          = errors.New("Сервис не готов") // устанавливается сервисами в случае прекращения работы
+	VMErrorServiceAlreadyRegistered = errors.New("Сервис уже зарегистрирован с таким же ID")
+	VMErrorServerAlreadyStarted     = errors.New("Сервер уже запущен")
+	VMErrorWrongHTTPMethod          = errors.New("Метод не применим к HTTP-соединению")
+	VMErrorNonHTTPMethod            = errors.New("Метод применим только к HTTP-соединению")
+	VMErrorHTTPResponseMethod       = errors.New("Метод применим только к ответу HTTP сервера")
+	VMErrorNilResponse              = errors.New("Отсутствует содержимое ответа")
+
+	VMErrorTransactionIsOpened  = errors.New("Уже была открыта транзакция")
+	VMErrorTransactionNotOpened = errors.New("Не открыта транзакция")
+	VMErrorWrongDBValue         = errors.New("Невозможно распознать значение в базе данных")
 )
 
 func VMErrorNeedArgs(n int) error {

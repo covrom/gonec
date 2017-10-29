@@ -27,7 +27,7 @@ const jsAceLang=`ace.define("ace/mode/gonec_highlight_rules",["require","exports
 			"СтрНайтиЛюбой|СтрНайтиПоследний|СтрЗаменить|Окр"
 		);
 	
-		var builtinTypes = ("ГруппаОжидания|Сервер|Клиент");
+		var builtinTypes = ("ГруппаОжидания|Сервер|Клиент|ФайловаяБазаДанных");
 	
 		var keywordMapper = this.createKeywordMapper({
 			"keyword": keywords,

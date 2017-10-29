@@ -370,7 +370,8 @@ func Import(env *Env) *Env {
 	env.DefineTypeS("длительность", ReflectVMTimeDuration)
 
 	env.DefineTypeS("группаожидания", ReflectVMWaitGroup)
-
+	env.DefineTypeS("файловаябазаданных", ReflectVMBoltDB)
+	
 	env.DefineTypeStruct("сервер", &VMServer{})
 	env.DefineTypeStruct("клиент", &VMClient{})
 
