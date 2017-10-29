@@ -15,6 +15,7 @@ var (
 
 	VMErrorNeedString   = errors.New("Требуется значение типа Строка")
 	VMErrorNeedInt      = errors.New("Требуется значение типа ЦелоеЧисло")
+	VMErrorNeedDecNum      = errors.New("Требуется значение типа Число")
 	VMErrorNeedDate     = errors.New("Требуется значение типа Дата")
 	VMErrorNeedMap    = errors.New("Требуется значение типа Структура")
 	VMErrorNeedSlice    = errors.New("Требуется значение типа Массив")

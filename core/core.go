@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/covrom/decnum"
+
 	"github.com/covrom/gonec/names"
 	"github.com/satori/go.uuid"
 )
@@ -257,12 +259,27 @@ func Import(env *Env) *Env {
 		v2, ok2 := args[1].(VMStringer)
 		v3, ok3 := args[2].(VMStringer)
 		if ok1 && ok2 && ok3 {
-			rets.Append(VMString(strings.Replace(string(v1.String()), string(v2.String()), string(v3.String()),-1)))
+			rets.Append(VMString(strings.Replace(string(v1.String()), string(v2.String()), string(v3.String()), -1)))
 			return nil
 		}
 		return VMErrorNeedString
 	}))
-	
+
+	env.DefineS("окр", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMDecNum)
+		if !ok1 {
+			return VMErrorNeedDecNum
+		}
+		v2, ok2 := args[1].(VMInt)
+		if !ok2 {
+			return VMErrorNeedInt
+		}
+
+		rets.Append(VMDecNum{num: v1.num.RoundWithMode(int32(v2), decnum.RoundHalfUp)})
+		return nil
+	}))
+
 	env.DefineS("формат", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 		*envout = env
 		if len(args) < 2 {
