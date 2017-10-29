@@ -57,7 +57,7 @@ func (x *VMBoltDB) Begin(writable bool) (tr *VMBoltTransaction, err error) {
 	if err != nil {
 		return tr, err
 	}
-	tr = &VMBoltTransaction{tx: tx}
+	tr = &VMBoltTransaction{tx: tx, writable: writable}
 	return
 }
 
@@ -103,7 +103,8 @@ func (x *VMBoltDB) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) e
 
 // VMBoltTransaction реализует функционал Transaction для BoltDB
 type VMBoltTransaction struct {
-	tx *bolt.Tx
+	tx       *bolt.Tx
+	writable bool
 }
 
 func (x *VMBoltTransaction) vmval() {}
@@ -138,9 +139,25 @@ func (x *VMBoltTransaction) CreateTableIfNotExists(name string) (*VMBoltTable, e
 	if x.tx == nil {
 		return nil, VMErrorTransactionNotOpened
 	}
-	b, err := x.tx.CreateBucketIfNotExists([]byte(name))
+	if x.writable {
+		b, err := x.tx.CreateBucketIfNotExists([]byte(name))
+		t := &VMBoltTable{name: name, b: b}
+		return t, err
+	} else {
+		return x.OpenTable(name)
+	}
+}
+
+func (x *VMBoltTransaction) OpenTable(name string) (*VMBoltTable, error) {
+	if x.tx == nil {
+		return nil, VMErrorTransactionNotOpened
+	}
+	b := x.tx.Bucket([]byte(name))
+	if b == nil {
+		return nil, VMErrorTableNotExists
+	}
 	t := &VMBoltTable{name: name, b: b}
-	return t, err
+	return t, nil
 }
 
 func (x *VMBoltTransaction) DeleteTable(name string) error {

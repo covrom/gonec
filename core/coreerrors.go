@@ -56,6 +56,7 @@ var (
 
 	VMErrorTransactionIsOpened  = errors.New("Уже была открыта транзакция")
 	VMErrorTransactionNotOpened = errors.New("Не открыта транзакция")
+	VMErrorTableNotExists       = errors.New("Отсутствует таблица в базе данных")
 	VMErrorWrongDBValue         = errors.New("Невозможно распознать значение в базе данных")
 )
 
