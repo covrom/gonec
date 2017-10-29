@@ -13,8 +13,8 @@ import (
 // VMBoltDB - группа ожидания исполнения горутин
 type VMBoltDB struct {
 	sync.Mutex
-	db *bolt.DB
-	tx *bolt.Tx
+	name string
+	db   *bolt.DB
 }
 
 var ReflectVMBoltDB = reflect.TypeOf(VMBoltDB{})
@@ -26,7 +26,7 @@ func (x *VMBoltDB) Interface() interface{} {
 }
 
 func (x *VMBoltDB) String() string {
-	return "Файловая база данных BoltDB"
+	return "Файловая база данных BoltDB " + x.name
 }
 
 func (x *VMBoltDB) Open(filename string) (err error) {
@@ -36,6 +36,7 @@ func (x *VMBoltDB) Open(filename string) (err error) {
 	if err != nil {
 		return err
 	}
+	x.name = filename
 	return nil
 }
 
@@ -48,62 +49,16 @@ func (x *VMBoltDB) Close() {
 	}
 }
 
-func (x *VMBoltDB) Begin(writable bool) (err error) {
+func (x *VMBoltDB) Begin(writable bool) (tr *VMBoltTransaction, err error) {
 	x.Lock()
 	defer x.Unlock()
-	if x.tx != nil {
-		return VMErrorTransactionIsOpened
-	}
-	x.tx, err = x.db.Begin(writable)
+	var tx *bolt.Tx
+	tx, err = x.db.Begin(writable)
 	if err != nil {
-		x.tx = nil
+		return tr, err
 	}
+	tr = &VMBoltTransaction{tx: tx}
 	return
-}
-
-func (x *VMBoltDB) Commit() error {
-	x.Lock()
-	defer x.Unlock()
-	if x.tx == nil {
-		return VMErrorTransactionNotOpened
-	}
-	err := x.tx.Commit()
-	x.tx = nil
-	return err
-}
-
-func (x *VMBoltDB) Rollback() error {
-	x.Lock()
-	defer x.Unlock()
-	if x.tx == nil {
-		return VMErrorTransactionNotOpened
-	}
-	x.tx.Rollback()
-	x.tx = nil
-	return nil
-}
-
-func (x *VMBoltDB) CreateTableIfNotExists(name string) (*VMBoltTable, error) {
-	if x.tx == nil {
-		return nil, VMErrorTransactionNotOpened
-	}
-	b, err := x.tx.CreateBucketIfNotExists([]byte(name))
-	t := &VMBoltTable{name: name, b: b}
-	return t, err
-}
-
-func (x *VMBoltDB) DeleteTable(name string) error {
-	if x.tx == nil {
-		return VMErrorTransactionNotOpened
-	}
-	return x.tx.DeleteBucket([]byte(name))
-}
-
-func (x *VMBoltDB) BackupDBToFile(name string) error {
-	if x.tx == nil {
-		return VMErrorTransactionNotOpened
-	}
-	return x.tx.CopyFile(name, 0644)
 }
 
 func (x *VMBoltDB) MethodMember(name int) (VMFunc, bool) {
@@ -116,6 +71,96 @@ func (x *VMBoltDB) MethodMember(name int) (VMFunc, bool) {
 		return VMFuncMustParams(0, x.Закрыть), true
 	case "начатьтранзакцию":
 		return VMFuncMustParams(1, x.НачатьТранзакцию), true
+	}
+	return nil, false
+}
+
+func (x *VMBoltDB) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	v, ok := args[0].(VMString)
+	if !ok {
+		return VMErrorNeedString
+	}
+	return x.Open(string(v))
+}
+
+func (x *VMBoltDB) НачатьТранзакцию(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	v, ok := args[0].(VMBool)
+	if !ok {
+		return VMErrorNeedBool
+	}
+	tr, err := x.Begin(bool(v))
+	if err != nil {
+		return err
+	}
+	rets.Append(tr)
+	return nil
+}
+
+func (x *VMBoltDB) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	x.Close()
+	return nil
+}
+
+// VMBoltTransaction реализует функционал Transaction для BoltDB
+type VMBoltTransaction struct {
+	tx *bolt.Tx
+}
+
+func (x *VMBoltTransaction) vmval() {}
+
+func (x *VMBoltTransaction) Interface() interface{} {
+	return x
+}
+
+func (x *VMBoltTransaction) String() string {
+	return "Транзакция файловой базы данных BoltDB"
+}
+
+func (x *VMBoltTransaction) Commit() error {
+	if x.tx == nil {
+		return VMErrorTransactionNotOpened
+	}
+	err := x.tx.Commit()
+	x.tx = nil
+	return err
+}
+
+func (x *VMBoltTransaction) Rollback() error {
+	if x.tx == nil {
+		return VMErrorTransactionNotOpened
+	}
+	x.tx.Rollback()
+	x.tx = nil
+	return nil
+}
+
+func (x *VMBoltTransaction) CreateTableIfNotExists(name string) (*VMBoltTable, error) {
+	if x.tx == nil {
+		return nil, VMErrorTransactionNotOpened
+	}
+	b, err := x.tx.CreateBucketIfNotExists([]byte(name))
+	t := &VMBoltTable{name: name, b: b}
+	return t, err
+}
+
+func (x *VMBoltTransaction) DeleteTable(name string) error {
+	if x.tx == nil {
+		return VMErrorTransactionNotOpened
+	}
+	return x.tx.DeleteBucket([]byte(name))
+}
+
+func (x *VMBoltTransaction) BackupDBToFile(name string) error {
+	if x.tx == nil {
+		return VMErrorTransactionNotOpened
+	}
+	return x.tx.CopyFile(name, 0644)
+}
+
+func (x *VMBoltTransaction) MethodMember(name int) (VMFunc, bool) {
+
+	// только эти методы будут доступны из кода на языке Гонец!
+	switch names.UniqueNames.GetLowerCase(name) {
 	case "зафиксироватьтранзакцию":
 		return VMFuncMustParams(0, x.ЗафиксироватьТранзакцию), true
 	case "отменитьтранзакцию":
@@ -130,36 +175,15 @@ func (x *VMBoltDB) MethodMember(name int) (VMFunc, bool) {
 	return nil, false
 }
 
-func (x *VMBoltDB) Открыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	v, ok := args[0].(VMString)
-	if !ok {
-		return VMErrorNeedString
-	}
-	return x.Open(string(v))
-}
-
-func (x *VMBoltDB) Закрыть(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	x.Close()
-	return nil
-}
-
-func (x *VMBoltDB) НачатьТранзакцию(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	v, ok := args[0].(VMBool)
-	if !ok {
-		return VMErrorNeedBool
-	}
-	return x.Begin(bool(v))
-}
-
-func (x *VMBoltDB) ЗафиксироватьТранзакцию(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+func (x *VMBoltTransaction) ЗафиксироватьТранзакцию(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	return x.Commit()
 }
 
-func (x *VMBoltDB) ОтменитьТранзакцию(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+func (x *VMBoltTransaction) ОтменитьТранзакцию(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	return x.Rollback()
 }
 
-func (x *VMBoltDB) Таблица(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+func (x *VMBoltTransaction) Таблица(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	v, ok := args[0].(VMString)
 	if !ok {
 		return VMErrorNeedString
@@ -172,7 +196,7 @@ func (x *VMBoltDB) Таблица(args VMSlice, rets *VMSlice, envout *(*Env)) e
 	return nil
 }
 
-func (x *VMBoltDB) УдалитьТаблицу(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+func (x *VMBoltTransaction) УдалитьТаблицу(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	v, ok := args[0].(VMString)
 	if !ok {
 		return VMErrorNeedString
@@ -180,7 +204,7 @@ func (x *VMBoltDB) УдалитьТаблицу(args VMSlice, rets *VMSlice, env
 	return x.DeleteTable(string(v))
 }
 
-func (x *VMBoltDB) ПолныйБэкап(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+func (x *VMBoltTransaction) ПолныйБэкап(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 	v, ok := args[0].(VMString)
 	if !ok {
 		return VMErrorNeedString
