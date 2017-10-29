@@ -3,13 +3,12 @@
 [![Gonec Logo](/extra/gonec.png)](https://github.com/covrom/gonec/releases)
 
 [![Presentation](/extra/button_ppt.png)](https://gitpitch.com/covrom/gonec)
-[![Chat](/extra/button_chat.png)](https://gitter.im/gonec/Lobby)
+[![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com/)
 
 [![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
 [![Docs](/extra/button_doc.png)](https://github.com/covrom/gonec/wiki)
 
-[![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com/)
-
+[![Chat](/extra/button_chat.png)](https://gitter.im/gonec/Lobby)
 [![Blog](/extra/button_blog.png)](https://www.facebook.com/gonecplatform/)
 
 ## Цели
