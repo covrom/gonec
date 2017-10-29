@@ -218,6 +218,51 @@ func Import(env *Env) *Env {
 		return VMErrorNeedString
 	}))
 
+	env.DefineS("стрнайти", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		if ok1 && ok2 {
+			rets.Append(VMInt(strings.Index(string(v1.String()), string(v2.String()))))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+
+	env.DefineS("стрнайтилюбой", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		if ok1 && ok2 {
+			rets.Append(VMInt(strings.IndexAny(string(v1.String()), string(v2.String()))))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+
+	env.DefineS("стрнайтипоследний", VMFuncMustParams(2, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		if ok1 && ok2 {
+			rets.Append(VMInt(strings.LastIndex(string(v1.String()), string(v2.String()))))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+
+	env.DefineS("стрзаменить", VMFuncMustParams(3, func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+		*envout = env
+		v1, ok1 := args[0].(VMStringer)
+		v2, ok2 := args[1].(VMStringer)
+		v3, ok3 := args[2].(VMStringer)
+		if ok1 && ok2 && ok3 {
+			rets.Append(VMString(strings.Replace(string(v1.String()), string(v2.String()), string(v3.String()),-1)))
+			return nil
+		}
+		return VMErrorNeedString
+	}))
+	
 	env.DefineS("формат", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
 		*envout = env
 		if len(args) < 2 {
