@@ -294,6 +294,30 @@ func (x *VMHttpResponse) Send(status VMInt, b VMString, h VMStringMap) error {
 	return nil
 }
 
+func (x *VMHttpResponse) RequestAsVMStringMap() (VMStringMap, error) {
+
+	var err error
+	rmap := make(VMStringMap)
+
+	rmap["Тело"], err = x.ReadBody()
+	if err != nil {
+		return rmap, err
+	}
+
+	rmap["ДлинаКонтента"] = VMInt(x.r.ContentLength)
+	rmap["Статус"] = VMInt(x.r.StatusCode)
+
+	m1 := make(VMStringMap)
+	for k, v := range x.r.Header {
+		if len(v) > 0 {
+			m1[k] = VMString(v[0])
+		}
+	}
+	rmap["Заголовки"] = m1
+
+	return rmap, nil
+}
+
 func (x *VMHttpResponse) MethodMember(name int) (VMFunc, bool) {
 
 	// только эти методы будут доступны из кода на языке Гонец!
@@ -301,8 +325,8 @@ func (x *VMHttpResponse) MethodMember(name int) (VMFunc, bool) {
 	switch names.UniqueNames.GetLowerCase(name) {
 	case "отправить":
 		return VMFuncMustParams(1, x.Отправить), true
-	case "тело":
-		return VMFuncMustParams(0, x.Тело), true
+	case "сообщение":
+		return VMFuncMustParams(0, x.Сообщение), true
 	}
 
 	return nil, false
@@ -344,8 +368,11 @@ func (x *VMHttpResponse) Отправить(args VMSlice, rets *VMSlice, envout 
 	return x.Send(sts, b, h)
 }
 
-func (x *VMHttpResponse) Тело(args VMSlice, rets *VMSlice, envout *(*Env)) error {
-	s, _ := x.ReadBody()
-	rets.Append(VMString(s))
+func (x *VMHttpResponse) Сообщение(args VMSlice, rets *VMSlice, envout *(*Env)) error {
+	v, err := x.RequestAsVMStringMap()
+	if err != nil {
+		return err
+	}
+	rets.Append(v)
 	return nil
 }
