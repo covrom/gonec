@@ -1,0 +1,180 @@
+#!gonec
+// Демонстрационный пример - todo список задач на базе vue.js и bootstrap
+
+база = Новый ФайловаяБазаДанных
+база.Открыть("todo.db")
+
+// инициируем таблицу, если ее еще нет
+тр = база.НачатьТранзакцию(Истина)
+тр.Таблица("Задачи")
+тр.ЗафиксироватьТранзакцию()
+
+Функция ГлавнаяСтраница(вых,вх) 
+    вых.Отправить({"Статус":200, "Тело": `<html>
+            <head>
+                <meta http-equiv="content-type" content="text/html; charset=utf-8">
+            
+                <title>TODO App</title>
+            
+                <!-- Latest compiled and minified CSS -->
+                <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+
+                <!-- Font Awesome -->
+                <link rel="stylesheet"  href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+                <!-- JQuery -->
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+        
+                <!-- Latest compiled and minified JavaScript -->
+                <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+            
+                <!-- Vue.js -->
+                <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.24/vue.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/0.7.0/vue-resource.min.js"></script>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h2>Мои задачи</h2>
+                            <ul class="list-group">
+                                <li class="list-group-item" v-for="task in tasks">
+                                    {{ task.name }}
+                                    <span class="pull-right">
+                                        <button class="btn btn-xs btn-danger" v-on:click="deleteTask($index)">
+                                            <i class="fa fa-trash-o" aria-hidden="true"></i>
+                                        </button>
+                                    </span>
+                                </li>
+                            </ul>
+                            <div class="input-group">
+                                <input type="text" 
+                                    class="form-control" 
+                                    placeholder="New Task" 
+                                    v-on:keyup.enter="createTask"
+                                    v-model="newTask.name">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary" type="button" v-on:click="createTask">Создать</button>
+                                </span>
+                            </div><!-- /input-group -->
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    new Vue({
+                        el: 'body',
+                        data: {
+                            tasks: [],
+                            newTask: {}
+                        },
+                        // This is run whenever the page is loaded to make sure we have a current task list
+                        created: function() {
+                            // Use the vue-resource $http client to fetch data from the /tasks route
+                            this.$http.get('/tasks').then(function(response) {
+                                this.tasks = response.data.items ? response.data.items : []
+                            })
+                        },
+                        methods: {
+                            createTask: function() {
+                                if (!$.trim(this.newTask.name)) {
+                                    this.newTask = {}
+                                    return
+                                }
+                                // Post the new task to the /tasks route using the $http client
+                                this.$http.put('/tasks', this.newTask).success(function(response) {
+                                    this.newTask.id = response.created
+                                    this.tasks.push(this.newTask)
+                                    console.log("Задача создана!")
+                                    console.log(this.newTask)
+                                    this.newTask = {}
+                                }).error(function(error) {
+                                    console.log(error)
+                                });
+                            },
+                            deleteTask: function(index) {
+                                // Use the $http client to delete a task by its id
+                                this.$http.delete('/tasks?id=' + this.tasks[index].id).success(function(response) {
+                                    this.tasks.splice(index, 1)
+                                    console.log("Task deleted!")
+                                }).error(function(error) {
+                                    console.log(error)
+                                })
+                            }
+                        }
+                    })
+                </script>
+            </body>
+        </html>
+    `})
+КонецФункции
+
+Функция Задачи(вых,вх)
+    база = вх.Данные()
+    сообщ = вх.Сообщение()
+    
+    Если сообщ.Метод = "GET" Тогда
+        
+        тело = {"items":[]}
+        
+        тр = база.НачатьТранзакцию(Ложь)
+        таб = тр.Таблица("Задачи")
+        задачи = таб.ПолучитьВсе()       
+        тр.ОтменитьТранзакцию() // при чтении транзакция не фиксируется, но отменяется
+        
+        Для каждого к из задачи.Ключи() Цикл
+            тело.items += {"id":к, "name": задачи[к]}
+        КонецЦикла
+        
+        вых.Отправить({"Статус":200, "Тело": Строка(тело)})
+    
+    ИначеЕсли сообщ.Метод = "PUT" Тогда
+
+        Сообщить(сообщ.Тело)
+
+        задача = Структура(сообщ.Тело)
+
+        тр = база.НачатьТранзакцию(Истина)
+        Попытка
+            таб = тр.Таблица("Задачи")
+            ид = Формат("%09d",таб.СледующийИдентификатор()) // 9 знаков с лидирующими нулями
+            таб.Установить(ид, задача.name)
+            // 201 = HTTP Created
+            вых.Отправить({"Статус":201, "Тело": Строка({"created": ид})})
+            тр.ЗафиксироватьТранзакцию()
+        Исключение
+            Сообщить(ОписаниеОшибки())
+            тр.ОтменитьТранзакцию()
+        КонецПопытки
+
+    ИначеЕсли сообщ.Метод = "DELETE" Тогда
+
+        ид = сообщ.Параметры["id"]
+
+        тр = база.НачатьТранзакцию(Истина)
+        Попытка
+            таб = тр.Таблица("Задачи")
+            таб.Удалить(ид)
+            вых.Отправить({"Статус":200, "Тело": Строка({"deleted": ид})})
+            тр.ЗафиксироватьТранзакцию()
+        Исключение
+            Сообщить(ОписаниеОшибки())
+            тр.ОтменитьТранзакцию()
+        КонецПопытки
+
+    КонецЕсли
+
+КонецФункции
+
+серв = Новый Сервер
+Попытка
+    серв.Открыть("http", ":9990", 100, {
+        "/": ГлавнаяСтраница,
+        "/tasks": Задачи,
+    }, база)
+Исключение
+    Сообщить(ОписаниеОшибки())
+КонецПопытки
+
+Пока серв.Работает() Цикл
+    ОбработатьГорутины()
+КонецЦикла

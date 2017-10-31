@@ -16,4 +16,7 @@
 debug
 gonec
 y.output
+
 test.db
+todo.db
+todo.db.lock
