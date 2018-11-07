@@ -20,8 +20,8 @@ func LoadAllBuiltins(env *Env) {
 	Import(env)
 
 	pkgs := map[string]func(env *Env) *Env{
-	// "sort":          gonec_sort.Import,
-	// "strings":       gonec_strings.Import,
+		// "sort":          gonec_sort.Import,
+		// "strings":       gonec_strings.Import,
 	}
 
 	env.DefineS("импорт", VMFunc(func(args VMSlice, rets *VMSlice, envout *(*Env)) error {
@@ -371,9 +371,14 @@ func Import(env *Env) *Env {
 
 	env.DefineTypeS("группаожидания", ReflectVMWaitGroup)
 	env.DefineTypeS("файловаябазаданных", ReflectVMBoltDB)
-	
+
 	env.DefineTypeStruct("сервер", &VMServer{})
 	env.DefineTypeStruct("клиент", &VMClient{})
+
+	env.DefineTypeStruct("таблицазначений", &VMTable{})
+	env.DefineTypeStruct("колонкатаблицызначений", &VMTableColumn{})
+	env.DefineTypeStruct("коллекцияколоноктаблицызначений", &VMTableColumns{})
+	env.DefineTypeStruct("строкатаблицызначений", &VMTableLine{})
 
 	//////////////////
 	env.DefineTypeStruct("__функциональнаяструктуратест__", &TttStructTest{})
