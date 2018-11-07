@@ -958,9 +958,10 @@ func RunWorker(stmts binstmt.BinStmts, labels []int, numofregs int, env *core.En
 		case *binstmt.BinFOREACH:
 			val := registers[s.Reg]
 
-			switch val.(type) {
-			case core.VMSlice:
+			switch vv := val.(type) {
+			case core.VMSlicer:
 				registers[s.RegIter] = core.VMInt(-1)
+				registers[s.Reg] = vv.Slice()
 			case core.VMChan:
 				registers[s.RegIter] = nil
 			default:
