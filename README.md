@@ -8,9 +8,6 @@
 [![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
 [![Docs](/extra/button_doc.png)](https://github.com/covrom/gonec/wiki)
 
-[![Chat](/extra/button_chat.png)](https://gitter.im/gonec/Lobby)
-[![Blog](/extra/button_blog.png)](https://www.facebook.com/gonecplatform/)
-
 ## Цели
 
 Платформа `Гонец:Микросервисы` создана для решения программистами 1С задач, связанных с высокопроизводительными распределенными вычислениями, создания микросервисов, вэб-сервисов и вэб-порталов для работы тысяч пользователей, работы с высокоэффективными базами данных, с использованием синтаксиса языка, похожего, но не ограниченного возможностями языка 1С. Для этого интерпретатор встраивается в решения на языке Go.
