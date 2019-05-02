@@ -2,10 +2,9 @@
 
 [![Gonec Logo](/extra/gonec.png)](https://github.com/covrom/gonec/releases)
 
-[![Presentation](/extra/button_ppt.png)](https://gitpitch.com/covrom/gonec)
 [![Demo site](/extra/button_play.png)](https://gonec.herokuapp.com/)
 
-[![Download](/extra/button_down.png)](https://github.com/covrom/gonec/releases)
+[![Presentation](/extra/button_ppt.png)](https://gitpitch.com/covrom/gonec)
 [![Docs](/extra/button_doc.png)](https://github.com/covrom/gonec/wiki)
 
 ## Цели
