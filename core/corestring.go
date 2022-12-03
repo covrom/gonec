@@ -152,7 +152,7 @@ func (x VMString) Slice() VMSlice {
 
 func (x VMString) StringMap() VMStringMap {
 	var rm VMStringMap
-	if err := json.Unmarshal([]byte(x), rm); err != nil {
+	if err := json.Unmarshal([]byte(x), &rm); err != nil {
 		panic(err)
 	}
 	return rm
